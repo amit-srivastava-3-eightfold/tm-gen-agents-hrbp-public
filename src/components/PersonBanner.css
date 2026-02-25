@@ -1,0 +1,56 @@
+.person-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 24px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  font-family: var(--font-family);
+}
+
+.person-banner__info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.person-banner__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #9D6309;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button3);
+  flex-shrink: 0;
+}
+
+.person-banner__avatar--photo {
+  object-fit: cover;
+  padding: 0;
+  background: transparent;
+}
+
+.person-banner__details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.person-banner__name {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.person-banner__role {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+

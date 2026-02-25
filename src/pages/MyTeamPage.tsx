@@ -1,0 +1,69 @@
+import { useState } from 'react'
+import * as Tabs from '@radix-ui/react-tabs'
+import { Navbar } from '../components/Navbar'
+import { PageHeader } from '../components/PageHeader'
+import { Button } from '../components/ui/Button'
+import { PersonBanner } from '../components/PersonBanner'
+import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
+import { UserCardList } from '../components/UserCardList'
+import '../components/Navbar.css'
+import '../components/PageHeader.css'
+import '../components/PersonBanner.css'
+import '../components/SkillAnalysisSection.css'
+import '../components/UserCard.css'
+import './MyTeamPage.css'
+
+export function MyTeamPage() {
+  const [reportScope, setReportScope] = useState<'direct' | 'open' | 'all'>('direct')
+
+  return (
+    <div className="my-team-page">
+      <Navbar />
+      <PageHeader title="My Team" />
+      <main className="my-team-page__main">
+        <div className="my-team-page__content">
+          <Tabs.Root defaultValue="reports" className="my-team-page__tabs">
+            <Tabs.List className="my-team-page__tabs-list">
+              <Tabs.Trigger value="reports" className="my-team-page__tab">
+                My reports
+              </Tabs.Trigger>
+              <Tabs.Trigger value="succession" className="my-team-page__tab">
+                Succession planning
+              </Tabs.Trigger>
+            </Tabs.List>
+            <Tabs.Content value="reports" className="my-team-page__tabs-content">
+              <div className="my-team-page__banner-wrap">
+                <PersonBanner />
+              </div>
+              <div className="my-team-page__skill-card">
+                <SkillAnalysisSection reportScope={reportScope} onReportScopeChange={setReportScope} />
+              </div>
+              {reportScope !== 'open' && (
+              <div className="my-team-page__user-cards">
+                <UserCardList />
+              </div>
+              )}
+            </Tabs.Content>
+            <Tabs.Content value="succession" className="my-team-page__tabs-content">
+              <div className="my-team-page__page-header grid grid-cols-12 gap-6">
+                <div className="my-team-page__header-actions col-span-12 flex justify-end">
+                  <Button variant="secondary">
+                    <span className="material-symbols-outlined">account_tree</span>
+                    View org chart
+                  </Button>
+                </div>
+              </div>
+              <div className="my-team-page__grid grid grid-cols-12 gap-6">
+                <p className="my-team-page__placeholder col-span-12">Succession planning content goes here.</p>
+              </div>
+            </Tabs.Content>
+          </Tabs.Root>
+        </div>
+        <footer className="my-team-page__footer">
+          <span>Powered by</span>
+          <span>#WhatsNextForYou</span>
+        </footer>
+      </main>
+    </div>
+  )
+}

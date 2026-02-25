@@ -1,0 +1,355 @@
+.user-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-card {
+  display: flex;
+  gap: 32px;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-family: var(--font-family);
+  align-items: stretch;
+}
+
+.user-card__top-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.user-card__ai-btn.btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #146DA6;
+  border-radius: 8px;
+}
+
+.user-card__ai-btn.btn:hover {
+  background: #F6F7F8;
+  color: #054D7B;
+}
+
+.user-card__ai-btn .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.user-card__left {
+  display: flex;
+  gap: 16px;
+  flex: 0 0 320px;
+}
+
+.user-card__avatar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.user-card__checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #146DA6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.user-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button1);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.user-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card__name {
+  margin: 0 0 4px;
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.user-card__meta {
+  margin: 0 0 12px;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.user-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.user-card__contact-btn.btn {
+  background: #F6F7F8;
+  color: #1A212E;
+  border: 1px solid #D9DCE1;
+}
+
+.user-card__contact-btn.btn:hover {
+  background: #EDEEF0;
+}
+
+.user-card__action-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.user-card__icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: #F6F7F8;
+  color: #4F5666;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.user-card__icon-btn:hover {
+  background: #EDEEF0;
+  color: #1A212E;
+}
+
+.user-card__icon-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.user-card__icon-btn--with-badge .user-card__icon-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #146DA6;
+  border-radius: 50%;
+}
+
+.user-card__reports {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-card__reports-arrow {
+  font-size: 20px;
+  color: #69717F;
+}
+
+.user-card__report-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.user-card__report-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-caption);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.user-card__report-more {
+  margin-left: 4px;
+  font: var(--typography-caption-semibold);
+  color: #4F5666;
+}
+
+.user-card__reports-btn.btn {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.user-card__right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-left: 1px solid #D9DCE1;
+  padding-left: 24px;
+}
+
+.user-card__metrics {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.user-card__metrics::-webkit-scrollbar {
+  height: 6px;
+}
+
+.user-card__metrics::-webkit-scrollbar-track {
+  background: #F6F7F8;
+  border-radius: 3px;
+}
+
+.user-card__metrics::-webkit-scrollbar-thumb {
+  background: #D9DCE1;
+  border-radius: 3px;
+}
+
+.user-card__metric {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  min-width: 140px;
+  max-width: 180px;
+  background: #F6F7F8;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.user-card__metric:hover {
+  background: #EDEEF0;
+}
+
+.user-card__metric-icon {
+  color: #4F5666;
+}
+
+.user-card__metric-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.user-card__metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-card__metric-label {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.user-card__metric-value {
+  font: var(--typography-header6);
+  color: #146DA6;
+}
+
+.user-card__metric-arrow {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 16px !important;
+  color: #69717F;
+}
+
+.user-card__metric {
+  position: relative;
+}
+
+.user-card__badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  background: #B0F3FE;
+  color: #054D7B;
+  font: var(--typography-caption-semibold);
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-card__risk {
+  margin-top: auto;
+}
+
+.user-card__risk-title {
+  margin: 0 0 8px;
+  font: var(--typography-header6);
+  color: #1A212E;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-card__risk-title .material-symbols-outlined {
+  font-size: 18px;
+  color: #4F5666;
+}
+
+.user-card__risk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Octuple DS Theme 2 Pill / Tag - Neutral & Disruptive variants */
+.user-card__risk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font: var(--typography-button3);
+  color: #4F5666;
+  background: #F6F7F8;
+  border: none;
+  border-radius: 24px;
+}
+
+.user-card__risk-tag .material-symbols-outlined {
+  font-size: 16px;
+  color: #4F5666;
+}
+
+.user-card__risk-tag--critical {
+  background: #D32F2F;
+  color: #FFFFFF;
+}
+
+.user-card__risk-tag--critical .material-symbols-outlined {
+  color: #FFFFFF;
+}
+
+.user-card__risk-tag--empty {
+  color: #69717F;
+  background: #EDEEF0;
+}
+
+.user-card__risk-tag--empty .material-symbols-outlined {
+  color: #69717F;
+}

@@ -1,0 +1,133 @@
+.skills-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.skills-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.skills-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.skills-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 8px;
+  background: #E8E9EB;
+  color: #4F5666;
+  font: var(--typography-caption-semibold);
+  border-radius: 10px;
+}
+
+.skills-card__info-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #4F5666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.skills-card__info-btn:hover {
+  background: #F6F7F8;
+  color: #1A212E;
+}
+
+.skills-card__info-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.skills-card__endorsement {
+  margin-bottom: 16px;
+}
+
+.skills-card__primary-skill {
+  margin: 0 0 4px;
+  font: var(--typography-header4);
+  color: #1A212E;
+  font-weight: 600;
+}
+
+.skills-card__endorsement-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-card__endorser-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-caption-semibold);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.skills-card__endorsement-text {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.skills-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skills-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+}
+
+.skills-card__tag-name {
+  flex-shrink: 0;
+}
+
+.skills-card__tag-endorsement {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.skills-card__tag-icon {
+  font-size: 16px !important;
+  color: #4F5666;
+}
+
+.skills-card__tag-icon--endorsed {
+  color: #2E7D32;
+}
+
+.skills-card__tag-count {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}

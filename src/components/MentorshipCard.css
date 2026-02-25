@@ -1,0 +1,134 @@
+/* Octuple DS Theme 2 - Orange palette */
+.mentorship-card {
+  background: #FFF8EB; /* $ORANGE10 */
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-family);
+  overflow: hidden;
+  position: relative;
+}
+
+.mentorship-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  padding-right: 40px; /* reserve space for visible portion of tilted icon */
+}
+
+.mentorship-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #3B2600; /* $ORANGE90 */
+}
+
+.mentorship-card__icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: #FFE3B0; /* $ORANGE20 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(16deg);
+  flex-shrink: 0;
+  position: absolute;
+  top: -32px;
+  right: -8px;
+}
+
+.mentorship-card__icon-wrap .material-symbols-outlined {
+  font-size: 36px !important;
+  font-variation-settings: 'FILL' 1;
+  color: #9D6309; /* $ORANGE70 - amber */
+}
+
+.mentorship-card__avatars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  height: 72px;
+}
+
+.mentorship-card__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFF8EB; /* $ORANGE10 */
+  position: absolute;
+}
+
+.mentorship-card__avatar--user {
+  left: 50%;
+  transform: translateX(calc(-100% + 12px));
+  z-index: 1;
+}
+
+.mentorship-card__avatar--mentor {
+  left: 50%;
+  transform: translateX(-12px);
+  z-index: 0;
+}
+
+.mentorship-card__cta {
+  margin: 0;
+  text-align: center;
+  font: var(--typography-header5);
+  color: #3B2600; /* $ORANGE90 */
+}
+
+.mentorship-card__details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mentorship-card__detail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  font: var(--typography-body3);
+  color: #3B2600; /* $ORANGE90 */
+}
+
+.mentorship-card__detail-icon {
+  font-size: 18px !important;
+  color: #3B2600; /* $ORANGE90 */
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.mentorship-card__detail--with-pill {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mentorship-card__detail-line {
+  display: flex;
+  align-items: center;
+}
+
+.mentorship-card__pill {
+  padding: 6px 12px;
+  background: #F6F7F8; /* $GREY10 */
+  color: #1A212E; /* $GREY90 */
+  border-radius: 20px;
+  font: var(--typography-caption-medium);
+  display: inline-block;
+}
+
+.mentorship-card__btn--full {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 16px;
+}

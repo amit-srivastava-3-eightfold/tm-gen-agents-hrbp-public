@@ -1,0 +1,35 @@
+.emp-info-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 20px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.emp-info-card__title {
+  margin: 0 0 20px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.emp-info-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emp-info-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.emp-info-card__label {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.emp-info-card__value {
+  font: var(--typography-header6);
+  color: #1A212E;
+}

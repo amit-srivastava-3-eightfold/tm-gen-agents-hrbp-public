@@ -1,0 +1,42 @@
+/* Light yellow/cream card with olive green accents - matches Highlights design */
+.standard-highlights-card {
+  background: #FFFDE8;
+  border: 1px solid #C5D684;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.standard-highlights-card__title {
+  margin: 0 0 16px;
+  font: var(--typography-button1);
+  font-weight: 700;
+  color: #4C600B;
+}
+
+.standard-highlights-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.standard-highlights-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.standard-highlights-card__icon {
+  font-size: 18px !important;
+  color: #4C600B;
+  flex-shrink: 0;
+}
+
+.standard-highlights-card__text {
+  font: var(--typography-body3);
+  color: #4C600B;
+}

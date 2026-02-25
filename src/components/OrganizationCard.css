@@ -1,0 +1,141 @@
+.org-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.org-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.org-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.org-card__section {
+  padding: 16px 0;
+}
+
+.org-card__section:first-of-type {
+  padding-top: 0;
+}
+
+.org-card__section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.org-card__section-title {
+  margin: 0;
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.org-card__section > .org-card__section-title {
+  margin-bottom: 8px;
+}
+
+.org-card__badge {
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #F6F7F8;
+  font: var(--typography-caption-semibold);
+  color: #1A212E;
+}
+
+.org-card__badge--plus {
+  margin-left: 4px;
+}
+
+.org-card__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.org-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.org-card__avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button3);
+  color: #FFFFFF;
+}
+
+.org-card__avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.org-card__avatar-row .org-card__avatar {
+  margin-left: -8px;
+  border: 2px solid #FFFFFF;
+}
+
+.org-card__avatar-row .org-card__avatar:first-child {
+  margin-left: 0;
+}
+
+.org-card__avatar-row--with-badge {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.org-card__avatar-row--with-badge .org-card__avatar {
+  margin-left: -8px;
+  border: 2px solid #FFFFFF;
+}
+
+.org-card__avatar-row--with-badge .org-card__avatar:first-child {
+  margin-left: 0;
+}
+
+.org-card__avatar-row--with-badge .org-card__badge {
+  margin-left: 0;
+}
+
+.org-card__person-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.org-card__person-name {
+  font: var(--typography-header6);
+  color: #1A212E;
+}
+
+.org-card__person-title {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.org-card__names {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #1A212E;
+}
+
+.org-card__divider {
+  height: 1px;
+  background: #D9DCE1;
+  margin: 0;
+}

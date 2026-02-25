@@ -1,0 +1,468 @@
+/* Profile Page - Pixel perfect from Figma */
+/* Figma: https://www.figma.com/design/WQDgwM8GLOWnExaXKJFmLm/Career-Hub---Profile node 478-38956 */
+
+.profile-page {
+  position: relative;
+  min-height: 100vh;
+  background: #FFFFFF;
+  font-family: var(--font-family);
+}
+
+/* Cover - background layer behind all content, fixed to top right */
+.profile-page__cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 560px;
+  z-index: 0;
+  background: url('/usage-profile.svg') top right / contain no-repeat;
+  background-attachment: fixed;
+}
+
+/* Cover fade - gradient at bottom */
+.profile-page__cover-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 560px;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+  pointer-events: none;
+}
+
+/* Header - navbar layered over background, anchored to bottom of cover area */
+.profile-page__header {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 560px;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Card row - 12-column grid via Tailwind */
+.profile-page__card-row {
+  align-items: flex-start;
+}
+
+/* View select - to the right of the card, right aligned */
+.profile-page__banner-actions {
+  flex-shrink: 0;
+}
+
+/* View select - matches profile-hero__btn (app style) */
+.profile-page__view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid #1999AC;
+  background: #FFFFFF;
+  font: var(--typography-button3);
+  color: #146DA6;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.profile-page__view-btn:hover {
+  background: #F6F7F8;
+}
+
+.profile-page__view-chevron {
+  font-size: 18px !important;
+  color: inherit;
+}
+
+.profile-page__view-menu {
+  min-width: 160px;
+  padding: 4px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-page__view-item {
+  padding: 8px 12px;
+  font: var(--typography-button3);
+  color: #1A212E;
+  cursor: pointer;
+  border-radius: 16px;
+  outline: none;
+}
+
+.profile-page__view-item:hover,
+.profile-page__view-item[data-highlighted] {
+  background: #F6F7F8;
+}
+
+.profile-page__main {
+  position: relative;
+  z-index: 2;
+  margin-top: -472px;
+  padding: 0;
+  padding-bottom: 24px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* Content zone - layout_8PH27K: 420px height, divider at y:419, card at y:39 */
+.profile-page__content-zone {
+  position: relative;
+  min-height: 420px;
+  flex-shrink: 0;
+}
+
+/* Divider - layout_7DL28H: full width 1440, at y:419, 1px #D9DCE1 */
+.profile-page__divider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #D9DCE1;
+}
+
+/* Content - layout_DGF9N7: x:24 y:39, card 448px */
+.profile-page__content {
+  flex: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 39px 24px 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-page__content--tabs {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* Profile Hero Card - layout_IK425B: width 448, layout_V3LGQZ: padding 84px 36px 24px, gap 16px */
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 0;
+  width: 448px;
+}
+
+.profile-hero__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 112px;
+  height: 100px;
+  margin-left: 36px;
+  z-index: 1;
+}
+
+.profile-hero__avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  position: absolute;
+  top: 0;
+  left: 6px;
+}
+
+.profile-hero__avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-header4);
+  color: #FFFFFF;
+  object-fit: unset;
+}
+
+/* Card - layout_V3LGQZ: padding 84px 36px 24px, gap 16px, backdrop-filter blur(30px), width 448px */
+.profile-hero__card {
+  position: relative;
+  width: 448px;
+  flex-shrink: 0;
+  margin-top: -66px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 84px 36px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(30px);
+}
+
+.profile-hero__card-menu-btn {
+  position: absolute;
+  top: 24px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.profile-hero__card-menu-btn:hover {
+  background: #F6F7F8;
+  color: #1A212E;
+}
+
+.profile-hero__card-menu-btn .material-symbols-outlined {
+  font-size: 24px !important;
+}
+
+.profile-hero__ai-btn.btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  color: #146DA6;
+  border-radius: 8px;
+}
+
+.profile-hero__ai-btn.btn:hover {
+  background: #F6F7F8;
+  color: #054D7B;
+}
+
+.profile-page__back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font: var(--typography-button3);
+  color: #146DA6;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.profile-page__back-link:hover {
+  background: #F6F7F8;
+}
+
+.profile-page__back-link .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* Info - layout_QP0X0V: gap 8px, fills $glassmorphism, borderRadius 16px */
+.profile-hero__info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+}
+
+.profile-hero__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Typography/Header4: Gilroy 600, 20px, 1.4em */
+.profile-hero__name {
+  margin: 0;
+  font: var(--typography-header4);
+  color: #1A212E;
+}
+
+/* Typography/Body2: Gilroy 500, 16px, 1.5em, secondary-grey */
+.profile-hero__title {
+  margin: 0;
+  font: var(--typography-body2);
+  color: #4F5666;
+}
+
+/* Pronouns + location on one line */
+.profile-hero__meta {
+  margin: -4px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.profile-hero__meta-sep {
+  color: #69717F;
+  margin: 0 2px;
+}
+
+.profile-hero__icon {
+  font-size: 16px !important;
+  color: #4F5666;
+}
+
+/* Actions - layout_CEXP4Q: justifyContent space-between, gap 16px; layout_2VNT8E: gap 12px */
+.profile-hero__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-hero__actions-inner {
+  display: flex;
+  gap: 12px;
+}
+
+/* Button - layout_WE7QZF: gap 6px (layout_785T27), padding 8px 12px, borderRadius 24px */
+.profile-hero__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font: var(--typography-button3);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.profile-hero__btn .material-symbols-outlined {
+  font-size: 18px !important;
+}
+
+/* Primary: Background-2 blue-green #B0F3FE, icon Primary blue #054D7B */
+.profile-hero__btn--primary {
+  background: #B0F3FE;
+  color: #054D7B;
+}
+
+.profile-hero__btn--primary:hover {
+  background: #9ae9f9;
+}
+
+/* Secondary: white bg, Tertiary blue-green border #1999AC, Secondary blue text #146DA6 */
+.profile-hero__btn--secondary {
+  background: #FFFFFF;
+  color: #146DA6;
+  border: 1px solid #1999AC;
+}
+
+.profile-hero__btn--secondary:hover {
+  background: #F6F7F8;
+}
+
+/* Line Divider - Background-2 grey */
+.profile-hero__divider {
+  width: 100%;
+  height: 1px;
+  background: #D9DCE1;
+  margin: 16px 0 0;
+}
+
+/* Open to - layout_WLUDQM: row, gap 12px, padding 6px 0 0; Charms layout_MUVCDM: gap 8px */
+.profile-hero__open-to {
+  margin-top: 0;
+  padding-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+
+
+/* Page Tabs - Octuple DS Tab component */
+/* Figma: https://www.figma.com/design/SlKRC7oKF7XZyHMv2op4ch/Octuple-DS--Theme-2- node 910-1381 */
+.profile-tabs {
+  margin-bottom: 32px;
+  margin-top: 0;
+  width: 100%;
+}
+
+.profile-tabs__list {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid #D9DCE1;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+
+.profile-tabs__trigger {
+  position: relative;
+  padding: 12px 8px;
+  font: var(--typography-header5);
+  color: #4F5666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  margin-bottom: -1px;
+}
+
+.profile-tabs__trigger::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: transparent;
+}
+
+.profile-tabs__trigger:hover {
+  color: #69717F;
+}
+
+.profile-tabs__trigger[data-state="active"] {
+  color: #146DA6;
+}
+
+.profile-tabs__trigger[data-state="active"]::after {
+  background: #146DA6;
+}
+
+.profile-tabs__content {
+  outline: none;
+}
+
+/* Profile Sections */
+.profile-section {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.profile-section__title {
+  margin: 0 0 12px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.profile-section__text {
+  margin: 0;
+  font: var(--typography-body2);
+  color: #4F5666;
+}
+
+/* Footer - layout_NDBMB3: padding 24px, gap 16px */
+.profile-page__footer {
+  text-align: center;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font: var(--typography-body3);
+  color: #69717F;
+}
+
+.profile-page__footer span:last-child {
+  color: #146DA6;
+}

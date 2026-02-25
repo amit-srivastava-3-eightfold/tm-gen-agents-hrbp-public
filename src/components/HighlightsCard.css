@@ -1,0 +1,128 @@
+/* Styled like insight card on My open roles */
+.highlights-card {
+  background: #E8F5E9;
+  border: 1px solid #A5D6A7;
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--font-family);
+}
+
+.highlights-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.highlights-card__match {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.highlights-card__match-role {
+  font: var(--typography-body3);
+  color: #1A212E;
+  font-weight: 600;
+}
+
+.highlights-card__match-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.highlights-card__match-label {
+  font: var(--typography-caption-semibold);
+  color: #4F5666;
+}
+
+.highlights-card__match-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.highlights-card__match-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D9DCE1;
+  flex-shrink: 0;
+}
+
+.highlights-card__match-dot--filled {
+  background: #146DA6;
+}
+
+.highlights-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.highlights-card__icon {
+  font-size: 18px !important;
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.highlights-card__text {
+  font: var(--typography-body3);
+  color: #1A212E;
+}
+
+.highlights-card__divider {
+  height: 1px;
+  background: #A5D6A7;
+  margin: 12px 0;
+}
+
+.highlights-card__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.highlights-card__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.highlights-card__info-item--full {
+  grid-column: 1 / -1;
+}
+
+.highlights-card__info-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.highlights-card__info-icon {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #146DA6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlights-card__info-icon .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+.highlights-card__info-value {
+  font: var(--typography-body3);
+  color: #1A212E;
+}

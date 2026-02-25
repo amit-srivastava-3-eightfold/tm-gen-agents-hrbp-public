@@ -1,0 +1,72 @@
+.open-to {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.open-to__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  background: #FFFFFF;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.open-to__select:hover {
+  background: #F6F7F8;
+  border-color: #C5C9D1;
+}
+
+.open-to__label {
+  font: var(--typography-button2);
+  color: #4F5666;
+}
+
+.open-to__label--plain {
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.open-to__chevron {
+  font-size: 18px !important;
+  color: #4F5666;
+}
+
+.open-to__icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.open-to__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.open-to__icon--coffee {
+  background: #FCECDD;
+  color: #723A0B;
+}
+
+.open-to__icon--mentoring {
+  background: #FCECDD;
+  color: #723A0B;
+}
+
+.open-to__icon--project {
+  background: #B1B3FD;
+  color: #45459A;
+}
+
+.open-to__icon-symbol {
+  font-size: 16px !important;
+}
