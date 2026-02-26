@@ -2,10 +2,10 @@ import { Button } from './ui/Button'
 import './ui/Button.css'
 import { useUser } from '../contexts/UserContext'
 
-const mateoAvatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-const lauraAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face'
-const ethanAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-const sarahAvatar = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
+const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face'
+const lauraAvatar = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
+const ethanAvatar = 'https://i.pravatar.cc/150?u=ethan'
+const sarahAvatar = 'https://i.pravatar.cc/150?u=sarah-chen'
 
 export function MentorshipCard() {
   const { currentUser } = useUser()

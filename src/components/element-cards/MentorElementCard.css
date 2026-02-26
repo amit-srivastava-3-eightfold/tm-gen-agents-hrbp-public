@@ -1,0 +1,62 @@
+/* Mentor Element Card - Octuple DS, Mentor variant */
+.mentor-element-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mentor-element-card__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mentor-element-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.mentor-element-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mentor-element-card__name {
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.mentor-element-card__role {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.mentor-element-card__match {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mentor-element-card__match-icon {
+  font-size: 16px;
+  color: #4F5666;
+}
+
+.mentor-element-card__match-text {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}
+
+.mentor-element-card__match-badge {
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  font: var(--typography-caption-semibold);
+  color: #1A212E;
+}

@@ -1,30 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useSearchParams } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
 import { PeopleProfileCard } from '../components/PeopleProfileCard'
 import { SEARCH_PEOPLE_CARDS, OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
+import type { PeopleProfileCardData } from '../components/PeopleProfileCard'
 import '../components/Navbar.css'
 import '../components/PageHeader.css'
 import './PeoplePage.css'
 
-const ROLE_OPTIONS = [
-  { value: 'sales-engineer', label: 'Sales Engineer' },
-  { value: 'solutions-engineer', label: 'Solutions Engineer' },
-  { value: 'technical-account-manager', label: 'Technical Account Manager' },
-  { value: 'senior-sales-engineer', label: 'Senior Sales Engineer' },
-]
+function getUniqueRolesFromData(cards: PeopleProfileCardData[]): { value: string; label: string }[] {
+  const seen = new Set<string>()
+  const roles: { value: string; label: string }[] = []
+  for (const p of cards) {
+    if (p.roleInterest && !seen.has(p.roleInterest)) {
+      seen.add(p.roleInterest)
+      roles.push({ value: p.roleInterest, label: p.roleInterest })
+    }
+  }
+  return roles.sort((a, b) => a.label.localeCompare(b.label))
+}
+
+function filterByRole(cards: PeopleProfileCardData[], roleLabel: string): PeopleProfileCardData[] {
+  if (!roleLabel) return cards
+  return cards.filter((p) => p.roleInterest === roleLabel)
+}
 
 export function PeoplePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabFromUrl = searchParams.get('tab') || 'search'
-  const roleFromUrl = searchParams.get('role') || 'senior-sales-engineer'
+  const roleFromUrl = searchParams.get('role') ?? ''
   const validTab = ['search', 'open-roles', 'mentors', 'mentees', 'coffee', 'saved'].includes(tabFromUrl) ? tabFromUrl : 'search'
-  const validRole = ROLE_OPTIONS.some((r) => r.value === roleFromUrl) ? roleFromUrl : 'senior-sales-engineer'
+
+  const roleOptions = useMemo(() => getUniqueRolesFromData(OPEN_ROLES_PEOPLE_CARDS), [])
+  const defaultRole = roleOptions[0]?.value ?? ''
+  const validRole = roleOptions.some((r) => r.value === roleFromUrl) ? roleFromUrl : defaultRole
 
   const [activeTab, setActiveTab] = useState(validTab)
   const [selectedRole, setSelectedRole] = useState(validRole)
+
+  const totalOpenRequisitions = OPEN_ROLES_PEOPLE_CARDS.length
+  const filteredOpenRolesCards = useMemo(
+    () => filterByRole(OPEN_ROLES_PEOPLE_CARDS, selectedRole),
+    [selectedRole]
+  )
 
   useEffect(() => {
     setActiveTab(validTab)
@@ -44,14 +64,15 @@ export function PeoplePage() {
   }
 
   const handleRoleChange = (value: string) => {
-    setSelectedRole(value)
+    const role = roleOptions.some((r) => r.value === value) ? value : defaultRole
+    setSelectedRole(role)
     const params = new URLSearchParams(searchParams)
     params.set('tab', 'open-roles')
-    params.set('role', value)
+    params.set('role', role)
     setSearchParams(params)
   }
 
-  const matchRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? 'Senior Sales Engineer'
+  const matchRoleLabel = selectedRole
 
   return (
     <div className="people-page">
@@ -65,8 +86,8 @@ export function PeoplePage() {
                 Search
               </Tabs.Trigger>
               <Tabs.Trigger value="open-roles" className="people-page__tab">
-                My open roles
-                <span className="people-page__tab-badge">3</span>
+                My open positions
+                <span className="people-page__tab-badge">{totalOpenRequisitions}</span>
               </Tabs.Trigger>
               <Tabs.Trigger value="mentors" className="people-page__tab">
                 My mentors
@@ -152,8 +173,7 @@ export function PeoplePage() {
                       onChange={(e) => handleRoleChange(e.target.value)}
                       aria-label="Role"
                     >
-                      <option value="">Role</option>
-                      {ROLE_OPTIONS.map((r) => (
+                      {roleOptions.map((r) => (
                         <option key={r.value} value={r.value}>
                           {r.label}
                         </option>
@@ -172,11 +192,13 @@ export function PeoplePage() {
                 </div>
               </div>
               <div className="people-page__results-banner">
-                <span className="people-page__results-count">Showing {OPEN_ROLES_PEOPLE_CARDS.length} people.</span>
+                <span className="people-page__results-count">
+                  Showing {filteredOpenRolesCards.length} people for {matchRoleLabel}.
+                </span>
               </div>
               <div className="people-page__cards">
-                {OPEN_ROLES_PEOPLE_CARDS.map((person) => (
-                  <PeopleProfileCard key={person.id} person={person} matchRole={matchRoleLabel} />
+                {filteredOpenRolesCards.map((person) => (
+                  <PeopleProfileCard key={person.id} person={person} matchRole={matchRoleLabel} showSaveLead />
                 ))}
               </div>
             </Tabs.Content>

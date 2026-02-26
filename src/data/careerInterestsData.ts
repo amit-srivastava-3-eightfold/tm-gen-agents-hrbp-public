@@ -302,6 +302,51 @@ export function getCareerPathForPerson(_personId: string, title: string, busines
     }
   }
 
+  if (title.toLowerCase().includes('hr business partner') || title.toLowerCase().includes('hrbp')) {
+    return {
+      ...base,
+      paths: [
+        {
+          role: {
+            id: 'senior-hrbp',
+            title: 'Senior HR Business Partner',
+            matchingSkills: 14,
+            peopleInRole: [
+              { name: 'Anna Park', initials: 'AP', avatarColor: '#6B7B3C' },
+            ],
+            peopleCount: 3,
+          },
+          connectsTo: ['director-hr'],
+        },
+        {
+          role: {
+            id: 'director-hr',
+            title: 'Director, Human Resources',
+            matchingSkills: 10,
+            peopleInRole: [
+              { name: 'Sarah Chen', initials: 'SC', avatarColor: '#5C6BC0' },
+            ],
+            peopleCount: 2,
+            domainChange: true,
+          },
+          connectsTo: ['chro'],
+        },
+        {
+          role: {
+            id: 'chro',
+            title: 'Chief Human Resources Officer',
+            matchingSkills: 8,
+            peopleInRole: [
+              { name: 'Sarah Chen', initials: 'SC', avatarColor: '#5C6BC0' },
+            ],
+            peopleCount: 1,
+            domainChange: true,
+          },
+        },
+      ],
+    }
+  }
+
   // Default career paths for other roles
   return {
     ...base,

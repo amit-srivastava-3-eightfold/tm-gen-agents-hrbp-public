@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { UserProvider } from './contexts/UserContext'
 import './index.css'
-import App from './App'
+import { HomePage } from './pages/HomePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { MyTeamPage } from './pages/MyTeamPage'
 import { PeoplePage } from './pages/PeoplePage'
@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
     <UserProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/people/:id" element={<PeopleProfilePage />} />

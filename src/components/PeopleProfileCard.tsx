@@ -32,9 +32,11 @@ interface PeopleProfileCardProps {
   person: PeopleProfileCardData
   /** Role title for the match score (e.g. "Senior Sales Engineer") — shown above the score when provided */
   matchRole?: string
+  /** When true, shows the "Save lead" button (e.g. in My open positions) */
+  showSaveLead?: boolean
 }
 
-export function PeopleProfileCard({ person, matchRole }: PeopleProfileCardProps) {
+export function PeopleProfileCard({ person, matchRole, showSaveLead = false }: PeopleProfileCardProps) {
   return (
     <article className="people-profile-card">
       <div className="people-profile-card__left">
@@ -77,6 +79,12 @@ export function PeopleProfileCard({ person, matchRole }: PeopleProfileCardProps)
             <span className="material-symbols-outlined" aria-hidden>bookmark</span>
             Save
           </Button>
+          {showSaveLead && (
+            <Button variant="secondary" className="people-profile-card__action-btn">
+              <span className="material-symbols-outlined" aria-hidden>person_add</span>
+              Save lead
+            </Button>
+          )}
         </div>
         <div className="people-profile-card__open-to">
           <OpenTo items={person.openToIcons} />

@@ -2,8 +2,9 @@ import { Button } from './ui/Button'
 import './ui/Button.css'
 import { useUser } from '../contexts/UserContext'
 
-const managerAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face'
-const lauraAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face'
+const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face'
+const lauraAvatar = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face'
+const sachitAvatar = 'https://i.pravatar.cc/80?u=sachit'
 
 const peerColors = ['#A1A6B1', '#7E3A77', '#9D6309', '#6B7B3C'] // grey, purple, amber, olive
 
@@ -83,7 +84,7 @@ export function OrganizationCard() {
           <span className="org-card__badge">4</span>
         </div>
         <div className="org-card__avatar-row">
-          <img src={managerAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <img src={mateoAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>MM</div>
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>PL</div>
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>VP</div>
@@ -97,7 +98,7 @@ export function OrganizationCard() {
           <span className="org-card__badge">7</span>
         </div>
         <div className="org-card__avatar-row org-card__avatar-row--with-badge">
-          <img src={managerAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <img src={sachitAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[0] }}>YA</div>
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[1] }}>YC</div>
           <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[2] }}>RB</div>

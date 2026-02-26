@@ -1,0 +1,88 @@
+.my-tasks-card {
+  background: #F6F7F8;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.my-tasks-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.my-tasks-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.my-tasks-card__badge {
+  padding: 2px 8px;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #146DA6;
+  color: #FFFFFF;
+  font: var(--typography-caption-semibold);
+}
+
+.my-tasks-card__view-all {
+  margin-left: auto;
+  font: var(--typography-body3);
+  color: #146DA6;
+  text-decoration: none;
+}
+
+.my-tasks-card__view-all:hover {
+  text-decoration: underline;
+}
+
+.my-tasks-card__task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.my-tasks-card__arrow {
+  font-size: 18px;
+  color: #4F5666;
+}
+
+.my-tasks-card__task-label {
+  font: var(--typography-body2);
+  color: #146DA6;
+  text-decoration: underline;
+  flex: 1;
+}
+
+.my-tasks-card__task-label:hover {
+  color: #054D7B;
+}
+
+.my-tasks-card__task-meta {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.my-tasks-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #FEF3C7;
+  color: #92400E;
+  font: var(--typography-caption-semibold);
+  border-radius: 12px;
+}
+
+.my-tasks-card__tag-icon {
+  font-size: 14px;
+}

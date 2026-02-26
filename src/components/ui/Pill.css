@@ -1,0 +1,82 @@
+/* Octuple DS Theme 2 Tag - Figma node 21025:244398
+   https://www.figma.com/design/SlKRC7oKF7XZyHMv2op4ch/Octuple-DS--Theme-2-?node-id=21025-244398 */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  color: #343C4C;
+  background: #F6F7F8;
+  border: none;
+  border-radius: 4px;
+}
+
+.pill__icon {
+  color: #343C4C;
+}
+
+.pill--small {
+  gap: 4px;
+  padding: 3px 6px;
+  font: var(--typography-button3);
+}
+
+.pill--small .pill__icon {
+  font-size: 16px;
+}
+
+.pill--medium {
+  gap: 8px;
+  padding: 10px 8px;
+  font: var(--typography-button3);
+}
+
+.pill--medium .pill__icon {
+  font-size: 20px;
+}
+
+.pill--large {
+  gap: 8px;
+  padding: 10px 8px;
+  font: var(--typography-button1);
+}
+
+.pill--large .pill__icon {
+  font-size: 24px;
+}
+
+.pill--critical {
+  background: #D32F2F;
+  color: #FFFFFF;
+}
+
+.pill--critical .pill__icon {
+  color: #FFFFFF;
+}
+
+.pill--empty {
+  color: #69717F;
+  background: #EDEEF0;
+}
+
+.pill--empty .pill__icon {
+  color: #69717F;
+}
+
+/* Color=Orange, Usage=BG2 & BG3 - for tags on orange backgrounds */
+.pill--orange {
+  background: var(--color-background2-orange);
+  color: var(--color-primary-orange);
+}
+
+.pill--orange .pill__icon {
+  color: var(--color-primary-orange);
+}
+
+/* Color=Blue-green, Usage=BG2 & BG3 - Course card */
+.pill--blueGreen {
+  background: var(--color-background2-blue-green);
+  color: var(--color-primary-blue-green);
+}
+
+.pill--blueGreen .pill__icon {
+  color: var(--color-primary-blue-green);
+}

@@ -1,0 +1,43 @@
+.home-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.home-sidebar__tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+.home-sidebar__tab-label {
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.home-sidebar__tab-badge {
+  padding: 2px 8px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #146DA6;
+  color: #FFFFFF;
+  font: var(--typography-caption-semibold);
+  border-radius: 50%;
+}
+
+.home-sidebar__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

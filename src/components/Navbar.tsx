@@ -46,7 +46,7 @@ export function Navbar() {
           >
             <span className="material-symbols-outlined navbar__menu-btn-icon">menu</span>
           </button>
-          <div className="navbar__branding">
+          <Link to="/" className="navbar__branding">
             <img
               src="/eightfold-logo.svg"
               alt="Eightfold"
@@ -63,7 +63,7 @@ export function Navbar() {
               />
               <span className="navbar__product-name">Career Hub</span>
             </div>
-          </div>
+          </Link>
           <Tabs.Root defaultValue="home" className="navbar__tabs">
             <Tabs.List className="navbar__tabs-list">
               {navTabs.map((tab) =>

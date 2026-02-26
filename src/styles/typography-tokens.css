@@ -7,6 +7,18 @@
 :root {
   --font-family: 'Gilroy', 'Inter', system-ui, -apple-system, sans-serif;
 
+  /* Background-3 Colors [day]/$color-background3-orange */
+  --color-background3-orange: #FFCD78;
+  /* Background-2 Colors [day]/$color-background2-orange - Tag on BG3 */
+  --color-background2-orange: #FFE3B0;
+  /* Primary Colors [day]/$color-primary-orange */
+  --color-primary-orange: #6C4500;
+
+  /* Blue-green - Course card */
+  --color-background2-blue-green: #B0F3FE;
+  --color-background3-blue-green: #7BE4F4;
+  --color-primary-blue-green: #025966;
+
   /* Caption - 12px / 1.33 */
   --typography-caption: 400 12px/1.33 var(--font-family);
 
