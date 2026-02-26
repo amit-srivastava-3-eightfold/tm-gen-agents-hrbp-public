@@ -36,6 +36,11 @@
   background: transparent;
 }
 
+.person-banner__avatar--initials {
+  color: #FFFFFF;
+  font: var(--typography-button3);
+}
+
 .person-banner__details {
   display: flex;
   flex-direction: column;

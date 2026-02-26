@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
+import { useUser } from '../contexts/UserContext'
 import { Navbar } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/ui/Button'
@@ -14,7 +15,10 @@ import '../components/UserCard.css'
 import './MyTeamPage.css'
 
 export function MyTeamPage() {
+  const { currentUser } = useUser()
   const [reportScope, setReportScope] = useState<'direct' | 'open' | 'all'>('direct')
+  const [sustainedHighPerformersFilter, setSustainedHighPerformersFilter] = useState(false)
+  const isLaura = currentUser.id === 'laura-shah'
 
   return (
     <div className="my-team-page">
@@ -25,7 +29,7 @@ export function MyTeamPage() {
           <Tabs.Root defaultValue="reports" className="my-team-page__tabs">
             <Tabs.List className="my-team-page__tabs-list">
               <Tabs.Trigger value="reports" className="my-team-page__tab">
-                My reports
+                {isLaura ? 'My client groups' : 'My reports'}
               </Tabs.Trigger>
               <Tabs.Trigger value="succession" className="my-team-page__tab">
                 Succession planning
@@ -36,11 +40,16 @@ export function MyTeamPage() {
                 <PersonBanner />
               </div>
               <div className="my-team-page__skill-card">
-                <SkillAnalysisSection reportScope={reportScope} onReportScopeChange={setReportScope} />
+                <SkillAnalysisSection
+                  reportScope={reportScope}
+                  onReportScopeChange={setReportScope}
+                  sustainedHighPerformersFilter={sustainedHighPerformersFilter}
+                  onSustainedHighPerformersClick={() => setSustainedHighPerformersFilter((v) => !v)}
+                />
               </div>
               {reportScope !== 'open' && (
               <div className="my-team-page__user-cards">
-                <UserCardList />
+                <UserCardList sustainedHighPerformersFilter={sustainedHighPerformersFilter} />
               </div>
               )}
             </Tabs.Content>

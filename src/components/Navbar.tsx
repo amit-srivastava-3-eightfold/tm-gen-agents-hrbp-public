@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import * as Dialog from '@radix-ui/react-dialog'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Tabs from '@radix-ui/react-tabs'
+import { useUser, MATEO, LAURA } from '../contexts/UserContext'
 
 const navTabs: { id: string; label: string; chevron?: boolean; path?: string }[] = [
   { id: 'home', label: 'Home', path: '/' },
@@ -12,11 +14,25 @@ const navTabs: { id: string; label: string; chevron?: boolean; path?: string }[]
   { id: 'my-team', label: 'My team', path: '/my-team' },
 ]
 
-const AVATAR_SRC = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face'
+const AVATAR_MENU_ITEMS = [
+  { label: 'My Profile', path: '/profile' },
+  { label: 'Career Interests', path: '/profile?tab=career' },
+  { label: 'Skill and Performance', path: '/profile?tab=skills' },
+  { label: 'Development Plans', path: '/profile?tab=development' },
+  { label: 'Settings', path: '#' },
+  { label: 'Logout', path: '#' },
+]
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [avatarError, setAvatarError] = useState(false)
+  const { currentUser, setCurrentUser } = useUser()
+  const location = useLocation()
+  const isOnProfile = location.pathname === '/profile'
+
+  const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
+    ? currentUser.avatarPhotoSrc.replace('w=200&h=200', 'w=80&h=80')
+    : null
 
   return (
     <nav className="navbar">
@@ -103,21 +119,68 @@ export function Navbar() {
             <span className="material-symbols-outlined navbar__btn-icon">apps</span>
             <span className="material-symbols-outlined navbar__btn-icon navbar__btn-icon--sm">expand_more</span>
           </button>
-          <Link to="/profile" className="navbar__avatar" aria-label="Mateo Myer">
-            <span className="navbar__avatar-inner">
-              {avatarError ? (
-                'MM'
-              ) : (
-                <img
-                  src={AVATAR_SRC}
-                  alt="Mateo Myer"
-                  className="navbar__avatar-img"
-                  onError={() => setAvatarError(true)}
-                />
-              )}
-            </span>
-            <span className="material-symbols-outlined navbar__avatar-caret" aria-hidden>expand_more</span>
-          </Link>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button type="button" className="navbar__avatar" aria-label="Open profile menu">
+                <span className="navbar__avatar-inner" style={currentUser.avatarColor ? { background: currentUser.avatarColor } : undefined}>
+                  {avatarError || !avatarSrc ? (
+                    currentUser.avatarInitials ?? 'MM'
+                  ) : (
+                    <img
+                      src={avatarSrc}
+                      alt={currentUser.name}
+                      className="navbar__avatar-img"
+                      onError={() => setAvatarError(true)}
+                    />
+                  )}
+                </span>
+                <span className="material-symbols-outlined navbar__avatar-caret" aria-hidden>expand_more</span>
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="navbar__avatar-menu" align="end" sideOffset={8}>
+                <div className="navbar__avatar-menu-inner">
+                {AVATAR_MENU_ITEMS.map((item) => (
+                  <DropdownMenu.Item key={item.label} asChild>
+                    <Link
+                      to={item.path}
+                      className={`navbar__avatar-menu-item ${item.label === 'My Profile' && isOnProfile ? 'navbar__avatar-menu-item--active' : ''}`}
+                    >
+                      {item.label}
+                    </Link>
+                  </DropdownMenu.Item>
+                ))}
+                <div className="navbar__avatar-menu-divider" />
+                <div className="navbar__avatar-menu-switch">
+                  <input
+                    type="text"
+                    placeholder="Switch To..."
+                    className="navbar__avatar-menu-input"
+                    aria-label="Switch to"
+                  />
+                  <DropdownMenu.Item asChild>
+                    <button
+                      type="button"
+                      className="navbar__avatar-menu-option"
+                      onClick={() => setCurrentUser(MATEO)}
+                    >
+                      manager@acme.com
+                    </button>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <button
+                      type="button"
+                      className="navbar__avatar-menu-option"
+                      onClick={() => setCurrentUser(LAURA)}
+                    >
+                      hrbp@acme.com
+                    </button>
+                  </DropdownMenu.Item>
+                </div>
+                </div>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       </div>
 

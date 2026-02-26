@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import { useUser } from '../contexts/UserContext'
 import { Button } from './ui/Button'
 import './ui/Button.css'
 
-const skillGaps = [
+const MATEO_SKILL_GAPS = [
   { name: 'Product Demos', current: 0, total: 8 },
   { name: 'CRM Systems', current: 0, total: 8 },
   { name: 'API Integration', current: 0, total: 7 },
@@ -10,7 +11,7 @@ const skillGaps = [
   { name: 'Enterprise Sales', current: 0, total: 6 },
 ]
 
-const skillStrengths = [
+const MATEO_SKILL_STRENGTHS = [
   { name: 'Solution Architecture', current: 1, total: 1 },
   { name: 'Sales Enablement', current: 1, total: 1 },
   { name: 'Technical Discovery', current: 1, total: 1 },
@@ -18,7 +19,7 @@ const skillStrengths = [
   { name: 'Communication', current: 0, total: 8 },
 ]
 
-const skillInterests = [
+const MATEO_SKILL_INTERESTS = [
   { name: 'Solutions Architecture', count: 2 },
   { name: 'Sales Engineering', count: 2 },
   { name: 'Technical Sales', count: 2 },
@@ -26,9 +27,35 @@ const skillInterests = [
   { name: 'Cross-Functional Team Leadership', count: 1 },
 ]
 
-const TAB_COUNTS = { direct: 7, all: 11 }
+const LAURA_SKILL_GAPS = [
+  { name: 'Performance Management', current: 2, total: 8 },
+  { name: 'Workforce Planning', current: 1, total: 6 },
+  { name: 'Succession Planning', current: 0, total: 5 },
+  { name: 'DEI Initiatives', current: 1, total: 6 },
+  { name: 'Change Management', current: 2, total: 7 },
+]
 
-const OPEN_POSITIONS = [
+const LAURA_SKILL_STRENGTHS = [
+  { name: 'Employee Relations', current: 6, total: 6 },
+  { name: 'Talent Management', current: 5, total: 5 },
+  { name: 'Coaching', current: 4, total: 5 },
+  { name: 'Data Analytics', current: 3, total: 6 },
+  { name: 'Stakeholder Management', current: 5, total: 6 },
+]
+
+const LAURA_SKILL_INTERESTS = [
+  { name: 'Leadership Development', count: 4 },
+  { name: 'HR Strategy', count: 3 },
+  { name: 'Talent Acquisition', count: 2 },
+  { name: 'Compensation & Benefits', count: 2 },
+  { name: 'Organizational Design', count: 1 },
+]
+
+const MATEO_TAB_COUNTS = { direct: 7, all: 11 }
+
+const LAURA_TAB_COUNTS = { direct: 12, all: 48 }
+
+const MATEO_OPEN_POSITIONS = [
   {
     id: '40468430',
     title: 'Sales Engineer',
@@ -70,12 +97,82 @@ const OPEN_POSITIONS = [
   },
 ]
 
+const LAURA_OPEN_POSITIONS = [
+  {
+    id: '40468430',
+    title: 'Sales Engineer',
+    details: 'Santa Clara, CA • Mateo Myer • Laura Shah • Sourcing Pipeline',
+    daysOpen: 12,
+    leads: 97,
+    employees: 24,
+    new: 0,
+    recruiterScreen: 0,
+    hiringManagerScreen: 0,
+    phoneInterview: 0,
+    onsiteInterview: 0,
+  },
+  {
+    id: '40468780',
+    title: 'Solutions Engineer',
+    details: 'Remote • Mateo Myer • Laura Shah • Sourcing Pipeline',
+    daysOpen: 28,
+    leads: 112,
+    employees: 18,
+    new: 0,
+    recruiterScreen: 0,
+    hiringManagerScreen: 0,
+    phoneInterview: 0,
+    onsiteInterview: 0,
+  },
+  {
+    id: '40468912',
+    title: 'Customer Success Manager',
+    details: 'Los Angeles, CA • Ethan Declerq • Laura Shah • Sourcing Pipeline',
+    daysOpen: 8,
+    leads: 62,
+    employees: 15,
+    new: 2,
+    recruiterScreen: 1,
+    hiringManagerScreen: 0,
+    phoneInterview: 0,
+    onsiteInterview: 0,
+  },
+  {
+    id: '40468920',
+    title: 'Implementation Consultant',
+    details: 'San Francisco, CA • Anna Patel • Laura Shah • Sourcing Pipeline',
+    daysOpen: 15,
+    leads: 45,
+    employees: 12,
+    new: 1,
+    recruiterScreen: 0,
+    hiringManagerScreen: 0,
+    phoneInterview: 0,
+    onsiteInterview: 0,
+  },
+]
+
 interface SkillAnalysisSectionProps {
   reportScope: 'direct' | 'open' | 'all'
   onReportScopeChange: (scope: 'direct' | 'open' | 'all') => void
+  sustainedHighPerformersFilter?: boolean
+  onSustainedHighPerformersClick?: () => void
 }
 
-export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: setReportScope }: SkillAnalysisSectionProps) {
+export function SkillAnalysisSection({
+  reportScope: scope,
+  onReportScopeChange: setReportScope,
+  sustainedHighPerformersFilter = false,
+  onSustainedHighPerformersClick,
+}: SkillAnalysisSectionProps) {
+  const { currentUser } = useUser()
+  const isLaura = currentUser.id === 'laura-shah'
+
+  const skillGaps = isLaura ? LAURA_SKILL_GAPS : MATEO_SKILL_GAPS
+  const skillStrengths = isLaura ? LAURA_SKILL_STRENGTHS : MATEO_SKILL_STRENGTHS
+  const skillInterests = isLaura ? LAURA_SKILL_INTERESTS : MATEO_SKILL_INTERESTS
+  const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
+  const openPositions = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
 
   return (
     <div className="skill-analysis">
@@ -85,8 +182,8 @@ export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: 
           className={`skill-analysis__tab ${scope === 'direct' ? 'skill-analysis__tab--active' : ''}`}
           onClick={() => setReportScope('direct')}
         >
-          Direct reports
-          <span className="skill-analysis__tab-badge">{TAB_COUNTS.direct}</span>
+          {isLaura ? 'Supported employees' : 'Direct reports'}
+          <span className="skill-analysis__tab-badge">{tabCounts.direct}</span>
         </Button>
         <Button
           variant="ghost"
@@ -94,15 +191,15 @@ export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: 
           onClick={() => setReportScope('open')}
         >
           Open positions
-          <span className="skill-analysis__tab-badge">{OPEN_POSITIONS.length}</span>
+          <span className="skill-analysis__tab-badge">{openPositions.length}</span>
         </Button>
         <Button
           variant="ghost"
           className={`skill-analysis__tab ${scope === 'all' ? 'skill-analysis__tab--active' : ''}`}
           onClick={() => setReportScope('all')}
         >
-          All reports
-          <span className="skill-analysis__tab-badge">{TAB_COUNTS.all}</span>
+          {isLaura ? 'All supported' : 'All reports'}
+          <span className="skill-analysis__tab-badge">{tabCounts.all}</span>
         </Button>
       </div>
 
@@ -165,7 +262,7 @@ export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: 
               </tr>
             </thead>
             <tbody>
-              {OPEN_POSITIONS.map((pos) => (
+              {openPositions.map((pos) => (
                 <tr key={pos.id} className="skill-analysis__positions-row">
                   <td className="skill-analysis__positions-td skill-analysis__positions-td--position">
                     <div className="skill-analysis__position-info">
@@ -290,6 +387,49 @@ export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: 
         </div>
       </div>
 
+      {isLaura && (
+        <div className="skill-analysis__stat-cards">
+          <div
+            role="button"
+            tabIndex={0}
+            className={`skill-analysis__stat-card ${sustainedHighPerformersFilter ? 'skill-analysis__stat-card--active' : ''}`}
+            onClick={onSustainedHighPerformersClick}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSustainedHighPerformersClick?.() }}
+          >
+            <span className="skill-analysis__stat-help-wrap" onClick={(e) => e.stopPropagation()}>
+              <span className="material-symbols-outlined skill-analysis__stat-help" aria-label="More information">help</span>
+              <span className="skill-analysis__stat-tooltip">Employees who have consistently met or exceeded performance expectations over multiple review cycles</span>
+            </span>
+            <span className="skill-analysis__stat-label">Sustained High Performers</span>
+            <span className="skill-analysis__stat-value">8.4% of Workforce</span>
+          </div>
+          <div className="skill-analysis__stat-card">
+            <span className="skill-analysis__stat-help-wrap">
+              <span className="material-symbols-outlined skill-analysis__stat-help" aria-label="More information">help</span>
+              <span className="skill-analysis__stat-tooltip">Average tenure of employees in their current job level</span>
+            </span>
+            <span className="skill-analysis__stat-label">Avg Time in Level</span>
+            <span className="skill-analysis__stat-value">2.4 yrs</span>
+          </div>
+          <div className="skill-analysis__stat-card">
+            <span className="skill-analysis__stat-help-wrap">
+              <span className="material-symbols-outlined skill-analysis__stat-help" aria-label="More information">help</span>
+              <span className="skill-analysis__stat-tooltip">Percentage of employees at or near the maximum of their pay band</span>
+            </span>
+            <span className="skill-analysis__stat-label">% Near Pay Band Max</span>
+            <span className="skill-analysis__stat-value">18%</span>
+          </div>
+          <div className="skill-analysis__stat-card">
+            <span className="skill-analysis__stat-help-wrap">
+              <span className="material-symbols-outlined skill-analysis__stat-help" aria-label="More information">help</span>
+              <span className="skill-analysis__stat-tooltip">Employees identified as high risk of voluntary turnover</span>
+            </span>
+            <span className="skill-analysis__stat-label">% High Flight Risk</span>
+            <span className="skill-analysis__stat-value">12%</span>
+          </div>
+        </div>
+      )}
+
       <div className="skill-analysis__filters skill-analysis__filters--bottom">
         <select className="skill-analysis__select">
           <option>Role</option>
@@ -310,7 +450,7 @@ export function SkillAnalysisSection({ reportScope: scope, onReportScopeChange: 
       </div>
 
       <div className="skill-analysis__results">
-        <span className="skill-analysis__results-text">Showing 11 results</span>
+        <span className="skill-analysis__results-text">Showing {tabCounts.all} results</span>
         <Button variant="ghost" className="skill-analysis__select-all">Select all on this page</Button>
       </div>
       </>

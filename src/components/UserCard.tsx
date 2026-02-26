@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Button } from './ui/Button'
 import './ui/Button.css'
 import './UserCard.css'
@@ -31,6 +32,8 @@ export interface UserCardData {
   successionPlanning: string
   managerActionsCount?: number
   riskTags: RiskTag[]
+  /** High tenure in current role without recent promotion (for Sustained High Performers filter) */
+  highTenureNoPromotion?: boolean
 }
 
 interface UserCardProps {
@@ -48,9 +51,10 @@ const METRIC_ITEMS = [
 
 export function UserCard({ user }: UserCardProps) {
   return (
+    <Link to={`/people/${user.id}`} className="user-card-link">
     <article className="user-card">
       <div className="user-card__left">
-        <div className="user-card__avatar-wrap">
+        <div className="user-card__avatar-wrap" onClick={(e) => e.stopPropagation()}>
           <input type="checkbox" className="user-card__checkbox" aria-label={`Select ${user.name}`} />
           <div className="user-card__avatar" style={{ background: user.avatarColor }}>
             {user.initials}
@@ -61,15 +65,18 @@ export function UserCard({ user }: UserCardProps) {
           <p className="user-card__meta">
             {user.title} • {user.location}
           </p>
-          <div className="user-card__actions">
+          <div className="user-card__actions" onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" className="user-card__contact-btn">
               Contact
               <span className="material-symbols-outlined">expand_more</span>
             </Button>
-            <div className="user-card__action-icons">
+            <div className="user-card__action-icons" onClick={(e) => e.stopPropagation()}>
               <button type="button" className="user-card__icon-btn user-card__icon-btn--with-badge" aria-label="Document">
                 <span className="material-symbols-outlined">description</span>
                 <span className="user-card__icon-badge" aria-hidden />
+              </button>
+              <button type="button" className="user-card__icon-btn" aria-label="Career navigator">
+                <span className="material-symbols-outlined">route</span>
               </button>
               <button type="button" className="user-card__icon-btn" aria-label="Org chart">
                 <span className="material-symbols-outlined">account_tree</span>
@@ -79,7 +86,7 @@ export function UserCard({ user }: UserCardProps) {
               </button>
             </div>
           </div>
-          <div className="user-card__reports">
+          <div className="user-card__reports" onClick={(e) => e.stopPropagation()}>
             <span className="material-symbols-outlined user-card__reports-arrow">subdirectory_arrow_right</span>
             <div className="user-card__report-avatars">
               {user.directReports.map((r, i) => (
@@ -104,7 +111,7 @@ export function UserCard({ user }: UserCardProps) {
         </div>
       </div>
       <div className="user-card__right">
-        <div className="user-card__top-right">
+        <div className="user-card__top-right" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" className="user-card__ai-btn" aria-label="AI assistant">
             <span className="material-symbols-outlined">auto_awesome</span>
           </Button>
@@ -116,7 +123,7 @@ export function UserCard({ user }: UserCardProps) {
             <span className="material-symbols-outlined">expand_more</span>
           </Button>
         </div>
-        <div className="user-card__metrics">
+        <div className="user-card__metrics" onClick={(e) => e.stopPropagation()}>
           {METRIC_ITEMS.map(({ key, label, getValue, icon }) => (
             <a key={key} href="#" className="user-card__metric">
               <span className="user-card__metric-icon">
@@ -130,11 +137,14 @@ export function UserCard({ user }: UserCardProps) {
             </a>
           ))}
         </div>
-        <div className="user-card__risk">
+        <div className="user-card__risk" onClick={(e) => e.stopPropagation()}>
           <h4 className="user-card__risk-title">
             <span className="material-symbols-outlined">speed</span>
             Risk profile
           </h4>
+          {user.highTenureNoPromotion && (
+            <p className="user-card__risk-note">High performer with high time in level</p>
+          )}
           <div className="user-card__risk-tags">
             {user.riskTags.map((tag) => (
               <span
@@ -149,5 +159,6 @@ export function UserCard({ user }: UserCardProps) {
         </div>
       </div>
     </article>
+    </Link>
   )
 }

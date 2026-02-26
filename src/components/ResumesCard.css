@@ -1,0 +1,54 @@
+.resumes-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.resumes-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.resumes-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.resumes-card__edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.resumes-card__edit-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.resumes-card__edit-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+.resumes-card__content {
+  min-height: 40px;
+}
+
+.resumes-card__empty {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}

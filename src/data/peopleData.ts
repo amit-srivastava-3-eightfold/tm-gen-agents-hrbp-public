@@ -1,4 +1,5 @@
 import type { PeopleProfileCardData } from '../components/PeopleProfileCard'
+import { MATEO_USER_CARDS, LAURA_USER_CARDS } from './teamData'
 
 export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
   {
@@ -332,7 +333,170 @@ export const OPEN_ROLES_PEOPLE_CARDS: PeopleProfileCardData[] = [
   },
 ]
 
-const ALL_PEOPLE = [...SEARCH_PEOPLE_CARDS, ...OPEN_ROLES_PEOPLE_CARDS]
+export const LAURA_SHAH: PeopleProfileCardData = {
+  id: 'laura-shah',
+  name: 'Laura Shah',
+  title: 'HR Business Partner • Human Resources',
+  avatarType: 'photo',
+  avatarPhotoSrc: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
+  avatarInitials: 'LS',
+  avatarColor: '#5C6BC0',
+  businessUnit: 'Human Resources',
+  manager: 'Sarah Chen',
+  location: 'San Francisco, CA',
+  timeInCurrentPosition: '3 years 1 month',
+  hasRequestButton: false,
+  openToIcons: ['coffee', 'mentoring'],
+  insights: [
+    'Laura supports Sales Engineering and Customer Success orgs',
+    'Laura led the talent review process for Q4',
+  ],
+  matchScore: undefined,
+  roleInterest: undefined,
+}
+
+const TEAM_PROFILE_OVERRIDES: Record<string, Partial<PeopleProfileCardData>> = {
+  '1': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '1 year 8 months',
+    title: 'Senior Solutions Engineer • Sales Engineering',
+    mobilityPreference: 'Willing to relocate',
+    flexibilityToTravel: 'Up to 25%',
+    insights: ['Maya has strong technical depth from 5 years in Engineering', 'Maya led 3 product demos at Enterprise Summit'],
+  },
+  '2': {
+    businessUnit: 'Sales',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '2 years 1 month',
+    title: 'Technical Account Manager • Sales',
+    mobilityPreference: 'Not open to relocate',
+    flexibilityToTravel: 'Up to 50%',
+    insights: ['Krešimir manages key enterprise accounts across APAC', 'Expanded 3 accounts with technical upsell this year'],
+  },
+  '3': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '11 months',
+    title: 'Sales Engineer • Sales Engineering',
+    insights: ['Michael supports enterprise POCs in the Southwest region', 'Completed Solutions Engineer certification'],
+  },
+  'l1': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Cong Wang',
+    timeInCurrentPosition: '3 years 2 months',
+    title: 'Sales Engineering Manager • Sales Engineering',
+    mobilityPreference: 'Willing to relocate',
+    flexibilityToTravel: 'Up to 25%',
+    insights: ['Mateo leads the Sales Engineering team of 4', 'Oversaw 20+ enterprise POCs this year'],
+  },
+  'l2': {
+    businessUnit: 'Customer Success',
+    manager: 'Sarah Chen',
+    timeInCurrentPosition: '2 years 6 months',
+    title: 'Director of Customer Success • Customer Success',
+    insights: ['Ethan leads Customer Success for West region', 'Reduced churn by 15% in managed accounts'],
+  },
+  'l3': {
+    businessUnit: 'Professional Services',
+    manager: 'Sarah Chen',
+    timeInCurrentPosition: '4 years 1 month',
+    title: 'Professional Services Lead • Professional Services',
+    insights: ['Anna leads implementation delivery for enterprise clients', 'Led 12 successful go-lives this year'],
+  },
+  'l4': {
+    businessUnit: 'Sales Engineering',
+    manager: '—',
+    timeInCurrentPosition: '5 years 3 months',
+    title: 'Director of Sales Engineering • Sales Engineering',
+    insights: ['Cong leads the global Sales Engineering organization', 'Grew team from 8 to 24 over 3 years'],
+  },
+  'l5': {
+    businessUnit: 'Customer Success',
+    manager: '—',
+    timeInCurrentPosition: '4 years 8 months',
+    title: 'VP of Customer Success • Customer Success',
+    insights: ['Sarah leads Customer Success globally', 'Drove NPS improvement from 42 to 58'],
+  },
+  'l6': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '1 year 4 months',
+    title: 'Sales Engineering Lead • Sales Engineering',
+    insights: ['James leads Sales Engineering for Austin hub', 'Mentors 2 junior sales engineers'],
+  },
+  'l7': {
+    businessUnit: 'Customer Success',
+    manager: 'Ethan Declerq',
+    timeInCurrentPosition: '2 years 2 months',
+    title: 'Customer Success Manager • Customer Success',
+    insights: ['David manages enterprise accounts in Pacific Northwest', 'Led 3 expansion initiatives this quarter'],
+  },
+  'l8': {
+    businessUnit: 'Human Resources',
+    manager: 'Sarah Chen',
+    timeInCurrentPosition: '2 years 9 months',
+    title: 'HRBP Peer • Human Resources',
+    insights: ['Anna supports Product and Engineering orgs', 'Led talent review for Q4'],
+  },
+  'l9': {
+    businessUnit: 'Professional Services',
+    manager: 'Sarah Chen',
+    timeInCurrentPosition: '3 years 1 month',
+    title: 'Implementation Director • Professional Services',
+    insights: ['Kim leads implementation delivery for Midwest', 'Delivered 8 enterprise implementations this year'],
+  },
+  'l10': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Cong Wang',
+    timeInCurrentPosition: '1 year 6 months',
+    title: 'Solutions Engineering Lead • Sales Engineering',
+    insights: ['Yoseph leads technical architecture for enterprise deals', 'Completed AWS and Azure certifications'],
+  },
+  'l11': {
+    businessUnit: 'Sales',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '2 years 3 months',
+    title: 'Technical Account Manager Lead • Sales',
+    insights: ['Rajarajan leads TAM team for East region', 'Expanded 5 strategic accounts this year'],
+  },
+  'l12': {
+    businessUnit: 'Sales Engineering',
+    manager: 'Mateo Myer',
+    timeInCurrentPosition: '8 months',
+    title: 'Senior Sales Engineer • Sales Engineering',
+    insights: ['Clinton supports enterprise demos and POCs', 'Transitioned from Support Engineering role'],
+  },
+}
+
+function userCardToProfile(c: { id: string; name: string; title: string; location: string; initials: string; avatarColor: string }): PeopleProfileCardData {
+  const o = TEAM_PROFILE_OVERRIDES[c.id] ?? {}
+  const bu = o.businessUnit ?? (c.title.includes('•') ? c.title.split('•')[1]?.trim() ?? 'General' : 'General')
+  return {
+    id: c.id,
+    name: c.name,
+    title: o.title ?? c.title,
+    avatarType: 'initials',
+    avatarInitials: c.initials,
+    avatarColor: c.avatarColor,
+    businessUnit: bu,
+    manager: o.manager ?? '—',
+    location: c.location,
+    timeInCurrentPosition: o.timeInCurrentPosition ?? '—',
+    hasRequestButton: false,
+    openToIcons: ['coffee', 'mentoring'],
+    insights: o.insights,
+    mobilityPreference: o.mobilityPreference,
+    flexibilityToTravel: o.flexibilityToTravel,
+  }
+}
+
+const TEAM_PROFILE_PEOPLE: PeopleProfileCardData[] = [
+  ...MATEO_USER_CARDS.map(userCardToProfile),
+  ...LAURA_USER_CARDS.map(userCardToProfile),
+]
+
+const ALL_PEOPLE = [...SEARCH_PEOPLE_CARDS, ...OPEN_ROLES_PEOPLE_CARDS, LAURA_SHAH, ...TEAM_PROFILE_PEOPLE]
 
 export function getPersonById(id: string): PeopleProfileCardData | undefined {
   return ALL_PEOPLE.find((p) => p.id === id)

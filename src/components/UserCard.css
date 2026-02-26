@@ -4,6 +4,17 @@
   gap: 16px;
 }
 
+.user-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.user-card-link:hover .user-card {
+  border-color: #146DA6;
+}
+
 .user-card {
   display: flex;
   gap: 32px;
@@ -310,6 +321,12 @@
 .user-card__risk-title .material-symbols-outlined {
   font-size: 18px;
   color: #4F5666;
+}
+
+.user-card__risk-note {
+  margin: 0 0 8px;
+  font: var(--typography-caption-medium);
+  color: #2E7D32;
 }
 
 .user-card__risk-tags {

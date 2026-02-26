@@ -24,6 +24,7 @@ export interface PeopleProfileCardData {
   roleInterest?: string
   hireDate?: string
   mobilityPreference?: string
+  flexibilityToTravel?: string
   eligibleForInternalMobility?: string
 }
 

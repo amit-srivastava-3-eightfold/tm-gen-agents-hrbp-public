@@ -1,7 +1,7 @@
 .emp-info-card {
   background: #FFFFFF;
   border: 1px solid #D9DCE1;
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 24px;
   font-family: var(--font-family);
 }

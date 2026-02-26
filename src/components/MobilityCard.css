@@ -1,0 +1,55 @@
+.mobility-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.mobility-card__title {
+  margin: 0 0 20px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.mobility-card__items {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mobility-card__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.mobility-card__item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobility-card__icon {
+  font-size: 24px !important;
+}
+
+.mobility-card__icon--relocate {
+  color: #7E3A77;
+}
+
+.mobility-card__icon--travel {
+  color: #1999AC;
+}
+
+.mobility-card__value {
+  font: var(--typography-header6);
+  color: #1A212E;
+}
+
+.mobility-card__label {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+  padding-left: 32px;
+}

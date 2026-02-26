@@ -52,6 +52,31 @@
   flex-shrink: 0;
 }
 
+/* Settings icon button */
+.profile-page__settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #D9DCE1;
+  border-radius: 20px;
+  background: #FFFFFF;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.profile-page__settings-btn:hover {
+  background: #F6F7F8;
+  color: #1A212E;
+}
+
+.profile-page__settings-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
 /* View select - matches profile-hero__btn (app style) */
 .profile-page__view-btn {
   display: inline-flex;
@@ -69,6 +94,11 @@
 
 .profile-page__view-btn:hover {
   background: #F6F7F8;
+}
+
+.profile-page__view-label--static {
+  font: var(--typography-button3);
+  color: #4F5666;
 }
 
 .profile-page__view-chevron {

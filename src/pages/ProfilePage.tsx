@@ -2,33 +2,45 @@ import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Navbar } from '../components/Navbar'
+import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
 import { OpenTo } from '../components/OpenTo'
+import { AboutCard } from '../components/AboutCard'
 import { MentorshipCard } from '../components/MentorshipCard'
 import { SkillsCard } from '../components/SkillsCard'
 import { OrganizationCard } from '../components/OrganizationCard'
+import { EmployeeInformationCard } from '../components/EmployeeInformationCard'
+import { ContactLinksCard } from '../components/ContactLinksCard'
+import { ResumesCard } from '../components/ResumesCard'
+import { MobilityCard } from '../components/MobilityCard'
 import '../components/ui/Button.css'
 import '../components/Navbar.css'
+import '../components/AboutCard.css'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
 import '../components/OrganizationCard.css'
 import './ProfilePage.css'
 
-const AVATAR_SRC = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face'
-
 const viewOptions = [
+  { id: 'own', label: 'Own view' },
   { id: 'hrbp', label: 'HRBP view' },
   { id: 'public', label: 'Public view' },
 ]
 
 const profileTabs = [
   { id: 'experience', label: 'Experience' },
+  { id: 'career-interest', label: 'Career navigator' },
   { id: 'skills', label: 'Skills and performance' },
   { id: 'development', label: 'Development plans' },
+  { id: 'mentorship', label: 'Mentorship' },
 ]
 
 export function ProfilePage() {
-  const [view, setView] = useState('public')
+  const [view, setView] = useState('own')
+  const { currentUser } = useUser()
+  const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
+    ? currentUser.avatarPhotoSrc
+    : null
 
   return (
     <div className="profile-page">
@@ -43,11 +55,20 @@ export function ProfilePage() {
             <div className="profile-page__card-row col-span-12 grid grid-cols-12 gap-6">
             <div className="profile-hero col-span-4">
               <div className="profile-hero__avatar-wrap">
-                <img
-                  src={AVATAR_SRC}
-                  alt="Mateo Myer"
-                  className="profile-hero__avatar"
-                />
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    alt={currentUser.name}
+                    className="profile-hero__avatar"
+                  />
+                ) : (
+                  <div
+                    className="profile-hero__avatar profile-hero__avatar--initials"
+                    style={currentUser.avatarColor ? { background: currentUser.avatarColor } : undefined}
+                  >
+                    {currentUser.avatarInitials}
+                  </div>
+                )}
               </div>
               <div className="profile-hero__card">
                 <button
@@ -59,15 +80,19 @@ export function ProfilePage() {
                 </button>
                 <div className="profile-hero__info">
                   <div className="profile-hero__name-row">
-                    <h1 className="profile-hero__name">Mateo Myer</h1>
+                    <h1 className="profile-hero__name">{currentUser.name}</h1>
                   </div>
-                  <p className="profile-hero__title">Sales Engineering Manager</p>
+                  <p className="profile-hero__title">{currentUser.title}</p>
                   <p className="profile-hero__meta">
-                    <span className="profile-hero__pronouns">He/Him/His</span>
-                    <span className="profile-hero__meta-sep">·</span>
+                    {currentUser.pronouns && (
+                      <>
+                        <span className="profile-hero__pronouns">{currentUser.pronouns}</span>
+                        <span className="profile-hero__meta-sep">·</span>
+                      </>
+                    )}
                     <span className="material-symbols-outlined profile-hero__icon">schedule</span>
                     <span className="material-symbols-outlined profile-hero__icon">location_on</span>
-                    Santa Clara, CA
+                    {currentUser.location}
                   </p>
                   <div className="profile-hero__actions">
                     <div className="profile-hero__actions-inner">
@@ -88,11 +113,14 @@ export function ProfilePage() {
                 </div>
               </div>
             </div>
-            <div className="profile-page__banner-actions col-span-8 flex justify-end">
+            <div className="profile-page__banner-actions col-span-8 flex justify-end items-center gap-2">
+              <button type="button" className="profile-page__settings-btn" aria-label="Settings">
+                <span className="material-symbols-outlined">settings</span>
+              </button>
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                   <button type="button" className="profile-page__view-btn" aria-label="Select view">
-                    <span className="profile-page__view-label">{viewOptions.find((o) => o.id === view)?.label ?? 'Public view'}</span>
+                    <span className="profile-page__view-label">{viewOptions.find((o) => o.id === view)?.label ?? 'Own view'}</span>
                     <span className="material-symbols-outlined profile-page__view-chevron">expand_more</span>
                   </button>
                 </DropdownMenu.Trigger>
@@ -130,13 +158,26 @@ export function ProfilePage() {
             </Tabs.List>
             <Tabs.Content value="experience" className="profile-tabs__content">
               <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-8">
+                <div className="col-span-8 flex flex-col gap-6">
+                  <AboutCard key={currentUser.id} />
                   <SkillsCard />
+                  <MobilityCard
+                    relocateValue={currentUser.mobilityPreference}
+                    travelValue={currentUser.flexibilityToTravel}
+                  />
                 </div>
                 <div className="col-span-4 flex flex-col gap-6">
-                  <MentorshipCard />
                   <OrganizationCard />
+                  <EmployeeInformationCard />
+                  <ContactLinksCard />
+                  <ResumesCard />
                 </div>
+              </div>
+            </Tabs.Content>
+            <Tabs.Content value="career-interest" className="profile-tabs__content">
+              <div className="profile-section">
+                <h2 className="profile-section__title">Career interest</h2>
+                <p className="profile-section__text">Career interest content goes here.</p>
               </div>
             </Tabs.Content>
             <Tabs.Content value="skills" className="profile-tabs__content">
@@ -149,6 +190,13 @@ export function ProfilePage() {
               <div className="profile-section">
                 <h2 className="profile-section__title">Development plans</h2>
                 <p className="profile-section__text">Development plans content goes here.</p>
+              </div>
+            </Tabs.Content>
+            <Tabs.Content value="mentorship" className="profile-tabs__content">
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-8">
+                  <MentorshipCard />
+                </div>
               </div>
             </Tabs.Content>
           </Tabs.Root>

@@ -331,6 +331,12 @@
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  font: inherit;
+}
+
+.navbar__avatar:focus-visible {
+  outline: 2px solid var(--color-secondary-blue);
+  outline-offset: 2px;
 }
 
 .navbar__avatar-caret {
@@ -361,6 +367,133 @@
 
 .navbar__avatar:hover .navbar__avatar-inner {
   background: #C4C8D1;
+}
+
+/* Avatar dropdown menu - Octuple DS Menu (Large) */
+/* Ref: https://www.figma.com/design/SlKRC7oKF7XZyHMv2op4ch/Octuple-DS--Theme-2-?node-id=917-3251 */
+.navbar__avatar-menu {
+  min-width: 220px;
+  padding: 0;
+  background: transparent;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 200;
+  animation: navbar-avatar-menu-in 0.15s ease-out;
+}
+
+.navbar__avatar-menu-inner {
+  padding: 12px 8px;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.navbar__avatar-menu-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  font: var(--typography-body2);
+  color: var(--color-primary-grey);
+  text-decoration: none;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+
+.navbar__avatar-menu-item:hover,
+.navbar__avatar-menu-item[data-highlighted] {
+  background: var(--color-bg1-grey);
+}
+
+.navbar__avatar-menu-item--active {
+  background: var(--color-bg1-grey);
+}
+
+.navbar__avatar-menu-divider {
+  height: 1px;
+  background: var(--color-bg2-grey);
+  margin: 2px 0;
+  flex-shrink: 0;
+}
+
+.navbar__avatar-menu-switch {
+  padding: 0 4px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navbar__avatar-menu-option {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  font: var(--typography-body3);
+  color: var(--color-primary-grey);
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+
+.navbar__avatar-menu-option:hover {
+  background: var(--color-bg1-grey);
+}
+
+/* Octuple Input Field - State=Enabled, Size=Medium */
+/* Ref: https://www.figma.com/design/SlKRC7oKF7XZyHMv2op4ch/Octuple-DS--Theme-2-?node-id=672-2816 */
+.navbar__avatar-menu-input {
+  width: 100%;
+  padding: 8px 12px;
+  font: var(--typography-body2);
+  color: #343C4C;
+  background: #FFFFFF;
+  border: 1px solid #69717F;
+  border-radius: 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.navbar__avatar-menu-input::placeholder {
+  font: var(--typography-body3);
+  color: #69717F;
+}
+
+.navbar__avatar-menu-input:focus {
+  border-color: #146DA6;
+}
+
+.navbar__avatar-menu-account {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 0;
+  flex-shrink: 0;
+}
+
+.navbar__avatar-menu-email {
+  font: var(--typography-body3);
+  color: var(--color-primary-grey);
+}
+
+.navbar__avatar-menu-account-id {
+  font: var(--typography-caption-medium);
+  color: var(--color-secondary-grey);
+}
+
+@keyframes navbar-avatar-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ========== Responsive: Tablet (≤1024px) ========== */
