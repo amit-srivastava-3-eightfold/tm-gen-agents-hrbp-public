@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "node scripts/setup-git-auth.js",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tonyh-2-eightfold/ef-design-system": "github:tonyh-2-eightfold/ef-design-system",
+    "@tonyh-2-eightfold/ef-design-system": "git+https://github.com/tonyh-2-eightfold/ef-design-system.git",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.4",
