@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "node scripts/setup-git-auth.js && npm install",
+  "installCommand": "node scripts/setup-git-auth.cjs && npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
