@@ -31,7 +31,7 @@
 
 .home-page__header {
   position: relative;
-  z-index: 2;
+  z-index: 100;
   width: 100%;
   height: 300px;
   padding-top: 80px; /* Reserve space for fixed Navbar */
@@ -56,10 +56,10 @@
   flex-shrink: 0;
 }
 
-/* Avatar: 80x80 */
+/* Avatar: 120x120 */
 .home-page__avatar {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid rgba(255, 255, 255, 0.95);

@@ -8,16 +8,16 @@
   font-family: var(--font-family);
 }
 
-/* Cover - background layer behind all content, fixed to top right */
+/* Cover - image fits from top to bottom of header, aspect ratio preserved */
 .profile-page__cover {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 560px;
+  height: 420px;
   z-index: 0;
-  background: url('/usage-profile.svg') top right / contain no-repeat;
-  background-attachment: fixed;
+  background: url('/usage-profile.svg') top right no-repeat;
+  background-size: auto 100%;
 }
 
 /* Cover fade - gradient at bottom */
@@ -26,21 +26,22 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 560px;
+  height: 420px;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 100%);
   pointer-events: none;
 }
 
-/* Header - navbar layered over background, anchored to bottom of cover area */
+/* Header - navbar layered over background, anchored to bottom of cover area (z-index above main) */
 .profile-page__header {
   position: relative;
-  z-index: 2;
+  z-index: 100;
   width: 100%;
-  height: 560px;
+  height: 420px;
   display: flex;
   align-items: flex-end;
 }
+
 
 /* Card row - 12-column grid via Tailwind */
 .profile-page__card-row {
@@ -52,16 +53,16 @@
   flex-shrink: 0;
 }
 
-/* Settings icon button */
+/* Settings icon button – default size (48px, matches Octuple icon button) */
 .profile-page__settings-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: 1px solid #D9DCE1;
-  border-radius: 20px;
+  border-radius: 24px;
   background: #FFFFFF;
   color: #4F5666;
   cursor: pointer;
@@ -77,12 +78,12 @@
   font-size: 20px !important;
 }
 
-/* View select - matches profile-hero__btn (app style) */
+/* View select - default size button (matches .btn) */
 .profile-page__view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 8px 16px;
   border-radius: 20px;
   border: 1px solid #1999AC;
   background: #FFFFFF;
@@ -132,7 +133,7 @@
 .profile-page__main {
   position: relative;
   z-index: 2;
-  margin-top: -472px;
+  margin-top: -332px;
   padding: 0;
   padding-bottom: 24px;
   min-height: 100vh;
@@ -141,29 +142,23 @@
   background: transparent;
 }
 
-/* Content zone - layout_8PH27K: 420px height, divider at y:419, card at y:39 */
+/* Content zone - sizes to content, no forced min-height */
 .profile-page__content-zone {
   position: relative;
-  min-height: 420px;
   flex-shrink: 0;
 }
 
-/* Divider - layout_7DL28H: full width 1440, at y:419, 1px #D9DCE1 */
+/* Divider - layout_7DL28H: full width 1440, at y:419, 1px #D9DCE1 - hidden per design */
 .profile-page__divider {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #D9DCE1;
+  display: none;
 }
 
-/* Content - layout_DGF9N7: x:24 y:39, card 448px */
+/* Content - 24px from navbar (80px) to top of profile card */
 .profile-page__content {
   flex: 1;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 39px 24px 24px;
+  padding: 16px 24px 24px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -335,9 +330,9 @@
   color: #4F5666;
 }
 
-/* Actions - layout_CEXP4Q: justifyContent space-between, gap 16px; layout_2VNT8E: gap 12px */
+/* Actions - layout_CEXP4Q: justifyContent space-between, gap 16px; layout_2VNT8E: gap 12px - hidden on profile pages */
 .profile-hero__actions {
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: center;
   gap: 16px;

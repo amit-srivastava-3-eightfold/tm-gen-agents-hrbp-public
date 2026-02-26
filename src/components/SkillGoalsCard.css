@@ -1,0 +1,167 @@
+.skill-goals-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 28px;
+  font-family: var(--font-family);
+}
+
+.skill-goals-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.skill-goals-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-goals-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.skill-goals-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  font: var(--typography-caption-semibold);
+  color: #4F5666;
+  background: #F6F7F8;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+}
+
+.skill-goals-card__badge--outline {
+  background: transparent;
+  border-color: #146DA6;
+  color: #146DA6;
+}
+
+.skill-goals-card__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.skill-goals-card__add-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.skill-goals-card__add-btn .material-symbols-outlined {
+  font-size: 24px !important;
+}
+
+.skill-goals-card__goals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.skill-goals-card__ai-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 20px;
+  color: #146DA6;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.skill-goals-card__ai-btn:hover {
+  background: #F6F7F8;
+  border-color: #1999AC;
+}
+
+.skill-goals-card__ai-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+.skill-goals-card__suggested-card {
+  background: #F6F7F8;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.skill-goals-card__suggested-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 18px 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.skill-goals-card__suggested-header:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.skill-goals-card__suggested-title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.skill-goals-card__chevron {
+  margin-left: auto;
+  font-size: 24px !important;
+  color: #4F5666;
+}
+
+.skill-goals-card__suggested-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 24px 24px;
+}
+
+.skill-goals-card__suggested-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.skill-goals-card__more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: var(--typography-button3);
+  color: #146DA6;
+  cursor: pointer;
+  align-self: center;
+  transition: color 0.15s;
+}
+
+.skill-goals-card__more-link:hover {
+  color: #054D7B;
+}

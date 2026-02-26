@@ -10,7 +10,7 @@ export function HomePage() {
   const { currentUser } = useUser()
   const firstName = currentUser.name.split(' ')[0] ?? currentUser.name
   const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
-    ? currentUser.avatarPhotoSrc.replace(/w=\d+&h=\d+/, 'w=80&h=80')
+    ? currentUser.avatarPhotoSrc.replace(/w=\d+&h=\d+/, 'w=120&h=120')
     : null
 
   return (

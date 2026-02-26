@@ -1,0 +1,87 @@
+.preferences-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.preferences-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.preferences-card__title {
+  margin: 0 0 4px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.preferences-card__description {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.preferences-card__edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.preferences-card__edit-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.preferences-card__edit-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+.preferences-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.preferences-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.preferences-card__icon {
+  font-size: 20px !important;
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.preferences-card__item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.preferences-card__label {
+  font: var(--typography-body3);
+  color: #1A212E;
+}
+
+.preferences-card__value {
+  font: var(--typography-body3);
+  color: #4F5666;
+}

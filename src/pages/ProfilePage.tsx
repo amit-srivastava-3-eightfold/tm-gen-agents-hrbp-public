@@ -13,6 +13,8 @@ import { EmployeeInformationCard } from '../components/EmployeeInformationCard'
 import { ContactLinksCard } from '../components/ContactLinksCard'
 import { ResumesCard } from '../components/ResumesCard'
 import { MobilityCard } from '../components/MobilityCard'
+import { SkillGoalsCard } from '../components/SkillGoalsCard'
+import { PreferencesCard } from '../components/PreferencesCard'
 import '../components/ui/Button.css'
 import '../components/AboutCard.css'
 import '../components/MentorshipCard.css'
@@ -28,7 +30,7 @@ const viewOptions = [
 
 const profileTabs = [
   { id: 'experience', label: 'Experience' },
-  { id: 'career-interest', label: 'Career navigator' },
+  { id: 'career-interest', label: 'Career interests' },
   { id: 'skills', label: 'Skills and performance' },
   { id: 'development', label: 'Development plans' },
   { id: 'mentorship', label: 'Mentorship' },
@@ -174,9 +176,13 @@ export function ProfilePage() {
               </div>
             </Tabs.Content>
             <Tabs.Content value="career-interest" className="profile-tabs__content">
-              <div className="profile-section">
-                <h2 className="profile-section__title">Career interest</h2>
-                <p className="profile-section__text">Career interest content goes here.</p>
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-8">
+                  <SkillGoalsCard />
+                </div>
+                <div className="col-span-4 flex flex-col gap-6">
+                  <PreferencesCard />
+                </div>
               </div>
             </Tabs.Content>
             <Tabs.Content value="skills" className="profile-tabs__content">

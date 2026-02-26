@@ -9,6 +9,7 @@ import { MyTeamPage } from './pages/MyTeamPage'
 import { PeoplePage } from './pages/PeoplePage'
 import { PositionPage } from './pages/PositionPage'
 import { PeopleProfilePage } from './pages/PeopleProfilePage'
+import { SkillTagPage } from './pages/SkillTagPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/people/:id" element={<PeopleProfilePage />} />
         <Route path="/my-team" element={<MyTeamPage />} />
         <Route path="/positions/:id" element={<PositionPage />} />
+        <Route path="/components/skill-tag" element={<SkillTagPage />} />
       </Routes>
     </BrowserRouter>
     </UserProvider>
