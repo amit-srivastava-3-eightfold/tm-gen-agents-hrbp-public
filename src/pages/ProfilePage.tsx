@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Navbar } from '../components/Navbar'
+import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
 import { OpenTo } from '../components/OpenTo'
@@ -14,7 +14,6 @@ import { ContactLinksCard } from '../components/ContactLinksCard'
 import { ResumesCard } from '../components/ResumesCard'
 import { MobilityCard } from '../components/MobilityCard'
 import '../components/ui/Button.css'
-import '../components/Navbar.css'
 import '../components/AboutCard.css'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
@@ -47,7 +46,7 @@ export function ProfilePage() {
       <div className="profile-page__cover" aria-hidden />
       <div className="profile-page__cover-fade" aria-hidden />
       <header className="profile-page__header">
-        <Navbar />
+        <NavbarApp />
       </header>
       <main className="profile-page__main">
         <div className="profile-page__content-zone">

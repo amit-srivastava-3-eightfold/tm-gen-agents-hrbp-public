@@ -1,9 +1,8 @@
-import { Navbar } from '../components/Navbar'
+import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { useUser } from '../contexts/UserContext'
-import '../components/Navbar.css'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
 
@@ -19,7 +18,7 @@ export function HomePage() {
       <div className="home-page__cover" aria-hidden />
       <div className="home-page__cover-fade" aria-hidden />
       <header className="home-page__header">
-        <Navbar />
+        <NavbarApp />
         <div className="home-page__hero">
           <div className="home-page__avatar-wrap">
             {avatarSrc ? (

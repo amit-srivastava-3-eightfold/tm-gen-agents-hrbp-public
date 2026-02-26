@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useUser } from '../contexts/UserContext'
-import { Navbar } from '../components/Navbar'
+import { NavbarApp } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/ui/Button'
 import { PersonBanner } from '../components/PersonBanner'
 import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
 import { UserCardList } from '../components/UserCardList'
-import '../components/Navbar.css'
 import '../components/PageHeader.css'
 import '../components/PersonBanner.css'
 import '../components/SkillAnalysisSection.css'
@@ -22,7 +21,7 @@ export function MyTeamPage() {
 
   return (
     <div className="my-team-page">
-      <Navbar />
+      <NavbarApp />
       <PageHeader title="My Team" />
       <main className="my-team-page__main">
         <div className="my-team-page__content">

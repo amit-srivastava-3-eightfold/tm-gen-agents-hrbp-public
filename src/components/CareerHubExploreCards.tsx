@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { getHomePageData } from '../data/homePageData'
-import { MentorElementCard } from './element-cards'
+import { MentorElementCard } from '@tonyh-2-eightfold/ef-design-system'
 import './CareerHubExploreCards.css'
 
 function JobCardContent({

@@ -1,13 +1,11 @@
 import { useParams, Link } from 'react-router-dom'
-import { Navbar } from '../components/Navbar'
-import '../components/Navbar.css'
-
+import { NavbarApp } from '../components/Navbar'
 export function PositionPage() {
   const { id } = useParams<{ id: string }>()
 
   return (
     <div className="position-page">
-      <Navbar />
+      <NavbarApp />
       <main style={{ padding: 24, paddingTop: 104, fontFamily: 'var(--font-family)' }}>
         <Link to="/my-team" style={{ color: '#146DA6', marginBottom: 16, display: 'inline-block' }}>
           ← Back to My Team

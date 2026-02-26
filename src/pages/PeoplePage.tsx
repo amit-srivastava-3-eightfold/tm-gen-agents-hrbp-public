@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useSearchParams } from 'react-router-dom'
-import { Navbar } from '../components/Navbar'
+import { NavbarApp } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
 import { PeopleProfileCard } from '../components/PeopleProfileCard'
 import { SEARCH_PEOPLE_CARDS, OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
 import type { PeopleProfileCardData } from '../components/PeopleProfileCard'
-import '../components/Navbar.css'
 import '../components/PageHeader.css'
 import './PeoplePage.css'
 
@@ -76,7 +75,7 @@ export function PeoplePage() {
 
   return (
     <div className="people-page">
-      <Navbar />
+      <NavbarApp />
       <PageHeader title="People" />
       <main className="people-page__main">
         <div className="people-page__content">

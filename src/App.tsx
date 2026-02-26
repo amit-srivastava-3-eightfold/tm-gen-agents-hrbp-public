@@ -1,12 +1,17 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Tabs from '@radix-ui/react-tabs'
 import { Navbar } from './components/Navbar'
-import './components/Navbar.css'
+
+const DEMO_NAVBAR_PROPS = {
+  tabs: [{ id: 'home', label: 'Home', path: '/' }],
+  avatarMenuItems: [{ label: 'Profile', path: '/profile' }],
+  user: { name: 'Demo', avatarType: 'initials' as const, avatarInitials: 'D' },
+}
 
 function App() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: '100vh' }}>
-      <Navbar />
+      <Navbar {...DEMO_NAVBAR_PROPS} />
       <main style={{ padding: 24, paddingTop: 104 }}>
       <h1>TM</h1>
       <p>Welcome to your new project.</p>

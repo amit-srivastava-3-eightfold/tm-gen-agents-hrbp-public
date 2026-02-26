@@ -1,8 +1,0 @@
-export { ElementCard } from './ElementCard'
-export type { ElementCardProps } from './ElementCard'
-export { MentorElementCard } from './MentorElementCard'
-export type { MentorElementCardProps } from './MentorElementCard'
-export { PeopleElementCard } from './PeopleElementCard'
-export type { PeopleElementCardProps } from './PeopleElementCard'
-export { CourseElementCard } from './CourseElementCard'
-export type { CourseElementCardProps } from './CourseElementCard'

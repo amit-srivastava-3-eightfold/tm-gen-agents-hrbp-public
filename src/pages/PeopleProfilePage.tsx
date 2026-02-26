@@ -3,7 +3,7 @@ import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Navbar } from '../components/Navbar'
+import { NavbarApp } from '../components/Navbar'
 import { Button } from '../components/ui/Button'
 import { OpenTo } from '../components/OpenTo'
 import { MentorshipCard } from '../components/MentorshipCard'
@@ -17,7 +17,6 @@ import { CareerInterestsSidebar } from '../components/CareerInterestsSidebar'
 import { getPersonById } from '../data/peopleData'
 import { getCareerPathForPerson, getCareerInterestsForSidebar } from '../data/careerInterestsData'
 import '../components/ui/Button.css'
-import '../components/Navbar.css'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
 import '../components/HighlightsCard.css'
@@ -93,7 +92,7 @@ export function PeopleProfilePage() {
       <div className="profile-page__cover" aria-hidden />
       <div className="profile-page__cover-fade" aria-hidden />
       <header className="profile-page__header">
-        <Navbar />
+        <NavbarApp />
       </header>
       <main className="profile-page__main">
         <div className="profile-page__content-zone">

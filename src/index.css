@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import './fonts/gilroy.css';
 @import './styles/typography-tokens.css';
+@import '@tonyh-2-eightfold/ef-design-system/styles';
 
 :root {
   font-family: var(--font-family);
