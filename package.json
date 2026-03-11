@@ -11,14 +11,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tonyh-2-eightfold/ef-design-system": "git+https://github.com/tonyh-2-eightfold/ef-design-system.git",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
+    "@tonyh-2-eightfold/ef-design-system": "github:tonyh-2-eightfold/ef-design-system#main",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

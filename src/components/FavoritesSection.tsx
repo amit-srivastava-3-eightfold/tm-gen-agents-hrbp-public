@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
-import { CourseElementCard, PeopleElementCard } from '@tonyh-2-eightfold/ef-design-system'
+import { CourseObjectCard, PeopleObjectCard } from '../element-cards'
 import './FavoritesSection.css'
 
 type FavoritePerson = {
@@ -126,11 +126,11 @@ export function FavoritesSection() {
           {favoritesPeople.map((person, i) => (
             <React.Fragment key={person.id}>
               <div className="favorites-section__card-wrap">
-                <PeopleElementCard person={person} href={`/people/${person.id}`} showBookmark LinkComponent={Link} />
+                <PeopleObjectCard person={person} href={`/people/${person.id}`} showBookmark LinkComponent={Link} />
               </div>
               {i === 0 && (
                 <div className="favorites-section__card-wrap">
-                  <CourseElementCard course={favoritesCourse} href="#" showBookmark LinkComponent={Link} />
+                  <CourseObjectCard course={favoritesCourse} href="#" showBookmark LinkComponent={Link} />
                 </div>
               )}
             </React.Fragment>

@@ -2,6 +2,7 @@ import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
+import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
@@ -53,7 +54,9 @@ export function HomePage() {
           </div>
           <div className="home-page__content col-span-8" aria-label="Main content">
             <CareerHubExploreCards />
-            <FavoritesSection />
+            <ErrorBoundary>
+              <FavoritesSection />
+            </ErrorBoundary>
           </div>
         </div>
       </main>

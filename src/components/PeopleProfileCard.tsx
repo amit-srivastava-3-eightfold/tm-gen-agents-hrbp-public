@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { OpenTo } from './OpenTo'
-import './ui/Button.css'
 import './PeopleProfileCard.css'
 
 export interface PeopleProfileCardData {

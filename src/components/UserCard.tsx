@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
+import { Tag } from '@tonyh-2-eightfold/ef-design-system'
 import { Button } from './ui/Button'
-import './ui/Button.css'
 import './UserCard.css'
 
 export interface DirectReport {
@@ -103,24 +103,30 @@ export function UserCard({ user }: UserCardProps) {
                 <span className="user-card__report-more">+{user.directReportCount}</span>
               )}
             </div>
-            <Button variant="ghost" className="user-card__reports-btn">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="user-card__reports-btn"
+              trailingIcon={<span className="material-symbols-outlined">chevron_right</span>}
+            >
               Direct reports
-              <span className="material-symbols-outlined">arrow_forward</span>
             </Button>
           </div>
         </div>
       </div>
       <div className="user-card__right">
         <div className="user-card__top-right" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" className="user-card__ai-btn" aria-label="AI assistant">
+          <Button variant="secondary" size="icon-sm" className="user-card__ai-btn" aria-label="AI assistant">
             <span className="material-symbols-outlined">auto_awesome</span>
           </Button>
-          <Button variant="outline" className="user-card__manager-actions">
+          <Button
+            variant="outline"
+            size="sm"
+            className="user-card__manager-actions"
+            badge={user.managerActionsCount != null && user.managerActionsCount > 0 ? user.managerActionsCount : undefined}
+            trailingIcon={<span className="material-symbols-outlined">expand_more</span>}
+          >
             Manager actions
-            {user.managerActionsCount != null && user.managerActionsCount > 0 && (
-              <span className="user-card__badge">{user.managerActionsCount}</span>
-            )}
-            <span className="material-symbols-outlined">expand_more</span>
           </Button>
         </div>
         <div className="user-card__metrics" onClick={(e) => e.stopPropagation()}>
@@ -149,10 +155,19 @@ export function UserCard({ user }: UserCardProps) {
             {user.riskTags.map((tag) => (
               <span
                 key={tag.label}
-                className={`user-card__risk-tag ${tag.isCritical ? 'user-card__risk-tag--critical' : ''} ${tag.isEmpty ? 'user-card__risk-tag--empty' : ''}`}
+                className={`user-card__risk-tag-wrap ${tag.isEmpty ? 'user-card__risk-tag--empty' : ''} ${tag.isCritical ? 'user-card__risk-tag--critical' : ''}`}
               >
-                {tag.label}{tag.isEmpty ? ' ' : `: ${tag.value} `}
-                {tag.isEmpty ? <span className="material-symbols-outlined">add</span> : null}
+                <Tag
+                  value={tag.label}
+                  variant={tag.isCritical ? 'selected' : 'default'}
+                  size="sm"
+                  className="user-card__risk-tag"
+                >
+                  {tag.isEmpty ? tag.label : `${tag.label}: ${tag.value}`}
+                </Tag>
+                <button type="button" className="user-card__risk-tag-pencil" aria-label="Edit">
+                  <span className="material-symbols-outlined">create</span>
+                </button>
               </span>
             ))}
           </div>

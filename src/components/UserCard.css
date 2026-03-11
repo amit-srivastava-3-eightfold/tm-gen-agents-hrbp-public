@@ -2,6 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.user-card-list::-webkit-scrollbar {
+  display: none;
 }
 
 .user-card-link {
@@ -36,23 +42,21 @@
 }
 
 .user-card__ai-btn.btn {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
   padding: 0;
-  border: none;
-  background: transparent;
+  border-radius: 50%;
+  background: #EBF7FF;
+  border-color: transparent;
   color: #146DA6;
-  border-radius: 8px;
 }
 
 .user-card__ai-btn.btn:hover {
-  background: #F6F7F8;
+  background: #BCE4FF;
+  border-color: transparent;
   color: #054D7B;
 }
 
 .user-card__ai-btn .material-symbols-outlined {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .user-card__left {
@@ -219,21 +223,12 @@
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .user-card__metrics::-webkit-scrollbar {
-  height: 6px;
-}
-
-.user-card__metrics::-webkit-scrollbar-track {
-  background: #F6F7F8;
-  border-radius: 3px;
-}
-
-.user-card__metrics::-webkit-scrollbar-thumb {
-  background: #D9DCE1;
-  border-radius: 3px;
+  display: none;
 }
 
 .user-card__metric {
@@ -292,19 +287,6 @@
   position: relative;
 }
 
-.user-card__badge {
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  background: #B0F3FE;
-  color: #054D7B;
-  font: var(--typography-caption-semibold);
-  border-radius: 9px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .user-card__risk {
   margin-top: auto;
 }
@@ -335,38 +317,64 @@
   gap: 8px;
 }
 
-/* Octuple DS Theme 2 Pill / Tag - Neutral & Disruptive variants */
-.user-card__risk-tag {
+.user-card__risk-tag-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  font: var(--typography-button3);
-  color: #4F5666;
+  gap: 2px;
+  border-radius: 8px;
   background: #F6F7F8;
+  padding: 2px 2px 2px 8px;
+}
+
+.user-card__risk-tag-wrap .user-card__risk-tag.tag {
+  background: transparent;
+  padding: 2px 4px 2px 0;
   border: none;
-  border-radius: 24px;
 }
 
-.user-card__risk-tag .material-symbols-outlined {
-  font-size: 16px;
+.user-card__risk-tag-pencil {
+  padding: 4px;
+  border: none;
+  background: none;
   color: #4F5666;
+  cursor: pointer;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.user-card__risk-tag--critical {
-  background: #D32F2F;
-  color: #FFFFFF;
+.user-card__risk-tag-pencil:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #146DA6;
 }
 
-.user-card__risk-tag--critical .material-symbols-outlined {
-  color: #FFFFFF;
+.user-card__risk-tag-pencil .material-symbols-outlined {
+  font-size: 16px;
 }
 
-.user-card__risk-tag--empty {
-  color: #69717F;
+.user-card__risk-tag-wrap.user-card__risk-tag--empty {
   background: #EDEEF0;
 }
 
-.user-card__risk-tag--empty .material-symbols-outlined {
+.user-card__risk-tag-wrap.user-card__risk-tag--empty .user-card__risk-tag.tag {
   color: #69717F;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--critical {
+  background: #FFEBEE;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--critical .user-card__risk-tag.tag {
+  background: transparent;
+  color: #B71C1C;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--critical .user-card__risk-tag-pencil {
+  color: #C62828;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--critical .user-card__risk-tag-pencil:hover {
+  background: rgba(183, 28, 28, 0.12);
+  color: #B71C1C;
 }

@@ -3,6 +3,7 @@ import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { TabsWithLines } from '../components/ui/TabsWithLines'
 import { NavbarApp } from '../components/Navbar'
 import { Button } from '../components/ui/Button'
 import { OpenTo } from '../components/OpenTo'
@@ -16,7 +17,6 @@ import { CareerNavigator } from '../components/CareerNavigator'
 import { CareerInterestsSidebar } from '../components/CareerInterestsSidebar'
 import { getPersonById } from '../data/peopleData'
 import { getCareerPathForPerson, getCareerInterestsForSidebar } from '../data/careerInterestsData'
-import '../components/ui/Button.css'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
 import '../components/HighlightsCard.css'
@@ -173,19 +173,8 @@ export function PeopleProfilePage() {
           <div className="profile-page__divider" />
         </div>
         <div className="profile-page__content profile-page__content--tabs grid grid-cols-12 gap-6">
-          <Tabs.Root key={view} defaultValue="experience" className="profile-tabs col-span-12">
-            <Tabs.List className="profile-tabs__list">
-              {profileTabs.map((tab) => (
-                <Tabs.Trigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="profile-tabs__trigger"
-                >
-                  {tab.label}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-            <Tabs.Content value="experience" className="profile-tabs__content">
+          <TabsWithLines key={view} tabs={profileTabs} defaultValue="experience" className="col-span-12">
+            <Tabs.Content value="experience" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
                   <SkillsCard personId={person.id} />
@@ -213,7 +202,7 @@ export function PeopleProfilePage() {
             </Tabs.Content>
             {(view === 'hrbp' || view === 'manager') && (
               <>
-                <Tabs.Content value="skills" className="profile-tabs__content">
+                <Tabs.Content value="skills" className="tabs-with-lines__content">
                   <div className="grid grid-cols-12 gap-6">
                     <div className="col-span-8 flex flex-col gap-6">
                       <SkillsCard personId={person.id} />
@@ -239,13 +228,13 @@ export function PeopleProfilePage() {
                     </div>
                   </div>
                 </Tabs.Content>
-                <Tabs.Content value="development" className="profile-tabs__content">
+                <Tabs.Content value="development" className="tabs-with-lines__content">
                   <div className="profile-section">
                     <h2 className="profile-section__title">Development plans</h2>
                     <p className="profile-section__text">Development plans content goes here.</p>
                   </div>
                 </Tabs.Content>
-                <Tabs.Content value="career-interest" className="profile-tabs__content">
+                <Tabs.Content value="career-interest" className="tabs-with-lines__content">
                   <div className="grid grid-cols-12 gap-6">
                     <div className="col-span-8">
                       <CareerNavigator
@@ -264,7 +253,7 @@ export function PeopleProfilePage() {
                 </Tabs.Content>
               </>
             )}
-            <Tabs.Content value="mentorship" className="profile-tabs__content">
+            <Tabs.Content value="mentorship" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8">
                   <MentorshipCard />
@@ -286,7 +275,7 @@ export function PeopleProfilePage() {
                 </div>
               </div>
             </Tabs.Content>
-          </Tabs.Root>
+          </TabsWithLines>
         </div>
         <footer className="profile-page__footer">
           <span>Powered by</span>

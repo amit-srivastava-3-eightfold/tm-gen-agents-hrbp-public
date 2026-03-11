@@ -81,6 +81,8 @@
 
 .career-hub-explore__scroll::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 .career-hub-explore__card-wrap {

@@ -151,6 +151,84 @@
   margin-bottom: 16px;
 }
 
+.skill-analysis__filter-tag-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-analysis__filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+}
+
+.skill-analysis__filter-tag--gaps {
+  background: #FFEBEE;
+  border: 1px solid #FFCDD2;
+}
+
+.skill-analysis__filter-tag--gaps .skill-analysis__filter-tag-icon {
+  color: #C15151;
+}
+
+.skill-analysis__filter-tag--strengths {
+  background: #E8F5E9;
+  border: 1px solid #C8E6C9;
+}
+
+.skill-analysis__filter-tag--strengths .skill-analysis__filter-tag-icon {
+  color: #2B715F;
+}
+
+.skill-analysis__filter-tag-icon {
+  font-size: 16px !important;
+}
+
+.skill-analysis__filter-tag-sep {
+  color: #4F5666;
+  font-size: 12px;
+}
+
+.skill-analysis__filter-tag-value {
+  font-weight: 500;
+}
+
+.skill-analysis__filter-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin: -2px -2px -2px 2px;
+  border: none;
+  background: none;
+  color: #4F5666;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.skill-analysis__filter-tag-remove:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1A212E;
+}
+
+.skill-analysis__filter-tag-remove .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.skill-analysis__assign-btn {
+  margin-left: auto;
+}
+
+.skill-analysis__cards .skill-analysis__card:first-child .skill-analysis__item,
+.skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item {
+  cursor: pointer;
+}
+
 .skill-analysis__select {
   padding: 8px 32px 8px 12px;
   border: 1px solid #D9DCE1;
@@ -160,6 +238,21 @@
   background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234F5666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
   appearance: none;
   cursor: pointer;
+}
+
+/* EF DS Select in filters – layout; secondary variant needs explicit bg (DS uses Tailwind secondary) */
+.skill-analysis__filters [data-slot="select-trigger"].skill-analysis__filter-select {
+  min-width: 140px;
+}
+
+.skill-analysis__filters [data-slot="select-trigger"][data-variant="secondary"] {
+  background: #F6F7F8;
+  border-color: transparent;
+  color: #1A212E;
+}
+
+.skill-analysis__filters [data-slot="select-trigger"][data-variant="secondary"]:hover {
+  background: #E8EAED;
 }
 
 .skill-analysis__cards {
@@ -211,15 +304,40 @@
 }
 
 .skill-analysis__item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 0;
+  margin: 0 -20px;
+  padding: 8px 20px;
   border-bottom: 1px solid #F6F7F8;
   font: var(--typography-body3);
   color: #1A212E;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
 }
+
+.skill-analysis__item:hover::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  background-color: #F6F7F8;
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.skill-analysis__cards > .skill-analysis__card:first-child .skill-analysis__item:hover::before {
+  background-color: #FFEBEE;
+}
+
+.skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item:hover::before {
+  background-color: #E8F5E9;
+}
+
 
 .skill-analysis__item:last-child {
   border-bottom: none;
@@ -228,6 +346,8 @@
 .skill-analysis__skill-name {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .skill-analysis__item-right {
@@ -235,6 +355,8 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .skill-analysis__person-icon {
@@ -246,30 +368,39 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 120px;
+  min-width: 180px;
 }
 
 .skill-analysis__bar {
   position: relative;
   flex: 1;
-  min-width: 80px;
-  height: 24px;
+  min-width: 140px;
+  height: 28px;
+  padding: 4px;
   background: #F6F7F8;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  position: relative;
+  box-sizing: border-box;
 }
 
 .skill-analysis__bar-fill {
   height: 100%;
-  min-width: 24px;
+  min-width: 28px;
+  padding: 4px;
   background: #B9F4E4;
   border: 1px solid #67C5AC;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: width 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Skill gaps card: red bar fill */
+.skill-analysis__cards > .skill-analysis__card:first-child .skill-analysis__bar-fill {
+  background: #F5C6CB;
+  border-color: #C15151;
 }
 
 .skill-analysis__bar-fill[style*="width: 0%"] {
@@ -281,6 +412,7 @@
 .skill-analysis__bar-value {
   font: var(--typography-caption-semibold);
   color: #1A212E;
+  line-height: 1;
 }
 
 .skill-analysis__bar-value--empty {
@@ -291,17 +423,19 @@
 }
 
 .skill-analysis__bar-total {
-  font: var(--typography-header6);
+  font: var(--typography-caption-semibold);
   color: #1A212E;
-  min-width: 20px;
+  min-width: 18px;
   text-align: right;
+  line-height: 1;
 }
 
 .skill-analysis__count {
-  font: var(--typography-header6);
+  font: var(--typography-caption-semibold);
   color: #1A212E;
-  min-width: 20px;
+  min-width: 18px;
   text-align: right;
+  line-height: 1;
 }
 
 .skill-analysis__search {
@@ -337,6 +471,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 .skill-analysis__results-text {
@@ -355,7 +490,13 @@
   border-radius: 12px;
   overflow-x: auto;
   overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.skill-analysis__positions-table-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 .skill-analysis__positions-table {

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { getHomePageData } from '../data/homePageData'
-import { MentorElementCard } from '@tonyh-2-eightfold/ef-design-system'
 import './CareerHubExploreCards.css'
 
 function JobCardContent({
@@ -38,6 +37,23 @@ function ProjectCardContent({ project }: { project: { title: string; tags: strin
             {tag}
           </span>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function MentorCardContent({ mentor }: { mentor: { name: string; role: string; avatarSrc: string; matchText: string; matchCount: number } }) {
+  return (
+    <div className="career-hub-card__mentor">
+      <div className="career-hub-card__mentor-profile">
+        <img src={mentor.avatarSrc} alt="" className="career-hub-card__avatar" />
+        <div className="career-hub-card__mentor-info">
+          <span className="career-hub-card__name">{mentor.name}</span>
+          <span className="career-hub-card__role">{mentor.role}</span>
+          <span className="career-hub-card__match">
+            {mentor.matchText} · {mentor.matchCount} matches
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -144,9 +160,8 @@ export function CareerHubExploreCards() {
 
   const cards = [
     {
-      id: 'mentors',
-      useElementCard: true,
-      elementCard: <MentorElementCard mentor={homeData.mentor} />,
+      ...CARD_TEMPLATES[0],
+      content: <MentorCardContent mentor={homeData.mentor} />,
     },
     {
       ...CARD_TEMPLATES[1],
@@ -200,13 +215,6 @@ export function CareerHubExploreCards() {
           </button>
           <div className="career-hub-explore__scroll" ref={scrollRef}>
             {cards.map((card) => {
-              if ('useElementCard' in card && card.useElementCard) {
-                return (
-                  <div key={card.id} className="career-hub-explore__card-wrap">
-                    {card.elementCard}
-                  </div>
-                )
-              }
               const c = card as {
                 bgColor: string
                 iconBgColor: string

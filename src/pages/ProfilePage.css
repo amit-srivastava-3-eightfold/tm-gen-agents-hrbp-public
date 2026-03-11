@@ -402,60 +402,6 @@
 
 
 
-/* Page Tabs - Octuple DS Tab component */
-/* Figma: https://www.figma.com/design/SlKRC7oKF7XZyHMv2op4ch/Octuple-DS--Theme-2- node 910-1381 */
-.profile-tabs {
-  margin-bottom: 32px;
-  margin-top: 0;
-  width: 100%;
-}
-
-.profile-tabs__list {
-  display: flex;
-  gap: 32px;
-  border-bottom: 1px solid #D9DCE1;
-  margin-bottom: 24px;
-  padding-bottom: 0;
-}
-
-.profile-tabs__trigger {
-  position: relative;
-  padding: 12px 8px;
-  font: var(--typography-header5);
-  color: #4F5666;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s;
-  margin-bottom: -1px;
-}
-
-.profile-tabs__trigger::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: transparent;
-}
-
-.profile-tabs__trigger:hover {
-  color: #69717F;
-}
-
-.profile-tabs__trigger[data-state="active"] {
-  color: #146DA6;
-}
-
-.profile-tabs__trigger[data-state="active"]::after {
-  background: #146DA6;
-}
-
-.profile-tabs__content {
-  outline: none;
-}
-
 /* Profile Sections */
 .profile-section {
   background: rgba(255, 255, 255, 0.92);

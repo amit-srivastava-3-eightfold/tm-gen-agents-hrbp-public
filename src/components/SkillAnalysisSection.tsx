@@ -1,10 +1,17 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
 import type { PeopleProfileCardData } from './PeopleProfileCard'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@tonyh-2-eightfold/ef-design-system'
 import { Button } from './ui/Button'
-import './ui/Button.css'
+import { UserCardList } from './UserCardList'
 
 type PositionRow = {
   id: string
@@ -73,51 +80,57 @@ function buildPositionsFromOpenRoles(
 }
 
 const MATEO_SKILL_GAPS = [
-  { name: 'Product Demos', current: 0, total: 8 },
-  { name: 'CRM Systems', current: 0, total: 8 },
-  { name: 'API Integration', current: 0, total: 7 },
-  { name: 'Technical Sales', current: 0, total: 6 },
-  { name: 'Enterprise Sales', current: 0, total: 6 },
+  { name: 'Value Proposition', current: 3, total: 20 },
+  { name: 'Product Demos', current: 0, total: 16 },
+  { name: 'Objection Handling', current: 0, total: 16 },
+  { name: 'CRM Systems', current: 2, total: 18 },
+  { name: 'API Integration', current: 0, total: 15 },
+  { name: 'Technical Sales', current: 4, total: 14 },
+  { name: 'Enterprise Sales', current: 0, total: 12 },
+  { name: 'Contract Negotiation', current: 5, total: 18 },
 ]
 
 const MATEO_SKILL_STRENGTHS = [
-  { name: 'Solution Architecture', current: 1, total: 1 },
-  { name: 'Sales Enablement', current: 1, total: 1 },
-  { name: 'Technical Discovery', current: 1, total: 1 },
-  { name: 'API Integration', current: 1, total: 7 },
-  { name: 'Communication', current: 0, total: 8 },
+  { name: 'Solution Architecture', current: 14, total: 14 },
+  { name: 'Sales Enablement', current: 12, total: 12 },
+  { name: 'Technical Discovery', current: 16, total: 16 },
+  { name: 'API Integration', current: 5, total: 16 },
+  { name: 'Communication', current: 0, total: 20 },
 ]
 
 const MATEO_SKILL_INTERESTS = [
-  { name: 'Solutions Architecture', count: 2 },
-  { name: 'Sales Engineering', count: 2 },
-  { name: 'Technical Sales', count: 2 },
-  { name: 'Product Management', count: 1 },
-  { name: 'Cross-Functional Team Leadership', count: 1 },
+  { name: 'Solutions Architecture', count: 18 },
+  { name: 'Sales Engineering', count: 16 },
+  { name: 'Technical Sales', count: 14 },
+  { name: 'Product Management', count: 13 },
+  { name: 'Cross-Functional Team Leadership', count: 12 },
 ]
 
 const LAURA_SKILL_GAPS = [
-  { name: 'Performance Management', current: 2, total: 8 },
-  { name: 'Workforce Planning', current: 1, total: 6 },
-  { name: 'Succession Planning', current: 0, total: 5 },
-  { name: 'DEI Initiatives', current: 1, total: 6 },
-  { name: 'Change Management', current: 2, total: 7 },
+  { name: 'Performance Management', current: 6, total: 18 },
+  { name: 'Workforce Planning', current: 4, total: 15 },
+  { name: 'Succession Planning', current: 0, total: 12 },
+  { name: 'DEI Initiatives', current: 3, total: 16 },
+  { name: 'Change Management', current: 6, total: 20 },
+  { name: 'Labor Law Compliance', current: 2, total: 14 },
+  { name: 'Talent Analytics', current: 0, total: 18 },
+  { name: 'Employee Engagement', current: 7, total: 16 },
 ]
 
 const LAURA_SKILL_STRENGTHS = [
-  { name: 'Employee Relations', current: 6, total: 6 },
-  { name: 'Talent Management', current: 5, total: 5 },
-  { name: 'Coaching', current: 4, total: 5 },
-  { name: 'Data Analytics', current: 3, total: 6 },
-  { name: 'Stakeholder Management', current: 5, total: 6 },
+  { name: 'Employee Relations', current: 18, total: 18 },
+  { name: 'Talent Management', current: 15, total: 15 },
+  { name: 'Coaching', current: 12, total: 16 },
+  { name: 'Data Analytics', current: 9, total: 18 },
+  { name: 'Stakeholder Management', current: 15, total: 18 },
 ]
 
 const LAURA_SKILL_INTERESTS = [
-  { name: 'Leadership Development', count: 4 },
-  { name: 'HR Strategy', count: 3 },
-  { name: 'Talent Acquisition', count: 2 },
-  { name: 'Compensation & Benefits', count: 2 },
-  { name: 'Organizational Design', count: 1 },
+  { name: 'Leadership Development', count: 20 },
+  { name: 'HR Strategy', count: 17 },
+  { name: 'Talent Acquisition', count: 14 },
+  { name: 'Compensation & Benefits', count: 15 },
+  { name: 'Organizational Design', count: 12 },
 ]
 
 const MATEO_TAB_COUNTS = { direct: 7, all: 11 }
@@ -251,7 +264,11 @@ export function SkillAnalysisSection({
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'laura-shah'
 
-  const skillGaps = isLaura ? LAURA_SKILL_GAPS : MATEO_SKILL_GAPS
+  const skillGaps = useMemo(() => {
+    const list = isLaura ? [...LAURA_SKILL_GAPS] : [...MATEO_SKILL_GAPS]
+    list.sort((a, b) => b.current - a.current)
+    return list.slice(0, 5)
+  }, [isLaura])
   const skillStrengths = isLaura ? LAURA_SKILL_STRENGTHS : MATEO_SKILL_STRENGTHS
   const skillInterests = isLaura ? LAURA_SKILL_INTERESTS : MATEO_SKILL_INTERESTS
   const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
@@ -260,6 +277,8 @@ export function SkillAnalysisSection({
     () => buildPositionsFromOpenRoles(OPEN_ROLES_PEOPLE_CARDS, pipelineLookup),
     [pipelineLookup]
   )
+  const [selectedSkillGap, setSelectedSkillGap] = useState<string | null>(null)
+  const [selectedSkillStrength, setSelectedSkillStrength] = useState<string | null>(null)
 
   return (
     <div className="skill-analysis">
@@ -292,15 +311,30 @@ export function SkillAnalysisSection({
 
       {scope !== 'open' && (
       <div className="skill-analysis__filters skill-analysis__filters--top">
-        <select className="skill-analysis__select" defaultValue="gaps">
-          <option value="gaps">View: Gaps analysis</option>
-        </select>
-        <select className="skill-analysis__select" defaultValue="all-roles">
-          <option value="all-roles">All roles</option>
-        </select>
-        <select className="skill-analysis__select" defaultValue="all-skills">
-          <option value="all-skills">All skills</option>
-        </select>
+        <Select defaultValue="gaps">
+          <SelectTrigger variant="primary" className="skill-analysis__filter-select">
+            <SelectValue placeholder="View" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gaps">View: Gaps analysis</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="all-roles">
+          <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all-roles">All roles</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="all-skills">
+          <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+            <SelectValue placeholder="Skills" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all-skills">All skills</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       )}
 
@@ -407,7 +441,14 @@ export function SkillAnalysisSection({
           </div>
           <ul className="skill-analysis__list">
             {skillGaps.map((skill) => (
-              <li key={skill.name} className="skill-analysis__item">
+              <li
+                key={skill.name}
+                role="button"
+                tabIndex={0}
+                className="skill-analysis__item"
+                onClick={() => setSelectedSkillGap(skill.name)}
+                onKeyDown={(e) => e.key === 'Enter' && setSelectedSkillGap(skill.name)}
+              >
                 <span className="skill-analysis__skill-name">{skill.name}</span>
                 <div className="skill-analysis__item-right">
                   <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
@@ -439,7 +480,14 @@ export function SkillAnalysisSection({
           </div>
           <ul className="skill-analysis__list">
             {skillStrengths.map((skill) => (
-              <li key={skill.name} className="skill-analysis__item">
+              <li
+                key={skill.name}
+                role="button"
+                tabIndex={0}
+                className="skill-analysis__item"
+                onClick={() => setSelectedSkillStrength(skill.name)}
+                onKeyDown={(e) => e.key === 'Enter' && setSelectedSkillStrength(skill.name)}
+              >
                 <span className="skill-analysis__skill-name">{skill.name}</span>
                 <div className="skill-analysis__item-right">
                   <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
@@ -527,28 +575,104 @@ export function SkillAnalysisSection({
       )}
 
       <div className="skill-analysis__filters skill-analysis__filters--bottom">
-        <select className="skill-analysis__select">
-          <option>Role</option>
-        </select>
-        <select className="skill-analysis__select">
-          <option>Skills</option>
-        </select>
-        <select className="skill-analysis__select">
-          <option>Job Level</option>
-        </select>
-        <select className="skill-analysis__select">
-          <option>Development Plan Status</option>
-        </select>
-        <div className="skill-analysis__search">
-          <span className="material-symbols-outlined skill-analysis__search-icon">search</span>
-          <input type="search" placeholder="Search name or role" className="skill-analysis__search-input" />
-        </div>
+        {selectedSkillGap && (
+          <span className="skill-analysis__filter-tag-wrap">
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--gaps">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">trending_down</span>
+              <span className="skill-analysis__filter-tag-label">Skill gaps</span>
+              <span className="skill-analysis__filter-tag-sep">&gt;</span>
+              <span className="skill-analysis__filter-tag-value">{selectedSkillGap}</span>
+              <button
+                type="button"
+                className="skill-analysis__filter-tag-remove"
+                onClick={() => setSelectedSkillGap(null)}
+                aria-label={`Remove ${selectedSkillGap} filter`}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </span>
+            <Button variant="secondary" size="icon-sm" className="skill-analysis__filter-tag-more" aria-label="More options">
+              <span className="material-symbols-outlined">more_vert</span>
+            </Button>
+          </span>
+        )}
+        {selectedSkillStrength && (
+          <span className="skill-analysis__filter-tag-wrap">
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--strengths">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">trending_up</span>
+              <span className="skill-analysis__filter-tag-label">Skill strengths</span>
+              <span className="skill-analysis__filter-tag-sep">&gt;</span>
+              <span className="skill-analysis__filter-tag-value">{selectedSkillStrength}</span>
+              <button
+                type="button"
+                className="skill-analysis__filter-tag-remove"
+                onClick={() => setSelectedSkillStrength(null)}
+                aria-label={`Remove ${selectedSkillStrength} filter`}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </span>
+            <Button variant="secondary" size="icon-sm" className="skill-analysis__filter-tag-more" aria-label="More options">
+              <span className="material-symbols-outlined">more_vert</span>
+            </Button>
+          </span>
+        )}
+        {!(selectedSkillGap || selectedSkillStrength) && (
+          <>
+            <Select defaultValue="role">
+              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="role">Role</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="skills">
+              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+                <SelectValue placeholder="Skills" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="skills">Skills</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="job-level">
+              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+                <SelectValue placeholder="Job Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="job-level">Job Level</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="dev-plan">
+              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
+                <SelectValue placeholder="Development Plan Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dev-plan">Development Plan Status</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="skill-analysis__search">
+              <span className="material-symbols-outlined skill-analysis__search-icon">search</span>
+              <input type="search" placeholder="Search name or role" className="skill-analysis__search-input" />
+            </div>
+          </>
+        )}
+        {(selectedSkillGap || selectedSkillStrength) && (
+          <Button
+            className="skill-analysis__assign-btn"
+            variant="outline"
+            leadingIcon={<span className="material-symbols-outlined">assignment</span>}
+          >
+            Assign development plan
+          </Button>
+        )}
       </div>
 
       <div className="skill-analysis__results">
         <span className="skill-analysis__results-text">Showing {tabCounts.all} results</span>
-        <Button variant="ghost" className="skill-analysis__select-all">Select all on this page</Button>
+        <Button variant="secondary" size="sm" className="skill-analysis__select-all">Select all on this page</Button>
       </div>
+      <UserCardList sustainedHighPerformersFilter={sustainedHighPerformersFilter} />
       </>
       )}
     </div>

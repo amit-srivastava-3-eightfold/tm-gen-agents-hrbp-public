@@ -1,0 +1,111 @@
+/* EF-style Select (Radix) for filters – matches skill-analysis filter look */
+.select-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  background: #FFFFFF;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.select-trigger:hover {
+  border-color: #69717F;
+}
+
+.select-trigger[data-state="open"] {
+  border-color: #146DA6;
+  box-shadow: 0 0 0 3px rgba(20, 109, 166, 0.2);
+}
+
+/* Primary variant – DS primary (filled blue) */
+.select-trigger--primary {
+  background: #146DA6;
+  border-color: #146DA6;
+  color: #FFFFFF;
+}
+
+.select-trigger--primary .select-trigger__icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.select-trigger--primary:hover {
+  background: #054D7B;
+  border-color: #054D7B;
+}
+
+.select-trigger--primary[data-state="open"] {
+  background: #054D7B;
+  border-color: #054D7B;
+  box-shadow: 0 0 0 3px rgba(20, 109, 166, 0.35);
+}
+
+.select-trigger__icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px !important;
+  color: #4F5666;
+  pointer-events: none;
+}
+
+.select-trigger[data-placeholder] .select-trigger__icon {
+  opacity: 0.8;
+}
+
+.select-content {
+  z-index: 50;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #D9DCE1;
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.select-content__viewport {
+  padding: 4px;
+  max-height: var(--radix-select-content-available-height, 300px);
+}
+
+.select-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 32px 8px 12px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  border-radius: 4px;
+  outline: none;
+}
+
+.select-item:hover,
+.select-item[data-highlighted] {
+  background: #F6F7F8;
+}
+
+.select-item[data-state="checked"] {
+  background: #E8F4FC;
+  color: #146DA6;
+}
+
+.select-item__indicator {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-item__indicator .material-symbols-outlined {
+  font-size: 16px !important;
+}

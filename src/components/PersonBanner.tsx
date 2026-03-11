@@ -1,6 +1,5 @@
 import { useUser } from '../contexts/UserContext'
 import { Button } from './ui/Button'
-import './ui/Button.css'
 
 export function PersonBanner() {
   const { currentUser } = useUser()

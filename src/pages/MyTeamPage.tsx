@@ -6,11 +6,9 @@ import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/ui/Button'
 import { PersonBanner } from '../components/PersonBanner'
 import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
-import { UserCardList } from '../components/UserCardList'
 import '../components/PageHeader.css'
 import '../components/PersonBanner.css'
 import '../components/SkillAnalysisSection.css'
-import '../components/UserCard.css'
 import './MyTeamPage.css'
 
 export function MyTeamPage() {
@@ -46,11 +44,6 @@ export function MyTeamPage() {
                   onSustainedHighPerformersClick={() => setSustainedHighPerformersFilter((v) => !v)}
                 />
               </div>
-              {reportScope !== 'open' && (
-              <div className="my-team-page__user-cards">
-                <UserCardList sustainedHighPerformersFilter={sustainedHighPerformersFilter} />
-              </div>
-              )}
             </Tabs.Content>
             <Tabs.Content value="succession" className="my-team-page__tabs-content">
               <div className="my-team-page__page-header grid grid-cols-12 gap-6">

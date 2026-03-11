@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { TabsWithLines } from '../components/ui/TabsWithLines'
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
@@ -15,7 +16,6 @@ import { ResumesCard } from '../components/ResumesCard'
 import { MobilityCard } from '../components/MobilityCard'
 import { SkillGoalsCard } from '../components/SkillGoalsCard'
 import { PreferencesCard } from '../components/PreferencesCard'
-import '../components/ui/Button.css'
 import '../components/AboutCard.css'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
@@ -145,19 +145,8 @@ export function ProfilePage() {
           <div className="profile-page__divider" />
         </div>
         <div className="profile-page__content profile-page__content--tabs grid grid-cols-12 gap-6">
-          <Tabs.Root defaultValue="experience" className="profile-tabs col-span-12">
-            <Tabs.List className="profile-tabs__list">
-              {profileTabs.map((tab) => (
-                <Tabs.Trigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="profile-tabs__trigger"
-                >
-                  {tab.label}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-            <Tabs.Content value="experience" className="profile-tabs__content">
+          <TabsWithLines tabs={profileTabs} defaultValue="experience" className="col-span-12">
+            <Tabs.Content value="experience" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
                   <AboutCard key={currentUser.id} />
@@ -175,7 +164,7 @@ export function ProfilePage() {
                 </div>
               </div>
             </Tabs.Content>
-            <Tabs.Content value="career-interest" className="profile-tabs__content">
+            <Tabs.Content value="career-interest" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8">
                   <SkillGoalsCard />
@@ -185,26 +174,26 @@ export function ProfilePage() {
                 </div>
               </div>
             </Tabs.Content>
-            <Tabs.Content value="skills" className="profile-tabs__content">
+            <Tabs.Content value="skills" className="tabs-with-lines__content">
               <div className="profile-section">
                 <h2 className="profile-section__title">Skills and performance</h2>
                 <p className="profile-section__text">Skills content goes here.</p>
               </div>
             </Tabs.Content>
-            <Tabs.Content value="development" className="profile-tabs__content">
+            <Tabs.Content value="development" className="tabs-with-lines__content">
               <div className="profile-section">
                 <h2 className="profile-section__title">Development plans</h2>
                 <p className="profile-section__text">Development plans content goes here.</p>
               </div>
             </Tabs.Content>
-            <Tabs.Content value="mentorship" className="profile-tabs__content">
+            <Tabs.Content value="mentorship" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8">
                   <MentorshipCard />
                 </div>
               </div>
             </Tabs.Content>
-          </Tabs.Root>
+          </TabsWithLines>
         </div>
         <footer className="profile-page__footer">
           <span>Powered by</span>

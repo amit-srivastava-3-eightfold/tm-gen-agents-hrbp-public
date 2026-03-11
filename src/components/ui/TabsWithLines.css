@@ -1,0 +1,51 @@
+.tabs-with-lines {
+  margin-bottom: 32px;
+  margin-top: 0;
+  width: 100%;
+}
+
+.tabs-with-lines__list {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid #D9DCE1;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+
+.tabs-with-lines__trigger {
+  position: relative;
+  padding: 12px 8px;
+  font: var(--typography-header5);
+  color: #4F5666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  margin-bottom: -1px;
+}
+
+.tabs-with-lines__trigger::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: transparent;
+}
+
+.tabs-with-lines__trigger:hover {
+  color: #69717F;
+}
+
+.tabs-with-lines__trigger[data-state="active"] {
+  color: #146DA6;
+}
+
+.tabs-with-lines__trigger[data-state="active"]::after {
+  background: #146DA6;
+}
+
+.tabs-with-lines__content {
+  outline: none;
+}

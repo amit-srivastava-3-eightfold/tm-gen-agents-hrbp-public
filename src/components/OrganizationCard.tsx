@@ -1,5 +1,4 @@
 import { Button } from './ui/Button'
-import './ui/Button.css'
 import { useUser } from '../contexts/UserContext'
 
 const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face'
