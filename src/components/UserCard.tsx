@@ -34,6 +34,14 @@ export interface UserCardData {
   riskTags: RiskTag[]
   /** High tenure in current role without recent promotion (for Sustained High Performers filter) */
   highTenureNoPromotion?: boolean
+  /** Skill names where this person has a gap (for filtering by skill gap row click) */
+  skillGaps?: string[]
+  /** Skill names where this person has strength (for filtering by skill strength row click) */
+  skillStrengths?: string[]
+  /** Skill interest names (for filtering by skill interests row click) */
+  skillInterests?: string[]
+  /** Years in current role (for Tenure sort) */
+  tenureYears?: number
 }
 
 interface UserCardProps {

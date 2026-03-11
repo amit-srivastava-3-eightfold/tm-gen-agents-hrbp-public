@@ -62,6 +62,229 @@
   margin-bottom: 20px;
 }
 
+/* Roles multiselect (top filter) */
+.skill-analysis__roles-trigger.btn {
+  min-width: 140px;
+  justify-content: space-between;
+  background: #F6F7F8;
+  border-color: transparent;
+  color: #1A212E;
+}
+
+.skill-analysis__roles-trigger.btn:hover {
+  background: #E8EAED;
+}
+
+.skill-analysis__roles-trigger-label {
+  flex: 1;
+  text-align: left;
+}
+
+.skill-analysis__roles-chevron {
+  font-size: 18px !important;
+  color: #4F5666;
+}
+
+.skill-analysis__roles-content {
+  min-width: 220px;
+  max-height: 320px;
+  padding: 0;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.skill-analysis__roles-list {
+  padding: 6px 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.skill-analysis__roles-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  width: 100%;
+  background: none;
+  text-align: left;
+}
+
+.skill-analysis__roles-item:hover,
+.skill-analysis__roles-item[data-highlighted] {
+  background: #F6F7F8;
+}
+
+/* Checkbox box: always visible for every option */
+.skill-analysis__roles-checkbox {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #D9DCE1;
+  border-radius: 4px;
+  background: #FFFFFF;
+}
+
+.skill-analysis__roles-item[data-state="checked"] .skill-analysis__roles-checkbox {
+  background: #146DA6;
+  border-color: #146DA6;
+}
+
+.skill-analysis__roles-indicator {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  color: #FFFFFF;
+}
+
+.skill-analysis__roles-indicator .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* Skills multiselect (top filter) – same as roles + search */
+.skill-analysis__skills-trigger.btn {
+  min-width: 140px;
+  justify-content: space-between;
+  background: #F6F7F8;
+  border-color: transparent;
+  color: #1A212E;
+}
+
+.skill-analysis__skills-trigger.btn:hover {
+  background: #E8EAED;
+}
+
+.skill-analysis__skills-trigger-label {
+  flex: 1;
+  text-align: left;
+}
+
+.skill-analysis__skills-chevron {
+  font-size: 18px !important;
+  color: #4F5666;
+}
+
+.skill-analysis__skills-content {
+  min-width: 220px;
+  max-height: 360px;
+  padding: 0;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-analysis__skills-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #F6F7F8;
+  background: #FFFFFF;
+}
+
+.skill-analysis__skills-search-icon {
+  font-size: 18px !important;
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.skill-analysis__skills-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #D9DCE1;
+  border-radius: 6px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  background: #FFFFFF;
+  outline: none;
+}
+
+.skill-analysis__skills-search-input::placeholder {
+  color: #858B98;
+}
+
+.skill-analysis__skills-search-input:focus {
+  border-color: #146DA6;
+  box-shadow: 0 0 0 2px rgba(20, 109, 166, 0.2);
+}
+
+.skill-analysis__skills-list {
+  padding: 6px 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.skill-analysis__skills-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  width: 100%;
+  background: none;
+  text-align: left;
+}
+
+.skill-analysis__skills-item:hover,
+.skill-analysis__skills-item[data-highlighted] {
+  background: #F6F7F8;
+}
+
+.skill-analysis__skills-checkbox {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #D9DCE1;
+  border-radius: 4px;
+  background: #FFFFFF;
+}
+
+.skill-analysis__skills-item[data-state="checked"] .skill-analysis__skills-checkbox {
+  background: #146DA6;
+  border-color: #146DA6;
+}
+
+.skill-analysis__skills-indicator {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  color: #FFFFFF;
+}
+
+.skill-analysis__skills-indicator .material-symbols-outlined {
+  font-size: 14px;
+}
+
 .skill-analysis__stat-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -185,6 +408,15 @@
   color: #2B715F;
 }
 
+.skill-analysis__filter-tag--interests {
+  background: #E3F2FD;
+  border: 1px solid #BBDEFB;
+}
+
+.skill-analysis__filter-tag--interests .skill-analysis__filter-tag-icon {
+  color: #1976D2;
+}
+
 .skill-analysis__filter-tag-icon {
   font-size: 16px !important;
 }
@@ -225,7 +457,8 @@
 }
 
 .skill-analysis__cards .skill-analysis__card:first-child .skill-analysis__item,
-.skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item {
+.skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item,
+.skill-analysis__cards > .skill-analysis__card:nth-child(3) .skill-analysis__item.skill-analysis__item--interests {
   cursor: pointer;
 }
 
@@ -267,6 +500,32 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Skill gaps and skill strengths cards: fixed height */
+.skill-analysis__cards > .skill-analysis__card:first-child,
+.skill-analysis__cards > .skill-analysis__card:nth-child(2) {
+  height: 300px;
+  box-sizing: border-box;
+}
+
+/* Skill interests: same height as gaps/strengths, list scrolls inside */
+.skill-analysis__card--interests {
+  height: 300px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.skill-analysis__interests-list-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-radius: 8px;
 }
 
 .skill-analysis__card-header {
@@ -338,6 +597,9 @@
   background-color: #E8F5E9;
 }
 
+.skill-analysis__cards > .skill-analysis__card:nth-child(3) .skill-analysis__item.skill-analysis__item--interests:hover::before {
+  background-color: #E3F2FD;
+}
 
 .skill-analysis__item:last-child {
   border-bottom: none;
@@ -481,6 +743,31 @@
 
 .skill-analysis__select-all {
   padding: 0;
+}
+
+.skill-analysis__results-sort {
+  margin-left: auto;
+}
+
+.skill-analysis__sort-select {
+  min-width: 220px;
+}
+
+.skill-analysis__sort-select [data-slot="select-trigger"],
+.skill-analysis__results-sort [data-slot="select-trigger"] {
+  min-width: 220px;
+}
+
+/* Match secondary select styling (same as filter row) */
+.skill-analysis__results-sort [data-slot="select-trigger"][data-variant="secondary"],
+.skill-analysis__results-sort [data-slot="select-trigger"] {
+  background: #F6F7F8;
+  border-color: transparent;
+  color: #1A212E;
+}
+
+.skill-analysis__results-sort [data-slot="select-trigger"]:hover {
+  background: #E8EAED;
 }
 
 /* Open Positions table */
