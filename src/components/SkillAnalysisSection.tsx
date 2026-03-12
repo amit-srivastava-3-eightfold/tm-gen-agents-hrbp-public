@@ -990,7 +990,7 @@ export function SkillAnalysisSection({
                     key={skill.name}
                     role="button"
                     tabIndex={0}
-                    className="skill-analysis__item"
+                    className={`skill-analysis__item${selectedSkillGap === skill.name ? ' skill-analysis__item--selected' : ''}`}
                     onClick={() => {
                       setSelectedSkillGap(skill.name)
                       setSelectedSkillStrength(null)
@@ -1028,7 +1028,7 @@ export function SkillAnalysisSection({
                 {skillStrengths.map((skill) => (
                   <li
                     key={skill.name}
-                    className="skill-analysis__item"
+                    className={`skill-analysis__item${selectedSkillStrength === skill.name ? ' skill-analysis__item--selected' : ''}`}
                   >
                     <div
                       role="button"
@@ -1075,7 +1075,7 @@ export function SkillAnalysisSection({
                       key={skill.name}
                       role="button"
                       tabIndex={0}
-                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      className={`skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests${selectedSkillInterest === skill.name ? ' skill-analysis__item--selected' : ''}`}
                       onClick={() => {
                         setSelectedSkillInterest(skill.name)
                         setSelectedSkillGap(null)
@@ -1152,7 +1152,7 @@ export function SkillAnalysisSection({
                       key={skill.name}
                       role="button"
                       tabIndex={0}
-                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      className={`skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests${selectedSkillStrength === skill.name ? ' skill-analysis__item--selected' : ''}`}
                       onClick={() => {
                         setSelectedSkillStrength(skill.name)
                         setSelectedSkillGap(null)
@@ -1184,7 +1184,7 @@ export function SkillAnalysisSection({
                       key={role}
                       role="button"
                       tabIndex={0}
-                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      className={`skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests${selectedRole === role ? ' skill-analysis__item--selected' : ''}`}
                       onClick={() => {
                         setSelectedRole(role)
                         setSelectedSkillGap(null)

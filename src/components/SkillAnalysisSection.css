@@ -747,6 +747,34 @@
   background-color: #E3F2FD;
 }
 
+/* Selected row state (persists until filter tag is cleared) */
+.skill-analysis__item--selected::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.skill-analysis__item--selected::before {
+  background-color: #F6F7F8;
+}
+
+.skill-analysis__cards > .skill-analysis__card:first-child .skill-analysis__item--selected::before {
+  background-color: #FFEBEE;
+}
+
+.skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item--selected::before {
+  background-color: #E8F5E9;
+}
+
+.skill-analysis__cards > .skill-analysis__card:nth-child(3) .skill-analysis__item--selected::before {
+  background-color: #E3F2FD;
+}
+
 .skill-analysis__card-header--employees .skill-analysis__card-icon {
   color: #4F5666;
 }
