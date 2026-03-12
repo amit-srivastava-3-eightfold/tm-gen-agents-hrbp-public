@@ -400,11 +400,20 @@
 }
 
 .skill-analysis__filter-tag--strengths {
-  background: #E8F5E9;
-  border: 1px solid #C8E6C9;
+  background: #B9F4E4;
+  border: 1px solid #2B715F;
 }
 
 .skill-analysis__filter-tag--strengths .skill-analysis__filter-tag-icon {
+  color: #2B715F;
+}
+
+.skill-analysis__filter-tag--popular {
+  background: #B9F4E4;
+  border: 1px solid #2B715F;
+}
+
+.skill-analysis__filter-tag--popular .skill-analysis__filter-tag-icon {
   color: #2B715F;
 }
 
@@ -415,6 +424,15 @@
 
 .skill-analysis__filter-tag--interests .skill-analysis__filter-tag-icon {
   color: #1976D2;
+}
+
+.skill-analysis__filter-tag--default {
+  background: #F6F7F8;
+  border: 1px solid #E8EAED;
+}
+
+.skill-analysis__filter-tag--default .skill-analysis__filter-tag-icon {
+  color: #4F5666;
 }
 
 .skill-analysis__filter-tag-icon {
@@ -509,7 +527,10 @@
   box-sizing: border-box;
 }
 
-/* Skill interests: same height as gaps/strengths, list scrolls inside */
+/* Employee skills, Popular skills & Roles: same height, list scrolls inside */
+.skill-analysis__card--employees,
+.skill-analysis__card--popular,
+.skill-analysis__card--roles,
 .skill-analysis__card--interests {
   height: 300px;
   box-sizing: border-box;
@@ -526,6 +547,12 @@
   margin: 0 -20px;
   padding: 0 20px;
   border-radius: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.skill-analysis__interests-list-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 .skill-analysis__card-header {
@@ -547,6 +574,18 @@
 
 .skill-analysis__card-icon--green {
   color: #2B715F;
+}
+
+.skill-analysis__card-icon--trophy {
+  color: #B8860B;
+}
+
+.skill-analysis__card-header--popular .skill-analysis__card-icon {
+  color: #B8860B;
+}
+
+.skill-analysis__card-header--roles .skill-analysis__card-icon {
+  color: #4F5666;
 }
 
 .skill-analysis__info-icon {
@@ -590,7 +629,7 @@
 }
 
 .skill-analysis__cards > .skill-analysis__card:first-child .skill-analysis__item:hover::before {
-  background-color: #FFEBEE;
+  background-color: #F6F7F8;
 }
 
 .skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item:hover::before {
@@ -599,6 +638,35 @@
 
 .skill-analysis__cards > .skill-analysis__card:nth-child(3) .skill-analysis__item.skill-analysis__item--interests:hover::before {
   background-color: #E3F2FD;
+}
+
+.skill-analysis__card-header--employees .skill-analysis__card-icon {
+  color: #4F5666;
+}
+
+.skill-analysis__item--employee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.skill-analysis__employee-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.skill-analysis__employee-name {
+  font: var(--typography-body3);
+  color: #1A212E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .skill-analysis__item:last-child {
@@ -650,7 +718,7 @@
   min-width: 28px;
   padding: 4px;
   background: #B9F4E4;
-  border: 1px solid #67C5AC;
+  border: 1px solid #2B715F;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -698,6 +766,128 @@
   min-width: 18px;
   text-align: right;
   line-height: 1;
+}
+
+.skill-analysis__percentage {
+  font: var(--typography-caption);
+  color: #4F5666;
+  line-height: 1;
+}
+
+/* Employee skills: tags above bar, right-aligned; bar 8px high */
+.skill-analysis__item-right--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.skill-analysis__req-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.skill-analysis__req-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font: var(--typography-caption-semibold);
+  color: #1A212E;
+  line-height: 1.25;
+}
+
+.skill-analysis__req-tag .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+.skill-analysis__req-tag--below {
+  background: #FFEBEE;
+  color: #C15151;
+}
+
+.skill-analysis__req-tag--below .material-symbols-outlined {
+  color: #C15151;
+}
+
+.skill-analysis__req-tag--meets {
+  background: #FFF8E1;
+  color: #B8860B;
+}
+
+.skill-analysis__req-tag--meets .material-symbols-outlined {
+  color: #B8860B;
+}
+
+.skill-analysis__req-tag--exceeds {
+  background: #B9F4E4;
+  color: #2B715F;
+}
+
+.skill-analysis__req-tag--exceeds .material-symbols-outlined {
+  color: #2B715F;
+}
+
+.skill-analysis__req-bar {
+  display: flex;
+  width: 220px;
+  min-width: 220px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #F6F7F8;
+}
+
+.skill-analysis__req-seg {
+  min-width: 0;
+  transition: width 0.2s ease;
+}
+
+.skill-analysis__req-seg--below {
+  background: #F5C6CB;
+}
+
+.skill-analysis__req-seg--meets {
+  background: #FFF3CD;
+}
+
+.skill-analysis__req-seg--exceeds {
+  background: #B9F4E4;
+}
+
+.skill-analysis__req-counts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.skill-analysis__req-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--typography-caption-semibold);
+  color: #1A212E;
+  line-height: 1;
+}
+
+.skill-analysis__req-count .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+.skill-analysis__req-count--below .material-symbols-outlined {
+  color: #C15151;
+}
+
+.skill-analysis__req-count--meets .material-symbols-outlined {
+  color: #B8860B;
+}
+
+.skill-analysis__req-count--exceeds .material-symbols-outlined {
+  color: #2B715F;
 }
 
 .skill-analysis__search {

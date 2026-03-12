@@ -1,39 +1,76 @@
 import { useUser } from '../contexts/UserContext'
 import type { UserCardData } from './UserCard'
 import { UserCard } from './UserCard'
-import { MATEO_USER_CARDS, LAURA_USER_CARDS } from '../data/teamData'
+import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
 
 interface UserCardListProps {
+  /** 'direct' = direct reports only; 'all' = all reports in chain (direct + indirect) */
+  reportScope?: 'direct' | 'all'
   sustainedHighPerformersFilter?: boolean
   /** When set, only show direct reports who have this skill gap (from skill card row click) */
   selectedSkillGap?: string | null
   /** When set, only show direct reports who have this skill strength (from skill card row click) */
   selectedSkillStrength?: string | null
-  /** When set, only show direct reports who have this skill interest (from skill interests row click) */
+  /** When set, only show people who have this skill interest (from Skill interests card in Gaps analysis view) */
   selectedSkillInterest?: string | null
+  /** When set, only show people in this role (from Roles card row click) */
+  selectedRole?: string | null
+  /** When set, only show people in any of these roles (from Role checkboxes) */
+  selectedRoles?: string[]
+  /** When set, only show people who have any of these skills (from Skills checkboxes) */
+  selectedSkills?: string[]
+  /** When set, only show people at any of these job levels (from Job level checkboxes) */
+  selectedJobLevels?: string[]
   /** Sort order for the list */
   sortBy?: 'rating-desc' | 'rating-asc' | 'gap-desc' | 'alphabetical' | 'tenure'
 }
 
+function getJobLevelFromTitle(title: string): string {
+  if (!title) return 'Individual contributor'
+  const t = title.toLowerCase()
+  if (t.startsWith('associate')) return 'Associate'
+  if (t.startsWith('senior')) return 'Senior'
+  if (t.startsWith('lead')) return 'Lead'
+  if (t.startsWith('principal')) return 'Principal'
+  return 'Individual contributor'
+}
+
 export function UserCardList({
+  reportScope = 'direct',
   sustainedHighPerformersFilter = false,
   selectedSkillGap = null,
   selectedSkillStrength = null,
   selectedSkillInterest = null,
+  selectedRole = null,
+  selectedRoles = [],
+  selectedSkills = [],
+  selectedJobLevels = [],
   sortBy = 'rating-desc',
 }: UserCardListProps) {
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'laura-shah'
-  let cards: UserCardData[] = isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS
+  const directCards = isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS
+  const allCards = isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS
+  let cards: UserCardData[] = reportScope === 'all' ? allCards : directCards
 
   if (selectedSkillGap) {
     cards = cards.filter((c) => c.skillGaps?.includes(selectedSkillGap))
   }
   if (selectedSkillStrength) {
     cards = cards.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
+  } else if (selectedSkills.length > 0) {
+    cards = cards.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
   }
   if (selectedSkillInterest) {
     cards = cards.filter((c) => c.skillInterests?.includes(selectedSkillInterest))
+  }
+  if (selectedRole) {
+    cards = cards.filter((c) => c.title === selectedRole)
+  } else if (selectedRoles.length > 0) {
+    cards = cards.filter((c) => selectedRoles.includes(c.title))
+  }
+  if (selectedJobLevels.length > 0) {
+    cards = cards.filter((c) => selectedJobLevels.includes(getJobLevelFromTitle(c.title)))
   }
 
   if (isLaura && sustainedHighPerformersFilter) {

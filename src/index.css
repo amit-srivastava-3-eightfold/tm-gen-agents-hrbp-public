@@ -36,6 +36,12 @@ body {
   min-height: 100vh;
 }
 
+/* Edit risk sheet open: put entire app below the sheet overlay so navbar and all content are under it */
+body[data-edit-sheet-open] #root {
+  z-index: 0 !important;
+  position: relative;
+}
+
 /* Radix Tabs active state */
 [data-state="active"] {
   color: #0f172a;

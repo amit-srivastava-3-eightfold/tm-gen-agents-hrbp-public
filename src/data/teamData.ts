@@ -1,10 +1,35 @@
 import type { UserCardData } from '../components/UserCard'
 
+/** Professional headshot URLs (Unsplash, face crop) for ~50% of avatars */
+const AVATAR_PHOTOS = [
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1500689854652-feccdd4d4702?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1531427186611-ecfd6d936cce?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1522556189639-b150ed9c4330?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=96&h=96&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=96&h=96&fit=crop&crop=face',
+]
+
 export const MATEO_USER_CARDS: UserCardData[] = [
   {
     id: '1',
     initials: 'MB',
     avatarColor: '#7B1FA2',
+    avatarPhotoSrc: AVATAR_PHOTOS[0],
     name: 'Maya Baum',
     title: 'Senior Solutions Engineer',
     location: 'Santa Clara, CA',
@@ -24,7 +49,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     riskTags: [
       { label: 'Retention risk', value: 'Medium' },
       { label: 'Loss impact', value: 'Low' },
-      { label: 'Employee criticality', value: 'High', isCritical: true },
+      { label: 'Employee criticality', isEmpty: true },
     ],
     skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling', 'API Integration', 'Enterprise Sales'],
     skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'],
@@ -35,6 +60,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '2',
     initials: 'KŽ',
     avatarColor: '#8D6E63',
+    avatarPhotoSrc: AVATAR_PHOTOS[1],
     name: 'Krešimir Žubrinić',
     title: 'Technical Account Manager',
     location: 'Noida, IN',
@@ -52,7 +78,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     successionPlanning: '2 ready',
     riskTags: [
       { label: 'Retention risk', value: 'Medium' },
-      { label: 'Loss impact', value: 'Medium' },
+      { label: 'Loss impact', isEmpty: true },
       { label: 'Employee criticality', value: 'Low' },
     ],
     skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling', 'CRM Systems', 'API Integration'],
@@ -64,8 +90,9 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '3',
     initials: 'MA',
     avatarColor: '#C62828',
+    avatarPhotoSrc: AVATAR_PHOTOS[2],
     name: 'Michael Alp',
-    title: 'Sales Engineer',
+    title: 'Associate Sales Engineer',
     location: 'Austin, TX',
     directReports: [],
     completionPercent: 50,
@@ -89,8 +116,9 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '4',
     initials: 'JT',
     avatarColor: '#0288D1',
+    avatarPhotoSrc: AVATAR_PHOTOS[3],
     name: 'Jordan Taylor',
-    title: 'Solutions Engineer',
+    title: 'Solutions Engineer II',
     location: 'Denver, CO',
     directReports: [
       { initials: 'NK', color: '#43A047' },
@@ -104,7 +132,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     successionPlanning: '1 ready',
     managerActionsCount: 1,
     riskTags: [
-      { label: 'Retention risk', value: 'Low' },
+      { label: 'Retention risk', isEmpty: true },
       { label: 'Loss impact', value: 'Medium' },
       { label: 'Employee criticality', value: 'Medium' },
     ],
@@ -117,6 +145,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '5',
     initials: 'SW',
     avatarColor: '#7B1FA2',
+    avatarPhotoSrc: AVATAR_PHOTOS[4],
     name: 'Sam Williams',
     title: 'Technical Account Manager',
     location: 'Chicago, IL',
@@ -134,7 +163,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     successionPlanning: 'No plan',
     riskTags: [
       { label: 'Retention risk', value: 'Medium' },
-      { label: 'Loss impact', value: 'Low' },
+      { label: 'Loss impact', isEmpty: true },
       { label: 'Employee criticality', value: 'Low' },
     ],
     skillGaps: ['Value Proposition', 'Product Demos', 'API Integration', 'Contract Negotiation'],
@@ -146,6 +175,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '6',
     initials: 'AC',
     avatarColor: '#2E7D32',
+    avatarPhotoSrc: AVATAR_PHOTOS[5],
     name: 'Alex Chen',
     title: 'Sales Engineer',
     location: 'Seattle, WA',
@@ -162,7 +192,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     riskTags: [
       { label: 'Retention risk', value: 'Low' },
       { label: 'Loss impact', value: 'Low' },
-      { label: 'Employee criticality', value: 'Medium' },
+      { label: 'Employee criticality', isEmpty: true },
     ],
     skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling', 'CRM Systems', 'Enterprise Sales'],
     skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'API Integration', 'Communication'],
@@ -173,6 +203,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     id: '7',
     initials: 'RM',
     avatarColor: '#5D4037',
+    avatarPhotoSrc: AVATAR_PHOTOS[6],
     name: 'Riley Martinez',
     title: 'Senior Solutions Engineer',
     location: 'Boston, MA',
@@ -189,7 +220,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     developmentPlanning: 'All complete',
     successionPlanning: '3 ready',
     riskTags: [
-      { label: 'Retention risk', value: 'Low' },
+      { label: 'Retention risk', isEmpty: true },
       { label: 'Loss impact', value: 'Medium' },
       { label: 'Employee criticality', value: 'High', isCritical: true },
     ],
@@ -215,7 +246,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     riskTags: [
       { label: 'Retention risk', value: 'Medium' },
       { label: 'Loss impact', value: 'Low' },
-      { label: 'Employee criticality', value: 'Low' },
+      { label: 'Employee criticality', isEmpty: true },
     ],
     skillGaps: ['Value Proposition', 'Objection Handling', 'API Integration', 'Technical Sales', 'Enterprise Sales', 'Contract Negotiation'],
     skillStrengths: ['Solution Architecture', 'Product Demos', 'CRM Systems', 'Sales Enablement', 'Technical Discovery', 'Communication'],
@@ -351,7 +382,7 @@ export const MATEO_USER_CARDS: UserCardData[] = [
     successionPlanning: '1 ready',
     riskTags: [
       { label: 'Retention risk', value: 'Low' },
-      { label: 'Loss impact', value: 'Low' },
+      { label: 'Loss impact', isEmpty: true },
       { label: 'Employee criticality', value: 'Medium' },
     ],
     skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling', 'CRM Systems', 'Technical Sales', 'Contract Negotiation'],
@@ -388,12 +419,33 @@ export const MATEO_USER_CARDS: UserCardData[] = [
   },
 ]
 
+/** Team members reporting to direct reports (in Mateo's chain) */
+const MATEO_INDIRECT_REPORTS: UserCardData[] = [
+  { id: '15', initials: 'JD', avatarColor: '#1976D2', avatarPhotoSrc: AVATAR_PHOTOS[7], name: 'Jordan Davis', title: 'Solutions Engineer II', location: 'Santa Clara, CA', directReports: [], completionPercent: 72, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Value Proposition', 'API Integration'], skillStrengths: ['Solution Architecture', 'Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Technical Sales'], tenureYears: 1 },
+  { id: '16', initials: 'SK', avatarColor: '#388E3C', avatarPhotoSrc: AVATAR_PHOTOS[8], name: 'Sam Kim', title: 'Sales Engineer', location: 'Austin, TX', directReports: [], completionPercent: 58, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Product Demos', 'Objection Handling'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Technical Sales'], tenureYears: 2 },
+  { id: '17', initials: 'AL', avatarColor: '#F57C00', avatarPhotoSrc: AVATAR_PHOTOS[9], name: 'Alex Lee', title: 'Technical Account Manager', location: 'Seattle, WA', directReports: [], completionPercent: 81, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solutions Architecture', 'Product Management'], tenureYears: 3 },
+  { id: '18', initials: 'RW', avatarColor: '#5D4037', avatarPhotoSrc: AVATAR_PHOTOS[10], name: 'Riley Wong', title: 'Solutions Engineer', location: 'Denver, CO', directReports: [], completionPercent: 45, careerInterests: 'No roles added', selfAssessment: 'No assessment', managerAssessment: 'More than 12 months', developmentPlanning: '4 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'High' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Value Proposition', 'Product Demos', 'CRM Systems', 'API Integration'], skillStrengths: ['Communication'], skillInterests: ['Technical Sales', 'Cross-Functional Team Leadership'], tenureYears: 1 },
+  { id: '19', initials: 'AB', avatarColor: '#0288D1', avatarPhotoSrc: AVATAR_PHOTOS[11], name: 'Avery Brown', title: 'Sales Engineer', location: 'Noida, IN', directReports: [], completionPercent: 66, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Enterprise Sales'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Data & Analytics'], tenureYears: 2 },
+  { id: '20', initials: 'CD', avatarColor: '#43A047', avatarPhotoSrc: AVATAR_PHOTOS[12], name: 'Casey Diaz', title: 'Principal Solutions Engineer', location: 'Boston, MA', directReports: [], completionPercent: 90, careerInterests: '3 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '3 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Product Demos', 'CRM Systems', 'Technical Sales', 'Communication'], skillInterests: ['Solutions Architecture', 'Pre-Sales Leadership'], tenureYears: 4 },
+  { id: '21', initials: 'EF', avatarColor: '#FB8C00', name: 'Morgan Foster', title: 'Senior Technical Account Manager', location: 'Chicago, IL', directReports: [], completionPercent: 55, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Value Proposition', 'Contract Negotiation'], skillStrengths: ['Technical Discovery', 'API Integration', 'Communication'], skillInterests: ['Customer Success'], tenureYears: 1 },
+  { id: '22', initials: 'NK', avatarColor: '#43A047', avatarPhotoSrc: AVATAR_PHOTOS[13], name: 'Nina Kumar', title: 'Solutions Engineer', location: 'Denver, CO', directReports: [], completionPercent: 78, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Objection Handling'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solutions Architecture', 'Sales Engineering'], tenureYears: 2 },
+  { id: '23', initials: 'PL', avatarColor: '#FB8C00', name: 'Jordan Phillips', title: 'Associate Sales Engineer', location: 'Portland, OR', directReports: [], completionPercent: 62, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Value Proposition', 'Product Demos', 'CRM Systems'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Technical Sales', 'Product Management'], tenureYears: 1 },
+  { id: '24', initials: 'QR', avatarColor: '#1976D2', avatarPhotoSrc: AVATAR_PHOTOS[14], name: 'Quinn Roberts', title: 'Solutions Engineer', location: 'Seattle, WA', directReports: [], completionPercent: 71, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['API Integration', 'Enterprise Sales'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Cloud Architecture'], tenureYears: 2 },
+  { id: '25', initials: 'ST', avatarColor: '#43A047', name: 'Sam Thompson', title: 'Lead Technical Account Manager', location: 'Miami, FL', directReports: [], completionPercent: 88, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Product Demos', 'CRM Systems', 'Technical Sales', 'API Integration', 'Communication'], skillInterests: ['Solutions Architecture', 'Solution Consulting'], tenureYears: 3 },
+  { id: '26', initials: 'UV', avatarColor: '#0288D1', avatarPhotoSrc: AVATAR_PHOTOS[15], name: 'Uma Vasquez', title: 'Sales Engineer', location: 'Dallas, TX', directReports: [], completionPercent: 52, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'More than 12 months', developmentPlanning: '4 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling', 'Technical Sales'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering'], tenureYears: 1 },
+  { id: '27', initials: 'WX', avatarColor: '#43A047', name: 'Jordan Williams', title: 'Lead Solutions Engineer', location: 'Atlanta, GA', directReports: [], completionPercent: 69, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Contract Negotiation'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'CRM Systems', 'Communication'], skillInterests: ['Solutions Architecture', 'Technical Sales'], tenureYears: 2 },
+  { id: '28', initials: 'CC', avatarColor: '#1976D2', name: 'Charlie Chen', title: 'Sales Engineer', location: 'San Diego, CA', directReports: [], completionPercent: 59, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Value Proposition', 'Objection Handling', 'Enterprise Sales'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Technical Sales', 'Customer Success'], tenureYears: 1 },
+]
+
+export const MATEO_ALL_REPORTS_CARDS: UserCardData[] = [...MATEO_USER_CARDS, ...MATEO_INDIRECT_REPORTS]
+
 // Laura Shah (HRBP) supports Sales Engineering, Customer Success, Professional Services
 export const LAURA_USER_CARDS: UserCardData[] = [
   {
     id: 'l1',
     initials: 'MM',
     avatarColor: '#6B7B3C',
+    avatarPhotoSrc: AVATAR_PHOTOS[0],
     name: 'Mateo Myer',
     title: 'Sales Engineering Manager',
     location: 'Santa Clara, CA',
@@ -413,7 +465,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     riskTags: [
       { label: 'Retention risk', value: 'Low' },
       { label: 'Loss impact', value: 'High' },
-      { label: 'Employee criticality', value: 'High', isCritical: true },
+      { label: 'Employee criticality', isEmpty: true },
     ],
     skillGaps: ['Workforce Planning', 'Succession Planning', 'Talent Analytics'],
     skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Data Analytics', 'Stakeholder Management'],
@@ -424,6 +476,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     id: 'l2',
     initials: 'ED',
     avatarColor: '#5C6BC0',
+    avatarPhotoSrc: AVATAR_PHOTOS[1],
     name: 'Ethan Declerq',
     title: 'Director of Customer Success',
     location: 'Los Angeles, CA',
@@ -441,7 +494,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     managerActionsCount: 1,
     riskTags: [
       { label: 'Retention risk', value: 'Medium' },
-      { label: 'Loss impact', value: 'Medium' },
+      { label: 'Loss impact', isEmpty: true },
       { label: 'Employee criticality', value: 'High', isCritical: true },
     ],
     skillGaps: ['Performance Management', 'Succession Planning', 'Labor Law Compliance'],
@@ -453,6 +506,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     id: 'l3',
     initials: 'AP',
     avatarColor: '#7B1FA2',
+    avatarPhotoSrc: AVATAR_PHOTOS[5],
     name: 'Anna Patel',
     title: 'Professional Services Lead',
     location: 'San Francisco, CA',
@@ -467,7 +521,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     developmentPlanning: '3 not started',
     successionPlanning: 'No plan',
     riskTags: [
-      { label: 'Retention risk', value: 'High' },
+      { label: 'Retention risk', isEmpty: true },
       { label: 'Loss impact', value: 'High' },
       { label: 'Employee criticality', value: 'Medium' },
     ],
@@ -481,6 +535,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     id: 'l4',
     initials: 'CW',
     avatarColor: '#2E7D32',
+    avatarPhotoSrc: AVATAR_PHOTOS[2],
     name: 'Cong Wang',
     title: 'Director of Sales Engineering',
     location: 'Santa Clara, CA',
@@ -498,7 +553,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     managerActionsCount: 0,
     riskTags: [
       { label: 'Retention risk', value: 'High' },
-      { label: 'Loss impact', value: 'High' },
+      { label: 'Loss impact', isEmpty: true },
       { label: 'Employee criticality', value: 'High', isCritical: true },
     ],
     highTenureNoPromotion: true,
@@ -511,6 +566,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     id: 'l5',
     initials: 'SC',
     avatarColor: '#5C6BC0',
+    avatarPhotoSrc: AVATAR_PHOTOS[6],
     name: 'Sarah Chen',
     title: 'VP of Customer Success',
     location: 'San Francisco, CA',
@@ -541,6 +597,7 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     id: 'l6',
     initials: 'JK',
     avatarColor: '#A1A6B1',
+    avatarPhotoSrc: AVATAR_PHOTOS[3],
     name: 'James Kim',
     title: 'Sales Engineering Lead',
     location: 'Austin, TX',
@@ -728,3 +785,45 @@ export const LAURA_USER_CARDS: UserCardData[] = [
     tenureYears: 3,
   },
 ]
+
+/** Team members reporting to supported employees (in Laura's chain) */
+const LAURA_INDIRECT_REPORTS: UserCardData[] = [
+  { id: 'l13', initials: 'CS', avatarColor: '#8D6E63', avatarPhotoSrc: AVATAR_PHOTOS[4], name: 'Cameron Shaw', title: 'Sales Engineer', location: 'Santa Clara, CA', directReports: [], completionPercent: 74, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Workforce Planning'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'HR Strategy'], tenureYears: 2 },
+  { id: 'l14', initials: 'PS', avatarColor: '#1976D2', avatarPhotoSrc: AVATAR_PHOTOS[7], name: 'Parker Singh', title: 'Solutions Engineer', location: 'Los Angeles, CA', directReports: [], completionPercent: 61, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Succession Planning', 'Talent Analytics'], skillStrengths: ['Employee Relations', 'Coaching', 'Communication'], skillInterests: ['Talent Acquisition', 'Learning & Development'], tenureYears: 1 },
+  { id: 'l15', initials: 'SM', avatarColor: '#C62828', avatarPhotoSrc: AVATAR_PHOTOS[8], name: 'Sam Morgan', title: 'Customer Success Manager', location: 'San Francisco, CA', directReports: [], completionPercent: 82, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'HR Strategy', 'Employee Experience'], tenureYears: 3 },
+  { id: 'l16', initials: 'VP', avatarColor: '#6B7B3C', avatarPhotoSrc: AVATAR_PHOTOS[9], name: 'Violet Park', title: 'HR Generalist', location: 'Santa Clara, CA', directReports: [], completionPercent: 68, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Labor Law Compliance'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['HR Strategy', 'Compensation & Benefits'], tenureYears: 2 },
+  { id: 'l17', initials: 'RK', avatarColor: '#0288D1', name: 'Riley Kim', title: 'Professional Services Consultant', location: 'San Francisco, CA', directReports: [], completionPercent: 55, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'High' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Performance Management', 'Workforce Planning', 'DEI Initiatives'], skillStrengths: ['Coaching', 'Employee Engagement'], skillInterests: ['Talent Acquisition', 'Organizational Design'], tenureYears: 1 },
+  { id: 'l18', initials: 'TN', avatarColor: '#43A047', name: 'Taylor Nguyen', title: 'Implementation Specialist', location: 'Austin, TX', directReports: [], completionPercent: 77, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Talent Analytics'], skillStrengths: ['Employee Relations', 'Talent Management', 'Data Analytics', 'Stakeholder Management'], skillInterests: ['Learning & Development', 'People Analytics'], tenureYears: 2 },
+  { id: 'l19', initials: 'MW', avatarColor: '#1976D2', avatarPhotoSrc: AVATAR_PHOTOS[10], name: 'Morgan Wright', title: 'Customer Success Manager', location: 'Los Angeles, CA', directReports: [], completionPercent: 70, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Succession Planning'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'Talent Development'], tenureYears: 2 },
+  { id: 'l20', initials: 'JK', avatarColor: '#388E3C', name: 'Jordan Khan', title: 'Account Manager', location: 'Seattle, WA', directReports: [], completionPercent: 64, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Performance Management', 'Workforce Planning'], skillStrengths: ['Employee Relations', 'Coaching', 'Employee Engagement'], skillInterests: ['HR Strategy', 'Diversity & Inclusion'], tenureYears: 1 },
+  { id: 'l21', initials: 'LR', avatarColor: '#F57C00', name: 'Logan Rivera', title: 'Customer Success Specialist', location: 'Denver, CO', directReports: [], completionPercent: 58, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'Last 90 days', developmentPlanning: '4 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['DEI Initiatives', 'Change Management'], skillStrengths: ['Employee Relations', 'Talent Management', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'Compensation Design'], tenureYears: 1 },
+  { id: 'l22', initials: 'ED', avatarColor: '#5C6BC0', avatarPhotoSrc: AVATAR_PHOTOS[1], name: 'Ellis Davis', title: 'Director of Customer Success', location: 'San Francisco, CA', directReports: [], completionPercent: 85, careerInterests: '3 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '3 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Employee Relations', 'Talent Management', 'Performance Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'HR Strategy', 'Organizational Design'], tenureYears: 4 },
+  { id: 'l23', initials: 'JM', avatarColor: '#7E3A77', name: 'Jamie Martinez', title: 'Customer Success Lead', location: 'Boston, MA', directReports: [], completionPercent: 72, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Labor Law Compliance'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Data Analytics', 'Stakeholder Management'], skillInterests: ['Talent Acquisition', 'People Analytics'], tenureYears: 2 },
+  { id: 'l24', initials: 'KR', avatarColor: '#9D6309', name: 'Kai Robinson', title: 'Customer Success Manager', location: 'Chicago, IL', directReports: [], completionPercent: 66, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Talent Analytics'], skillStrengths: ['Employee Relations', 'Coaching', 'Employee Engagement', 'Stakeholder Management'], skillInterests: ['Learning & Development', 'Workforce Strategy'], tenureYears: 2 },
+  { id: 'l25', initials: 'AB', avatarColor: '#0288D1', avatarPhotoSrc: AVATAR_PHOTOS[11], name: 'Avery Brooks', title: 'Sales Engineer', location: 'Austin, TX', directReports: [], completionPercent: 60, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Performance Management', 'Succession Planning'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Leadership Development'], tenureYears: 1 },
+  { id: 'l26', initials: 'CD', avatarColor: '#43A047', name: 'Charlie Diaz', title: 'Solutions Engineer', location: 'Dallas, TX', directReports: [], completionPercent: 78, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Communication'], skillInterests: ['Solutions Architecture', 'HR Strategy'], tenureYears: 3 },
+  { id: 'l27', initials: 'EF', avatarColor: '#FB8C00', name: 'Emerson Foster', title: 'Sales Engineer', location: 'Seattle, WA', directReports: [], completionPercent: 53, careerInterests: 'No roles added', selfAssessment: 'No assessment', managerAssessment: 'More than 12 months', developmentPlanning: '5 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'High' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Value Proposition', 'Product Demos', 'Objection Handling'], skillStrengths: ['Communication'], skillInterests: ['Technical Sales', 'Talent Acquisition'], tenureYears: 1 },
+  { id: 'l28', initials: 'GH', avatarColor: '#5D4037', name: 'Gray Hernandez', title: 'Technical Account Manager', location: 'Phoenix, AZ', directReports: [], completionPercent: 71, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Contract Negotiation'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solutions Architecture', 'Leadership Development'], tenureYears: 2 },
+  { id: 'l29', initials: 'IJ', avatarColor: '#C62828', name: 'Indigo Jones', title: 'Sales Engineer', location: 'Miami, FL', directReports: [], completionPercent: 65, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['CRM Systems', 'API Integration'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Learning & Development'], tenureYears: 1 },
+  { id: 'l30', initials: 'KL', avatarColor: '#0288D1', name: 'Kennedy Lee', title: 'Implementation Consultant', location: 'Chicago, IL', directReports: [], completionPercent: 73, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Succession Planning'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Data Analytics'], skillInterests: ['HR Strategy', 'People Analytics'], tenureYears: 2 },
+  { id: 'l31', initials: 'MN', avatarColor: '#43A047', avatarPhotoSrc: AVATAR_PHOTOS[6], name: 'Morgan Nguyen', title: 'Professional Services Lead', location: 'Minneapolis, MN', directReports: [], completionPercent: 80, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'Organizational Design'], tenureYears: 3 },
+  { id: 'l32', initials: 'OP', avatarColor: '#F57C00', name: 'Oakley Patel', title: 'Solutions Engineer', location: 'Portland, OR', directReports: [], completionPercent: 57, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'More than 12 months', developmentPlanning: '4 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Performance Management', 'Workforce Planning', 'DEI Initiatives'], skillStrengths: ['Coaching', 'Employee Engagement'], skillInterests: ['Talent Acquisition', 'Diversity & Inclusion'], tenureYears: 1 },
+  { id: 'l33', initials: 'QR', avatarColor: '#0288D1', name: 'Quinn Rodriguez', title: 'Sales Engineer', location: 'Denver, CO', directReports: [], completionPercent: 69, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Labor Law Compliance'], skillStrengths: ['Employee Relations', 'Technical Discovery', 'Communication'], skillInterests: ['Leadership Development', 'HR Strategy'], tenureYears: 2 },
+  { id: 'l34', initials: 'ST', avatarColor: '#43A047', name: 'Skyler Thompson', title: 'Technical Account Manager', location: 'Boston, MA', directReports: [], completionPercent: 76, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solutions Architecture', 'Talent Development'], tenureYears: 2 },
+  { id: 'l35', initials: 'UV', avatarColor: '#0288D1', name: 'Uma Vance', title: 'Sales Engineer', location: 'Atlanta, GA', directReports: [], completionPercent: 63, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Talent Analytics'], skillStrengths: ['Employee Relations', 'Coaching', 'Stakeholder Management'], skillInterests: ['People Analytics', 'Workforce Strategy'], tenureYears: 1 },
+  { id: 'l36', initials: 'WX', avatarColor: '#43A047', name: 'Winter Xu', title: 'Solutions Engineer', location: 'San Diego, CA', directReports: [], completionPercent: 74, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Succession Planning'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Leadership Development'], tenureYears: 2 },
+  { id: 'l37', initials: 'YZ', avatarColor: '#FB8C00', name: 'Yael Zhang', title: 'Customer Success Specialist', location: 'Seattle, WA', directReports: [], completionPercent: 67, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['DEI Initiatives'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Employee Engagement'], skillInterests: ['Diversity & Inclusion', 'Employee Experience'], tenureYears: 2 },
+  { id: 'l38', initials: 'AA', avatarColor: '#6B7B3C', name: 'Alex Adams', title: 'HR Coordinator', location: 'New York, NY', directReports: [], completionPercent: 51, careerInterests: 'No roles added', selfAssessment: 'No assessment', managerAssessment: 'More than 12 months', developmentPlanning: '5 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'High' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Performance Management', 'Workforce Planning', 'Labor Law Compliance'], skillStrengths: ['Employee Engagement'], skillInterests: ['Talent Acquisition', 'Compensation & Benefits'], tenureYears: 1 },
+  { id: 'l39', initials: 'BB', avatarColor: '#C62828', name: 'Blake Brown', title: 'Technical Account Manager', location: 'Chicago, IL', directReports: [], completionPercent: 79, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solution Consulting', 'Leadership Development'], tenureYears: 3 },
+  { id: 'l40', initials: 'DD', avatarColor: '#388E3C', name: 'Dakota Davis', title: 'Sales Engineer', location: 'San Diego, CA', directReports: [], completionPercent: 62, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Value Proposition', 'Enterprise Sales'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Technical Sales', 'HR Strategy'], tenureYears: 1 },
+  { id: 'l41', initials: 'EE', avatarColor: '#5C6BC0', avatarPhotoSrc: AVATAR_PHOTOS[13], name: 'Emery Evans', title: 'Customer Success Manager', location: 'Austin, TX', directReports: [], completionPercent: 70, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['Change Management'], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'Talent Acquisition'], tenureYears: 2 },
+  { id: 'l42', initials: 'FF', avatarColor: '#7B1FA2', avatarPhotoSrc: AVATAR_PHOTOS[12], name: 'Finley Fisher', title: 'HR Business Partner', location: 'Boston, MA', directReports: [], completionPercent: 75, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Employee Relations', 'Talent Management', 'Performance Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['HR Strategy', 'Organizational Design'], tenureYears: 3 },
+  { id: 'l43', initials: 'GG', avatarColor: '#2E7D32', name: 'Greer Garcia', title: 'Solutions Engineer', location: 'Miami, FL', directReports: [], completionPercent: 56, careerInterests: 'No roles added', selfAssessment: 'More than 12 months', managerAssessment: 'Last 90 days', developmentPlanning: '4 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Product Demos', 'Objection Handling'], skillStrengths: ['Technical Discovery', 'Communication'], skillInterests: ['Sales Engineering', 'Learning & Development'], tenureYears: 1 },
+  { id: 'l44', initials: 'HH', avatarColor: '#0288D1', name: 'Hayden Hall', title: 'Technical Account Manager', location: 'Dallas, TX', directReports: [], completionPercent: 84, careerInterests: '3 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: 'All complete', successionPlanning: '3 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'High' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Solutions Architecture', 'Leadership Development'], tenureYears: 4 },
+  { id: 'l45', initials: 'II', avatarColor: '#43A047', name: 'Ivy Ingram', title: 'Implementation Specialist', location: 'Portland, OR', directReports: [], completionPercent: 61, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'More than 12 months', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Workforce Planning', 'Succession Planning'], skillStrengths: ['Employee Relations', 'Coaching', 'Data Analytics'], skillInterests: ['People Analytics', 'Workforce Strategy'], tenureYears: 1 },
+  { id: 'l46', initials: 'JJ', avatarColor: '#F57C00', name: 'Jordan James', title: 'Sales Engineer', location: 'Phoenix, AZ', directReports: [], completionPercent: 68, careerInterests: '1 role added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '2 not started', successionPlanning: '1 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Medium' }, { label: 'Employee criticality', value: 'Medium' }], skillGaps: ['API Integration'], skillStrengths: ['Solution Architecture', 'Sales Enablement', 'Technical Discovery', 'Communication'], skillInterests: ['Technical Sales', 'HR Strategy'], tenureYears: 2 },
+  { id: 'l47', initials: 'KK', avatarColor: '#6B7B3C', name: 'Kendall King', title: 'Customer Success Lead', location: 'Denver, CO', directReports: [], completionPercent: 72, careerInterests: '2 roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '1 not started', successionPlanning: '2 ready', riskTags: [{ label: 'Retention risk', value: 'Low' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'High', isCritical: true }], skillGaps: [], skillStrengths: ['Employee Relations', 'Talent Management', 'Coaching', 'Stakeholder Management'], skillInterests: ['Leadership Development', 'Diversity & Inclusion'], tenureYears: 2 },
+  { id: 'l48', initials: 'LL', avatarColor: '#8D6E63', name: 'Logan Lewis', title: 'HR Generalist', location: 'Seattle, WA', directReports: [], completionPercent: 59, careerInterests: 'No roles added', selfAssessment: 'Last 90 days', managerAssessment: 'Last 90 days', developmentPlanning: '3 not started', successionPlanning: 'No plan', riskTags: [{ label: 'Retention risk', value: 'Medium' }, { label: 'Loss impact', value: 'Low' }, { label: 'Employee criticality', value: 'Low' }], skillGaps: ['Labor Law Compliance', 'Talent Analytics'], skillStrengths: ['Employee Relations', 'Coaching', 'Employee Engagement'], skillInterests: ['Compensation & Benefits', 'Talent Acquisition'], tenureYears: 1 },
+]
+
+export const LAURA_ALL_REPORTS_CARDS: UserCardData[] = [...LAURA_USER_CARDS, ...LAURA_INDIRECT_REPORTS]

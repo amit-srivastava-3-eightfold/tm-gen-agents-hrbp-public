@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Tag } from '@tonyh-2-eightfold/ef-design-system'
+import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
+import { EditRiskSheet } from './EditRiskSheet'
 import './UserCard.css'
 
 export interface DirectReport {
@@ -19,6 +22,8 @@ export interface UserCardData {
   id: string
   initials: string
   avatarColor: string
+  /** Optional professional headshot URL; when set, avatar shows photo instead of initials */
+  avatarPhotoSrc?: string
   name: string
   title: string
   location: string
@@ -46,6 +51,25 @@ export interface UserCardData {
 
 interface UserCardProps {
   user: UserCardData
+  onRiskTagsChange?: (userId: string, riskTags: RiskTag[]) => void
+}
+
+const RISK_TAG_LABEL_ORDER = ['Retention risk', 'Loss impact', 'Employee criticality'] as const
+
+function sortRiskTags(tags: RiskTag[]): RiskTag[] {
+  const byLabel = new Map(tags.map((t) => [t.label, t]))
+  const inOrder = RISK_TAG_LABEL_ORDER.map((label) => byLabel.get(label)).filter(Boolean) as RiskTag[]
+  return inOrder.sort((a, b) => {
+    const aSelected = !a.isEmpty && a.value != null
+    const bSelected = !b.isEmpty && b.value != null
+    if (aSelected && !bSelected) return -1
+    if (!aSelected && bSelected) return 1
+    const aHigh = a.value === 'High' || a.isCritical === true
+    const bHigh = b.value === 'High' || b.isCritical === true
+    if (aHigh && !bHigh) return -1
+    if (!aHigh && bHigh) return 1
+    return RISK_TAG_LABEL_ORDER.indexOf(a.label as (typeof RISK_TAG_LABEL_ORDER)[number]) - RISK_TAG_LABEL_ORDER.indexOf(b.label as (typeof RISK_TAG_LABEL_ORDER)[number])
+  })
 }
 
 const METRIC_ITEMS = [
@@ -57,16 +81,27 @@ const METRIC_ITEMS = [
   { key: 'successionPlanning', label: 'Succession planning', getValue: (u: UserCardData) => u.successionPlanning, icon: 'account_tree' },
 ] as const
 
-export function UserCard({ user }: UserCardProps) {
+export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
+  const [editSheetOpen, setEditSheetOpen] = useState(false)
+
+  const handleEditRiskClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditSheetOpen(true)
+  }
+
+  const handleSaveRisk = (riskTags: RiskTag[]) => {
+    onRiskTagsChange?.(user.id, riskTags)
+  }
+
   return (
+    <>
     <Link to={`/people/${user.id}`} className="user-card-link">
     <article className="user-card">
       <div className="user-card__left">
         <div className="user-card__avatar-wrap" onClick={(e) => e.stopPropagation()}>
           <input type="checkbox" className="user-card__checkbox" aria-label={`Select ${user.name}`} />
-          <div className="user-card__avatar" style={{ background: user.avatarColor }}>
-            {user.initials}
-          </div>
+          <Avatar initials={user.initials} avatarColor={user.avatarColor} avatarPhotoSrc={user.avatarPhotoSrc} size="md" className="user-card__avatar" />
         </div>
         <div className="user-card__info">
           <h3 className="user-card__name">{user.name}</h3>
@@ -160,28 +195,39 @@ export function UserCard({ user }: UserCardProps) {
             <p className="user-card__risk-note">High performer with high time in level</p>
           )}
           <div className="user-card__risk-tags">
-            {user.riskTags.map((tag) => (
-              <span
-                key={tag.label}
-                className={`user-card__risk-tag-wrap ${tag.isEmpty ? 'user-card__risk-tag--empty' : ''} ${tag.isCritical ? 'user-card__risk-tag--critical' : ''}`}
-              >
-                <Tag
-                  value={tag.label}
-                  variant={tag.isCritical ? 'selected' : 'default'}
-                  size="sm"
-                  className="user-card__risk-tag"
+            {sortRiskTags(user.riskTags).map((tag) => {
+              const isHigh = tag.value === 'High' || tag.isCritical === true
+              const hasRating = !tag.isEmpty && tag.value != null
+              return (
+                <span
+                  key={tag.label}
+                  className={`user-card__risk-tag-wrap ${tag.isEmpty ? 'user-card__risk-tag--empty' : ''} ${hasRating && !isHigh ? 'user-card__risk-tag--secondary' : ''} ${isHigh ? 'user-card__risk-tag--critical' : ''}`}
                 >
-                  {tag.isEmpty ? tag.label : `${tag.label}: ${tag.value}`}
-                </Tag>
-                <button type="button" className="user-card__risk-tag-pencil" aria-label="Edit">
-                  <span className="material-symbols-outlined">create</span>
-                </button>
-              </span>
-            ))}
+                  <Tag
+                    value={tag.label}
+                    variant={tag.isEmpty ? 'outline' : hasRating ? 'secondary' : 'outline'}
+                    size="24"
+                    className="user-card__risk-tag"
+                  >
+                    {tag.isEmpty ? tag.label : `${tag.label}: ${tag.value}`}
+                  </Tag>
+                  <button type="button" className="user-card__risk-tag-pencil" aria-label="Edit risk profile" onClick={handleEditRiskClick}>
+                    <span className="material-symbols-outlined">create</span>
+                  </button>
+                </span>
+              )
+            })}
           </div>
         </div>
       </div>
     </article>
     </Link>
+    <EditRiskSheet
+      user={editSheetOpen ? user : null}
+      open={editSheetOpen}
+      onClose={() => setEditSheetOpen(false)}
+      onSave={handleSaveRisk}
+    />
+    </>
   )
 }

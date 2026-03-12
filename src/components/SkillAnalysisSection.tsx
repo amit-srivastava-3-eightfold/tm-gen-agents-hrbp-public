@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useUser } from '../contexts/UserContext'
 import { OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
-import { MATEO_USER_CARDS, LAURA_USER_CARDS } from '../data/teamData'
+import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
 import type { PeopleProfileCardData } from './PeopleProfileCard'
 import {
   Select,
@@ -12,6 +12,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@tonyh-2-eightfold/ef-design-system'
+import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
 import { UserCardList } from './UserCardList'
 
@@ -158,9 +159,43 @@ const LAURA_SKILL_INTERESTS = [
   { name: 'Workforce Strategy', count: 4 },
 ]
 
-const MATEO_TAB_COUNTS = { direct: 14, all: 18 }
+const MATEO_TAB_COUNTS = { direct: 14, all: 28 }
 
 const LAURA_TAB_COUNTS = { direct: 12, all: 48 }
+
+/** Role titles that require this skill (for gaps: need to have it). Right-side total = people in these roles. */
+const ROLES_REQUIRING_SKILL_GAP: Record<string, string[]> = {
+  'Value Proposition': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Product Demos': ['Senior Solutions Engineer', 'Sales Engineer', 'Solutions Engineer'],
+  'Objection Handling': ['Technical Account Manager', 'Sales Engineer'],
+  'CRM Systems': ['Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'API Integration': ['Senior Solutions Engineer', 'Solutions Engineer'],
+  'Technical Sales': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer'],
+  'Enterprise Sales': ['Technical Account Manager', 'Sales Engineer'],
+  'Contract Negotiation': ['Technical Account Manager', 'Sales Engineer'],
+  'Performance Management': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director', 'Customer Success Manager'],
+  'Workforce Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director'],
+  'Succession Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer'],
+  'DEI Initiatives': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager'],
+  'Change Management': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director', 'Customer Success Manager'],
+  'Labor Law Compliance': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success'],
+  'Talent Analytics': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success', 'Director of Sales Engineering'],
+  'Employee Engagement': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director'],
+}
+
+/** Role titles that require this strength. Right-side total = people in these roles. */
+const ROLES_REQUIRING_SKILL_STRENGTH: Record<string, string[]> = {
+  'Solution Architecture': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Sales Enablement': ['Senior Solutions Engineer', 'Sales Engineer', 'Solutions Engineer'],
+  'Technical Discovery': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'API Integration': ['Senior Solutions Engineer', 'Solutions Engineer'],
+  'Communication': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Employee Relations': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director', 'Professional Services Lead'],
+  'Talent Management': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director'],
+  'Coaching': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Sales Engineering Lead', 'Implementation Director'],
+  'Data Analytics': ['HRBP Peer', 'VP of Customer Success', 'Director of Sales Engineering', 'Director of Customer Success', 'Implementation Director'],
+  'Stakeholder Management': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director', 'Professional Services Lead'],
+}
 
 /** Unique skill names across gaps, strengths, and interests (for skills filter) */
 const SKILLS_FOR_TEAM: string[] = (() => {
@@ -174,6 +209,19 @@ const SKILLS_FOR_TEAM: string[] = (() => {
   add(LAURA_SKILL_INTERESTS)
   return Array.from(names).sort()
 })()
+
+/** Job levels derived from title (for Job Level filter) */
+const JOB_LEVELS = ['Associate', 'Senior', 'Lead', 'Principal', 'Individual contributor'] as const
+
+function getJobLevelFromTitle(title: string): string {
+  if (!title) return 'Individual contributor'
+  const t = title.toLowerCase()
+  if (t.startsWith('associate')) return 'Associate'
+  if (t.startsWith('senior')) return 'Senior'
+  if (t.startsWith('lead')) return 'Lead'
+  if (t.startsWith('principal')) return 'Principal'
+  return 'Individual contributor'
+}
 
 const MATEO_OPEN_POSITIONS: PositionRow[] = [
   {
@@ -286,6 +334,8 @@ const LAURA_OPEN_POSITIONS: PositionRow[] = [
   },
 ]
 
+type ViewFilterValue = 'gaps' | 'skills-overview' | 'team-statistics' | 'team-insights'
+
 interface SkillAnalysisSectionProps {
   reportScope: 'direct' | 'open' | 'all'
   onReportScopeChange: (scope: 'direct' | 'open' | 'all') => void
@@ -302,34 +352,106 @@ export function SkillAnalysisSection({
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'laura-shah'
 
+  const cardsForScope = scope === 'all'
+    ? (isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS)
+    : (isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS)
+
+  /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill */
   const skillGaps = useMemo(() => {
-    const list = isLaura ? [...LAURA_SKILL_GAPS] : [...MATEO_SKILL_GAPS]
+    const gapNames = isLaura ? LAURA_SKILL_GAPS.map((s) => s.name) : MATEO_SKILL_GAPS.map((s) => s.name)
+    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_GAP[name] ?? []
+    const list = gapNames.map((name) => {
+      const roles = rolesFor(name)
+      const needSkill = roles.length > 0 ? cardsForScope.filter((c) => roles.includes(c.title)) : cardsForScope
+      const total = needSkill.length
+      const current = needSkill.filter((c) => c.skillGaps?.includes(name)).length
+      return { name, current, total }
+    })
     list.sort((a, b) => b.current - a.current)
     return list.slice(0, 5)
-  }, [isLaura])
+  }, [isLaura, cardsForScope])
+
+  /* For Gaps analysis view: strengths with current/total bar (role-based) */
   const skillStrengths = useMemo(() => {
-    const list = isLaura ? [...LAURA_SKILL_STRENGTHS] : [...MATEO_SKILL_STRENGTHS]
-    list.sort((a, b) => b.current - a.current)
-    return list
-  }, [isLaura])
-  const skillInterests = isLaura ? LAURA_SKILL_INTERESTS : MATEO_SKILL_INTERESTS
-  const skillInterestsSortedByCount = useMemo(
-    () => [...skillInterests].sort((a, b) => b.count - a.count),
-    [skillInterests]
-  )
+    const strengthNames = isLaura ? LAURA_SKILL_STRENGTHS.map((s) => s.name) : MATEO_SKILL_STRENGTHS.map((s) => s.name)
+    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_STRENGTH[name] ?? []
+    const list = strengthNames.map((name) => {
+      const roles = rolesFor(name)
+      const needSkill = roles.length > 0 ? cardsForScope.filter((c) => roles.includes(c.title)) : cardsForScope
+      const total = needSkill.length
+      const current = needSkill.filter((c) => c.skillStrengths?.includes(name)).length
+      return { name, current, total }
+    })
+    return list.sort((a, b) => b.current - a.current)
+  }, [isLaura, cardsForScope])
+
+  /* For Gaps analysis view: skill interests with count */
+  const skillInterestsSortedByCount = useMemo(() => {
+    const interestNames = isLaura ? LAURA_SKILL_INTERESTS.map((s) => s.name) : MATEO_SKILL_INTERESTS.map((s) => s.name)
+    const list = interestNames.map((name) => ({
+      name,
+      count: cardsForScope.filter((c) => c.skillInterests?.includes(name)).length,
+    }))
+    return list.sort((a, b) => b.count - a.count)
+  }, [isLaura, cardsForScope])
+
+  /* Popular skills: all skills that anyone possesses, with count; sorted by count desc (list is scrollable) */
+  const popularSkills = useMemo(() => {
+    const nameSet = new Set<string>()
+    for (const c of cardsForScope) {
+      for (const name of c.skillStrengths ?? []) {
+        nameSet.add(name)
+      }
+    }
+    const list = Array.from(nameSet).map((name) => ({
+      name,
+      count: cardsForScope.filter((c) => c.skillStrengths?.includes(name)).length,
+    }))
+    return list.sort((a, b) => b.count - a.count)
+  }, [cardsForScope])
+
+  /* Roles: role title + count + percentage of people in that role */
+  const rolesWithCountAndPct = useMemo(() => {
+    const total = cardsForScope.length
+    const byTitle: Record<string, number> = {}
+    for (const c of cardsForScope) {
+      const t = c.title ?? ''
+      byTitle[t] = (byTitle[t] ?? 0) + 1
+    }
+    return Object.entries(byTitle)
+      .map(([role, count]) => ({ role, count, percentage: total ? Math.round((count / total) * 100) : 0 }))
+      .sort((a, b) => b.count - a.count)
+  }, [cardsForScope])
   const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
   const pipelineLookup = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
   const openPositions = useMemo(
     () => buildPositionsFromOpenRoles(OPEN_ROLES_PEOPLE_CARDS, pipelineLookup),
     [pipelineLookup]
   )
+  const [viewFilter, setViewFilter] = useState<ViewFilterValue>('skills-overview')
   const [selectedSkillGap, setSelectedSkillGap] = useState<string | null>(null)
   const [selectedSkillStrength, setSelectedSkillStrength] = useState<string | null>(null)
   const [selectedSkillInterest, setSelectedSkillInterest] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [selectedJobLevels, setSelectedJobLevels] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'rating-desc' | 'rating-asc' | 'gap-desc' | 'alphabetical' | 'tenure'>('rating-desc')
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [skillsSearch, setSkillsSearch] = useState('')
+
+  const filteredResultsCount = useMemo(() => {
+    let list = cardsForScope
+    if (selectedSkillGap) list = list.filter((c) => c.skillGaps?.includes(selectedSkillGap))
+    if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
+    if (selectedSkillInterest) list = list.filter((c) => c.skillInterests?.includes(selectedSkillInterest))
+    if (selectedRole) list = list.filter((c) => c.title === selectedRole)
+    else if (selectedRoles.length > 0) list = list.filter((c) => selectedRoles.includes(c.title))
+    if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
+    else if (selectedSkills.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
+    if (selectedJobLevels.length > 0) list = list.filter((c) => selectedJobLevels.includes(getJobLevelFromTitle(c.title)))
+    if (isLaura && sustainedHighPerformersFilter) list = list.filter((c) => c.highTenureNoPromotion === true)
+    return list.length
+  }, [cardsForScope, selectedSkillGap, selectedSkillStrength, selectedSkillInterest, selectedRole, selectedRoles, selectedSkills, selectedJobLevels, isLaura, sustainedHighPerformersFilter])
 
   const toggleRole = (role: string, checked: boolean) => {
     setSelectedRoles((prev) => (checked ? [...prev, role] : prev.filter((r) => r !== role)))
@@ -337,6 +459,10 @@ export function SkillAnalysisSection({
 
   const toggleSkill = (skill: string, checked: boolean) => {
     setSelectedSkills((prev) => (checked ? [...prev, skill] : prev.filter((s) => s !== skill)))
+  }
+
+  const toggleJobLevel = (level: string, checked: boolean) => {
+    setSelectedJobLevels((prev) => (checked ? [...prev, level] : prev.filter((l) => l !== level)))
   }
 
   const filteredSkills = useMemo(
@@ -378,14 +504,15 @@ export function SkillAnalysisSection({
 
       {scope !== 'open' && (
       <div className="skill-analysis__filters skill-analysis__filters--top">
-        <Select defaultValue="gaps">
-          <SelectTrigger variant="primary" className="skill-analysis__filter-select">
-            <SelectValue placeholder="View" />
+        <Select value={viewFilter} onValueChange={(v: string) => setViewFilter(v as ViewFilterValue)}>
+          <SelectTrigger variant="default" className="skill-analysis__filter-select">
+            View: <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="gaps">View: Gaps analysis</SelectItem>
-            <SelectItem value="skills-overview">View: Skills overview</SelectItem>
-            <SelectItem value="team-statistics">View: Team statistics</SelectItem>
+            <SelectItem value="gaps">Gaps analysis</SelectItem>
+            <SelectItem value="skills-overview">Skills overview</SelectItem>
+            <SelectItem value="team-statistics">Team statistics</SelectItem>
+            <SelectItem value="team-insights">Team insights</SelectItem>
           </SelectContent>
         </Select>
         <DropdownMenu.Root>
@@ -596,123 +723,225 @@ export function SkillAnalysisSection({
       ) : (
       <>
       <div className="skill-analysis__cards">
-        <div className="skill-analysis__card">
-          <div className="skill-analysis__card-header skill-analysis__card-header--gaps">
-            <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--red">trending_down</span>
-            <span>Skill gaps</span>
-            <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
-          </div>
-          <ul className="skill-analysis__list">
-            {skillGaps.map((skill) => (
-              <li
-                key={skill.name}
-                role="button"
-                tabIndex={0}
-                className="skill-analysis__item"
-                onClick={() => {
-                  setSelectedSkillGap(skill.name)
-                  setSelectedSkillStrength(null)
-                  setSelectedSkillInterest(null)
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillGap(skill.name), setSelectedSkillStrength(null), setSelectedSkillInterest(null))}
-              >
-                <span className="skill-analysis__skill-name">{skill.name}</span>
-                <div className="skill-analysis__item-right">
-                  <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
-                  <div className="skill-analysis__bar-wrap">
-                    <div className="skill-analysis__bar">
-                      <div
-                        className="skill-analysis__bar-fill"
-                        style={{ width: `${skill.total > 0 ? (skill.current / skill.total) * 100 : 0}%` }}
-                      >
-                        {skill.current > 0 && <span className="skill-analysis__bar-value">{skill.current}</span>}
+        {viewFilter === 'gaps' ? (
+          /* Gaps analysis: first view – Skill gaps, Skill strengths, Skill interests */
+          <>
+            <div className="skill-analysis__card">
+              <div className="skill-analysis__card-header skill-analysis__card-header--gaps">
+                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--red">trending_down</span>
+                <span>Skill gaps</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <ul className="skill-analysis__list">
+                {skillGaps.map((skill) => (
+                  <li
+                    key={skill.name}
+                    role="button"
+                    tabIndex={0}
+                    className="skill-analysis__item"
+                    onClick={() => {
+                      setSelectedSkillGap(skill.name)
+                      setSelectedSkillStrength(null)
+                      setSelectedSkillInterest(null)
+                      setSelectedRole(null)
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillGap(skill.name), setSelectedSkillStrength(null), setSelectedSkillInterest(null), setSelectedRole(null))}
+                  >
+                    <span className="skill-analysis__skill-name">{skill.name}</span>
+                    <div className="skill-analysis__item-right">
+                      <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
+                      <div className="skill-analysis__bar-wrap">
+                        <div className="skill-analysis__bar">
+                          <div className="skill-analysis__bar-fill" style={{ width: `${skill.total > 0 ? (skill.current / skill.total) * 100 : 0}%` }}>
+                            {skill.current > 0 && <span className="skill-analysis__bar-value">{skill.current}</span>}
+                          </div>
+                          {skill.current === 0 && <span className="skill-analysis__bar-value skill-analysis__bar-value--empty">{skill.current}</span>}
+                        </div>
+                        <span className="skill-analysis__bar-total">{skill.total}</span>
                       </div>
-                      {skill.current === 0 && (
-                        <span className="skill-analysis__bar-value skill-analysis__bar-value--empty">{skill.current}</span>
-                      )}
                     </div>
-                    <span className="skill-analysis__bar-total">{skill.total}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="skill-analysis__card">
-          <div className="skill-analysis__card-header skill-analysis__card-header--strengths">
-            <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--green">trending_up</span>
-            <span>Skill strengths</span>
-            <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
-          </div>
-          <ul className="skill-analysis__list">
-            {skillStrengths.map((skill) => (
-              <li
-                key={skill.name}
-                role="button"
-                tabIndex={0}
-                className="skill-analysis__item"
-                onClick={() => {
-                  setSelectedSkillStrength(skill.name)
-                  setSelectedSkillGap(null)
-                  setSelectedSkillInterest(null)
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillStrength(skill.name), setSelectedSkillGap(null), setSelectedSkillInterest(null))}
-              >
-                <span className="skill-analysis__skill-name">{skill.name}</span>
-                <div className="skill-analysis__item-right">
-                  <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
-                  <div className="skill-analysis__bar-wrap">
-                    <div className="skill-analysis__bar">
-                      <div
-                        className="skill-analysis__bar-fill"
-                        style={{ width: `${skill.total > 0 ? (skill.current / skill.total) * 100 : 0}%` }}
-                      >
-                        {skill.current > 0 && <span className="skill-analysis__bar-value">{skill.current}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="skill-analysis__card">
+              <div className="skill-analysis__card-header skill-analysis__card-header--strengths">
+                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--green">trending_up</span>
+                <span>Skill strengths</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <ul className="skill-analysis__list">
+                {skillStrengths.map((skill) => (
+                  <li
+                    key={skill.name}
+                    role="button"
+                    tabIndex={0}
+                    className="skill-analysis__item"
+                    onClick={() => {
+                      setSelectedSkillStrength(skill.name)
+                      setSelectedSkillGap(null)
+                      setSelectedSkillInterest(null)
+                      setSelectedRole(null)
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillStrength(skill.name), setSelectedSkillGap(null), setSelectedSkillInterest(null), setSelectedRole(null))}
+                  >
+                    <span className="skill-analysis__skill-name">{skill.name}</span>
+                    <div className="skill-analysis__item-right">
+                      <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
+                      <div className="skill-analysis__bar-wrap">
+                        <div className="skill-analysis__bar">
+                          <div className="skill-analysis__bar-fill" style={{ width: `${skill.total > 0 ? (skill.current / skill.total) * 100 : 0}%` }}>
+                            {skill.current > 0 && <span className="skill-analysis__bar-value">{skill.current}</span>}
+                          </div>
+                          {skill.current === 0 && <span className="skill-analysis__bar-value skill-analysis__bar-value--empty">{skill.current}</span>}
+                        </div>
+                        <span className="skill-analysis__bar-total">{skill.total}</span>
                       </div>
-                      {skill.current === 0 && (
-                        <span className="skill-analysis__bar-value skill-analysis__bar-value--empty">{skill.current}</span>
-                      )}
                     </div>
-                    <span className="skill-analysis__bar-total">{skill.total}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="skill-analysis__card skill-analysis__card--interests">
-          <div className="skill-analysis__card-header skill-analysis__card-header--interests">
-            <span className="material-symbols-outlined skill-analysis__card-icon">settings</span>
-            <span>Skill interests</span>
-            <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
-          </div>
-          <div className="skill-analysis__interests-list-wrap">
-            <ul className="skill-analysis__list">
-            {skillInterestsSortedByCount.map((skill) => (
-              <li
-                key={skill.name}
-                role="button"
-                tabIndex={0}
-                className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
-                onClick={() => {
-                  setSelectedSkillInterest(skill.name)
-                  setSelectedSkillGap(null)
-                  setSelectedSkillStrength(null)
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillInterest(skill.name), setSelectedSkillGap(null), setSelectedSkillStrength(null))}
-              >
-                <span className="skill-analysis__skill-name">{skill.name}</span>
-                <div className="skill-analysis__item-right">
-                  <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
-                  <span className="skill-analysis__count">{skill.count}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-          </div>
-        </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="skill-analysis__card skill-analysis__card--interests">
+              <div className="skill-analysis__card-header skill-analysis__card-header--interests">
+                <span className="material-symbols-outlined skill-analysis__card-icon">settings</span>
+                <span>Skill interests</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
+                  {skillInterestsSortedByCount.map((skill) => (
+                    <li
+                      key={skill.name}
+                      role="button"
+                      tabIndex={0}
+                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      onClick={() => {
+                        setSelectedSkillInterest(skill.name)
+                        setSelectedSkillGap(null)
+                        setSelectedSkillStrength(null)
+                        setSelectedRole(null)
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillInterest(skill.name), setSelectedSkillGap(null), setSelectedSkillStrength(null), setSelectedRole(null))}
+                    >
+                      <span className="skill-analysis__skill-name">{skill.name}</span>
+                      <div className="skill-analysis__item-right">
+                        <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
+                        <span className="skill-analysis__count">{skill.count}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Skills overview / Team statistics / Team insights: Employee skills, Popular skills, Roles */
+          <>
+            <div className="skill-analysis__card skill-analysis__card--employees">
+              <div className="skill-analysis__card-header skill-analysis__card-header--employees">
+                <span className="material-symbols-outlined skill-analysis__card-icon">person</span>
+                <span>Employee skills</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
+                  {cardsForScope.map((person) => {
+                    const below = person.skillGaps?.length ?? 0
+                    const exceeds = person.skillStrengths?.length ?? 0
+                    const total = 18
+                    const meets = Math.max(0, total - below - exceeds)
+                    return (
+                      <li key={person.id} className="skill-analysis__item skill-analysis__item--employee">
+                        <div className="skill-analysis__employee-info">
+                          <Avatar initials={person.initials ?? '?'} avatarColor={person.avatarColor ?? '#D9DCE1'} avatarPhotoSrc={person.avatarPhotoSrc} size="sm" />
+                          <span className="skill-analysis__employee-name">{person.name ?? ''}</span>
+                        </div>
+                        <div className="skill-analysis__item-right skill-analysis__item-right--stacked">
+                          <div className="skill-analysis__req-tags">
+                            <span className="skill-analysis__req-tag skill-analysis__req-tag--below"><span className="material-symbols-outlined">trending_down</span>{below}</span>
+                            <span className="skill-analysis__req-tag skill-analysis__req-tag--meets"><span className="material-symbols-outlined">check</span>{meets}</span>
+                            <span className="skill-analysis__req-tag skill-analysis__req-tag--exceeds"><span className="material-symbols-outlined">trending_up</span>{exceeds}</span>
+                          </div>
+                          <div className="skill-analysis__req-bar">
+                            <div className="skill-analysis__req-seg skill-analysis__req-seg--below" style={{ width: `${total ? (below / total) * 100 : 0}%` }} />
+                            <div className="skill-analysis__req-seg skill-analysis__req-seg--meets" style={{ width: `${total ? (meets / total) * 100 : 0}%` }} />
+                            <div className="skill-analysis__req-seg skill-analysis__req-seg--exceeds" style={{ width: `${total ? (exceeds / total) * 100 : 0}%` }} />
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </div>
+            <div className="skill-analysis__card skill-analysis__card--popular">
+              <div className="skill-analysis__card-header skill-analysis__card-header--popular">
+                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--trophy">emoji_events</span>
+                <span>Popular skills</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
+                  {popularSkills.map((skill) => (
+                    <li
+                      key={skill.name}
+                      role="button"
+                      tabIndex={0}
+                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      onClick={() => {
+                        setSelectedSkillStrength(skill.name)
+                        setSelectedSkillGap(null)
+                        setSelectedSkillInterest(null)
+                        setSelectedRole(null)
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillStrength(skill.name), setSelectedSkillGap(null), setSelectedSkillInterest(null), setSelectedRole(null))}
+                    >
+                      <span className="skill-analysis__skill-name">{skill.name}</span>
+                      <div className="skill-analysis__item-right">
+                        <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
+                        <span className="skill-analysis__count">{skill.count}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="skill-analysis__card skill-analysis__card--roles">
+              <div className="skill-analysis__card-header skill-analysis__card-header--roles">
+                <span className="material-symbols-outlined skill-analysis__card-icon">work</span>
+                <span>Roles</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+              </div>
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
+                  {rolesWithCountAndPct.map(({ role, count, percentage }) => (
+                    <li
+                      key={role}
+                      role="button"
+                      tabIndex={0}
+                      className="skill-analysis__item skill-analysis__item--no-input skill-analysis__item--interests"
+                      onClick={() => {
+                        setSelectedRole(role)
+                        setSelectedSkillGap(null)
+                        setSelectedSkillStrength(null)
+                        setSelectedSkillInterest(null)
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && (setSelectedRole(role), setSelectedSkillGap(null), setSelectedSkillStrength(null), setSelectedSkillInterest(null))}
+                    >
+                      <span className="skill-analysis__skill-name">{role}</span>
+                      <div className="skill-analysis__item-right">
+                        <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
+                        <span className="skill-analysis__count">{count}</span>
+                        <span className="skill-analysis__percentage">({percentage}%)</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {isLaura && (
@@ -782,9 +1011,9 @@ export function SkillAnalysisSection({
         )}
         {selectedSkillStrength && (
           <span className="skill-analysis__filter-tag-wrap">
-            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--strengths">
-              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">trending_up</span>
-              <span className="skill-analysis__filter-tag-label">Skill strengths</span>
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--popular">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">emoji_events</span>
+              <span className="skill-analysis__filter-tag-label">Popular skills</span>
               <span className="skill-analysis__filter-tag-sep">&gt;</span>
               <span className="skill-analysis__filter-tag-value">{selectedSkillStrength}</span>
               <button
@@ -822,32 +1051,206 @@ export function SkillAnalysisSection({
             </Button>
           </span>
         )}
-        {!(selectedSkillGap || selectedSkillStrength || selectedSkillInterest) && (
+        {selectedRole && (
+          <span className="skill-analysis__filter-tag-wrap">
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--default">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">work</span>
+              <span className="skill-analysis__filter-tag-label">Roles</span>
+              <span className="skill-analysis__filter-tag-sep">&gt;</span>
+              <span className="skill-analysis__filter-tag-value">{selectedRole}</span>
+              <button
+                type="button"
+                className="skill-analysis__filter-tag-remove"
+                onClick={() => setSelectedRole(null)}
+                aria-label={`Remove ${selectedRole} filter`}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </span>
+            <Button variant="secondary" size="icon-sm" className="skill-analysis__filter-tag-more" aria-label="More options">
+              <span className="material-symbols-outlined">more_vert</span>
+            </Button>
+          </span>
+        )}
+        {selectedJobLevels.length > 0 && (
+          <span className="skill-analysis__filter-tag-wrap">
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--default">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">badge</span>
+              <span className="skill-analysis__filter-tag-label">Job level</span>
+              <span className="skill-analysis__filter-tag-sep">&gt;</span>
+              <span className="skill-analysis__filter-tag-value">{selectedJobLevels.join(', ')}</span>
+              <button
+                type="button"
+                className="skill-analysis__filter-tag-remove"
+                onClick={() => setSelectedJobLevels([])}
+                aria-label="Clear job level filter"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </span>
+          </span>
+        )}
+        {!(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole) && (
           <>
-            <Select defaultValue="role">
-              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="role">Role</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="skills">
-              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
-                <SelectValue placeholder="Skills" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="skills">Skills</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="job-level">
-              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
-                <SelectValue placeholder="Job Level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="job-level">Job Level</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <Button
+                  variant="secondary"
+                  className="skill-analysis__filter-select skill-analysis__roles-trigger"
+                  aria-label="Role filter"
+                >
+                  <span className="skill-analysis__roles-trigger-label">
+                    {selectedRoles.length === 0 ? 'Role' : `${selectedRoles.length} role${selectedRoles.length === 1 ? '' : 's'} selected`}
+                  </span>
+                  <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                  <div className="skill-analysis__roles-list">
+                    <DropdownMenu.CheckboxItem
+                      className="skill-analysis__roles-item"
+                      checked={selectedRoles.length === 0}
+                      onCheckedChange={(checked) => checked && setSelectedRoles([])}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <span className="skill-analysis__roles-checkbox" aria-hidden>
+                        <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
+                          <span className="material-symbols-outlined">check</span>
+                        </DropdownMenu.ItemIndicator>
+                      </span>
+                      All roles
+                    </DropdownMenu.CheckboxItem>
+                    {ROLES_FOR_TEAM.map((role) => (
+                      <DropdownMenu.CheckboxItem
+                        key={role}
+                        className="skill-analysis__roles-item"
+                        checked={selectedRoles.includes(role)}
+                        onCheckedChange={(checked) => toggleRole(role, checked === true)}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <span className="skill-analysis__roles-checkbox" aria-hidden>
+                          <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
+                            <span className="material-symbols-outlined">check</span>
+                          </DropdownMenu.ItemIndicator>
+                        </span>
+                        {role}
+                      </DropdownMenu.CheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+            <DropdownMenu.Root onOpenChange={(open) => !open && setSkillsSearch('')}>
+              <DropdownMenu.Trigger asChild>
+                <Button
+                  variant="secondary"
+                  className="skill-analysis__filter-select skill-analysis__skills-trigger"
+                  aria-label="Skills filter"
+                >
+                  <span className="skill-analysis__skills-trigger-label">
+                    {selectedSkills.length === 0 ? 'Skills' : `${selectedSkills.length} skill${selectedSkills.length === 1 ? '' : 's'} selected`}
+                  </span>
+                  <span className="material-symbols-outlined skill-analysis__skills-chevron">expand_more</span>
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="skill-analysis__skills-content" align="start" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
+                  <div className="skill-analysis__skills-search-wrap">
+                    <span className="material-symbols-outlined skill-analysis__skills-search-icon">search</span>
+                    <input
+                      type="search"
+                      placeholder="Search skills"
+                      className="skill-analysis__skills-search-input"
+                      value={skillsSearch}
+                      onChange={(e) => setSkillsSearch(e.target.value)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <div className="skill-analysis__skills-list">
+                    <DropdownMenu.CheckboxItem
+                      className="skill-analysis__skills-item"
+                      checked={selectedSkills.length === 0}
+                      onCheckedChange={(checked) => checked && setSelectedSkills([])}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <span className="skill-analysis__skills-checkbox" aria-hidden>
+                        <DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator">
+                          <span className="material-symbols-outlined">check</span>
+                        </DropdownMenu.ItemIndicator>
+                      </span>
+                      All skills
+                    </DropdownMenu.CheckboxItem>
+                    {filteredSkills.map((skill) => (
+                      <DropdownMenu.CheckboxItem
+                        key={skill}
+                        className="skill-analysis__skills-item"
+                        checked={selectedSkills.includes(skill)}
+                        onCheckedChange={(checked) => toggleSkill(skill, checked === true)}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <span className="skill-analysis__skills-checkbox" aria-hidden>
+                          <DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator">
+                            <span className="material-symbols-outlined">check</span>
+                          </DropdownMenu.ItemIndicator>
+                        </span>
+                        {skill}
+                      </DropdownMenu.CheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <Button
+                  variant="secondary"
+                  className="skill-analysis__filter-select skill-analysis__roles-trigger"
+                  aria-label="Job level filter"
+                >
+                  <span className="skill-analysis__roles-trigger-label">
+                    {selectedJobLevels.length === 0 ? 'Job level' : `${selectedJobLevels.length} level${selectedJobLevels.length === 1 ? '' : 's'} selected`}
+                  </span>
+                  <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                  <div className="skill-analysis__roles-list">
+                    <DropdownMenu.CheckboxItem
+                      className="skill-analysis__roles-item"
+                      checked={selectedJobLevels.length === 0}
+                      onCheckedChange={(checked) => checked && setSelectedJobLevels([])}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <span className="skill-analysis__roles-checkbox" aria-hidden>
+                        <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
+                          <span className="material-symbols-outlined">check</span>
+                        </DropdownMenu.ItemIndicator>
+                      </span>
+                      All levels
+                    </DropdownMenu.CheckboxItem>
+                    {JOB_LEVELS.map((level) => (
+                      <DropdownMenu.CheckboxItem
+                        key={level}
+                        className="skill-analysis__roles-item"
+                        checked={selectedJobLevels.includes(level)}
+                        onCheckedChange={(checked) => toggleJobLevel(level, checked === true)}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <span className="skill-analysis__roles-checkbox" aria-hidden>
+                          <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
+                            <span className="material-symbols-outlined">check</span>
+                          </DropdownMenu.ItemIndicator>
+                        </span>
+                        {level}
+                      </DropdownMenu.CheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
             <Select defaultValue="dev-plan">
               <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
                 <SelectValue placeholder="Development Plan Status" />
@@ -862,7 +1265,7 @@ export function SkillAnalysisSection({
             </div>
           </>
         )}
-        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest) && (
+        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedJobLevels.length > 0) && (
           <Button
             className="skill-analysis__assign-btn"
             variant="outline"
@@ -874,10 +1277,12 @@ export function SkillAnalysisSection({
       </div>
 
       <div className="skill-analysis__results">
-        <span className="skill-analysis__results-text">Showing {tabCounts.all} results</span>
+        <span className="skill-analysis__results-text">
+          Showing {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedJobLevels.length > 0 || sustainedHighPerformersFilter) ? filteredResultsCount : (scope === 'all' ? tabCounts.all : tabCounts.direct)} results
+        </span>
         <Button variant="secondary" size="sm" className="skill-analysis__select-all">Select all on this page</Button>
         <div className="skill-analysis__results-sort">
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <Select value={sortBy} onValueChange={(v: string) => setSortBy(v as typeof sortBy)}>
             <SelectTrigger variant="secondary" className="skill-analysis__sort-select">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
@@ -892,10 +1297,15 @@ export function SkillAnalysisSection({
         </div>
       </div>
       <UserCardList
+        reportScope={scope}
         sustainedHighPerformersFilter={sustainedHighPerformersFilter}
         selectedSkillGap={selectedSkillGap}
         selectedSkillStrength={selectedSkillStrength}
         selectedSkillInterest={selectedSkillInterest}
+        selectedRole={selectedRole}
+        selectedRoles={selectedRoles}
+        selectedSkills={selectedSkills}
+        selectedJobLevels={selectedJobLevels}
         sortBy={sortBy}
       />
       </>

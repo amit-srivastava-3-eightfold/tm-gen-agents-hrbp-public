@@ -354,11 +354,21 @@
 }
 
 .user-card__risk-tag-wrap.user-card__risk-tag--empty {
-  background: #EDEEF0;
+  background: transparent;
+  border: 1px solid #D9DCE1;
 }
 
 .user-card__risk-tag-wrap.user-card__risk-tag--empty .user-card__risk-tag.tag {
   color: #69717F;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--secondary {
+  background: #F6F7F8;
+}
+
+.user-card__risk-tag-wrap.user-card__risk-tag--secondary .user-card__risk-tag.tag {
+  background: transparent;
+  color: #1A212E;
 }
 
 .user-card__risk-tag-wrap.user-card__risk-tag--critical {
