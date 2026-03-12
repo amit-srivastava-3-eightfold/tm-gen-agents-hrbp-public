@@ -121,7 +121,7 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
               <button type="button" className="user-card__icon-btn" aria-label="Career navigator">
                 <span className="material-symbols-outlined">route</span>
               </button>
-              <button type="button" className="user-card__icon-btn" aria-label="Org chart">
+              <button type="button" className="user-card__icon-btn" aria-label="Org chart" hidden>
                 <span className="material-symbols-outlined">account_tree</span>
               </button>
               <button type="button" className="user-card__icon-btn" aria-label="More options">

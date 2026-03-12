@@ -369,6 +369,93 @@
   color: #146DA6;
 }
 
+/* Team statistics view: horizontal filter cards (All reports, Pending onboarding, etc.) */
+.skill-analysis__view-stat-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.skill-analysis__view-stat-card {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.skill-analysis__view-stat-card:hover {
+  border-color: #146DA6;
+}
+
+.skill-analysis__view-stat-card--active {
+  background: #F0F9FC;
+  border-color: #146DA6;
+}
+
+.skill-analysis__view-stat-label {
+  font: var(--typography-caption-medium);
+  color: #1A212E;
+  line-height: 1.33;
+}
+
+.skill-analysis__view-stat-value {
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.skill-analysis__view-stat-card--active .skill-analysis__view-stat-value {
+  color: #146DA6;
+}
+
+/* Team statistics: stat bar when a filter card is selected */
+.skill-analysis__stat-bar-view {
+  width: 100%;
+}
+
+.skill-analysis__stat-bar-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.skill-analysis__stat-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.skill-analysis__stat-bar-title {
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.skill-analysis__stat-bar-meta {
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.skill-analysis__stat-bar-track {
+  height: 12px;
+  background: #E2E8F0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.skill-analysis__stat-bar-fill {
+  height: 100%;
+  background: #146DA6;
+  border-radius: 6px;
+  transition: width 0.2s;
+}
+
 .skill-analysis__filters--bottom {
   margin-top: 20px;
   margin-bottom: 16px;
@@ -652,6 +739,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  cursor: pointer;
+}
+
+.skill-analysis__item--employee:hover {
+  background: #F6F7F8;
 }
 
 .skill-analysis__employee-info {

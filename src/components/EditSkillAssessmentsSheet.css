@@ -1,0 +1,249 @@
+.edit-skill-assessments__root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.edit-skill-assessments__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 0;
+}
+
+.edit-skill-assessments__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 720px;
+  background: #ffffff;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-family);
+}
+
+.edit-skill-assessments__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #d9dce1;
+  flex-shrink: 0;
+}
+
+.edit-skill-assessments__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-skill-assessments__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.edit-skill-assessments__profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edit-skill-assessments__name {
+  font: var(--typography-header6);
+  color: #1a212e;
+}
+
+.edit-skill-assessments__title {
+  font: var(--typography-caption-medium);
+  color: #4f5666;
+}
+
+.edit-skill-assessments__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-skill-assessments__view-profile {
+  font: var(--typography-body3);
+  color: #146da6;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.edit-skill-assessments__view-profile:hover {
+  background: #f6f7f8;
+  color: #0d5a8c;
+}
+
+.edit-skill-assessments__icon-btn {
+  padding: 8px;
+  border: none;
+  background: none;
+  color: #4f5666;
+  cursor: pointer;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-skill-assessments__icon-btn:hover {
+  background: #f6f7f8;
+  color: #1a212e;
+}
+
+.edit-skill-assessments__icon-btn .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.edit-skill-assessments__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.edit-skill-assessments__heading {
+  margin: 0 0 20px;
+  font: var(--typography-header5);
+  color: #1a212e;
+}
+
+.edit-skill-assessments__tabs.tabs-with-lines {
+  margin-bottom: 24px;
+}
+
+.edit-skill-assessments__tab-content {
+  outline: none;
+}
+
+.edit-skill-assessments__skill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-skill-assessments__skill-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-skill-assessments__skill-chip {
+  flex-shrink: 0;
+  min-width: 120px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #f6f7f8;
+  font: var(--typography-body3);
+  color: #1a212e;
+}
+
+.edit-skill-assessments__slider-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 280px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Fixed height so the bar (only) center-aligns with the skill chip; label stays below */
+.edit-skill-assessments__bar-container {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.edit-skill-assessments__slider {
+  width: 100%;
+  height: 8px;
+  accent-color: #146da6;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.edit-skill-assessments__slider::-webkit-slider-runnable-track {
+  height: 8px;
+  background: linear-gradient(to right, #146da6 0%, #146da6 var(--slider-pct, 0%), #e2e8f0 var(--slider-pct, 0%));
+  border-radius: 4px;
+}
+
+.edit-skill-assessments__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #146da6;
+  cursor: pointer;
+  margin-top: -6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.edit-skill-assessments__slider::-moz-range-track {
+  height: 8px;
+  background: linear-gradient(to right, #146da6 0%, #146da6 var(--slider-pct, 0%), #e2e8f0 var(--slider-pct, 0%));
+  border-radius: 4px;
+}
+
+.edit-skill-assessments__slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #146da6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.edit-skill-assessments__proficiency-value {
+  font: var(--typography-caption-medium);
+  color: #4f5666;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.edit-skill-assessments__options-btn {
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
+  background: none;
+  color: #4f5666;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.edit-skill-assessments__options-btn:hover {
+  background: #f6f7f8;
+  color: #1a212e;
+}
+
+.edit-skill-assessments__options-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.edit-skill-assessments__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #d9dce1;
+  flex-shrink: 0;
+}

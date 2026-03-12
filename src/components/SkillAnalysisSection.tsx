@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useUser } from '../contexts/UserContext'
@@ -14,8 +14,9 @@ import {
 } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
-import type { RiskTag } from './UserCard'
+import type { RiskTag, UserCardData } from './UserCard'
 import { UserCardList } from './UserCardList'
+import { EditSkillAssessmentsSheet } from './EditSkillAssessmentsSheet'
 
 /** Unique role titles across the team (from team data) */
 const ROLES_FOR_TEAM: string[] = (() => {
@@ -249,6 +250,46 @@ const ROLES_REQUIRING_SKILL_STRENGTH: Record<string, string[]> = {
   'Succession Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer'],
 }
 
+/** Skills required for a given role title (from gap + strength role mappings) */
+function getRequiredSkillsForTitle(title: string): string[] {
+  const set = new Set<string>()
+  for (const [skill, roles] of Object.entries(ROLES_REQUIRING_SKILL_GAP)) {
+    if (roles.includes(title)) set.add(skill)
+  }
+  for (const [skill, roles] of Object.entries(ROLES_REQUIRING_SKILL_STRENGTH)) {
+    if (roles.includes(title)) set.add(skill)
+  }
+  return Array.from(set).sort()
+}
+
+/** Default proficiency when no saved value: gap = 1.5, strength = 4.2, else 3.5 (matches sheet) */
+function getDefaultProficiencyForSkill(skillName: string, user: UserCardData): number {
+  if (user.skillGaps?.includes(skillName)) return 1.5
+  if (user.skillStrengths?.includes(skillName)) return 4.2
+  return 3.5
+}
+
+/** Below/meets/exceeds counts for required-by-role skills; uses saved proficiencies when present */
+function getEmployeeSkillCounts(
+  person: UserCardData,
+  savedProficiencies: Record<string, Record<string, number>> | undefined
+): { below: number; meets: number; exceeds: number; total: number } {
+  const required = getRequiredSkillsForTitle(person.title)
+  const total = required.length
+  if (total === 0) return { below: 0, meets: 0, exceeds: 0, total: 0 }
+  let below = 0
+  let meets = 0
+  let exceeds = 0
+  const byUser = savedProficiencies?.[person.id]
+  for (const skillName of required) {
+    const p = byUser?.[skillName] ?? getDefaultProficiencyForSkill(skillName, person)
+    if (p < 2.5) below += 1
+    else if (p > 3.5) exceeds += 1
+    else meets += 1
+  }
+  return { below, meets, exceeds, total }
+}
+
 /** Unique skill names across gaps, strengths, and interests (for skills filter) */
 const SKILLS_FOR_TEAM: string[] = (() => {
   const names = new Set<string>()
@@ -388,9 +429,20 @@ const LAURA_OPEN_POSITIONS: PositionRow[] = [
 
 type ViewFilterValue = 'gaps' | 'skills-overview' | 'team-statistics' | 'team-insights'
 
+/** Team statistics view: stat card ids and labels; counts/computed from cardsForScope */
+const TEAM_STAT_CARD_DEFS = [
+  { id: 'all', label: 'All reports' },
+  { id: 'pending-onboarding', label: 'Pending onboarding' },
+  { id: 'without-role-interests', label: 'Without role interests' },
+  { id: 'missing-retention-risks', label: 'Missing retention risks' },
+  { id: 'missing-loss-impact', label: 'Missing loss impact' },
+  { id: 'without-self-assessments', label: 'Without self assessments' },
+  { id: 'without-development-plans', label: 'Without development plans' },
+] as const
+
 interface SkillAnalysisSectionProps {
-  reportScope: 'direct' | 'open' | 'all'
-  onReportScopeChange: (scope: 'direct' | 'open' | 'all') => void
+  reportScope: 'direct' | 'all'
+  onReportScopeChange: (scope: 'direct' | 'all') => void
   sustainedHighPerformersFilter?: boolean
   onSustainedHighPerformersClick?: () => void
 }
@@ -419,8 +471,22 @@ export function SkillAnalysisSection({
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [selectedRolesPeople, setSelectedRolesPeople] = useState<string[]>([])
   const [selectedSkillsPeople, setSelectedSkillsPeople] = useState<string[]>([])
+  const [selectedTenure, setSelectedTenure] = useState<string>('')
+  const [selectedRetentionRisk, setSelectedRetentionRisk] = useState<string>('')
+  const [selectedLossImpact, setSelectedLossImpact] = useState<string>('')
+  const [selectedDevPlanStatus, setSelectedDevPlanStatus] = useState<string>('')
   const [skillsSearch, setSkillsSearch] = useState('')
   const [riskTagOverrides, setRiskTagOverrides] = useState<Record<string, RiskTag[]>>({})
+  const [skillAssessmentPerson, setSkillAssessmentPerson] = useState<UserCardData | null>(null)
+  /** Saved skill proficiencies per user (userId -> skillName -> value); used by sheet and Employee skills card */
+  const [skillProficiencies, setSkillProficiencies] = useState<Record<string, Record<string, number>>>({})
+  /** When in Team statistics view, which filter card is selected (replaces skill cards with stat bar) */
+  const [selectedStatCard, setSelectedStatCard] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (viewFilter === 'team-statistics') setSelectedStatCard('all')
+    else setSelectedStatCard(null)
+  }, [viewFilter])
 
   /* Top bar Role/Skills filter the skill cards only (not the people list). Scope the pool for card data. */
   const cardsForCards = useMemo(() => {
@@ -428,7 +494,7 @@ export function SkillAnalysisSection({
     if (selectedRoles.length > 0) list = list.filter((c) => selectedRoles.includes(c.title))
     if (selectedSkills.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
     return list
-  }, [cardsForScope, selectedRoles, selectedSkills])
+  }, [scope, cardsForScope, selectedRoles, selectedSkills])
 
   /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill. When top Skills filter is set, only show those skills. */
   const skillGaps = useMemo(() => {
@@ -500,6 +566,16 @@ export function SkillAnalysisSection({
       .map(([role, count]) => ({ role, count, percentage: total ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count)
   }, [cardsForCards])
+
+  /* Employee skills card: sort people by deficit (below) count, highest first */
+  const employeeSkillsListSorted = useMemo(() => {
+    return [...cardsForCards].sort((a, b) => {
+      const aBelow = getEmployeeSkillCounts(a, skillProficiencies).below
+      const bBelow = getEmployeeSkillCounts(b, skillProficiencies).below
+      return bBelow - aBelow
+    })
+  }, [cardsForCards, skillProficiencies])
+
   const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
   const pipelineLookup = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
   const openPositions = useMemo(
@@ -509,6 +585,7 @@ export function SkillAnalysisSection({
 
   const filteredResultsCount = useMemo(() => {
     let list = cardsForScope
+    const getRiskTags = (c: UserCardData) => riskTagOverrides[c.id] ?? c.riskTags
     if (selectedSkillGap) list = list.filter((c) => c.skillGaps?.includes(selectedSkillGap))
     if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
     if (selectedSkillInterest) list = list.filter((c) => c.skillInterests?.includes(selectedSkillInterest))
@@ -517,9 +594,66 @@ export function SkillAnalysisSection({
     if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
     else if (selectedSkillsPeople.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkillsPeople.includes(s)))
     if (selectedJobLevels.length > 0) list = list.filter((c) => selectedJobLevels.includes(getJobLevelFromTitle(c.title)))
+    /* Team statistics–only filters */
+    if (viewFilter === 'team-statistics') {
+      if (selectedTenure) {
+        list = list.filter((c) => {
+          const y = c.tenureYears ?? 0
+          if (selectedTenure === '<1') return y < 1
+          if (selectedTenure === '1-2') return y >= 1 && y < 2
+          if (selectedTenure === '2-5') return y >= 2 && y < 5
+          if (selectedTenure === '5+') return y >= 5
+          return true
+        })
+      }
+      if (selectedRetentionRisk) list = list.filter((c) => getRiskTags(c).find((t) => t.label === 'Retention risk')?.value === selectedRetentionRisk)
+      if (selectedLossImpact) list = list.filter((c) => getRiskTags(c).find((t) => t.label === 'Loss impact')?.value === selectedLossImpact)
+      if (selectedDevPlanStatus) {
+        list = list.filter((c) => {
+          const dp = c.developmentPlanning ?? ''
+          if (selectedDevPlanStatus === 'not-started') return /not started/i.test(dp)
+          if (selectedDevPlanStatus === 'in-progress') return /not started/i.test(dp) && !/all complete/i.test(dp)
+          if (selectedDevPlanStatus === 'complete') return /all complete/i.test(dp)
+          return true
+        })
+      }
+    }
     if (isLaura && sustainedHighPerformersFilter) list = list.filter((c) => c.highTenureNoPromotion === true)
     return list.length
-  }, [cardsForScope, selectedSkillGap, selectedSkillStrength, selectedSkillInterest, selectedRole, selectedRolesPeople, selectedSkillsPeople, selectedJobLevels, isLaura, sustainedHighPerformersFilter])
+  }, [cardsForScope, viewFilter, selectedSkillGap, selectedSkillStrength, selectedSkillInterest, selectedRole, selectedRolesPeople, selectedSkillsPeople, selectedJobLevels, selectedTenure, selectedRetentionRisk, selectedLossImpact, selectedDevPlanStatus, isLaura, sustainedHighPerformersFilter, riskTagOverrides])
+
+  /* Team statistics: stat cards with counts/pct derived from current scope (direct vs all reports) */
+  const teamStatFilterCards = useMemo(() => {
+    const list = cardsForScope
+    const total = list.length
+    const getRiskTags = (c: UserCardData) => riskTagOverrides[c.id] ?? c.riskTags
+    const pendingOnboarding = list.filter((c) => (c.tenureYears ?? 0) <= 1 && (c.selfAssessment === 'No assessment' || !c.selfAssessment)).length
+    const withoutRoleInterests = list.filter((c) => (c.careerInterests ?? '') === 'No roles added').length
+    const missingRetentionRisks = list.filter((c) => {
+      const tag = getRiskTags(c).find((t) => t.label === 'Retention risk')
+      return !tag || tag.isEmpty || !tag.value
+    }).length
+    const missingLossImpact = list.filter((c) => {
+      const tag = getRiskTags(c).find((t) => t.label === 'Loss impact')
+      return !tag || tag.isEmpty || !tag.value
+    }).length
+    const withoutSelfAssessments = list.filter((c) => (c.selfAssessment ?? '') === 'No assessment').length
+    const withoutDevelopmentPlans = list.filter((c) => /not started/i.test(c.developmentPlanning ?? '')).length
+    const counts: Record<string, number> = {
+      all: total,
+      'pending-onboarding': pendingOnboarding,
+      'without-role-interests': withoutRoleInterests,
+      'missing-retention-risks': missingRetentionRisks,
+      'missing-loss-impact': missingLossImpact,
+      'without-self-assessments': withoutSelfAssessments,
+      'without-development-plans': withoutDevelopmentPlans,
+    }
+    return TEAM_STAT_CARD_DEFS.map((def) => ({
+      ...def,
+      count: counts[def.id] ?? 0,
+      pct: total ? Math.round((counts[def.id] ?? 0) / total * 100) : 0,
+    }))
+  }, [cardsForScope, riskTagOverrides])
 
   const toggleRole = (role: string, checked: boolean) => {
     setSelectedRoles((prev) => (checked ? [...prev, role] : prev.filter((r) => r !== role)))
@@ -553,6 +687,7 @@ export function SkillAnalysisSection({
     <div className="skill-analysis">
       <div className="skill-analysis__tabs">
         <Button
+          type="button"
           variant="ghost"
           className={`skill-analysis__tab ${scope === 'direct' ? 'skill-analysis__tab--active' : ''}`}
           onClick={() => setReportScope('direct')}
@@ -561,14 +696,7 @@ export function SkillAnalysisSection({
           <span className="skill-analysis__tab-badge">{tabCounts.direct}</span>
         </Button>
         <Button
-          variant="ghost"
-          className={`skill-analysis__tab ${scope === 'open' ? 'skill-analysis__tab--active' : ''}`}
-          onClick={() => setReportScope('open')}
-        >
-          Open positions
-          <span className="skill-analysis__tab-badge">{OPEN_ROLES_PEOPLE_CARDS.length}</span>
-        </Button>
-        <Button
+          type="button"
           variant="ghost"
           className={`skill-analysis__tab ${scope === 'all' ? 'skill-analysis__tab--active' : ''}`}
           onClick={() => setReportScope('all')}
@@ -578,7 +706,6 @@ export function SkillAnalysisSection({
         </Button>
       </div>
 
-      {scope !== 'open' && (
       <div className="skill-analysis__filters skill-analysis__filters--top">
         <Select value={viewFilter} onValueChange={(v: string) => setViewFilter(v as ViewFilterValue)}>
           <SelectTrigger variant="default" className="skill-analysis__filter-select">
@@ -587,8 +714,8 @@ export function SkillAnalysisSection({
           <SelectContent>
             <SelectItem value="gaps">Gaps analysis</SelectItem>
             <SelectItem value="skills-overview">Skills overview</SelectItem>
-            <SelectItem value="team-statistics">Team statistics</SelectItem>
             <SelectItem value="team-insights">Team insights</SelectItem>
+            <SelectItem value="team-statistics">Team statistics</SelectItem>
           </SelectContent>
         </Select>
         <DropdownMenu.Root>
@@ -702,9 +829,8 @@ export function SkillAnalysisSection({
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </div>
-      )}
 
-      {scope === 'open' ? (
+      {false ? (
         <div className="skill-analysis__positions-table-wrap">
           <table className="skill-analysis__positions-table">
             <thead>
@@ -798,6 +924,27 @@ export function SkillAnalysisSection({
         </div>
       ) : (
       <>
+      {viewFilter === 'team-statistics' && (
+        <div className="skill-analysis__view-stat-cards">
+          {teamStatFilterCards.map((card) => {
+            const isActive = selectedStatCard === card.id
+            const valueText = card.id === 'all' ? String(card.count) : `${card.count} (${card.pct}%)`
+            return (
+              <div
+                key={card.id}
+                role="button"
+                tabIndex={0}
+                className={`skill-analysis__view-stat-card ${isActive ? 'skill-analysis__view-stat-card--active' : ''}`}
+                onClick={() => setSelectedStatCard(isActive ? null : card.id)}
+                onKeyDown={(e) => e.key === 'Enter' && setSelectedStatCard(isActive ? null : card.id)}
+              >
+                <span className="skill-analysis__view-stat-label">{card.label}</span>
+                <span className="skill-analysis__view-stat-value">{valueText}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
       <div className="skill-analysis__cards">
         {viewFilter === 'gaps' ? (
           /* Gaps analysis: first view – Skill gaps, Skill strengths, Skill interests */
@@ -915,10 +1062,10 @@ export function SkillAnalysisSection({
               </div>
             </div>
           </>
-        ) : (
-          /* Skills overview / Team statistics / Team insights: Employee skills, Popular skills, Roles */
+        ) : viewFilter === 'team-statistics' ? null : (
+          /* Skills overview / Team insights: Employee skills, Popular skills, Roles (not shown in Team statistics) */
           <>
-            <div className="skill-analysis__card skill-analysis__card--employees">
+            <div className="skill-analysis__card skill-analysis__card--employees" key={`employee-skills-${scope}`}>
               <div className="skill-analysis__card-header skill-analysis__card-header--employees">
                 <span className="material-symbols-outlined skill-analysis__card-icon">person</span>
                 <span>Employee skills</span>
@@ -926,13 +1073,17 @@ export function SkillAnalysisSection({
               </div>
               <div className="skill-analysis__interests-list-wrap">
                 <ul className="skill-analysis__list">
-                  {cardsForCards.map((person) => {
-                    const below = person.skillGaps?.length ?? 0
-                    const exceeds = person.skillStrengths?.length ?? 0
-                    const total = 18
-                    const meets = Math.max(0, total - below - exceeds)
+                  {employeeSkillsListSorted.map((person) => {
+                    const { below, meets, exceeds, total } = getEmployeeSkillCounts(person, skillProficiencies)
                     return (
-                      <li key={person.id} className="skill-analysis__item skill-analysis__item--employee">
+                      <li
+                        key={person.id}
+                        role="button"
+                        tabIndex={0}
+                        className="skill-analysis__item skill-analysis__item--employee"
+                        onClick={() => setSkillAssessmentPerson(person)}
+                        onKeyDown={(e) => e.key === 'Enter' && setSkillAssessmentPerson(person)}
+                      >
                         <div className="skill-analysis__employee-info">
                           <Avatar initials={person.initials ?? '?'} avatarColor={person.avatarColor ?? '#D9DCE1'} avatarPhotoSrc={person.avatarPhotoSrc} size="sm" />
                           <span className="skill-analysis__employee-name">{person.name ?? ''}</span>
@@ -1024,7 +1175,7 @@ export function SkillAnalysisSection({
         )}
       </div>
 
-      {isLaura && (
+      {viewFilter !== 'team-statistics' && isLaura && (
         <div className="skill-analysis__stat-cards">
           <div
             role="button"
@@ -1067,6 +1218,7 @@ export function SkillAnalysisSection({
         </div>
       )}
 
+      <>
       <div className="skill-analysis__filters skill-analysis__filters--bottom">
         {selectedSkillGap && (
           <span className="skill-analysis__filter-tag-wrap">
@@ -1172,180 +1324,219 @@ export function SkillAnalysisSection({
         )}
         {!(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole) && (
           <>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <Button
-                  variant="secondary"
-                  className="skill-analysis__filter-select skill-analysis__roles-trigger"
-                  aria-label="Role filter (people list)"
-                >
-                  <span className="skill-analysis__roles-trigger-label">
-                    {selectedRolesPeople.length === 0 ? 'Role' : `${selectedRolesPeople.length} role${selectedRolesPeople.length === 1 ? '' : 's'} selected`}
-                  </span>
-                  <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
-                  <div className="skill-analysis__roles-list">
-                    <DropdownMenu.CheckboxItem
-                      className="skill-analysis__roles-item"
-                      checked={selectedRolesPeople.length === 0}
-                      onCheckedChange={(checked) => checked && setSelectedRolesPeople([])}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      <span className="skill-analysis__roles-checkbox" aria-hidden>
-                        <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
-                          <span className="material-symbols-outlined">check</span>
-                        </DropdownMenu.ItemIndicator>
+            {viewFilter === 'team-statistics' ? (
+              /* Team statistics view: Skills, Role, Job level, Tenure, Retention risk, Loss impact, Development plan status */
+              <>
+                <DropdownMenu.Root onOpenChange={(open) => !open && setSkillsSearch('')}>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__skills-trigger" aria-label="Skills filter (people list)">
+                      <span className="skill-analysis__roles-trigger-label">
+                        {selectedSkillsPeople.length === 0 ? 'Skills' : `${selectedSkillsPeople.length} skill${selectedSkillsPeople.length === 1 ? '' : 's'} selected`}
                       </span>
-                      All roles
-                    </DropdownMenu.CheckboxItem>
-                    {ROLES_FOR_TEAM.map((role) => (
-                      <DropdownMenu.CheckboxItem
-                        key={role}
-                        className="skill-analysis__roles-item"
-                        checked={selectedRolesPeople.includes(role)}
-                        onCheckedChange={(checked) => toggleRolePeople(role, checked === true)}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <span className="skill-analysis__roles-checkbox" aria-hidden>
-                          <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
-                            <span className="material-symbols-outlined">check</span>
-                          </DropdownMenu.ItemIndicator>
-                        </span>
-                        {role}
-                      </DropdownMenu.CheckboxItem>
-                    ))}
-                  </div>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-            <DropdownMenu.Root onOpenChange={(open) => !open && setSkillsSearch('')}>
-              <DropdownMenu.Trigger asChild>
-                <Button
-                  variant="secondary"
-                  className="skill-analysis__filter-select skill-analysis__skills-trigger"
-                  aria-label="Skills filter (people list)"
-                >
-                  <span className="skill-analysis__skills-trigger-label">
-                    {selectedSkillsPeople.length === 0 ? 'Skills' : `${selectedSkillsPeople.length} skill${selectedSkillsPeople.length === 1 ? '' : 's'} selected`}
-                  </span>
-                  <span className="material-symbols-outlined skill-analysis__skills-chevron">expand_more</span>
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content className="skill-analysis__skills-content" align="start" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-                  <div className="skill-analysis__skills-search-wrap">
-                    <span className="material-symbols-outlined skill-analysis__skills-search-icon">search</span>
-                    <input
-                      type="search"
-                      placeholder="Search skills"
-                      className="skill-analysis__skills-search-input"
-                      value={skillsSearch}
-                      onChange={(e) => setSkillsSearch(e.target.value)}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="skill-analysis__skills-list">
-                    <DropdownMenu.CheckboxItem
-                      className="skill-analysis__skills-item"
-                      checked={selectedSkillsPeople.length === 0}
-                      onCheckedChange={(checked) => checked && setSelectedSkillsPeople([])}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      <span className="skill-analysis__skills-checkbox" aria-hidden>
-                        <DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator">
-                          <span className="material-symbols-outlined">check</span>
-                        </DropdownMenu.ItemIndicator>
-                      </span>
-                      All skills
-                    </DropdownMenu.CheckboxItem>
-                    {filteredSkills.map((skill) => (
-                      <DropdownMenu.CheckboxItem
-                        key={skill}
-                        className="skill-analysis__skills-item"
-                        checked={selectedSkillsPeople.includes(skill)}
-                        onCheckedChange={(checked) => toggleSkillPeople(skill, checked === true)}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <span className="skill-analysis__skills-checkbox" aria-hidden>
-                          <DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator">
-                            <span className="material-symbols-outlined">check</span>
-                          </DropdownMenu.ItemIndicator>
-                        </span>
-                        {skill}
-                      </DropdownMenu.CheckboxItem>
-                    ))}
-                  </div>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <Button
-                  variant="secondary"
-                  className="skill-analysis__filter-select skill-analysis__roles-trigger"
-                  aria-label="Job level filter"
-                >
-                  <span className="skill-analysis__roles-trigger-label">
-                    {selectedJobLevels.length === 0 ? 'Job level' : `${selectedJobLevels.length} level${selectedJobLevels.length === 1 ? '' : 's'} selected`}
-                  </span>
-                  <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
-                  <div className="skill-analysis__roles-list">
-                    <DropdownMenu.CheckboxItem
-                      className="skill-analysis__roles-item"
-                      checked={selectedJobLevels.length === 0}
-                      onCheckedChange={(checked) => checked && setSelectedJobLevels([])}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      <span className="skill-analysis__roles-checkbox" aria-hidden>
-                        <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
-                          <span className="material-symbols-outlined">check</span>
-                        </DropdownMenu.ItemIndicator>
-                      </span>
-                      All levels
-                    </DropdownMenu.CheckboxItem>
-                    {JOB_LEVELS.map((level) => (
-                      <DropdownMenu.CheckboxItem
-                        key={level}
-                        className="skill-analysis__roles-item"
-                        checked={selectedJobLevels.includes(level)}
-                        onCheckedChange={(checked) => toggleJobLevel(level, checked === true)}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <span className="skill-analysis__roles-checkbox" aria-hidden>
-                          <DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator">
-                            <span className="material-symbols-outlined">check</span>
-                          </DropdownMenu.ItemIndicator>
-                        </span>
-                        {level}
-                      </DropdownMenu.CheckboxItem>
-                    ))}
-                  </div>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-            <Select defaultValue="dev-plan">
-              <SelectTrigger variant="secondary" className="skill-analysis__filter-select">
-                <SelectValue placeholder="Development Plan Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dev-plan">Development Plan Status</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="skill-analysis__search">
-              <span className="material-symbols-outlined skill-analysis__search-icon">search</span>
-              <input type="search" placeholder="Search name or role" className="skill-analysis__search-input" />
-            </div>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__skills-content" align="start" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
+                      <div className="skill-analysis__skills-search-wrap">
+                        <span className="material-symbols-outlined skill-analysis__skills-search-icon">search</span>
+                        <input type="search" placeholder="Search skills" className="skill-analysis__skills-search-input" value={skillsSearch} onChange={(e) => setSkillsSearch(e.target.value)} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} />
+                      </div>
+                      <div className="skill-analysis__skills-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__skills-item" checked={selectedSkillsPeople.length === 0} onCheckedChange={(checked) => checked && setSelectedSkillsPeople([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__skills-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All skills
+                        </DropdownMenu.CheckboxItem>
+                        {filteredSkills.map((skill) => (
+                          <DropdownMenu.CheckboxItem key={skill} className="skill-analysis__skills-item" checked={selectedSkillsPeople.includes(skill)} onCheckedChange={(checked) => toggleSkillPeople(skill, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__skills-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {skill}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__roles-trigger" aria-label="Role filter (people list)">
+                      <span className="skill-analysis__roles-trigger-label">{selectedRolesPeople.length === 0 ? 'Role' : `${selectedRolesPeople.length} role${selectedRolesPeople.length === 1 ? '' : 's'} selected`}</span>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                      <div className="skill-analysis__roles-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__roles-item" checked={selectedRolesPeople.length === 0} onCheckedChange={(checked) => checked && setSelectedRolesPeople([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All roles
+                        </DropdownMenu.CheckboxItem>
+                        {ROLES_FOR_TEAM.map((role) => (
+                          <DropdownMenu.CheckboxItem key={role} className="skill-analysis__roles-item" checked={selectedRolesPeople.includes(role)} onCheckedChange={(checked) => toggleRolePeople(role, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {role}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__roles-trigger" aria-label="Job level filter">
+                      <span className="skill-analysis__roles-trigger-label">{selectedJobLevels.length === 0 ? 'Job level' : `${selectedJobLevels.length} level${selectedJobLevels.length === 1 ? '' : 's'} selected`}</span>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                      <div className="skill-analysis__roles-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__roles-item" checked={selectedJobLevels.length === 0} onCheckedChange={(checked) => checked && setSelectedJobLevels([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All levels
+                        </DropdownMenu.CheckboxItem>
+                        {JOB_LEVELS.map((level) => (
+                          <DropdownMenu.CheckboxItem key={level} className="skill-analysis__roles-item" checked={selectedJobLevels.includes(level)} onCheckedChange={(checked) => toggleJobLevel(level, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {level}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <Select value={selectedTenure || 'any'} onValueChange={(v: string) => setSelectedTenure(v === 'any' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Tenure" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Tenure</SelectItem>
+                    <SelectItem value="<1">&lt;1 year</SelectItem>
+                    <SelectItem value="1-2">1-2 years</SelectItem>
+                    <SelectItem value="2-5">2-5 years</SelectItem>
+                    <SelectItem value="5+">5+ years</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedRetentionRisk || 'any'} onValueChange={(v: string) => setSelectedRetentionRisk(v === 'any' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Retention risk" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Retention risk</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedLossImpact || 'any'} onValueChange={(v: string) => setSelectedLossImpact(v === 'any' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Loss impact" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Loss impact</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedDevPlanStatus || 'any'} onValueChange={(v: string) => setSelectedDevPlanStatus(v === 'any' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Development plan status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Development plan status</SelectItem>
+                    <SelectItem value="not-started">Not started</SelectItem>
+                    <SelectItem value="in-progress">In progress</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            ) : (
+              /* Other views: Role, Skills, Job level, Development Plan Status placeholder, Search */
+              <>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__roles-trigger" aria-label="Role filter (people list)">
+                      <span className="skill-analysis__roles-trigger-label">{selectedRolesPeople.length === 0 ? 'Role' : `${selectedRolesPeople.length} role${selectedRolesPeople.length === 1 ? '' : 's'} selected`}</span>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                      <div className="skill-analysis__roles-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__roles-item" checked={selectedRolesPeople.length === 0} onCheckedChange={(checked) => checked && setSelectedRolesPeople([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All roles
+                        </DropdownMenu.CheckboxItem>
+                        {ROLES_FOR_TEAM.map((role) => (
+                          <DropdownMenu.CheckboxItem key={role} className="skill-analysis__roles-item" checked={selectedRolesPeople.includes(role)} onCheckedChange={(checked) => toggleRolePeople(role, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {role}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <DropdownMenu.Root onOpenChange={(open) => !open && setSkillsSearch('')}>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__skills-trigger" aria-label="Skills filter (people list)">
+                      <span className="skill-analysis__roles-trigger-label">{selectedSkillsPeople.length === 0 ? 'Skills' : `${selectedSkillsPeople.length} skill${selectedSkillsPeople.length === 1 ? '' : 's'} selected`}</span>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__skills-content" align="start" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
+                      <div className="skill-analysis__skills-search-wrap">
+                        <span className="material-symbols-outlined skill-analysis__skills-search-icon">search</span>
+                        <input type="search" placeholder="Search skills" className="skill-analysis__skills-search-input" value={skillsSearch} onChange={(e) => setSkillsSearch(e.target.value)} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} />
+                      </div>
+                      <div className="skill-analysis__skills-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__skills-item" checked={selectedSkillsPeople.length === 0} onCheckedChange={(checked) => checked && setSelectedSkillsPeople([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__skills-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All skills
+                        </DropdownMenu.CheckboxItem>
+                        {filteredSkills.map((skill) => (
+                          <DropdownMenu.CheckboxItem key={skill} className="skill-analysis__skills-item" checked={selectedSkillsPeople.includes(skill)} onCheckedChange={(checked) => toggleSkillPeople(skill, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__skills-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__skills-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {skill}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="secondary" className="skill-analysis__filter-select skill-analysis__roles-trigger" aria-label="Job level filter">
+                      <span className="skill-analysis__roles-trigger-label">{selectedJobLevels.length === 0 ? 'Job level' : `${selectedJobLevels.length} level${selectedJobLevels.length === 1 ? '' : 's'} selected`}</span>
+                      <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+                      <div className="skill-analysis__roles-list">
+                        <DropdownMenu.CheckboxItem className="skill-analysis__roles-item" checked={selectedJobLevels.length === 0} onCheckedChange={(checked) => checked && setSelectedJobLevels([])} onSelect={(e) => e.preventDefault()}>
+                          <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                          All levels
+                        </DropdownMenu.CheckboxItem>
+                        {JOB_LEVELS.map((level) => (
+                          <DropdownMenu.CheckboxItem key={level} className="skill-analysis__roles-item" checked={selectedJobLevels.includes(level)} onCheckedChange={(checked) => toggleJobLevel(level, checked === true)} onSelect={(e) => e.preventDefault()}>
+                            <span className="skill-analysis__roles-checkbox" aria-hidden><DropdownMenu.ItemIndicator className="skill-analysis__roles-indicator"><span className="material-symbols-outlined">check</span></DropdownMenu.ItemIndicator></span>
+                            {level}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <Select defaultValue="dev-plan">
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Development Plan Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dev-plan">Development Plan Status</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="skill-analysis__search">
+                  <span className="material-symbols-outlined skill-analysis__search-icon">search</span>
+                  <input type="search" placeholder="Search name or role" className="skill-analysis__search-input" />
+                </div>
+              </>
+            )}
           </>
         )}
-        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0) && (
+        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0 || (viewFilter === 'team-statistics' && (selectedTenure || selectedRetentionRisk || selectedLossImpact || selectedDevPlanStatus))) && (
           <Button
             className="skill-analysis__assign-btn"
             variant="outline"
@@ -1358,7 +1549,7 @@ export function SkillAnalysisSection({
 
       <div className="skill-analysis__results">
         <span className="skill-analysis__results-text">
-          Showing {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0 || sustainedHighPerformersFilter) ? filteredResultsCount : (scope === 'all' ? tabCounts.all : tabCounts.direct)} results
+          Showing {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0 || (viewFilter === 'team-statistics' && (selectedTenure || selectedRetentionRisk || selectedLossImpact || selectedDevPlanStatus)) || sustainedHighPerformersFilter) ? filteredResultsCount : (scope === 'all' ? tabCounts.all : tabCounts.direct)} results
         </span>
         <Button variant="secondary" size="sm" className="skill-analysis__select-all">Select all on this page</Button>
         <div className="skill-analysis__results-sort">
@@ -1377,6 +1568,7 @@ export function SkillAnalysisSection({
         </div>
       </div>
       <UserCardList
+        key={scope}
         reportScope={scope}
         sustainedHighPerformersFilter={sustainedHighPerformersFilter}
         selectedSkillGap={selectedSkillGap}
@@ -1386,12 +1578,37 @@ export function SkillAnalysisSection({
         selectedRoles={selectedRolesPeople}
         selectedSkills={selectedSkillsPeople}
         selectedJobLevels={selectedJobLevels}
+        selectedTenure={viewFilter === 'team-statistics' ? selectedTenure : ''}
+        selectedRetentionRisk={viewFilter === 'team-statistics' ? selectedRetentionRisk : ''}
+        selectedLossImpact={viewFilter === 'team-statistics' ? selectedLossImpact : ''}
+        selectedDevPlanStatus={viewFilter === 'team-statistics' ? selectedDevPlanStatus : ''}
         sortBy={sortBy}
         riskTagOverrides={riskTagOverrides}
         onRiskTagsChange={(userId, riskTags) => setRiskTagOverrides((prev) => ({ ...prev, [userId]: riskTags }))}
       />
       </>
+      </>
       )}
+      <EditSkillAssessmentsSheet
+        user={skillAssessmentPerson}
+        requiredByRoleSkills={skillAssessmentPerson ? getRequiredSkillsForTitle(skillAssessmentPerson.title) : []}
+        otherSkills={
+          skillAssessmentPerson
+            ? SKILLS_FOR_TEAM.filter((s) => !getRequiredSkillsForTitle(skillAssessmentPerson.title).includes(s))
+            : []
+        }
+        initialProficiencies={skillAssessmentPerson ? skillProficiencies[skillAssessmentPerson.id] : undefined}
+        open={!!skillAssessmentPerson}
+        onClose={() => setSkillAssessmentPerson(null)}
+        onSave={(assessments) => {
+          if (skillAssessmentPerson) {
+            setSkillProficiencies((prev) => ({
+              ...prev,
+              [skillAssessmentPerson.id]: Object.fromEntries(assessments.map((a) => [a.name, a.proficiency])),
+            }))
+          }
+        }}
+      />
     </div>
   )
 }

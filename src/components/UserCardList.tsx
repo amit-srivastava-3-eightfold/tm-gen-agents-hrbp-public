@@ -21,6 +21,14 @@ interface UserCardListProps {
   selectedSkills?: string[]
   /** When set, only show people at any of these job levels (from Job level checkboxes) */
   selectedJobLevels?: string[]
+  /** Tenure filter: '' | '<1' | '1-2' | '2-5' | '5+' */
+  selectedTenure?: string
+  /** Retention risk filter: '' | 'Low' | 'Medium' | 'High' */
+  selectedRetentionRisk?: string
+  /** Loss impact filter: '' | 'Low' | 'Medium' | 'High' */
+  selectedLossImpact?: string
+  /** Development plan status: '' | 'not-started' | 'in-progress' | 'complete' */
+  selectedDevPlanStatus?: string
   /** Sort order for the list */
   sortBy?: 'rating-desc' | 'rating-asc' | 'gap-desc' | 'alphabetical' | 'tenure'
   /** Override risk tags per user id (from Edit risk sheet save) */
@@ -49,6 +57,10 @@ export function UserCardList({
   selectedRoles = [],
   selectedSkills = [],
   selectedJobLevels = [],
+  selectedTenure = '',
+  selectedRetentionRisk = '',
+  selectedLossImpact = '',
+  selectedDevPlanStatus = '',
   sortBy = 'rating-desc',
   riskTagOverrides = {},
   onRiskTagsChange,
@@ -58,6 +70,8 @@ export function UserCardList({
   const directCards = isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS
   const allCards = isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS
   let cards: UserCardData[] = reportScope === 'all' ? allCards : directCards
+
+  const getEffectiveRiskTags = (c: UserCardData) => riskTagOverrides[c.id] ?? c.riskTags
 
   if (selectedSkillGap) {
     cards = cards.filter((c) => c.skillGaps?.includes(selectedSkillGap))
@@ -77,6 +91,39 @@ export function UserCardList({
   }
   if (selectedJobLevels.length > 0) {
     cards = cards.filter((c) => selectedJobLevels.includes(getJobLevelFromTitle(c.title)))
+  }
+  if (selectedTenure) {
+    cards = cards.filter((c) => {
+      const y = c.tenureYears ?? 0
+      if (selectedTenure === '<1') return y < 1
+      if (selectedTenure === '1-2') return y >= 1 && y < 2
+      if (selectedTenure === '2-5') return y >= 2 && y < 5
+      if (selectedTenure === '5+') return y >= 5
+      return true
+    })
+  }
+  if (selectedRetentionRisk) {
+    cards = cards.filter((c) => {
+      const tags = getEffectiveRiskTags(c)
+      const tag = tags.find((t) => t.label === 'Retention risk')
+      return tag?.value === selectedRetentionRisk
+    })
+  }
+  if (selectedLossImpact) {
+    cards = cards.filter((c) => {
+      const tags = getEffectiveRiskTags(c)
+      const tag = tags.find((t) => t.label === 'Loss impact')
+      return tag?.value === selectedLossImpact
+    })
+  }
+  if (selectedDevPlanStatus) {
+    cards = cards.filter((c) => {
+      const dp = c.developmentPlanning ?? ''
+      if (selectedDevPlanStatus === 'not-started') return /not started/i.test(dp)
+      if (selectedDevPlanStatus === 'in-progress') return /not started/i.test(dp) && !/all complete/i.test(dp)
+      if (selectedDevPlanStatus === 'complete') return /all complete/i.test(dp)
+      return true
+    })
   }
 
   if (isLaura && sustainedHighPerformersFilter) {

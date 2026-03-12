@@ -1,0 +1,19 @@
+---
+description: When user asks to push to GitHub, run production build first and only push if build succeeds
+alwaysApply: true
+---
+
+# Push to GitHub
+
+When the user asks to **push to GitHub** (e.g. "push to github", "push to git", "commit and push", "push my changes"):
+
+1. **Run the production build first**  
+   Use the project’s build command (e.g. `npm run build`). This matches what Vercel runs and catches build/type errors before push.
+
+2. **Only push if the build succeeds**  
+   If the build fails, fix the failures (TypeScript, lint, etc.) and run the build again. Do not run `git push` until the build passes.
+
+3. **Then run git commands**  
+   After a successful build, run `git add`, `git commit`, and `git push` as requested.
+
+If the user only asked to “push” without specifying GitHub, still run the build first when the intent is to push to a remote (e.g. origin).

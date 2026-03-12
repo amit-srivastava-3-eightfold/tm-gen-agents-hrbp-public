@@ -38,8 +38,27 @@
   color: #69717F;
 }
 
+.tabs-with-lines__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabs-with-lines__badge {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F6F7F8;
+}
+
 .tabs-with-lines__trigger[data-state="active"] {
   color: #146DA6;
+}
+
+.tabs-with-lines__trigger[data-state="active"] .tabs-with-lines__badge {
+  color: #146DA6;
+  background: #E8F4FC;
 }
 
 .tabs-with-lines__trigger[data-state="active"]::after {

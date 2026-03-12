@@ -13,7 +13,7 @@ import './MyTeamPage.css'
 
 export function MyTeamPage() {
   const { currentUser } = useUser()
-  const [reportScope, setReportScope] = useState<'direct' | 'open' | 'all'>('direct')
+  const [reportScope, setReportScope] = useState<'direct' | 'all'>('direct')
   const [sustainedHighPerformersFilter, setSustainedHighPerformersFilter] = useState(false)
   const isLaura = currentUser.id === 'laura-shah'
 

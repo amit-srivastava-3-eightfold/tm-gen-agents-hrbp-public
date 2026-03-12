@@ -1,7 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import './TabsWithLines.css'
 
-export type TabItem = { id: string; label: string }
+export type TabItem = { id: string; label: string; badge?: number | string }
 
 export interface TabsWithLinesProps {
   tabs: TabItem[]
@@ -38,6 +38,9 @@ export function TabsWithLines({
             className="tabs-with-lines__trigger"
           >
             {tab.label}
+            {tab.badge != null && (
+              <span className="tabs-with-lines__badge">{tab.badge}</span>
+            )}
           </Tabs.Trigger>
         ))}
       </Tabs.List>
