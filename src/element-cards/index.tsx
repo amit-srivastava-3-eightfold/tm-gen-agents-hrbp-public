@@ -1,14 +1,15 @@
 /**
- * Object cards – re-exported from the design system for use in this app or in other projects.
+ * Object cards – re-exported from the design system (or local fallback) for use in this app.
  *
- * In another project:
- * 1. Copy this folder (element-cards/) into your src.
- * 2. Install the design system: npm i @tonyh-2-eightfold/ef-design-system
- * 3. Import: import { CourseObjectCard, PeopleObjectCard, ProjectObjectCard } from './element-cards'
+ * PeopleObjectCard is provided locally so the app builds when the design system
+ * does not export it (e.g. on Vercel). CourseObjectCard and ProjectObjectCard
+ * are re-exported from the design system.
  */
+
+export { PeopleObjectCard } from './PeopleObjectCard'
+export type { PeopleObjectCardPerson, PeopleObjectCardProps } from './PeopleObjectCard'
 
 export {
   CourseObjectCard,
-  PeopleObjectCard,
   ProjectObjectCard,
 } from '@tonyh-2-eightfold/ef-design-system'
