@@ -1,4 +1,4 @@
-import { Button } from './ui/Button'
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { useUser } from '../contexts/UserContext'
 
 const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face'
@@ -16,7 +16,7 @@ export function OrganizationCard() {
       <div className="org-card">
         <div className="org-card__header">
           <h3 className="org-card__title">Organization</h3>
-          <Button variant="outline">View org chart</Button>
+          <Button variant="default">View org chart</Button>
         </div>
         <div className="org-card__section">
           <h4 className="org-card__section-title">Manager</h4>
@@ -62,7 +62,7 @@ export function OrganizationCard() {
     <div className="org-card">
       <div className="org-card__header">
         <h3 className="org-card__title">Organization</h3>
-        <Button variant="outline">View org chart</Button>
+        <Button variant="default">View org chart</Button>
       </div>
       <div className="org-card__section">
         <h4 className="org-card__section-title">Manager</h4>

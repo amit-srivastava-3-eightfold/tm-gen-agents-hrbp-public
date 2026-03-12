@@ -1,5 +1,5 @@
 import { useUser } from '../contexts/UserContext'
-import { Button } from './ui/Button'
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 
 export function PersonBanner() {
   const { currentUser } = useUser()
@@ -25,7 +25,7 @@ export function PersonBanner() {
           <p className="person-banner__role">{currentUser.title} • {currentUser.location}</p>
         </div>
       </div>
-      <Button variant="primary">
+      <Button variant="default">
         <span className="material-symbols-outlined">account_tree</span>
         View org chart
       </Button>

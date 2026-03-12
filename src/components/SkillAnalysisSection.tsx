@@ -11,6 +11,7 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  SkillTag,
 } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
@@ -427,7 +428,7 @@ const LAURA_OPEN_POSITIONS: PositionRow[] = [
   },
 ]
 
-type ViewFilterValue = 'gaps' | 'skills-overview' | 'team-statistics' | 'team-insights'
+type ViewFilterValue = 'gaps' | 'skills-overview' | 'team-statistics'
 
 /** Team statistics view: stat card ids and labels; counts/computed from cardsForScope */
 const TEAM_STAT_CARD_DEFS = [
@@ -707,17 +708,44 @@ export function SkillAnalysisSection({
       </div>
 
       <div className="skill-analysis__filters skill-analysis__filters--top">
-        <Select value={viewFilter} onValueChange={(v: string) => setViewFilter(v as ViewFilterValue)}>
-          <SelectTrigger variant="default" className="skill-analysis__filter-select">
-            View: <SelectValue placeholder="Filter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="gaps">Gaps analysis</SelectItem>
-            <SelectItem value="skills-overview">Skills overview</SelectItem>
-            <SelectItem value="team-insights">Team insights</SelectItem>
-            <SelectItem value="team-statistics">Team statistics</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button
+              variant="primary"
+              className="skill-analysis__filter-select skill-analysis__roles-trigger skill-analysis__view-trigger"
+              aria-label="View"
+            >
+              <span className="skill-analysis__roles-trigger-label">
+                View: {viewFilter === 'gaps' ? 'Gaps analysis' : viewFilter === 'skills-overview' ? 'Skills overview' : 'Team statistics'}
+              </span>
+              <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="skill-analysis__roles-content" align="start" sideOffset={4}>
+              <div className="skill-analysis__roles-list">
+                <DropdownMenu.Item
+                  className="skill-analysis__roles-item"
+                  onSelect={() => setViewFilter('gaps')}
+                >
+                  Gaps analysis
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className="skill-analysis__roles-item"
+                  onSelect={() => setViewFilter('skills-overview')}
+                >
+                  Skills overview
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className="skill-analysis__roles-item"
+                  onSelect={() => setViewFilter('team-statistics')}
+                >
+                  Team statistics
+                </DropdownMenu.Item>
+              </div>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <Button
@@ -951,9 +979,9 @@ export function SkillAnalysisSection({
           <>
             <div className="skill-analysis__card skill-analysis__card--gaps">
               <div className="skill-analysis__card-header skill-analysis__card-header--gaps">
-                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--red">trending_down</span>
+                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--red" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_circle_down</span>
                 <span>Skill gaps</span>
-                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Skills with most employees rated below benchmark" title="Skills with most employees rated below benchmark">info</span>
               </div>
               <div className="skill-analysis__interests-list-wrap">
                 <ul className="skill-analysis__list">
@@ -971,7 +999,7 @@ export function SkillAnalysisSection({
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillGap(skill.name), setSelectedSkillStrength(null), setSelectedSkillInterest(null), setSelectedRole(null))}
                   >
-                    <span className="skill-analysis__skill-name">{skill.name}</span>
+                    <SkillTag variant="selected" className="skill-analysis__skill-name">{skill.name}</SkillTag>
                     <div className="skill-analysis__item-right">
                       <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
                       <div className="skill-analysis__bar-wrap">
@@ -991,28 +1019,32 @@ export function SkillAnalysisSection({
             </div>
             <div className="skill-analysis__card skill-analysis__card--strengths">
               <div className="skill-analysis__card-header skill-analysis__card-header--strengths">
-                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--green">trending_up</span>
+                <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--green" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_circle_up</span>
                 <span>Skill strengths</span>
-                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
+                <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Skills with most ratings above benchmark" title="Skills with most ratings above benchmark">info</span>
               </div>
               <div className="skill-analysis__interests-list-wrap">
                 <ul className="skill-analysis__list">
                 {skillStrengths.map((skill) => (
                   <li
                     key={skill.name}
-                    role="button"
-                    tabIndex={0}
                     className="skill-analysis__item"
-                    onClick={() => {
-                      setSelectedSkillStrength(skill.name)
-                      setSelectedSkillGap(null)
-                      setSelectedSkillInterest(null)
-                      setSelectedRole(null)
-                    }}
-                    onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillStrength(skill.name), setSelectedSkillGap(null), setSelectedSkillInterest(null), setSelectedRole(null))}
                   >
-                    <span className="skill-analysis__skill-name">{skill.name}</span>
-                    <div className="skill-analysis__item-right">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="skill-analysis__item-inner"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedSkillStrength(skill.name)
+                        setSelectedSkillGap(null)
+                        setSelectedSkillInterest(null)
+                        setSelectedRole(null)
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillStrength(skill.name), setSelectedSkillGap(null), setSelectedSkillInterest(null), setSelectedRole(null))}
+                    >
+                      <SkillTag variant="selected" className="skill-analysis__skill-name">{skill.name}</SkillTag>
+                      <div className="skill-analysis__item-right">
                       <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
                       <div className="skill-analysis__bar-wrap">
                         <div className="skill-analysis__bar">
@@ -1024,6 +1056,7 @@ export function SkillAnalysisSection({
                         <span className="skill-analysis__bar-total">{skill.total}</span>
                       </div>
                     </div>
+                    </div>
                   </li>
                 ))}
                 </ul>
@@ -1031,7 +1064,7 @@ export function SkillAnalysisSection({
             </div>
             <div className="skill-analysis__card skill-analysis__card--interests">
               <div className="skill-analysis__card-header skill-analysis__card-header--interests">
-                <span className="material-symbols-outlined skill-analysis__card-icon">settings</span>
+                <span className="material-symbols-outlined skill-analysis__card-icon">track_changes</span>
                 <span>Skill interests</span>
                 <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
               </div>
@@ -1051,7 +1084,7 @@ export function SkillAnalysisSection({
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && (setSelectedSkillInterest(skill.name), setSelectedSkillGap(null), setSelectedSkillStrength(null), setSelectedRole(null))}
                     >
-                      <span className="skill-analysis__skill-name">{skill.name}</span>
+                      <SkillTag variant="selected" className="skill-analysis__skill-name">{skill.name}</SkillTag>
                       <div className="skill-analysis__item-right">
                         <span className="material-symbols-outlined skill-analysis__person-icon">person</span>
                         <span className="skill-analysis__count">{skill.count}</span>
@@ -1223,7 +1256,7 @@ export function SkillAnalysisSection({
         {selectedSkillGap && (
           <span className="skill-analysis__filter-tag-wrap">
             <span className="skill-analysis__filter-tag skill-analysis__filter-tag--gaps">
-              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">trending_down</span>
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_circle_down</span>
               <span className="skill-analysis__filter-tag-label">Skill gaps</span>
               <span className="skill-analysis__filter-tag-sep">&gt;</span>
               <span className="skill-analysis__filter-tag-value">{selectedSkillGap}</span>
@@ -1243,9 +1276,9 @@ export function SkillAnalysisSection({
         )}
         {selectedSkillStrength && (
           <span className="skill-analysis__filter-tag-wrap">
-            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--popular">
-              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">emoji_events</span>
-              <span className="skill-analysis__filter-tag-label">Popular skills</span>
+            <span className="skill-analysis__filter-tag skill-analysis__filter-tag--strengths">
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_circle_up</span>
+              <span className="skill-analysis__filter-tag-label">Skill strengths</span>
               <span className="skill-analysis__filter-tag-sep">&gt;</span>
               <span className="skill-analysis__filter-tag-value">{selectedSkillStrength}</span>
               <button
@@ -1265,7 +1298,7 @@ export function SkillAnalysisSection({
         {selectedSkillInterest && (
           <span className="skill-analysis__filter-tag-wrap">
             <span className="skill-analysis__filter-tag skill-analysis__filter-tag--interests">
-              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">star</span>
+              <span className="material-symbols-outlined skill-analysis__filter-tag-icon">track_changes</span>
               <span className="skill-analysis__filter-tag-label">Skill interests</span>
               <span className="skill-analysis__filter-tag-sep">&gt;</span>
               <span className="skill-analysis__filter-tag-value">{selectedSkillInterest}</span>
@@ -1536,14 +1569,16 @@ export function SkillAnalysisSection({
             )}
           </>
         )}
-        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0 || (viewFilter === 'team-statistics' && (selectedTenure || selectedRetentionRisk || selectedLossImpact || selectedDevPlanStatus))) && (
-          <Button
-            className="skill-analysis__assign-btn"
-            variant="outline"
-            leadingIcon={<span className="material-symbols-outlined">assignment</span>}
-          >
-            Assign development plan
-          </Button>
+        {selectedSkillGap && (
+          <Select value="assign" onValueChange={() => {}}>
+            <SelectTrigger variant="outline" size="md" className="skill-analysis__assign-select">
+              <span className="material-symbols-outlined skill-analysis__assign-icon">assignment</span>
+              <SelectValue placeholder="Assign development plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="assign">Assign development plan</SelectItem>
+            </SelectContent>
+          </Select>
         )}
       </div>
 

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Tag } from '@tonyh-2-eightfold/ef-design-system'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tag } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
-import { Button } from './ui/Button'
 import { EditRiskSheet } from './EditRiskSheet'
 import './UserCard.css'
 
@@ -109,24 +109,35 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
             {user.title} • {user.location}
           </p>
           <div className="user-card__actions" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" className="user-card__contact-btn">
-              Contact
-              <span className="material-symbols-outlined">expand_more</span>
-            </Button>
+            <div className="user-card__contact-wrap">
+              <div className="user-card__contact-inner">
+                <Select value="contact" onValueChange={() => {}}>
+                  <SelectTrigger variant="secondary" className="user-card__contact-select">
+                    <SelectValue placeholder="Contact" />
+                  </SelectTrigger>
+                  <SelectContent className="user-card__contact-content">
+                    <SelectItem value="contact">Contact</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="message">Message</SelectItem>
+                    <SelectItem value="schedule">Schedule call</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="user-card__action-icons" onClick={(e) => e.stopPropagation()}>
-              <button type="button" className="user-card__icon-btn user-card__icon-btn--with-badge" aria-label="Document">
+              <Button variant="secondary" size="icon" className="user-card__icon-btn user-card__icon-btn--with-badge" aria-label="Document">
                 <span className="material-symbols-outlined">description</span>
                 <span className="user-card__icon-badge" aria-hidden />
-              </button>
-              <button type="button" className="user-card__icon-btn" aria-label="Career navigator">
+              </Button>
+              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Career navigator">
                 <span className="material-symbols-outlined">route</span>
-              </button>
-              <button type="button" className="user-card__icon-btn" aria-label="Org chart" hidden>
+              </Button>
+              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Org chart" hidden>
                 <span className="material-symbols-outlined">account_tree</span>
-              </button>
-              <button type="button" className="user-card__icon-btn" aria-label="More options">
+              </Button>
+              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="More options">
                 <span className="material-symbols-outlined">more_vert</span>
-              </button>
+              </Button>
             </div>
           </div>
           <div className="user-card__reports" onClick={(e) => e.stopPropagation()}>
@@ -162,15 +173,52 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
           <Button variant="secondary" size="icon-sm" className="user-card__ai-btn" aria-label="AI assistant">
             <span className="material-symbols-outlined">auto_awesome</span>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="user-card__manager-actions"
-            badge={user.managerActionsCount != null && user.managerActionsCount > 0 ? user.managerActionsCount : undefined}
-            trailingIcon={<span className="material-symbols-outlined">expand_more</span>}
-          >
-            Manager actions
-          </Button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                className="user-card__manager-actions user-card__manager-actions--select-outline"
+                aria-haspopup="menu"
+              >
+                <span className="user-card__manager-actions-label-text">Manager actions</span>
+                {user.managerActionsCount != null && user.managerActionsCount > 0 ? (
+                  <span className="user-card__manager-actions-badge" aria-hidden>{user.managerActionsCount}</span>
+                ) : null}
+                <span className="material-symbols-outlined user-card__manager-actions-chevron" aria-hidden>expand_more</span>
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="user-card__manager-actions-content" align="end" sideOffset={4} onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu.Label className="user-card__manager-actions-label">Suggested actions</DropdownMenu.Label>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={(e) => e.preventDefault()}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">mail</span>
+                  Send self assessment reminder
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={(e) => e.preventDefault()}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">format_list_bulleted</span>
+                  Assess skills
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={(e) => e.preventDefault()}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">add</span>
+                  Create succession plan
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="user-card__manager-actions-separator" />
+                <DropdownMenu.Label className="user-card__manager-actions-label">All actions</DropdownMenu.Label>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={() => setEditSheetOpen(true)}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">label</span>
+                  Edit Risk Indicators
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={(e) => e.preventDefault()}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">mail</span>
+                  Send development plan reminder
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="user-card__manager-actions-item" onSelect={(e) => e.preventDefault()}>
+                  <span className="material-symbols-outlined user-card__manager-actions-icon">add</span>
+                  Create development plan
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
         <div className="user-card__metrics" onClick={(e) => e.stopPropagation()}>
           {METRIC_ITEMS.map(({ key, label, getValue, icon }) => (

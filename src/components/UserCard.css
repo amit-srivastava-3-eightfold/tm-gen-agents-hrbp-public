@@ -62,7 +62,8 @@
 .user-card__left {
   display: flex;
   gap: 16px;
-  flex: 0 0 320px;
+  flex: 0 0 360px;
+  min-width: 0;
 }
 
 .user-card__avatar-wrap {
@@ -97,6 +98,7 @@
 .user-card__info {
   flex: 1;
   min-width: 0;
+  overflow: visible;
 }
 
 .user-card__name {
@@ -116,16 +118,44 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 
-.user-card__contact-btn.btn {
+.user-card__contact-wrap {
+  flex-shrink: 0;
+  width: 140px;
+  min-width: 140px;
+  display: flex;
+}
+
+.user-card__contact-inner {
+  width: 100%;
+  min-width: 0;
+}
+
+.user-card__contact-wrap [data-slot="select-trigger"],
+.user-card__contact-select {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.user-card__contact-wrap [data-slot="select-trigger"] {
   background: #F6F7F8;
+  border-color: transparent;
   color: #1A212E;
-  border: 1px solid #D9DCE1;
 }
 
-.user-card__contact-btn.btn:hover {
+.user-card__contact-wrap [data-slot="select-trigger"]:hover {
   background: #EDEEF0;
+}
+
+.user-card__contact-content {
+  width: max-content;
+  min-width: var(--radix-select-trigger-width, auto);
 }
 
 .user-card__action-icons {
@@ -387,4 +417,108 @@
 .user-card__risk-tag-wrap.user-card__risk-tag--critical .user-card__risk-tag-pencil:hover {
   background: rgba(183, 28, 28, 0.12);
   color: #B71C1C;
+}
+
+/* Manager actions trigger: outline select style (DS SelectTrigger variant="outline") */
+.user-card__manager-actions--select-outline.user-card__manager-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 12px;
+  font: var(--typography-body3);
+  color: var(--text-color-default, #1A212E);
+  background: transparent;
+  border: 1px solid #D9DCE1;
+  border-radius: var(--radius-8, 8px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+}
+
+.user-card__manager-actions--select-outline.user-card__manager-actions:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.user-card__manager-actions--select-outline.user-card__manager-actions:focus-visible {
+  border-color: #146DA6;
+  box-shadow: 0 0 0 3px rgba(20, 109, 166, 0.2);
+}
+
+.user-card__manager-actions-label-text {
+  flex: 1;
+  text-align: left;
+}
+
+.user-card__manager-actions-chevron {
+  font-size: 18px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.user-card__manager-actions-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font: var(--typography-caption-semibold);
+  font-size: 11px;
+  line-height: 18px;
+  background: #146DA6;
+  color: #FFFFFF;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Manager actions dropdown */
+.user-card__manager-actions-content {
+  min-width: 240px;
+  padding: 8px 0;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+}
+
+.user-card__manager-actions-label {
+  padding: 6px 12px 4px;
+  font: var(--typography-caption-semibold);
+  color: #4F5666;
+}
+
+.user-card__manager-actions-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  width: 100%;
+  background: none;
+  text-align: left;
+}
+
+.user-card__manager-actions-item:hover,
+.user-card__manager-actions-item[data-highlighted] {
+  background: #F6F7F8;
+}
+
+.user-card__manager-actions-icon {
+  font-size: 20px;
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.user-card__manager-actions-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: #D9DCE1;
 }

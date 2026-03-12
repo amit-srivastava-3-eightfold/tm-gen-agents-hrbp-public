@@ -3,7 +3,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import { useUser } from '../contexts/UserContext'
 import { NavbarApp } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
-import { Button } from '../components/ui/Button'
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { PersonBanner } from '../components/PersonBanner'
 import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
 import '../components/PageHeader.css'
@@ -48,7 +48,7 @@ export function MyTeamPage() {
             <Tabs.Content value="succession" className="my-team-page__tabs-content">
               <div className="my-team-page__page-header grid grid-cols-12 gap-6">
                 <div className="my-team-page__header-actions col-span-12 flex justify-end">
-                  <Button variant="secondary">
+                  <Button variant="default">
                     <span className="material-symbols-outlined">account_tree</span>
                     View org chart
                   </Button>

@@ -75,6 +75,16 @@
   background: #E8EAED;
 }
 
+/* View trigger: match default Select (light blue) */
+.skill-analysis__view-trigger.btn {
+  background: rgba(235, 247, 255, 1);
+  color: var(--color-button-primary-text, #054D7B);
+}
+
+.skill-analysis__view-trigger.btn:hover {
+  background: rgba(220, 240, 255, 1);
+}
+
 .skill-analysis__roles-trigger-label {
   flex: 1;
   text-align: left;
@@ -557,8 +567,15 @@
   font-size: 16px;
 }
 
-.skill-analysis__assign-btn {
+.skill-analysis__assign-select {
   margin-left: auto;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.skill-analysis__assign-select .skill-analysis__assign-icon {
+  font-size: 18px;
+  margin-right: 6px;
 }
 
 .skill-analysis__cards .skill-analysis__card:first-child .skill-analysis__item,
@@ -719,7 +736,7 @@
 }
 
 .skill-analysis__cards > .skill-analysis__card:first-child .skill-analysis__item:hover::before {
-  background-color: #F6F7F8;
+  background-color: #FFEBEE;
 }
 
 .skill-analysis__cards > .skill-analysis__card:nth-child(2) .skill-analysis__item:hover::before {
@@ -768,11 +785,35 @@
   border-bottom: none;
 }
 
-.skill-analysis__skill-name {
+.skill-analysis__item-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex: 1;
   min-width: 0;
   position: relative;
   z-index: 1;
+  cursor: pointer;
+}
+
+/* Let clicks pass through to row handler (fixes Skill strength row not updating results) */
+.skill-analysis__item-inner .skill-analysis__skill-name {
+  pointer-events: none;
+}
+
+.skill-analysis__skill-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Keep EF SkillTag from stretching in card rows */
+.skill-analysis__item .skill-analysis__skill-name.skill-tag {
+  width: fit-content;
+  max-width: 100%;
 }
 
 .skill-analysis__item-right {
