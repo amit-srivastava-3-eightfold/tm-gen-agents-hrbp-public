@@ -520,11 +520,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* Skill gaps and skill strengths cards: fixed height */
-.skill-analysis__cards > .skill-analysis__card:first-child,
-.skill-analysis__cards > .skill-analysis__card:nth-child(2) {
+/* Skill gaps and skill strengths cards: fixed height, list scrolls inside */
+.skill-analysis__card--gaps,
+.skill-analysis__card--strengths {
   height: 300px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Employee skills, Popular skills & Roles: same height, list scrolls inside */

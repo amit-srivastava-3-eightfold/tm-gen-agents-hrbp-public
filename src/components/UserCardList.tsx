@@ -1,5 +1,5 @@
 import { useUser } from '../contexts/UserContext'
-import type { UserCardData } from './UserCard'
+import type { UserCardData, RiskTag } from './UserCard'
 import { UserCard } from './UserCard'
 import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
 
@@ -23,6 +23,10 @@ interface UserCardListProps {
   selectedJobLevels?: string[]
   /** Sort order for the list */
   sortBy?: 'rating-desc' | 'rating-asc' | 'gap-desc' | 'alphabetical' | 'tenure'
+  /** Override risk tags per user id (from Edit risk sheet save) */
+  riskTagOverrides?: Record<string, RiskTag[]>
+  /** Called when user saves risk tags in the edit sheet */
+  onRiskTagsChange?: (userId: string, riskTags: RiskTag[]) => void
 }
 
 function getJobLevelFromTitle(title: string): string {
@@ -46,6 +50,8 @@ export function UserCardList({
   selectedSkills = [],
   selectedJobLevels = [],
   sortBy = 'rating-desc',
+  riskTagOverrides = {},
+  onRiskTagsChange,
 }: UserCardListProps) {
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'laura-shah'
@@ -109,7 +115,11 @@ export function UserCardList({
   return (
     <div className="user-card-list">
       {sorted.map((user) => (
-        <UserCard key={user.id} user={user} />
+        <UserCard
+          key={user.id}
+          user={riskTagOverrides[user.id] ? { ...user, riskTags: riskTagOverrides[user.id] } : user}
+          onRiskTagsChange={onRiskTagsChange}
+        />
       ))}
     </div>
   )

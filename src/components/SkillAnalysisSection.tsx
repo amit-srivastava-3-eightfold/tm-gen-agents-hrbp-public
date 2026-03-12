@@ -14,6 +14,7 @@ import {
 } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
+import type { RiskTag } from './UserCard'
 import { UserCardList } from './UserCardList'
 
 /** Unique role titles across the team (from team data) */
@@ -99,14 +100,27 @@ const MATEO_SKILL_GAPS = [
   { name: 'Technical Sales', current: 7, total: 14 },
   { name: 'Enterprise Sales', current: 3, total: 14 },
   { name: 'Contract Negotiation', current: 6, total: 14 },
+  { name: 'Discovery Calls', current: 4, total: 14 },
+  { name: 'Competitive Positioning', current: 5, total: 14 },
+  { name: 'Proof of Concept', current: 3, total: 14 },
+  { name: 'Solution Scoping', current: 6, total: 14 },
+  { name: 'Stakeholder Mapping', current: 4, total: 14 },
+  { name: 'Proposal Writing', current: 5, total: 14 },
 ]
 
 const MATEO_SKILL_STRENGTHS = [
   { name: 'Solution Architecture', current: 12, total: 14 },
   { name: 'Sales Enablement', current: 10, total: 14 },
   { name: 'Technical Discovery', current: 11, total: 14 },
-  { name: 'API Integration', current: 5, total: 14 },
   { name: 'Communication', current: 14, total: 14 },
+  { name: 'API Integration', current: 5, total: 14 },
+  { name: 'Product Demos', current: 9, total: 14 },
+  { name: 'Value Proposition', current: 8, total: 14 },
+  { name: 'Technical Sales', current: 10, total: 14 },
+  { name: 'CRM Systems', current: 11, total: 14 },
+  { name: 'Objection Handling', current: 7, total: 14 },
+  { name: 'Contract Negotiation', current: 8, total: 14 },
+  { name: 'Enterprise Sales', current: 6, total: 14 },
 ]
 
 const MATEO_SKILL_INTERESTS = [
@@ -134,14 +148,27 @@ const LAURA_SKILL_GAPS = [
   { name: 'Labor Law Compliance', current: 3, total: 12 },
   { name: 'Talent Analytics', current: 2, total: 12 },
   { name: 'Employee Engagement', current: 8, total: 12 },
+  { name: 'Compensation Design', current: 3, total: 12 },
+  { name: 'Organizational Design', current: 4, total: 12 },
+  { name: 'HR Technology', current: 5, total: 12 },
+  { name: 'Conflict Resolution', current: 4, total: 12 },
+  { name: 'Talent Sourcing', current: 3, total: 12 },
+  { name: 'Learning Strategy', current: 2, total: 12 },
 ]
 
 const LAURA_SKILL_STRENGTHS = [
   { name: 'Employee Relations', current: 11, total: 12 },
   { name: 'Talent Management', current: 10, total: 12 },
+  { name: 'Stakeholder Management', current: 10, total: 12 },
   { name: 'Coaching', current: 9, total: 12 },
   { name: 'Data Analytics', current: 7, total: 12 },
-  { name: 'Stakeholder Management', current: 10, total: 12 },
+  { name: 'Performance Management', current: 8, total: 12 },
+  { name: 'Employee Engagement', current: 9, total: 12 },
+  { name: 'Change Management', current: 6, total: 12 },
+  { name: 'Workforce Planning', current: 7, total: 12 },
+  { name: 'DEI Initiatives', current: 8, total: 12 },
+  { name: 'Succession Planning', current: 6, total: 12 },
+  { name: 'Communication', current: 12, total: 12 },
 ]
 
 const LAURA_SKILL_INTERESTS = [
@@ -173,6 +200,12 @@ const ROLES_REQUIRING_SKILL_GAP: Record<string, string[]> = {
   'Technical Sales': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer'],
   'Enterprise Sales': ['Technical Account Manager', 'Sales Engineer'],
   'Contract Negotiation': ['Technical Account Manager', 'Sales Engineer'],
+  'Discovery Calls': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Competitive Positioning': ['Senior Solutions Engineer', 'Sales Engineer', 'Solutions Engineer'],
+  'Proof of Concept': ['Senior Solutions Engineer', 'Solutions Engineer'],
+  'Solution Scoping': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Stakeholder Mapping': ['Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Proposal Writing': ['Technical Account Manager', 'Sales Engineer'],
   'Performance Management': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director', 'Customer Success Manager'],
   'Workforce Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director'],
   'Succession Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer'],
@@ -181,6 +214,12 @@ const ROLES_REQUIRING_SKILL_GAP: Record<string, string[]> = {
   'Labor Law Compliance': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success'],
   'Talent Analytics': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success', 'Director of Sales Engineering'],
   'Employee Engagement': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director'],
+  'Compensation Design': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success'],
+  'Organizational Design': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Director of Sales Engineering'],
+  'HR Technology': ['HRBP Peer', 'VP of Customer Success', 'Director of Customer Success', 'Implementation Director'],
+  'Conflict Resolution': ['Director of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager'],
+  'Talent Sourcing': ['HRBP Peer', 'VP of Customer Success', 'Director of Sales Engineering'],
+  'Learning Strategy': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Implementation Director'],
 }
 
 /** Role titles that require this strength. Right-side total = people in these roles. */
@@ -190,11 +229,24 @@ const ROLES_REQUIRING_SKILL_STRENGTH: Record<string, string[]> = {
   'Technical Discovery': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
   'API Integration': ['Senior Solutions Engineer', 'Solutions Engineer'],
   'Communication': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Product Demos': ['Senior Solutions Engineer', 'Sales Engineer', 'Solutions Engineer'],
+  'Value Proposition': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Technical Sales': ['Senior Solutions Engineer', 'Technical Account Manager', 'Sales Engineer'],
+  'CRM Systems': ['Technical Account Manager', 'Sales Engineer', 'Solutions Engineer'],
+  'Objection Handling': ['Technical Account Manager', 'Sales Engineer'],
+  'Contract Negotiation': ['Technical Account Manager', 'Sales Engineer'],
+  'Enterprise Sales': ['Technical Account Manager', 'Sales Engineer'],
   'Employee Relations': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director', 'Professional Services Lead'],
   'Talent Management': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director'],
   'Coaching': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Sales Engineering Lead', 'Implementation Director'],
   'Data Analytics': ['HRBP Peer', 'VP of Customer Success', 'Director of Sales Engineering', 'Director of Customer Success', 'Implementation Director'],
   'Stakeholder Management': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director', 'Professional Services Lead'],
+  'Performance Management': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director', 'Customer Success Manager'],
+  'Employee Engagement': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager', 'Sales Engineering Manager', 'Director of Sales Engineering', 'Implementation Director'],
+  'Change Management': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director', 'Customer Success Manager'],
+  'Workforce Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer', 'Implementation Director'],
+  'DEI Initiatives': ['Director of Customer Success', 'VP of Customer Success', 'HRBP Peer', 'Customer Success Manager'],
+  'Succession Planning': ['Director of Customer Success', 'VP of Customer Success', 'Sales Engineering Manager', 'Director of Sales Engineering', 'HRBP Peer'],
 }
 
 /** Unique skill names across gaps, strengths, and interests (for skills filter) */
@@ -356,79 +408,7 @@ export function SkillAnalysisSection({
     ? (isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS)
     : (isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS)
 
-  /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill */
-  const skillGaps = useMemo(() => {
-    const gapNames = isLaura ? LAURA_SKILL_GAPS.map((s) => s.name) : MATEO_SKILL_GAPS.map((s) => s.name)
-    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_GAP[name] ?? []
-    const list = gapNames.map((name) => {
-      const roles = rolesFor(name)
-      const needSkill = roles.length > 0 ? cardsForScope.filter((c) => roles.includes(c.title)) : cardsForScope
-      const total = needSkill.length
-      const current = needSkill.filter((c) => c.skillGaps?.includes(name)).length
-      return { name, current, total }
-    })
-    list.sort((a, b) => b.current - a.current)
-    return list.slice(0, 5)
-  }, [isLaura, cardsForScope])
-
-  /* For Gaps analysis view: strengths with current/total bar (role-based) */
-  const skillStrengths = useMemo(() => {
-    const strengthNames = isLaura ? LAURA_SKILL_STRENGTHS.map((s) => s.name) : MATEO_SKILL_STRENGTHS.map((s) => s.name)
-    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_STRENGTH[name] ?? []
-    const list = strengthNames.map((name) => {
-      const roles = rolesFor(name)
-      const needSkill = roles.length > 0 ? cardsForScope.filter((c) => roles.includes(c.title)) : cardsForScope
-      const total = needSkill.length
-      const current = needSkill.filter((c) => c.skillStrengths?.includes(name)).length
-      return { name, current, total }
-    })
-    return list.sort((a, b) => b.current - a.current)
-  }, [isLaura, cardsForScope])
-
-  /* For Gaps analysis view: skill interests with count */
-  const skillInterestsSortedByCount = useMemo(() => {
-    const interestNames = isLaura ? LAURA_SKILL_INTERESTS.map((s) => s.name) : MATEO_SKILL_INTERESTS.map((s) => s.name)
-    const list = interestNames.map((name) => ({
-      name,
-      count: cardsForScope.filter((c) => c.skillInterests?.includes(name)).length,
-    }))
-    return list.sort((a, b) => b.count - a.count)
-  }, [isLaura, cardsForScope])
-
-  /* Popular skills: all skills that anyone possesses, with count; sorted by count desc (list is scrollable) */
-  const popularSkills = useMemo(() => {
-    const nameSet = new Set<string>()
-    for (const c of cardsForScope) {
-      for (const name of c.skillStrengths ?? []) {
-        nameSet.add(name)
-      }
-    }
-    const list = Array.from(nameSet).map((name) => ({
-      name,
-      count: cardsForScope.filter((c) => c.skillStrengths?.includes(name)).length,
-    }))
-    return list.sort((a, b) => b.count - a.count)
-  }, [cardsForScope])
-
-  /* Roles: role title + count + percentage of people in that role */
-  const rolesWithCountAndPct = useMemo(() => {
-    const total = cardsForScope.length
-    const byTitle: Record<string, number> = {}
-    for (const c of cardsForScope) {
-      const t = c.title ?? ''
-      byTitle[t] = (byTitle[t] ?? 0) + 1
-    }
-    return Object.entries(byTitle)
-      .map(([role, count]) => ({ role, count, percentage: total ? Math.round((count / total) * 100) : 0 }))
-      .sort((a, b) => b.count - a.count)
-  }, [cardsForScope])
-  const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
-  const pipelineLookup = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
-  const openPositions = useMemo(
-    () => buildPositionsFromOpenRoles(OPEN_ROLES_PEOPLE_CARDS, pipelineLookup),
-    [pipelineLookup]
-  )
-  const [viewFilter, setViewFilter] = useState<ViewFilterValue>('skills-overview')
+  const [viewFilter, setViewFilter] = useState<ViewFilterValue>('gaps')
   const [selectedSkillGap, setSelectedSkillGap] = useState<string | null>(null)
   const [selectedSkillStrength, setSelectedSkillStrength] = useState<string | null>(null)
   const [selectedSkillInterest, setSelectedSkillInterest] = useState<string | null>(null)
@@ -437,7 +417,95 @@ export function SkillAnalysisSection({
   const [sortBy, setSortBy] = useState<'rating-desc' | 'rating-asc' | 'gap-desc' | 'alphabetical' | 'tenure'>('rating-desc')
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [selectedRolesPeople, setSelectedRolesPeople] = useState<string[]>([])
+  const [selectedSkillsPeople, setSelectedSkillsPeople] = useState<string[]>([])
   const [skillsSearch, setSkillsSearch] = useState('')
+  const [riskTagOverrides, setRiskTagOverrides] = useState<Record<string, RiskTag[]>>({})
+
+  /* Top bar Role/Skills filter the skill cards only (not the people list). Scope the pool for card data. */
+  const cardsForCards = useMemo(() => {
+    let list = cardsForScope
+    if (selectedRoles.length > 0) list = list.filter((c) => selectedRoles.includes(c.title))
+    if (selectedSkills.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
+    return list
+  }, [cardsForScope, selectedRoles, selectedSkills])
+
+  /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill. When top Skills filter is set, only show those skills. */
+  const skillGaps = useMemo(() => {
+    const gapNames = isLaura ? LAURA_SKILL_GAPS.map((s) => s.name) : MATEO_SKILL_GAPS.map((s) => s.name)
+    const namesToShow = selectedSkills.length > 0 ? gapNames.filter((n) => selectedSkills.includes(n)) : gapNames
+    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_GAP[name] ?? []
+    const list = namesToShow.map((name) => {
+      const roles = rolesFor(name)
+      const needSkill = roles.length > 0 ? cardsForCards.filter((c) => roles.includes(c.title)) : cardsForCards
+      const total = needSkill.length
+      const current = needSkill.filter((c) => c.skillGaps?.includes(name)).length
+      return { name, current, total }
+    })
+    list.sort((a, b) => b.current - a.current)
+    return list
+  }, [isLaura, cardsForCards, selectedSkills])
+
+  /* For Gaps analysis view: strengths with current/total bar (role-based). When top Skills filter is set, only show those skills. */
+  const skillStrengths = useMemo(() => {
+    const strengthNames = isLaura ? LAURA_SKILL_STRENGTHS.map((s) => s.name) : MATEO_SKILL_STRENGTHS.map((s) => s.name)
+    const namesToShow = selectedSkills.length > 0 ? strengthNames.filter((n) => selectedSkills.includes(n)) : strengthNames
+    const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_STRENGTH[name] ?? []
+    const list = namesToShow.map((name) => {
+      const roles = rolesFor(name)
+      const needSkill = roles.length > 0 ? cardsForCards.filter((c) => roles.includes(c.title)) : cardsForCards
+      const total = needSkill.length
+      const current = needSkill.filter((c) => c.skillStrengths?.includes(name)).length
+      return { name, current, total }
+    })
+    return list.sort((a, b) => b.current - a.current)
+  }, [isLaura, cardsForCards, selectedSkills])
+
+  /* For Gaps analysis view: skill interests with count. When top Skills filter is set, only show those skills (if they appear in interests). */
+  const skillInterestsSortedByCount = useMemo(() => {
+    const interestNames = isLaura ? LAURA_SKILL_INTERESTS.map((s) => s.name) : MATEO_SKILL_INTERESTS.map((s) => s.name)
+    const namesToShow = selectedSkills.length > 0 ? interestNames.filter((n) => selectedSkills.includes(n)) : interestNames
+    const list = namesToShow.map((name) => ({
+      name,
+      count: cardsForCards.filter((c) => c.skillInterests?.includes(name)).length,
+    }))
+    return list.sort((a, b) => b.count - a.count)
+  }, [isLaura, cardsForCards, selectedSkills])
+
+  /* Popular skills: when top Skills filter is set, only show those skills; otherwise all skills in cardsForCards. */
+  const popularSkills = useMemo(() => {
+    const nameSet = new Set<string>()
+    for (const c of cardsForCards) {
+      for (const name of c.skillStrengths ?? []) {
+        nameSet.add(name)
+      }
+    }
+    const namesToShow = selectedSkills.length > 0 ? Array.from(nameSet).filter((n) => selectedSkills.includes(n)) : Array.from(nameSet)
+    const list = namesToShow.map((name) => ({
+      name,
+      count: cardsForCards.filter((c) => c.skillStrengths?.includes(name)).length,
+    }))
+    return list.sort((a, b) => b.count - a.count)
+  }, [cardsForCards, selectedSkills])
+
+  /* Roles: role title + count + percentage of people in that role */
+  const rolesWithCountAndPct = useMemo(() => {
+    const total = cardsForCards.length
+    const byTitle: Record<string, number> = {}
+    for (const c of cardsForCards) {
+      const t = c.title ?? ''
+      byTitle[t] = (byTitle[t] ?? 0) + 1
+    }
+    return Object.entries(byTitle)
+      .map(([role, count]) => ({ role, count, percentage: total ? Math.round((count / total) * 100) : 0 }))
+      .sort((a, b) => b.count - a.count)
+  }, [cardsForCards])
+  const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
+  const pipelineLookup = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
+  const openPositions = useMemo(
+    () => buildPositionsFromOpenRoles(OPEN_ROLES_PEOPLE_CARDS, pipelineLookup),
+    [pipelineLookup]
+  )
 
   const filteredResultsCount = useMemo(() => {
     let list = cardsForScope
@@ -445,13 +513,13 @@ export function SkillAnalysisSection({
     if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
     if (selectedSkillInterest) list = list.filter((c) => c.skillInterests?.includes(selectedSkillInterest))
     if (selectedRole) list = list.filter((c) => c.title === selectedRole)
-    else if (selectedRoles.length > 0) list = list.filter((c) => selectedRoles.includes(c.title))
+    else if (selectedRolesPeople.length > 0) list = list.filter((c) => selectedRolesPeople.includes(c.title))
     if (selectedSkillStrength) list = list.filter((c) => c.skillStrengths?.includes(selectedSkillStrength))
-    else if (selectedSkills.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
+    else if (selectedSkillsPeople.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkillsPeople.includes(s)))
     if (selectedJobLevels.length > 0) list = list.filter((c) => selectedJobLevels.includes(getJobLevelFromTitle(c.title)))
     if (isLaura && sustainedHighPerformersFilter) list = list.filter((c) => c.highTenureNoPromotion === true)
     return list.length
-  }, [cardsForScope, selectedSkillGap, selectedSkillStrength, selectedSkillInterest, selectedRole, selectedRoles, selectedSkills, selectedJobLevels, isLaura, sustainedHighPerformersFilter])
+  }, [cardsForScope, selectedSkillGap, selectedSkillStrength, selectedSkillInterest, selectedRole, selectedRolesPeople, selectedSkillsPeople, selectedJobLevels, isLaura, sustainedHighPerformersFilter])
 
   const toggleRole = (role: string, checked: boolean) => {
     setSelectedRoles((prev) => (checked ? [...prev, role] : prev.filter((r) => r !== role)))
@@ -463,6 +531,14 @@ export function SkillAnalysisSection({
 
   const toggleJobLevel = (level: string, checked: boolean) => {
     setSelectedJobLevels((prev) => (checked ? [...prev, level] : prev.filter((l) => l !== level)))
+  }
+
+  const toggleRolePeople = (role: string, checked: boolean) => {
+    setSelectedRolesPeople((prev) => (checked ? [...prev, role] : prev.filter((r) => r !== role)))
+  }
+
+  const toggleSkillPeople = (skill: string, checked: boolean) => {
+    setSelectedSkillsPeople((prev) => (checked ? [...prev, skill] : prev.filter((s) => s !== skill)))
   }
 
   const filteredSkills = useMemo(
@@ -726,13 +802,14 @@ export function SkillAnalysisSection({
         {viewFilter === 'gaps' ? (
           /* Gaps analysis: first view – Skill gaps, Skill strengths, Skill interests */
           <>
-            <div className="skill-analysis__card">
+            <div className="skill-analysis__card skill-analysis__card--gaps">
               <div className="skill-analysis__card-header skill-analysis__card-header--gaps">
                 <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--red">trending_down</span>
                 <span>Skill gaps</span>
                 <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
               </div>
-              <ul className="skill-analysis__list">
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
                 {skillGaps.map((skill) => (
                   <li
                     key={skill.name}
@@ -762,15 +839,17 @@ export function SkillAnalysisSection({
                     </div>
                   </li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             </div>
-            <div className="skill-analysis__card">
+            <div className="skill-analysis__card skill-analysis__card--strengths">
               <div className="skill-analysis__card-header skill-analysis__card-header--strengths">
                 <span className="material-symbols-outlined skill-analysis__card-icon skill-analysis__card-icon--green">trending_up</span>
                 <span>Skill strengths</span>
                 <span className="material-symbols-outlined skill-analysis__info-icon" aria-label="Info">info</span>
               </div>
-              <ul className="skill-analysis__list">
+              <div className="skill-analysis__interests-list-wrap">
+                <ul className="skill-analysis__list">
                 {skillStrengths.map((skill) => (
                   <li
                     key={skill.name}
@@ -800,7 +879,8 @@ export function SkillAnalysisSection({
                     </div>
                   </li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             </div>
             <div className="skill-analysis__card skill-analysis__card--interests">
               <div className="skill-analysis__card-header skill-analysis__card-header--interests">
@@ -846,7 +926,7 @@ export function SkillAnalysisSection({
               </div>
               <div className="skill-analysis__interests-list-wrap">
                 <ul className="skill-analysis__list">
-                  {cardsForScope.map((person) => {
+                  {cardsForCards.map((person) => {
                     const below = person.skillGaps?.length ?? 0
                     const exceeds = person.skillStrengths?.length ?? 0
                     const total = 18
@@ -1097,10 +1177,10 @@ export function SkillAnalysisSection({
                 <Button
                   variant="secondary"
                   className="skill-analysis__filter-select skill-analysis__roles-trigger"
-                  aria-label="Role filter"
+                  aria-label="Role filter (people list)"
                 >
                   <span className="skill-analysis__roles-trigger-label">
-                    {selectedRoles.length === 0 ? 'Role' : `${selectedRoles.length} role${selectedRoles.length === 1 ? '' : 's'} selected`}
+                    {selectedRolesPeople.length === 0 ? 'Role' : `${selectedRolesPeople.length} role${selectedRolesPeople.length === 1 ? '' : 's'} selected`}
                   </span>
                   <span className="material-symbols-outlined skill-analysis__roles-chevron">expand_more</span>
                 </Button>
@@ -1110,8 +1190,8 @@ export function SkillAnalysisSection({
                   <div className="skill-analysis__roles-list">
                     <DropdownMenu.CheckboxItem
                       className="skill-analysis__roles-item"
-                      checked={selectedRoles.length === 0}
-                      onCheckedChange={(checked) => checked && setSelectedRoles([])}
+                      checked={selectedRolesPeople.length === 0}
+                      onCheckedChange={(checked) => checked && setSelectedRolesPeople([])}
                       onSelect={(e) => e.preventDefault()}
                     >
                       <span className="skill-analysis__roles-checkbox" aria-hidden>
@@ -1125,8 +1205,8 @@ export function SkillAnalysisSection({
                       <DropdownMenu.CheckboxItem
                         key={role}
                         className="skill-analysis__roles-item"
-                        checked={selectedRoles.includes(role)}
-                        onCheckedChange={(checked) => toggleRole(role, checked === true)}
+                        checked={selectedRolesPeople.includes(role)}
+                        onCheckedChange={(checked) => toggleRolePeople(role, checked === true)}
                         onSelect={(e) => e.preventDefault()}
                       >
                         <span className="skill-analysis__roles-checkbox" aria-hidden>
@@ -1146,10 +1226,10 @@ export function SkillAnalysisSection({
                 <Button
                   variant="secondary"
                   className="skill-analysis__filter-select skill-analysis__skills-trigger"
-                  aria-label="Skills filter"
+                  aria-label="Skills filter (people list)"
                 >
                   <span className="skill-analysis__skills-trigger-label">
-                    {selectedSkills.length === 0 ? 'Skills' : `${selectedSkills.length} skill${selectedSkills.length === 1 ? '' : 's'} selected`}
+                    {selectedSkillsPeople.length === 0 ? 'Skills' : `${selectedSkillsPeople.length} skill${selectedSkillsPeople.length === 1 ? '' : 's'} selected`}
                   </span>
                   <span className="material-symbols-outlined skill-analysis__skills-chevron">expand_more</span>
                 </Button>
@@ -1171,8 +1251,8 @@ export function SkillAnalysisSection({
                   <div className="skill-analysis__skills-list">
                     <DropdownMenu.CheckboxItem
                       className="skill-analysis__skills-item"
-                      checked={selectedSkills.length === 0}
-                      onCheckedChange={(checked) => checked && setSelectedSkills([])}
+                      checked={selectedSkillsPeople.length === 0}
+                      onCheckedChange={(checked) => checked && setSelectedSkillsPeople([])}
                       onSelect={(e) => e.preventDefault()}
                     >
                       <span className="skill-analysis__skills-checkbox" aria-hidden>
@@ -1186,8 +1266,8 @@ export function SkillAnalysisSection({
                       <DropdownMenu.CheckboxItem
                         key={skill}
                         className="skill-analysis__skills-item"
-                        checked={selectedSkills.includes(skill)}
-                        onCheckedChange={(checked) => toggleSkill(skill, checked === true)}
+                        checked={selectedSkillsPeople.includes(skill)}
+                        onCheckedChange={(checked) => toggleSkillPeople(skill, checked === true)}
                         onSelect={(e) => e.preventDefault()}
                       >
                         <span className="skill-analysis__skills-checkbox" aria-hidden>
@@ -1265,7 +1345,7 @@ export function SkillAnalysisSection({
             </div>
           </>
         )}
-        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedJobLevels.length > 0) && (
+        {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0) && (
           <Button
             className="skill-analysis__assign-btn"
             variant="outline"
@@ -1278,7 +1358,7 @@ export function SkillAnalysisSection({
 
       <div className="skill-analysis__results">
         <span className="skill-analysis__results-text">
-          Showing {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedJobLevels.length > 0 || sustainedHighPerformersFilter) ? filteredResultsCount : (scope === 'all' ? tabCounts.all : tabCounts.direct)} results
+          Showing {(selectedSkillGap || selectedSkillStrength || selectedSkillInterest || selectedRole || selectedRolesPeople.length > 0 || selectedSkillsPeople.length > 0 || selectedJobLevels.length > 0 || sustainedHighPerformersFilter) ? filteredResultsCount : (scope === 'all' ? tabCounts.all : tabCounts.direct)} results
         </span>
         <Button variant="secondary" size="sm" className="skill-analysis__select-all">Select all on this page</Button>
         <div className="skill-analysis__results-sort">
@@ -1303,10 +1383,12 @@ export function SkillAnalysisSection({
         selectedSkillStrength={selectedSkillStrength}
         selectedSkillInterest={selectedSkillInterest}
         selectedRole={selectedRole}
-        selectedRoles={selectedRoles}
-        selectedSkills={selectedSkills}
+        selectedRoles={selectedRolesPeople}
+        selectedSkills={selectedSkillsPeople}
         selectedJobLevels={selectedJobLevels}
         sortBy={sortBy}
+        riskTagOverrides={riskTagOverrides}
+        onRiskTagsChange={(userId, riskTags) => setRiskTagOverrides((prev) => ({ ...prev, [userId]: riskTags }))}
       />
       </>
       )}
