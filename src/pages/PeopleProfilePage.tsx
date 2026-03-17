@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import * as Tabs from '@radix-ui/react-tabs'
@@ -71,15 +71,30 @@ export function PeopleProfilePage() {
     return { viewOptions: ALL_VIEW_OPTIONS, defaultView: 'hrbp' as const }
   }, [isMateo, isOnMateosTeam])
 
-  const [view, setView] = useState<string>(defaultView)
-
-  useEffect(() => {
-    setView(defaultView)
-  }, [id, defaultView])
-
   if (!person) {
     return <Navigate to="/people" replace />
   }
+
+  return (
+    <PeopleProfileContent
+      key={id}
+      person={person}
+      defaultView={defaultView}
+      viewOptions={viewOptions}
+    />
+  )
+}
+
+function PeopleProfileContent({
+  person,
+  defaultView,
+  viewOptions,
+}: {
+  person: NonNullable<ReturnType<typeof getPersonById>>
+  defaultView: string
+  viewOptions: { id: string; label: string }[]
+}) {
+  const [view, setView] = useState<string>(defaultView)
 
   const avatarSrc = person.avatarType === 'photo' && person.avatarPhotoSrc
     ? person.avatarPhotoSrc.replace('w=80&h=80', 'w=200&h=200')

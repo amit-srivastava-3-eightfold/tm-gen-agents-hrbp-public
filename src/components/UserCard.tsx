@@ -271,6 +271,7 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
     </article>
     </Link>
     <EditRiskSheet
+      key={editSheetOpen && user ? user.id : 'edit-risk-closed'}
       user={editSheetOpen ? user : null}
       open={editSheetOpen}
       onClose={() => setEditSheetOpen(false)}

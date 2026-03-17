@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import * as Tabs from '@radix-ui/react-tabs'
 import { Link } from 'react-router-dom'
@@ -53,21 +53,18 @@ export function EditSkillAssessmentsSheet({
   onClose,
   onSave,
 }: EditSkillAssessmentsSheetProps) {
-  const [proficiencies, setProficiencies] = useState<Record<string, number>>({})
-
-  useEffect(() => {
-    if (user && open) {
-      const next: Record<string, number> = {}
-      const fromSaved = (name: string) => initialProficiencies?.[name] ?? defaultProficiency(name, user)
-      for (const name of requiredByRoleSkills) {
-        next[name] = fromSaved(name)
-      }
-      for (const name of otherSkills) {
-        next[name] = fromSaved(name)
-      }
-      setProficiencies(next)
+  const [proficiencies, setProficiencies] = useState<Record<string, number>>(() => {
+    if (!user) return {}
+    const next: Record<string, number> = {}
+    const fromSaved = (name: string) => initialProficiencies?.[name] ?? defaultProficiency(name, user)
+    for (const name of requiredByRoleSkills) {
+      next[name] = fromSaved(name)
     }
-  }, [user, open, requiredByRoleSkills, otherSkills, initialProficiencies])
+    for (const name of otherSkills) {
+      next[name] = fromSaved(name)
+    }
+    return next
+  })
 
   useLayoutEffect(() => {
     if (open) document.body.setAttribute(BODY_SHEET_ATTR, 'true')

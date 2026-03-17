@@ -1,4 +1,4 @@
-import type { CurrentUser } from '../contexts/UserContext'
+import type { CurrentUser } from '../contexts/demoUsers'
 import { getCareerPathForPerson } from './careerInterestsData'
 
 export interface HomeTask {

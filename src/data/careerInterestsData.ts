@@ -392,6 +392,7 @@ export interface CareerInterestRole {
 export function getCareerInterestsForSidebar(
   _personId: string,
   title: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for future filtering by business unit
   _businessUnit: string
 ): CareerInterestRole[] {
   const isManager = title.toLowerCase().includes('manager') || title.toLowerCase().includes('lead') || title.toLowerCase().includes('director')

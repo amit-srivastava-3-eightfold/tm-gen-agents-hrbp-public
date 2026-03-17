@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useSearchParams } from 'react-router-dom'
 import { NavbarApp } from '../components/Navbar'
@@ -36,26 +36,17 @@ export function PeoplePage() {
   const defaultRole = roleOptions[0]?.value ?? ''
   const validRole = roleOptions.some((r) => r.value === roleFromUrl) ? roleFromUrl : defaultRole
 
-  const [activeTab, setActiveTab] = useState(validTab)
-  const [selectedRole, setSelectedRole] = useState(validRole)
-
   const totalOpenRequisitions = OPEN_ROLES_PEOPLE_CARDS.length
   const filteredOpenRolesCards = useMemo(
-    () => filterByRole(OPEN_ROLES_PEOPLE_CARDS, selectedRole),
-    [selectedRole]
+    () => filterByRole(OPEN_ROLES_PEOPLE_CARDS, validRole),
+    [validRole]
   )
 
-  useEffect(() => {
-    setActiveTab(validTab)
-    setSelectedRole(validRole)
-  }, [validTab, validRole])
-
   const handleTabChange = (value: string) => {
-    setActiveTab(value)
     const params = new URLSearchParams(searchParams)
     params.set('tab', value)
     if (value === 'open-roles') {
-      params.set('role', selectedRole)
+      params.set('role', validRole)
     } else {
       params.delete('role')
     }
@@ -64,14 +55,13 @@ export function PeoplePage() {
 
   const handleRoleChange = (value: string) => {
     const role = roleOptions.some((r) => r.value === value) ? value : defaultRole
-    setSelectedRole(role)
     const params = new URLSearchParams(searchParams)
     params.set('tab', 'open-roles')
     params.set('role', role)
     setSearchParams(params)
   }
 
-  const matchRoleLabel = selectedRole
+  const matchRoleLabel = validRole
 
   return (
     <div className="people-page">
@@ -79,7 +69,7 @@ export function PeoplePage() {
       <PageHeader title="People" />
       <main className="people-page__main">
         <div className="people-page__content">
-          <Tabs.Root value={activeTab} onValueChange={handleTabChange} className="people-page__tabs">
+          <Tabs.Root value={validTab} onValueChange={handleTabChange} className="people-page__tabs">
             <Tabs.List className="people-page__tabs-list">
               <Tabs.Trigger value="search" className="people-page__tab">
                 Search
@@ -168,7 +158,7 @@ export function PeoplePage() {
                     Role
                     <select
                       className="people-page__filter-select"
-                      value={selectedRole}
+                      value={validRole}
                       onChange={(e) => handleRoleChange(e.target.value)}
                       aria-label="Role"
                     >

@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useUser } from '../contexts/UserContext'
-import { OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
 import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
-import type { PeopleProfileCardData } from './PeopleProfileCard'
 import {
   Select,
   SelectTrigger,
@@ -25,72 +22,6 @@ const ROLES_FOR_TEAM: string[] = (() => {
   ;[...MATEO_USER_CARDS, ...LAURA_USER_CARDS].forEach((c) => titles.add(c.title))
   return Array.from(titles).sort()
 })()
-
-type PositionRow = {
-  id: string
-  title: string
-  details: string
-  daysOpen: number
-  leads: number
-  employees: number
-  new: number
-  recruiterScreen: number
-  hiringManagerScreen: number
-  phoneInterview: number
-  onsiteInterview: number
-  offer: number
-  referenceCheck: number
-}
-
-function getUniqueRolesFromData(cards: PeopleProfileCardData[]): string[] {
-  const seen = new Set<string>()
-  const roles: string[] = []
-  for (const p of cards) {
-    if (p.roleInterest && !seen.has(p.roleInterest)) {
-      seen.add(p.roleInterest)
-      roles.push(p.roleInterest)
-    }
-  }
-  return roles.sort((a, b) => a.localeCompare(b))
-}
-
-function getCountByRole(cards: PeopleProfileCardData[]): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (const p of cards) {
-    if (p.roleInterest) {
-      counts[p.roleInterest] = (counts[p.roleInterest] ?? 0) + 1
-    }
-  }
-  return counts
-}
-
-function buildPositionsFromOpenRoles(
-  cards: PeopleProfileCardData[],
-  pipelineLookup: PositionRow[]
-): PositionRow[] {
-  const roles = getUniqueRolesFromData(cards)
-  const counts = getCountByRole(cards)
-  const lookupByTitle = Object.fromEntries(pipelineLookup.map((p) => [p.title, p]))
-  return roles.map((role) => {
-    const pipeline = lookupByTitle[role]
-    const id = pipeline?.id ?? role.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    return {
-      id,
-      title: role,
-      details: pipeline?.details ?? `${role} • Sourcing Pipeline`,
-      daysOpen: pipeline?.daysOpen ?? 0,
-      leads: pipeline?.leads ?? 0,
-      employees: counts[role] ?? 0,
-      new: pipeline?.new ?? 0,
-      recruiterScreen: pipeline?.recruiterScreen ?? 0,
-      hiringManagerScreen: pipeline?.hiringManagerScreen ?? 0,
-      phoneInterview: pipeline?.phoneInterview ?? 0,
-      onsiteInterview: pipeline?.onsiteInterview ?? 0,
-      offer: pipeline?.offer ?? 0,
-      referenceCheck: pipeline?.referenceCheck ?? 0,
-    }
-  })
-}
 
 /* Totals = 14 direct reports; current = how many have the skill (gaps = need it by role, strengths = have it) */
 const MATEO_SKILL_GAPS = [
@@ -317,117 +248,6 @@ function getJobLevelFromTitle(title: string): string {
   return 'Individual contributor'
 }
 
-const MATEO_OPEN_POSITIONS: PositionRow[] = [
-  {
-    id: '40468430',
-    title: 'Sales Engineer',
-    details: 'Santa Clara, CA • Mateo Myer • Recruiter not specified • Sourcing Pipeline',
-    daysOpen: 12,
-    leads: 97,
-    employees: 24,
-    new: 0,
-    recruiterScreen: 0,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-  {
-    id: '40468780',
-    title: 'Solutions Engineer',
-    details: 'Remote • Mateo Myer • Recruiter not specified • Sourcing Pipeline',
-    daysOpen: 28,
-    leads: 112,
-    employees: 18,
-    new: 0,
-    recruiterScreen: 0,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-  {
-    id: '40468912',
-    title: 'Technical Account Manager',
-    details: 'Santa Clara, CA • Mateo Myer • Recruiter not specified • Sourcing Pipeline',
-    daysOpen: 5,
-    leads: 84,
-    employees: 31,
-    new: 3,
-    recruiterScreen: 2,
-    hiringManagerScreen: 1,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 1,
-    referenceCheck: 1,
-  },
-]
-
-const LAURA_OPEN_POSITIONS: PositionRow[] = [
-  {
-    id: '40468430',
-    title: 'Sales Engineer',
-    details: 'Santa Clara, CA • Mateo Myer • Laura Shah • Sourcing Pipeline',
-    daysOpen: 12,
-    leads: 97,
-    employees: 24,
-    new: 0,
-    recruiterScreen: 0,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-  {
-    id: '40468780',
-    title: 'Solutions Engineer',
-    details: 'Remote • Mateo Myer • Laura Shah • Sourcing Pipeline',
-    daysOpen: 28,
-    leads: 112,
-    employees: 18,
-    new: 0,
-    recruiterScreen: 0,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-  {
-    id: '40468912',
-    title: 'Customer Success Manager',
-    details: 'Los Angeles, CA • Ethan Declerq • Laura Shah • Sourcing Pipeline',
-    daysOpen: 8,
-    leads: 62,
-    employees: 15,
-    new: 2,
-    recruiterScreen: 1,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-  {
-    id: '40468920',
-    title: 'Implementation Consultant',
-    details: 'San Francisco, CA • Anna Patel • Laura Shah • Sourcing Pipeline',
-    daysOpen: 15,
-    leads: 45,
-    employees: 12,
-    new: 1,
-    recruiterScreen: 0,
-    hiringManagerScreen: 0,
-    phoneInterview: 0,
-    onsiteInterview: 0,
-    offer: 0,
-    referenceCheck: 0,
-  },
-]
-
 type ViewFilterValue = 'gaps' | 'skills-overview' | 'team-statistics'
 
 /** Team statistics view: stat card ids and labels; counts/computed from cardsForScope */
@@ -484,18 +304,13 @@ export function SkillAnalysisSection({
   /** When in Team statistics view, which filter card is selected (replaces skill cards with stat bar) */
   const [selectedStatCard, setSelectedStatCard] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (viewFilter === 'team-statistics') setSelectedStatCard('all')
-    else setSelectedStatCard(null)
-  }, [viewFilter])
-
   /* Top bar Role/Skills filter the skill cards only (not the people list). Scope the pool for card data. */
   const cardsForCards = useMemo(() => {
     let list = cardsForScope
     if (selectedRoles.length > 0) list = list.filter((c) => selectedRoles.includes(c.title))
     if (selectedSkills.length > 0) list = list.filter((c) => (c.skillStrengths ?? []).some((s) => selectedSkills.includes(s)))
     return list
-  }, [scope, cardsForScope, selectedRoles, selectedSkills])
+  }, [cardsForScope, selectedRoles, selectedSkills])
 
   /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill. When top Skills filter is set, only show those skills. */
   const skillGaps = useMemo(() => {
@@ -578,11 +393,6 @@ export function SkillAnalysisSection({
   }, [cardsForCards, skillProficiencies])
 
   const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
-  const pipelineLookup = isLaura ? LAURA_OPEN_POSITIONS : MATEO_OPEN_POSITIONS
-  const openPositions = useMemo(
-    () => buildPositionsFromOpenRoles(OPEN_ROLES_PEOPLE_CARDS, pipelineLookup),
-    [pipelineLookup]
-  )
 
   const filteredResultsCount = useMemo(() => {
     let list = cardsForScope
@@ -858,104 +668,11 @@ export function SkillAnalysisSection({
         </DropdownMenu.Root>
       </div>
 
-      {false ? (
-        <div className="skill-analysis__positions-table-wrap">
-          <table className="skill-analysis__positions-table">
-            <thead>
-              <tr>
-                <th className="skill-analysis__positions-th skill-analysis__positions-th--position">Position</th>
-                <th className="skill-analysis__positions-th">
-                  Days Open
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Leads
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Employees
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  New
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Recruiter Screen
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Hiring Manager Screen
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Phone Interview
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Onsite Interview
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Offer
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th">
-                  Reference Check
-                  <span className="material-symbols-outlined skill-analysis__sort-icon">unfold_more</span>
-                </th>
-                <th className="skill-analysis__positions-th skill-analysis__positions-th--actions" scope="col">
-                  <span className="material-symbols-outlined" aria-hidden>more_vert</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {openPositions.map((pos) => (
-                <tr key={pos.id} className="skill-analysis__positions-row">
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--position">
-                    <div className="skill-analysis__position-info">
-                      <Link to={`/positions/${pos.id}`} className="skill-analysis__position-title skill-analysis__position-title--link">
-                        {pos.title} ({pos.id})
-                      </Link>
-                      <span className="skill-analysis__position-details">
-                        <span className="skill-analysis__position-dot" aria-hidden />
-                        {pos.details}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="skill-analysis__positions-td">{pos.daysOpen}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--lead">{pos.leads}</td>
-                  <td className="skill-analysis__positions-td">
-                    <Link
-                      to={`/people?tab=open-roles&role=${encodeURIComponent(pos.title)}`}
-                      className="skill-analysis__positions-badge-link"
-                    >
-                      {pos.employees}
-                    </Link>
-                  </td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.new}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.recruiterScreen}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.hiringManagerScreen}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.phoneInterview}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.onsiteInterview}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.offer}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--link">{pos.referenceCheck}</td>
-                  <td className="skill-analysis__positions-td skill-analysis__positions-td--actions">
-                    <button type="button" className="skill-analysis__positions-actions-btn" aria-label="Actions">
-                      <span className="material-symbols-outlined">more_vert</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
       <>
       {viewFilter === 'team-statistics' && (
         <div className="skill-analysis__view-stat-cards">
           {teamStatFilterCards.map((card) => {
-            const isActive = selectedStatCard === card.id
+            const isActive = (selectedStatCard ?? 'all') === card.id
             const valueText = card.id === 'all' ? String(card.count) : `${card.count} (${card.pct}%)`
             return (
               <div
@@ -1623,8 +1340,8 @@ export function SkillAnalysisSection({
       />
       </>
       </>
-      )}
       <EditSkillAssessmentsSheet
+        key={skillAssessmentPerson?.id ?? 'edit-skill-closed'}
         user={skillAssessmentPerson}
         requiredByRoleSkills={skillAssessmentPerson ? getRequiredSkillsForTitle(skillAssessmentPerson.title) : []}
         otherSkills={

@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
@@ -23,17 +23,15 @@ function getTagValue(tags: RiskTag[], label: string): RiskLevel | '' {
 const BODY_SHEET_ATTR = 'data-edit-sheet-open'
 
 export function EditRiskSheet({ user, open, onClose, onSave }: EditRiskSheetProps) {
-  const [retention, setRetention] = useState<RiskLevel | ''>('')
-  const [lossImpact, setLossImpact] = useState<RiskLevel | ''>('')
-  const [employeeCriticality, setEmployeeCriticality] = useState<RiskLevel | ''>('')
-
-  useEffect(() => {
-    if (user && open) {
-      setRetention(getTagValue(user.riskTags, 'Retention risk'))
-      setLossImpact(getTagValue(user.riskTags, 'Loss impact'))
-      setEmployeeCriticality(getTagValue(user.riskTags, 'Employee criticality'))
-    }
-  }, [user, open])
+  const [retention, setRetention] = useState<RiskLevel | ''>(() =>
+    user ? getTagValue(user.riskTags, 'Retention risk') : ''
+  )
+  const [lossImpact, setLossImpact] = useState<RiskLevel | ''>(() =>
+    user ? getTagValue(user.riskTags, 'Loss impact') : ''
+  )
+  const [employeeCriticality, setEmployeeCriticality] = useState<RiskLevel | ''>(() =>
+    user ? getTagValue(user.riskTags, 'Employee criticality') : ''
+  )
 
   /* Force navbar/headers below sheet; run before paint so no flash */
   useLayoutEffect(() => {
