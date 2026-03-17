@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": "node scripts/setup-git-auth.cjs",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npx tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "update-ds": "rm -rf node_modules/@tonyh-2-eightfold/ef-design-system && npm install @tonyh-2-eightfold/ef-design-system@github:tonyh-2-eightfold/ef-design-system#main"

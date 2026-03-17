@@ -1,9 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import { MATEO, LAURA, CHRO } from '../../contexts/demoUsers'
-import { Navbar, getNavbarProductConfig, CAREER_HUB_CHRO_TABS, CAREER_HUB_HRBP_TABS } from '@tonyh-2-eightfold/ef-design-system'
+import {
+  Navbar,
+  getNavbarProductConfig,
+  TALENT_ACQUISITION_RECRUITER_TABS,
+} from '@tonyh-2-eightfold/ef-design-system'
 
-const NAV_TABS = [
+/** Career Hub navbar tabs for employee/manager (and HRBP). */
+const CAREER_HUB_TABS = [
   { id: 'home', label: 'Home', path: '/' },
   { id: 'my-career', label: 'My career', chevron: true },
   { id: 'marketplace', label: 'Marketplace', chevron: true },
@@ -11,6 +16,13 @@ const NAV_TABS = [
   { id: 'people', label: 'People', path: '/people' },
   { id: 'my-team', label: 'My team', path: '/my-team' },
 ]
+
+/** Navbar variant is driven solely by the account selected in the user menu. */
+const NAVBAR_TABS_BY_USER_ID: Record<string, typeof CAREER_HUB_TABS | typeof TALENT_ACQUISITION_RECRUITER_TABS> = {
+  mateo: CAREER_HUB_TABS,
+  'laura-shah': CAREER_HUB_TABS,
+  chro: TALENT_ACQUISITION_RECRUITER_TABS,
+}
 
 const AVATAR_MENU_ITEMS = [
   { label: 'My Profile', path: '/profile' },
@@ -37,20 +49,15 @@ const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO> = {
 const NAVBAR_PRODUCT = getNavbarProductConfig('career-hub', 'medium')
 const PRODUCT_ICON_SRC = '/career-hub-icon.svg' // app serves this; DS default path
 
-/** TM app Navbar wired to UserContext and React Router. Uses DS Career Hub variant; CHRO account uses DS CHRO tabs. */
+/** TM app Navbar: the account selected in the user menu drives the navbar variant (tabs). */
 export function NavbarApp() {
   const { currentUser, setCurrentUser } = useUser()
   const location = useLocation()
-  const navTabs =
-    currentUser.id === 'chro'
-      ? CAREER_HUB_CHRO_TABS
-      : currentUser.id === 'laura-shah'
-        ? CAREER_HUB_HRBP_TABS
-        : NAV_TABS
+  const tabs = NAVBAR_TABS_BY_USER_ID[currentUser.id] ?? CAREER_HUB_TABS
 
   return (
     <Navbar
-      tabs={navTabs}
+      tabs={tabs}
       avatarMenuItems={AVATAR_MENU_ITEMS}
       user={{
         name: currentUser.name,
