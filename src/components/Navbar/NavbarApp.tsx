@@ -4,10 +4,11 @@ import { MATEO, LAURA, CHRO } from '../../contexts/demoUsers'
 import {
   Navbar,
   getNavbarProductConfig,
-  TALENT_ACQUISITION_RECRUITER_TABS,
+  CAREER_HUB_CHRO_TABS,
+  CAREER_HUB_HRBP_TABS,
 } from '@tonyh-2-eightfold/ef-design-system'
 
-/** Career Hub navbar tabs for employee/manager (and HRBP). */
+/** Career Hub navbar tabs for employee/manager. */
 const CAREER_HUB_TABS = [
   { id: 'home', label: 'Home', path: '/' },
   { id: 'my-career', label: 'My career', chevron: true },
@@ -18,10 +19,10 @@ const CAREER_HUB_TABS = [
 ]
 
 /** Navbar variant is driven solely by the account selected in the user menu. */
-const NAVBAR_TABS_BY_USER_ID: Record<string, typeof CAREER_HUB_TABS | typeof TALENT_ACQUISITION_RECRUITER_TABS> = {
+const NAVBAR_TABS_BY_USER_ID: Record<string, typeof CAREER_HUB_TABS | typeof CAREER_HUB_HRBP_TABS | typeof CAREER_HUB_CHRO_TABS> = {
   mateo: CAREER_HUB_TABS,
-  'laura-shah': CAREER_HUB_TABS,
-  chro: TALENT_ACQUISITION_RECRUITER_TABS,
+  'laura-shah': CAREER_HUB_HRBP_TABS,
+  chro: CAREER_HUB_CHRO_TABS,
 }
 
 const AVATAR_MENU_ITEMS = [

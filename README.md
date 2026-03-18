@@ -37,3 +37,7 @@ npm run build
 ```bash
 npm run preview
 ```
+
+## Deploy (Vercel)
+
+See [docs/VERCEL.md](docs/VERCEL.md). Run `npm run build` before pushing; Node **20+** (see `engines` / `.nvmrc`).

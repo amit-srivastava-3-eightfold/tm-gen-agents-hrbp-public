@@ -46,3 +46,21 @@
   font: var(--typography-header4-large);
   color: #1A212E;
 }
+
+/* Medium page header (shorter hero, tighter typography) */
+.page-header--medium {
+  height: 120px;
+}
+
+.page-header--medium .page-header__img {
+  max-width: 55%;
+}
+
+.page-header--medium .page-header__content {
+  padding: 20px 24px 0;
+}
+
+.page-header--medium .page-header__title {
+  font: var(--typography-header5);
+  color: #1A212E;
+}

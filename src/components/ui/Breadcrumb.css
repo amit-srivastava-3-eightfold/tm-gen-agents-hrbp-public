@@ -1,0 +1,53 @@
+/* Octuple-aligned breadcrumb (typography / color tokens). Use DS Breadcrumb when exported from ef-design-system. */
+.ds-breadcrumb {
+  width: 100%;
+}
+
+.ds-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ds-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-breadcrumb__link {
+  font: var(--typography-button3);
+  color: #4f5666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.ds-breadcrumb__link:hover {
+  color: #1a212e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ds-breadcrumb__page {
+  font: var(--typography-header6);
+  color: #1a212e;
+}
+
+.ds-breadcrumb__separator {
+  display: inline-flex;
+  color: #94a3b8;
+  margin: 0 6px;
+  user-select: none;
+}
+
+.ds-breadcrumb__separator svg {
+  width: 14px;
+  height: 14px;
+}
