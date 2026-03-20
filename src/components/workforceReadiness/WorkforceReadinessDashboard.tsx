@@ -1,9 +1,11 @@
 import * as Tabs from '@radix-ui/react-tabs'
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge, Button, Pill } from '@tonyh-2-eightfold/ef-design-system'
 import {
   EM,
   ORG,
+  WFR_DEMO_COLLECTION_WINDOW,
+  wfrDemoDeptCollectionSnapshot,
   OUTCOME,
   ZONE,
   countTransformableTasksForRole,
@@ -29,7 +31,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '../ui/Breadcrumb'
-import { WorkforceMetricSheet } from './WorkforceMetricSheet'
+import { FocusCollectionDetailSheet } from './FocusCollectionDetailSheet'
+import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
+import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMetricSheet'
 import './WorkforceReadinessDashboard.css'
 
 function gapStatusBadgeVariant(label: string): 'destructive' | 'outline' | 'secondary' {
@@ -291,7 +295,7 @@ function RoleRow({
           )}
           {isFirst && (
             <Pill variant="orange" size="small">
-              Focus first
+              Recommended actions
             </Pill>
           )}
           {o && (
@@ -564,7 +568,6 @@ function DeptTasksTable({ sortedRoles }: { sortedRoles: RoleRowType[] }) {
   )
 }
 
-type MetricId = 'potential' | 'readiness' | 'gap' | null
 
 function outcomeShortLabel(outcome: 'at-risk' | 'transforms' | 'survives'): string {
   if (outcome === 'at-risk') return 'At risk'
@@ -713,7 +716,19 @@ function RoleEmployeeRow({ employee }: { employee: RoleEmployee }) {
   )
 }
 
-function RolePageView({ dept, role }: { dept: Dept; role: RoleRowType }) {
+function RolePageView({
+  dept,
+  role,
+  orgCollectionActive,
+  collectionLaunchSummary,
+  onOpenCollectionDetail,
+}: {
+  dept: Dept
+  role: RoleRowType
+  orgCollectionActive: boolean
+  collectionLaunchSummary: FocusCollectionLaunchSummary | null
+  onOpenCollectionDetail: () => void
+}) {
   const tasks = getTasksForRole(role.title)
   const sortedTasks = [...tasks].sort((a, b) => b.score - a.score || a.task.localeCompare(b.task))
   const outcome = peopleOutcome(tasks)
@@ -776,6 +791,17 @@ function RolePageView({ dept, role }: { dept: Dept; role: RoleRowType }) {
           </div>
         </div>
       </header>
+
+      {orgCollectionActive ? (
+        <FocusFirstModule
+          mode="collecting"
+          snapshot={wfrDemoDeptCollectionSnapshot(dept)}
+          attentionScope="dept"
+          onOpenCollectionDetail={onOpenCollectionDetail}
+          collectionLaunchSummary={collectionLaunchSummary}
+          departmentContextName={dept.name}
+        />
+      ) : null}
 
       <DeptFocusFirstCard
         role={role}
@@ -947,7 +973,9 @@ function DeptFocusFirstCard({
       <div className="wfr-dash__focus-card-icon-wrap" aria-hidden>
         <span className="material-symbols-outlined wfr-dash__focus-card-icon">priority_high</span>
       </div>
-      <span className="wfr-dash__focus-card-label">Focus first</span>
+      <span className="wfr-dash__focus-card-label wfr-dash__focus-module-eyebrow wfr-dash__focus-module-eyebrow--alert">
+        Recommended actions
+      </span>
     </div>
   )
 
@@ -1025,13 +1053,30 @@ function DeptFocusFirstCard({
   )
 }
 
-function DeptView({ dept, onOpenRole }: { dept: Dept; onOpenRole: (role: RoleRowType) => void }) {
-  const [openMetric, setOpenMetric] = useState<MetricId>(null)
+function DeptView({
+  dept,
+  onOpenRole,
+  orgCollectionActive,
+  onCollectionActiveChange,
+  collectionLaunchSummary,
+  focusLaunchOpen,
+  setFocusLaunchOpen,
+  onOpenCollectionDetail,
+}: {
+  dept: Dept
+  onOpenRole: (role: RoleRowType) => void
+  orgCollectionActive: boolean
+  onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
+  collectionLaunchSummary: FocusCollectionLaunchSummary | null
+  focusLaunchOpen: boolean
+  setFocusLaunchOpen: (open: boolean) => void
+  onOpenCollectionDetail: () => void
+}) {
+  const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [rolesTab, setRolesTab] = useState<'roles' | 'tasks'>('roles')
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
   const roles = getRolesForDept(dept.name)
   const sorted = [...roles].sort((a, b) => tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness))
-  const focusRole = sorted[0]
   const deptAug = deptPeopleInAugRoles(dept)
   const gapCount = deptGapHeadcount(dept)
   const deptReady = Math.max(0, deptAug - gapCount)
@@ -1125,17 +1170,16 @@ function DeptView({ dept, onOpenRole }: { dept: Dept; onOpenRole: (role: RoleRow
           ))}
         </div>
 
-        {focusRole && (
-          <DeptFocusFirstCard
-            role={focusRole}
-            onExpandBelow={() => {
-              setRolesTab('roles')
-              requestAnimationFrame(() =>
-                deptRolesPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-              )
-            }}
-          />
-        )}
+        <FocusFirstModule
+          collectionActive={orgCollectionActive}
+          onCollectionActiveChange={onCollectionActiveChange}
+          launchOpen={focusLaunchOpen}
+          onLaunchOpenChange={setFocusLaunchOpen}
+          onOpenCollectionDetail={onOpenCollectionDetail}
+          onRequestCloseMetricSheet={() => setOpenMetric(null)}
+          deptContext={dept}
+          collectionLaunchSummary={collectionLaunchSummary}
+        />
 
         <WorkforceMetricSheet
           metric={openMetric}
@@ -1218,8 +1262,24 @@ function DeptView({ dept, onOpenRole }: { dept: Dept; onOpenRole: (role: RoleRow
   )
 }
 
-function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
-  const [openMetric, setOpenMetric] = useState<MetricId>(null)
+function BoardView({
+  onDeptClick,
+  focusCollectionActive,
+  onCollectionActiveChange,
+  collectionLaunchSummary,
+  focusLaunchOpen,
+  setFocusLaunchOpen,
+  onOpenCollectionDetail,
+}: {
+  onDeptClick: (d: Dept) => void
+  focusCollectionActive: boolean
+  onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
+  collectionLaunchSummary: FocusCollectionLaunchSummary | null
+  focusLaunchOpen: boolean
+  setFocusLaunchOpen: (open: boolean) => void
+  onOpenCollectionDetail: () => void
+}) {
+  const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
 
   const sorted = [...ORG.departments].sort((a, b) => {
     const pp = tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness)
@@ -1229,27 +1289,7 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
   const ready = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
   const gapPeople = ORG.peopleInAugRoles - ready
   const hrsUnlocked = Math.round(gapPeople * ORG.hrsPerPersonWeek)
-
   const gapSharePct = Math.min(100, Math.round((gapPeople / ORG.peopleInAugRoles) * 100))
-
-  const focusDeptsImmediate = ORG.departments
-    .map((d) => ({
-      name: d.name,
-      imm: getRolesForDept(d.name)
-        .filter((r) => r.reskillPriority === 'Immediate')
-        .reduce((s, r) => s + r.employees, 0),
-    }))
-    .filter((x) => x.imm > 0)
-    .sort((a, b) => b.imm - a.imm || a.name.localeCompare(b.name))
-
-  const focusImmediateCount = focusDeptsImmediate.reduce((s, x) => s + x.imm, 0)
-  const focusPrimaryDept = focusDeptsImmediate[0]
-  const focusSecondaryDepts = focusDeptsImmediate.slice(1)
-
-  const openFocusDept = (deptName: string) => {
-    const d = ORG.departments.find((x) => x.name === deptName)
-    if (d) onDeptClick(d)
-  }
 
   const cards = [
     {
@@ -1298,8 +1338,8 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
           <div className="wfr-dash__capture-tag-wrap">
             <Pill variant="neutral" size="small" className="wfr-dash__capture-tag !h-auto !max-w-none !py-2 !px-3.5">
               <span className="wfr-type-body2 text-[#1a212e]">
-                ~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in
-                augmentable roles are not yet AI-ready.
+                ~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable
+                roles are not yet AI-ready.
               </span>
             </Pill>
           </div>
@@ -1309,10 +1349,7 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
       <div className="flex flex-col gap-0">
         <div className="wfr-dash__cards-row">
           {cards.map((c) => (
-            <article
-              key={c.id}
-              className={`wfr-metric-card wfr-metric-card--${c.id}`}
-            >
+            <article key={c.id} className={`wfr-metric-card wfr-metric-card--${c.id}`}>
               <div className="wfr-metric-card__top">
                 <div className="wfr-metric-card__icon-wrap" aria-hidden>
                   <span className="material-symbols-outlined wfr-metric-card__icon">{c.icon}</span>
@@ -1333,57 +1370,6 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
           ))}
         </div>
 
-        {focusImmediateCount > 0 && focusPrimaryDept && (
-          <div className="wfr-dash__focus-card">
-            <div className="wfr-dash__focus-card-head">
-              <div className="wfr-dash__focus-card-icon-wrap" aria-hidden>
-                <span className="material-symbols-outlined wfr-dash__focus-card-icon">priority_high</span>
-              </div>
-              <span className="wfr-dash__focus-card-label">Focus first</span>
-            </div>
-            <p className="wfr-dash__focus-card-body">
-              <strong className="wfr-dash__focus-card-headcount">
-                {focusImmediateCount.toLocaleString()} employees
-              </strong>{' '}
-              are in roles that require immediate
-              reskilling. Highest-priority department:{' '}
-              <button
-                type="button"
-                className="wfr-dash__focus-card-dept-link wfr-dash__focus-card-primary-name"
-                onClick={() => openFocusDept(focusPrimaryDept.name)}
-              >
-                {focusPrimaryDept.name}
-              </button>
-              {' '}
-              <span className="wfr-dash__focus-card-meta">
-                ({focusPrimaryDept.imm.toLocaleString()} people)
-              </span>
-              {focusSecondaryDepts.length > 0 ? (
-                <>
-                  . Also address{' '}
-                  {focusSecondaryDepts.map((d, i) => (
-                    <Fragment key={d.name}>
-                      {i > 0 && (i === focusSecondaryDepts.length - 1 ? ' and ' : ', ')}
-                      <button
-                        type="button"
-                        className="wfr-dash__focus-card-dept-link wfr-dash__focus-card-dept"
-                        onClick={() => openFocusDept(d.name)}
-                      >
-                        {d.name}
-                      </button>
-                      {' '}
-                      <span className="wfr-dash__focus-card-meta">({d.imm.toLocaleString()})</span>
-                    </Fragment>
-                  ))}
-                  .
-                </>
-              ) : (
-                '.'
-              )}
-            </p>
-          </div>
-        )}
-
         <WorkforceMetricSheet
           metric={openMetric}
           onClose={() => setOpenMetric(null)}
@@ -1391,6 +1377,17 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
           gapPeople={gapPeople}
           hrsUnlocked={hrsUnlocked}
         />
+
+        <FocusFirstModule
+          collectionActive={focusCollectionActive}
+          onCollectionActiveChange={onCollectionActiveChange}
+          launchOpen={focusLaunchOpen}
+          onLaunchOpenChange={setFocusLaunchOpen}
+          onOpenCollectionDetail={onOpenCollectionDetail}
+          onRequestCloseMetricSheet={() => setOpenMetric(null)}
+          collectionLaunchSummary={collectionLaunchSummary}
+        />
+
       </div>
 
       <div className="wfr-dash__panel">
@@ -1410,7 +1407,9 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
                   Transformation gap
                 </th>
                 <th className="wfr-dash__th">Status</th>
-                <th className="wfr-dash__th wfr-dash__th--action" aria-hidden="true" />
+                {focusCollectionActive ? (
+                  <th className="wfr-dash__th wfr-dash__th--current-action">Current action</th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -1442,16 +1441,16 @@ function BoardView({ onDeptClick }: { onDeptClick: (d: Dept) => void }) {
                         {st.label}
                       </Badge>
                     </td>
-                    <td
-                      className="wfr-dash__td wfr-dash__td--action"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {st.label !== 'On track' ? (
-                        <Button type="button" variant="secondary" size="sm" onClick={() => onDeptClick(d)}>
-                          Take action
-                        </Button>
-                      ) : null}
-                    </td>
+                    {focusCollectionActive ? (
+                      <td className="wfr-dash__td wfr-dash__td--current-action">
+                        <div className="wfr-dash__dept-current-action">
+                          <span className="wfr-dash__dept-current-action__status">Collecting data</span>
+                          <span className="wfr-dash__dept-current-action__dates">
+                            {WFR_DEMO_COLLECTION_WINDOW.datesLine}
+                          </span>
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 )
               })}
@@ -1471,6 +1470,32 @@ export function WorkforceReadinessDashboard({
   const [view, setView] = useState<'board' | 'dept' | 'role'>('board')
   const [dept, setDept] = useState<Dept | null>(null)
   const [roleFocus, setRoleFocus] = useState<RoleRowType | null>(null)
+  const [focusCollectionActive, setFocusCollectionActive] = useState(false)
+  const [focusCollectionLaunchSummary, setFocusCollectionLaunchSummary] =
+    useState<FocusCollectionLaunchSummary | null>(null)
+  const [focusLaunchOpen, setFocusLaunchOpen] = useState(false)
+  const [collectionDetailOpen, setCollectionDetailOpen] = useState(false)
+
+  const handleFocusCollectionActiveChange = (
+    active: boolean,
+    launchSummary?: FocusCollectionLaunchSummary | null,
+  ) => {
+    setFocusCollectionActive(active)
+    if (!active) {
+      setFocusCollectionLaunchSummary(null)
+    } else if (launchSummary != null) {
+      setFocusCollectionLaunchSummary(launchSummary)
+    }
+  }
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('tm:wfr-focus-collection-session')
+      localStorage.removeItem('tm:wfr-focus-collection-active')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     onViewChange?.(view)
@@ -1530,19 +1555,45 @@ export function WorkforceReadinessDashboard({
               setRoleFocus(null)
               setView('dept')
             }}
+            focusCollectionActive={focusCollectionActive}
+            onCollectionActiveChange={handleFocusCollectionActiveChange}
+            collectionLaunchSummary={focusCollectionLaunchSummary}
+            focusLaunchOpen={focusLaunchOpen}
+            setFocusLaunchOpen={setFocusLaunchOpen}
+            onOpenCollectionDetail={() => setCollectionDetailOpen(true)}
           />
         )}
         {view === 'dept' && dept && (
           <DeptView
             dept={dept}
+            orgCollectionActive={focusCollectionActive}
+            onCollectionActiveChange={handleFocusCollectionActiveChange}
+            collectionLaunchSummary={focusCollectionLaunchSummary}
+            focusLaunchOpen={focusLaunchOpen}
+            setFocusLaunchOpen={setFocusLaunchOpen}
+            onOpenCollectionDetail={() => setCollectionDetailOpen(true)}
             onOpenRole={(r) => {
               setRoleFocus(r)
               setView('role')
             }}
           />
         )}
-        {view === 'role' && dept && roleFocus && <RolePageView dept={dept} role={roleFocus} />}
+        {view === 'role' && dept && roleFocus && (
+          <RolePageView
+            dept={dept}
+            role={roleFocus}
+            orgCollectionActive={focusCollectionActive}
+            collectionLaunchSummary={focusCollectionLaunchSummary}
+            onOpenCollectionDetail={() => setCollectionDetailOpen(true)}
+          />
+        )}
       </div>
+
+      <FocusCollectionDetailSheet
+        open={collectionDetailOpen}
+        onClose={() => setCollectionDetailOpen(false)}
+        scopeDepartment={view === 'dept' || view === 'role' ? dept : null}
+      />
     </>
   )
 }

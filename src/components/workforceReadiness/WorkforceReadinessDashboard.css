@@ -4,6 +4,12 @@
   --wfr-potential-text: #6366f1;
   --wfr-readiness: #22c55e;
   --wfr-readiness-text: #15803d;
+  /* Focus first module — use for every variant (pre-launch, collecting, …) */
+  --wfr-focus-module-mt: 24px;
+  --wfr-focus-module-radius: 16px;
+  --wfr-focus-module-shadow: 0 1px 3px rgba(26, 33, 46, 0.04);
+  --wfr-focus-module-pad-y: 18px;
+  --wfr-focus-module-pad-x: 20px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -564,6 +570,39 @@
   white-space: nowrap;
 }
 
+.wfr-dash__th--current-action {
+  min-width: 9.5rem;
+  white-space: nowrap;
+}
+
+.wfr-dash__td--current-action {
+  vertical-align: top;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.wfr-dash__dept-current-action {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 14rem;
+}
+
+.wfr-dash__dept-current-action__status {
+  font: var(--typography-caption-semibold);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wfr-potential-text, #6366f1);
+  letter-spacing: 0.01em;
+}
+
+.wfr-dash__dept-current-action__dates {
+  font: var(--typography-caption);
+  color: #64748b;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
 .wfr-readiness-bar__solo {
   opacity: 1;
 }
@@ -906,13 +945,37 @@
   }
 }
 
+/* Focus first: keep new states under .wfr-dash__focus-*; reuse --wfr-focus-module-* tokens */
+.wfr-dash__focus-module {
+  margin-top: var(--wfr-focus-module-mt);
+}
+
+.wfr-dash__focus-module-eyebrow {
+  font: var(--typography-caption-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 4px;
+}
+
+.wfr-dash__focus-module-eyebrow--alert {
+  color: #991b1b;
+}
+
+.wfr-dash__focus-module-eyebrow--potential {
+  color: var(--wfr-potential-text, #6366f1);
+}
+
 .wfr-dash__focus-card {
-  margin-top: 24px;
+  margin-top: var(--wfr-focus-module-mt);
   background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
   border: 1px solid #fecaca;
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(26, 33, 46, 0.04);
+  border-radius: var(--wfr-focus-module-radius);
+  padding: var(--wfr-focus-module-pad-y) var(--wfr-focus-module-pad-x);
+  box-shadow: var(--wfr-focus-module-shadow);
+}
+
+.wfr-dash__focus-module .wfr-dash__focus-card {
+  margin-top: 0;
 }
 
 .wfr-dash__focus-card-head {
@@ -945,11 +1008,25 @@
 
 .wfr-dash__focus-card-label {
   display: block;
-  font: var(--typography-caption-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #991b1b;
   margin: 0;
+}
+
+.wfr-dash__focus-card-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 20px;
+}
+
+@media (max-width: 720px) {
+  .wfr-dash__focus-card-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wfr-dash__focus-card-cta-row__btn {
+    width: 100%;
+  }
 }
 
 .wfr-dash__focus-card-body {
@@ -957,6 +1034,129 @@
   color: #334155;
   margin: 0;
   line-height: 1.5;
+}
+
+.wfr-dash__focus-card-body--lead {
+  font-weight: 600;
+  color: #1a212e;
+  flex: 1;
+  min-width: 0;
+  text-wrap: pretty;
+}
+
+/* Focus first — collection progress sits inside the same .wfr-dash__focus-card shell as pre-launch */
+
+.wfr-dash__focus-collecting__top {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.wfr-dash__focus-collecting__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.wfr-dash__focus-collecting__title {
+  font: var(--typography-body2);
+  font-weight: 700;
+  line-height: 1.35;
+  color: #1a212e;
+  margin: 0;
+  letter-spacing: -0.01em;
+  min-width: 0;
+  flex: 1;
+}
+
+.wfr-dash__focus-collecting__sub {
+  font: var(--typography-body3);
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.wfr-dash__focus-collecting__badge {
+  flex-shrink: 0;
+  font: var(--typography-caption-semibold);
+  color: #b45309;
+  background: #fffbeb;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid #fde68a;
+  white-space: nowrap;
+}
+
+.wfr-dash__focus-collecting__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.wfr-dash__focus-collecting__track {
+  flex: 1;
+  position: relative;
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.wfr-dash__focus-collecting__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--wfr-potential-text, #6366f1);
+}
+
+.wfr-dash__focus-collecting__pct {
+  font: var(--typography-header5);
+  font-weight: 800;
+  color: var(--wfr-potential-text, #6366f1);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.wfr-dash__focus-collecting__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wfr-dash__focus-collecting__status {
+  font: var(--typography-body3);
+  color: #475569;
+  margin: 0;
+}
+
+.wfr-dash__focus-collecting__link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--typography-button3);
+  font-weight: 500;
+  color: var(--wfr-potential-text, #6366f1);
+}
+
+.wfr-dash__focus-collecting__link:hover {
+  text-decoration: underline;
+}
+
+.wfr-dash__focus-collecting__link:focus-visible {
+  outline: 2px solid var(--wfr-potential-text, #6366f1);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .wfr-dash__focus-card-body strong {

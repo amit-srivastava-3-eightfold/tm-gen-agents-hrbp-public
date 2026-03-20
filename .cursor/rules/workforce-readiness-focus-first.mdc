@@ -1,0 +1,25 @@
+---
+description: Preserve Focus first module styling when editing workforce readiness overview or related UI.
+globs: "**/workforceReadiness/**/*", "**/wfrOrgData.ts"
+alwaysApply: false
+---
+
+# Focus first module (Workforce Readiness)
+
+When adding or editing **Focus first** content on the overview (or parallel “focus” callouts on dept/role views that reuse these classes):
+
+1. **Class prefix** — Keep all overview Focus first surfaces under `wfr-dash__focus-*` (e.g. `wfr-dash__focus-card`, `wfr-dash__focus-collecting`, `wfr-dash__focus-module`). New states (e.g. a third phase) should get a new `wfr-dash__focus-<variant>` block, not ad hoc utility classes.
+
+2. **Shared tokens** — On `.wfr-dash`, use the existing CSS variables for shell consistency:
+   - `--wfr-focus-module-mt`, `--wfr-focus-module-radius`, `--wfr-focus-module-shadow`, `--wfr-focus-module-pad-x`, `--wfr-focus-module-pad-y`  
+   Do not introduce one-off `margin-top`, `border-radius`, or `box-shadow` on these cards unless you also update these variables so all variants stay aligned.
+
+3. **Eyebrow “Recommended actions”** (module title) — Use `wfr-dash__focus-module-eyebrow` plus a color variant:
+   - `wfr-dash__focus-module-eyebrow--alert` (red) for the urgent / pre-launch gradient card.
+   - `wfr-dash__focus-module-eyebrow--potential` (indigo) for collecting / primary-accent states.
+
+4. **Typography & color** — Prefer `var(--typography-*)` and existing `wfr-dash` / `--wfr-potential-text` / readiness reds already used in `WorkforceReadinessDashboard.css`. Avoid inline `style={{ color: … }}` for module chrome (dynamic bar widths are OK).
+
+5. **Overview wrapper** — The overview Focus first block should stay inside `wfr-dash__focus-module` so spacing is applied once; inner surfaces should not add their own top margin.
+
+6. **Dialogs / sheets** — Launch flow (`FocusFirstLaunchDialog`) and collection detail (`FocusCollectionDetailSheet`) are separate components; keep accents consistent with `--wfr-potential-text` unless the design explicitly branches.

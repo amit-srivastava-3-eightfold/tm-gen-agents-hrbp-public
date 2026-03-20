@@ -790,6 +790,158 @@ export function tGap(potential: number, readiness: number) {
   return potential - readiness
 }
 
+/** Demo survey response % by department (Focus first — collection underway). */
+export function wfrDemoDeptResponseRate(deptName: string): number {
+  const overrides: Record<string, number> = {
+    Sales: 12,
+    Procurement: 15,
+    Operations: 32,
+    Administrative: 34,
+    Finance: 52,
+  }
+  if (overrides[deptName] != null) return overrides[deptName]
+  let h = 0
+  for (let i = 0; i < deptName.length; i++) h += deptName.charCodeAt(i)
+  return 24 + (h % 56)
+}
+
+export interface WfrDemoCollectionSnapshot {
+  orgResponseRate: number
+  respondedCount: number
+  totalEmployees: number
+  needAttentionDeptCount: number
+}
+
+/** Demo collection window (dept table, etc.). */
+export const WFR_DEMO_COLLECTION_WINDOW = {
+  /** Start and end dates, one line */
+  datesLine: 'Mar 10, 2026 · Apr 4, 2026',
+} as const
+
+/** Weighted org response rate and counts for the collecting-state Focus card. */
+export function wfrDemoCollectionSnapshot(): WfrDemoCollectionSnapshot {
+  let responded = 0
+  let needAttention = 0
+  for (const d of ORG.departments) {
+    const r = wfrDemoDeptResponseRate(d.name)
+    responded += Math.round((d.employees * r) / 100)
+    if (r < 20) needAttention++
+  }
+  const orgResponseRate = Math.min(100, Math.round((responded / ORG.totalEmployees) * 100))
+  return {
+    orgResponseRate,
+    respondedCount: responded,
+    totalEmployees: ORG.totalEmployees,
+    needAttentionDeptCount: needAttention,
+  }
+}
+
+/** Dept-level demo counts while org-wide Focus first collection is active. */
+export function wfrDemoDeptCollectionSnapshot(d: Dept): WfrDemoCollectionSnapshot {
+  const orgResponseRate = wfrDemoDeptResponseRate(d.name)
+  const respondedCount = Math.round((d.employees * orgResponseRate) / 100)
+  return {
+    orgResponseRate,
+    respondedCount,
+    totalEmployees: d.employees,
+    needAttentionDeptCount: orgResponseRate < 20 ? 1 : 0,
+  }
+}
+
+const WFR_DEPT_SHEET_MAX_ROWS = 250
+
+function deptCollectionSheetHash(name: string): number {
+  let h = 2166136261
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+export type WfrDeptCollectionEmployeeRow = {
+  name: string
+  roleTitle: string
+  status: 'responded' | 'pending'
+}
+
+/**
+ * Flat employee list for the department-scoped collection detail sheet.
+ * Uses role rosters when present; otherwise synthesizes names up to the display cap.
+ */
+export function wfrDeptCollectionEmployeeRows(d: Dept): {
+  rows: WfrDeptCollectionEmployeeRow[]
+  /** Roster size used for status assignment (may be capped). */
+  rosterSize: number
+  respondedCount: number
+  pendingCount: number
+  truncated: boolean
+} {
+  const roles = getRolesForDept(d.name)
+  const flat: { name: string; roleTitle: string }[] = []
+  for (const role of roles) {
+    for (const emp of getEmployeesForRole(role)) {
+      flat.push({ name: emp.name, roleTitle: role.title })
+    }
+  }
+
+  if (flat.length === 0) {
+    const n = Math.min(d.employees, WFR_DEPT_SHEET_MAX_ROWS)
+    const seed = deptCollectionSheetHash(d.name)
+    const used = new Set<string>()
+    const first = WFR_FIRST_NAMES
+    const last = WFR_LAST_NAMES
+    for (let i = 0; i < n; i++) {
+      const r = mulberry32((seed + i * 2654435761) >>> 0)
+      let name: string
+      let tries = 0
+      do {
+        const fn = first[Math.floor(r() * first.length)]!
+        const ln = last[Math.floor(r() * last.length)]!
+        name = `${fn} ${ln}`
+        tries++
+        if (tries > 24) {
+          name = `${fn} ${ln} (${i + 1})`
+          break
+        }
+      } while (used.has(name))
+      used.add(name)
+      flat.push({ name, roleTitle: 'Team member' })
+    }
+    flat.sort((a, b) => a.name.localeCompare(b.name) || a.roleTitle.localeCompare(b.roleTitle))
+  } else {
+    flat.sort((a, b) => a.name.localeCompare(b.name) || a.roleTitle.localeCompare(b.roleTitle))
+  }
+
+  const rate = wfrDemoDeptResponseRate(d.name)
+  const rosterSize = flat.length
+  const targetResponded = Math.min(rosterSize, Math.round((rosterSize * rate) / 100))
+
+  const indices = flat.map((_, i) => i)
+  const rng = mulberry32(deptCollectionSheetHash(d.name))
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    const a = indices[i]!
+    indices[i] = indices[j]!
+    indices[j] = a
+  }
+  const respondedIdx = new Set(indices.slice(0, targetResponded))
+
+  const full: WfrDeptCollectionEmployeeRow[] = flat.map((row, i) => ({
+    name: row.name,
+    roleTitle: row.roleTitle,
+    status: respondedIdx.has(i) ? 'responded' : 'pending',
+  }))
+
+  const truncated = full.length > WFR_DEPT_SHEET_MAX_ROWS
+  const rows = truncated ? full.slice(0, WFR_DEPT_SHEET_MAX_ROWS) : full
+
+  const respondedCount = full.filter((x) => x.status === 'responded').length
+  const pendingCount = full.length - respondedCount
+
+  return { rows, rosterSize: full.length, respondedCount, pendingCount, truncated }
+}
+
 function deptHeadcountDenominator() {
   return ORG.departments.reduce((s, d) => s + d.employees, 0)
 }
