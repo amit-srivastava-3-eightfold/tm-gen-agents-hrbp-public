@@ -9,7 +9,7 @@ import './WorkforceReadinessPage.css'
 
 export function WorkforceReadinessPage() {
   const { currentUser } = useUser()
-  const [wfrView, setWfrView] = useState<'board' | 'dept'>('board')
+  const [wfrView, setWfrView] = useState<'board' | 'dept' | 'role'>('board')
 
   if (currentUser.id !== 'chro') {
     return <Navigate to="/" replace />
@@ -20,7 +20,7 @@ export function WorkforceReadinessPage() {
       <NavbarApp />
       <PageHeader
         title="Workforce Readiness"
-        size={wfrView === 'dept' ? 'medium' : 'default'}
+        size={wfrView === 'dept' || wfrView === 'role' ? 'medium' : 'default'}
       />
       <main className="workforce-readiness-page__main">
         <div className="workforce-readiness-page__content">

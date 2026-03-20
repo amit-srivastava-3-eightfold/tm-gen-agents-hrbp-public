@@ -225,6 +225,10 @@
   color: #1a212e;
 }
 
+.wfr-dash__capture-tag-text {
+  text-wrap: pretty;
+}
+
 .wfr-dash__capture-tag:hover {
   background: #fef3c7 !important;
 }
@@ -488,6 +492,10 @@
   overflow: hidden;
 }
 
+#wfr-dept-roles-panel {
+  scroll-margin-top: 96px;
+}
+
 .wfr-dash__panel-head {
   padding: 14px 20px;
   border-bottom: 1px solid #f1f5f9;
@@ -537,6 +545,12 @@
   padding-left: 8px;
 }
 
+.wfr-dash__th--icon {
+  width: 2.25rem;
+  padding: 9px 8px 9px 20px;
+  vertical-align: middle;
+}
+
 .wfr-dash__th--action {
   width: 1%;
   padding-left: 12px;
@@ -574,6 +588,101 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Task-level table (workforce readiness): mock-aligned layout */
+.wfr-dash__table--tasks {
+  background: #fff;
+}
+
+.wfr-dash__table--tasks .wfr-dash__th--tasks {
+  background: #fff;
+  color: #94a3b8;
+  font: var(--typography-caption-semibold);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #e8ecf1;
+  vertical-align: bottom;
+}
+
+.wfr-dash__table--tasks .wfr-dash__tr--tasks {
+  border-top: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+}
+
+.wfr-dash__table--tasks .wfr-dash__tr--tasks:last-child {
+  border-bottom: none;
+}
+
+.wfr-dash__table--tasks .wfr-dash__tr--tasks:hover {
+  background: #fafbff;
+}
+
+.wfr-dash__td--task-name {
+  font-weight: 700;
+  color: #1a212e;
+}
+
+.wfr-dash__td--score-cell {
+  vertical-align: middle;
+  min-width: 148px;
+  max-width: 220px;
+}
+
+.wfr-dash__task-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wfr-dash__task-score__track {
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: 3px;
+  background: #f1f5f9;
+  overflow: hidden;
+  min-width: 72px;
+}
+
+.wfr-dash__task-score__fill {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 0;
+}
+
+.wfr-dash__task-score__pct {
+  flex: 0 0 auto;
+  font: var(--typography-body3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.75rem;
+  text-align: right;
+}
+
+.wfr-dash__td--zone-cell {
+  vertical-align: middle;
+}
+
+.wfr-dash__zone-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font: var(--typography-caption-semibold);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wfr-dash__td--appears-in {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.wfr-dash__td--employees-affected {
+  font-weight: 700;
+  color: #1a212e;
+}
+
 .wfr-dash__dept-name {
   font: var(--typography-header6);
   color: #1a212e;
@@ -584,8 +693,194 @@
   color: #64748b;
 }
 
+/* Roles / Tasks tabs (Radix) — self-contained, no global [data-state=active] dependency */
+.wfr-dash__panel-tabs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.wfr-dash__panel-tabs-list {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.wfr-dash__panel-tab {
+  position: relative;
+  margin: 0 0 -1px;
+  padding: 14px 2px 12px;
+  font: var(--typography-caption-semibold);
+  color: #64748b;
+  letter-spacing: 0.04em;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.wfr-dash__panel-tab:hover {
+  color: #334155;
+}
+
+.wfr-dash__panel-tab:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.wfr-dash__panel-tab[data-state='active'] {
+  color: #b91c1c;
+  border-bottom-color: #b91c1c;
+  font-weight: 700;
+}
+
+.wfr-dash__panel-tabs-content {
+  width: 100%;
+  padding: 0;
+  outline: none;
+}
+
+.wfr-dash__table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tasks tab: Automate / Augment / Human-only summary cards */
+.wfr-dash__task-band-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 20px 16px;
+  border-top: 1px solid #e8ecf1;
+  border-bottom: 1px solid #e8ecf1;
+  background: #fff;
+}
+
+@media (max-width: 720px) {
+  .wfr-dash__task-band-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wfr-dash__task-band-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 16px 12px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.wfr-dash__task-band-stat__top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wfr-dash__task-band-stat__tasks {
+  font: var(--typography-body2);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.wfr-dash__task-band-stat__band {
+  font: var(--typography-caption-semibold);
+  text-align: right;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.wfr-dash__task-band-stat__affected {
+  margin: 0;
+  font: var(--typography-caption);
+  line-height: 1.35;
+}
+
+/* Automate (>75%) */
+.wfr-dash__task-band-stat--above {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.wfr-dash__task-band-stat--above .wfr-dash__task-band-stat__tasks {
+  color: #991b1b;
+}
+
+.wfr-dash__task-band-stat--above .wfr-dash__task-band-stat__band {
+  color: #b91c1c;
+}
+
+.wfr-dash__task-band-stat--above .wfr-dash__task-band-stat__affected {
+  color: #dc2626;
+  opacity: 0.88;
+  font-weight: 500;
+}
+
+/* Augment (15–75%) */
+.wfr-dash__task-band-stat--augment {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.wfr-dash__task-band-stat--augment .wfr-dash__task-band-stat__tasks {
+  color: #92400e;
+}
+
+.wfr-dash__task-band-stat--augment .wfr-dash__task-band-stat__band {
+  color: #b45309;
+}
+
+.wfr-dash__task-band-stat--augment .wfr-dash__task-band-stat__affected {
+  color: #b45309;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Human-only (<15%) */
+.wfr-dash__task-band-stat--below {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.wfr-dash__task-band-stat--below .wfr-dash__task-band-stat__tasks {
+  color: #1e293b;
+}
+
+.wfr-dash__task-band-stat--below .wfr-dash__task-band-stat__band {
+  color: #334155;
+}
+
+.wfr-dash__task-band-stat--below .wfr-dash__task-band-stat__affected {
+  color: #475569;
+  font-weight: 500;
+}
+
+.wfr-dash__panel-table-foot {
+  font: var(--typography-caption);
+  color: #94a3b8;
+  margin: 0;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #f8fafc;
+}
+
 .wfr-dash__dept-hero {
   margin-bottom: 24px;
+}
+
+.wfr-dash__dept-hero .wfr-dash__capture-tag-wrap {
+  margin-top: 20px;
 }
 
 .wfr-dash__dept-subheadline {
@@ -593,7 +888,8 @@
   color: #334155;
   line-height: 1.45;
   margin: 0;
-  max-width: 36rem;
+  max-width: none;
+  text-wrap: pretty;
 }
 
 .wfr-dash__dept-mini-cards {
@@ -608,13 +904,6 @@
     grid-template-columns: repeat(3, 1fr);
     align-items: stretch;
   }
-}
-
-.wfr-dash__focus-banner {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 8px;
-  padding: 10px 14px;
 }
 
 .wfr-dash__focus-card {
@@ -725,17 +1014,19 @@
   font-weight: 500;
 }
 
-.wfr-role-row__expand {
-  padding: 4px 6px 4px 20px;
-  width: 14px;
+.wfr-dash__table--roles .wfr-role-row__cell {
+  padding: 12px 16px 12px 20px;
+  vertical-align: middle;
+  min-width: 11rem;
+}
+
+.wfr-dash__table--roles .wfr-dash__td--roles-action {
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .wfr-role-row__cell {
   padding: 13px 8px;
-}
-
-.wfr-role-row__detail {
-  background: #f8faff;
 }
 
 .wfr-readiness-bar {
@@ -778,4 +1069,364 @@
 
 .wfr-readiness-bar__label-potential {
   color: var(--wfr-potential-text);
+}
+
+/* --- Role page (dept drill-down) --- */
+.wfr-dash--role-page {
+  gap: 20px;
+}
+
+.wfr-role-row__title-link {
+  font: var(--typography-header6);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: #1e3a5f;
+  text-decoration: underline;
+  text-decoration-color: #94a3b8;
+  text-underline-offset: 3px;
+}
+
+.wfr-role-row__title-link:hover {
+  color: var(--wfr-potential-text);
+  text-decoration-color: var(--wfr-potential-text);
+}
+
+.wfr-role-page__hero {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8ecf1;
+  padding: 24px 28px 22px;
+  box-shadow: 0 1px 3px rgba(26, 33, 46, 0.04);
+}
+
+.wfr-role-page__hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px 32px;
+  margin-bottom: 22px;
+}
+
+.wfr-role-page__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.wfr-role-page__title {
+  font: var(--typography-header4);
+  font-weight: 700;
+  color: #1e3a5f;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.wfr-role-page__sub {
+  font: var(--typography-body2);
+  color: #64748b;
+  margin: 0;
+}
+
+.wfr-role-page__hero-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 36px;
+  flex-shrink: 0;
+}
+
+.wfr-role-page__hero-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.wfr-role-page__hero-metric-pct {
+  font: var(--typography-header5);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.wfr-role-page__hero-metric-label {
+  font: var(--typography-caption-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.wfr-role-page__hero-metric-delta {
+  font: var(--typography-caption-semibold);
+  color: var(--wfr-readiness-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.wfr-role-page__dev {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 14px 18px 16px;
+  margin-bottom: 20px;
+}
+
+.wfr-role-page__dev-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.wfr-role-page__dev-eyebrow {
+  font: var(--typography-caption-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+}
+
+.wfr-role-page__dev-stats {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #1e3a5f;
+  font-variant-numeric: tabular-nums;
+}
+
+.wfr-role-page__dev-track {
+  height: 10px;
+  border-radius: 99px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.wfr-role-page__dev-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--wfr-potential) 0%, var(--wfr-potential-text) 100%);
+  min-width: 0;
+  transition: width 0.25s ease;
+}
+
+.wfr-role-page__tasks-tab {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wfr-role-page__tabs-panel {
+  overflow: hidden;
+}
+
+.wfr-role-page__tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0 20px;
+}
+
+.wfr-role-page__tabs-list {
+  border-bottom: none !important;
+  flex: 1;
+  min-width: min(100%, 240px);
+}
+
+.wfr-role-page__sorted-hint {
+  font: var(--typography-caption);
+  color: #94a3b8;
+  padding-bottom: 12px;
+}
+
+.wfr-role-page__tab[data-state='active'] {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 700;
+}
+
+.wfr-role-page__task-table {
+  margin-top: 0;
+}
+
+.wfr-role-page__employees-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  background: #fff;
+}
+
+.wfr-role-page__employees-tab {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Employees tab: AI-ready / Completed plan / In training / Not started */
+.wfr-role-page__emp-stat-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid #e8ecf1;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .wfr-role-page__emp-stat-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .wfr-role-page__emp-stat-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wfr-role-page__emp-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  min-height: 118px;
+  padding: 14px 12px 12px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.wfr-role-page__emp-stat-card__value {
+  font: var(--typography-header3);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.wfr-role-page__emp-stat-card__title {
+  font: var(--typography-caption-semibold);
+  line-height: 1.25;
+}
+
+.wfr-role-page__emp-stat-card__subtitle {
+  font: var(--typography-caption);
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 22ch;
+}
+
+/* AI-ready */
+.wfr-role-page__emp-stat-card--ai-ready {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.wfr-role-page__emp-stat-card--ai-ready .wfr-role-page__emp-stat-card__value,
+.wfr-role-page__emp-stat-card--ai-ready .wfr-role-page__emp-stat-card__title {
+  color: #15803d;
+}
+
+.wfr-role-page__emp-stat-card--ai-ready .wfr-role-page__emp-stat-card__subtitle {
+  color: #166534;
+  opacity: 0.88;
+}
+
+/* Completed plan — lavender, aligned with In training */
+.wfr-role-page__emp-stat-card--completed {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.wfr-role-page__emp-stat-card--completed .wfr-role-page__emp-stat-card__value,
+.wfr-role-page__emp-stat-card--completed .wfr-role-page__emp-stat-card__title {
+  color: #5b21b6;
+}
+
+.wfr-role-page__emp-stat-card--completed .wfr-role-page__emp-stat-card__subtitle {
+  color: #6d28d9;
+  opacity: 0.9;
+}
+
+/* In training */
+.wfr-role-page__emp-stat-card--in-training {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.wfr-role-page__emp-stat-card--in-training .wfr-role-page__emp-stat-card__value,
+.wfr-role-page__emp-stat-card--in-training .wfr-role-page__emp-stat-card__title {
+  color: #5b21b6;
+}
+
+.wfr-role-page__emp-stat-card--in-training .wfr-role-page__emp-stat-card__subtitle {
+  color: #6d28d9;
+  opacity: 0.9;
+}
+
+/* Not started */
+.wfr-role-page__emp-stat-card--not-started {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.wfr-role-page__emp-stat-card--not-started .wfr-role-page__emp-stat-card__value,
+.wfr-role-page__emp-stat-card--not-started .wfr-role-page__emp-stat-card__title {
+  color: #64748b;
+}
+
+.wfr-role-page__emp-stat-card--not-started .wfr-role-page__emp-stat-card__subtitle {
+  color: #475569;
+  opacity: 0.9;
+}
+
+.wfr-role-page__employees-table {
+  margin-top: 0;
+}
+
+.wfr-role-page__emp-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font: var(--typography-caption-semibold);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Match stat bar cards (same labels / stages as row Status) */
+.wfr-role-page__emp-status--completed {
+  background: #f5f3ff;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.wfr-role-page__emp-status--in-training {
+  background: #f5f3ff;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.wfr-role-page__emp-status--ai-ready {
+  background: #ecfdf5;
+  color: #15803d;
+  border-color: #a7f3d0;
+}
+
+.wfr-role-page__emp-status--not-started {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #e2e8f0;
 }

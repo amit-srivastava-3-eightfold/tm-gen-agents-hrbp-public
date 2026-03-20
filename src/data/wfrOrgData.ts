@@ -1,7 +1,7 @@
 /**
  * Workforce Readiness dashboard demo data.
- * Org-level AI Potential (48%), Readiness (25%), augmentable headcount (7,665), and
- * Transformation Gap (5,749) align with Octave metric definitions (example table).
+ * Org-level AI Potential (48%), Readiness (24%), augmentable headcount (8,400), and
+ * transformation gap align with Octave metric definitions (example table).
  */
 
 export const EM = '\u2014'
@@ -10,12 +10,15 @@ export const EN = '\u2013'
 export const ORG = {
   totalEmployees: 9940,
   aiPotential: 48,
-  aiReadiness: 25,
+  aiReadiness: 24,
   totalRoleTasks: 220,
-  tasksInAugZone: 106,
-  tasksAboveThreshold: 38,
-  tasksBelowThreshold: 76,
-  peopleInAugRoles: 7665,
+  /** Tasks in 15–75% augmentation band */
+  tasksInAugZone: 136,
+  /** Tasks scoring above 75% (automatable) */
+  tasksAboveThreshold: 28,
+  /** Tasks scoring below 15% (human-only band) */
+  tasksBelowThreshold: 56,
+  peopleInAugRoles: 8400,
   hrsPerPersonWeek: 4,
   departments: [
     { name: 'Administrative', employees: 677, aiPotential: 68, aiReadiness: 11 },
@@ -93,6 +96,37 @@ export const ORG = {
       { title: 'Quality Assurance Lead', employees: 165, aiPotential: 40, aiReadiness: 21, reskillPriority: 'This year' as const },
       { title: 'Compliance Specialist', employees: 125, aiPotential: 37, aiReadiness: 18, reskillPriority: 'This year' as const },
       { title: 'Internal Auditor', employees: 74, aiPotential: 34, aiReadiness: 17, reskillPriority: 'Monitor' as const },
+    ],
+    Marketing: [
+      { title: 'Marketing Manager', employees: 155, aiPotential: 52, aiReadiness: 24, reskillPriority: 'Monitor' as const },
+      { title: 'Content Marketing Specialist', employees: 148, aiPotential: 58, aiReadiness: 19, reskillPriority: 'This year' as const },
+      { title: 'Digital Campaign Analyst', employees: 152, aiPotential: 61, aiReadiness: 22, reskillPriority: 'This year' as const },
+      { title: 'Brand & Creative Lead', employees: 155, aiPotential: 46, aiReadiness: 28, reskillPriority: 'Monitor' as const },
+    ],
+    HR: [
+      { title: 'HR Business Partner', employees: 82, aiPotential: 44, aiReadiness: 26, reskillPriority: 'Monitor' as const },
+      { title: 'Talent Acquisition Specialist', employees: 78, aiPotential: 55, aiReadiness: 16, reskillPriority: 'This year' as const },
+      { title: 'People Operations Coordinator', employees: 80, aiPotential: 48, aiReadiness: 14, reskillPriority: 'Immediate' as const },
+      { title: 'Compensation Analyst', employees: 80, aiPotential: 38, aiReadiness: 20, reskillPriority: 'Monitor' as const },
+    ],
+    Sales: [
+      { title: 'Account Executive', employees: 380, aiPotential: 42, aiReadiness: 28, reskillPriority: 'Monitor' as const },
+      { title: 'Sales Development Representative', employees: 260, aiPotential: 49, aiReadiness: 21, reskillPriority: 'This year' as const },
+      { title: 'Solutions Consultant', employees: 220, aiPotential: 51, aiReadiness: 31, reskillPriority: 'Monitor' as const },
+      { title: 'Regional Sales Director', employees: 200, aiPotential: 35, aiReadiness: 24, reskillPriority: 'Monitor' as const },
+      { title: 'Sales Operations Analyst', employees: 180, aiPotential: 56, aiReadiness: 18, reskillPriority: 'This year' as const },
+    ],
+    Engineering: [
+      { title: 'Software Engineer', employees: 720, aiPotential: 44, aiReadiness: 38, reskillPriority: 'Monitor' as const },
+      { title: 'Senior Software Engineer', employees: 540, aiPotential: 39, aiReadiness: 42, reskillPriority: 'Monitor' as const },
+      { title: 'Engineering Manager', employees: 320, aiPotential: 33, aiReadiness: 35, reskillPriority: 'Monitor' as const },
+      { title: 'QA Automation Engineer', employees: 280, aiPotential: 47, aiReadiness: 29, reskillPriority: 'This year' as const },
+      { title: 'DevOps Engineer', employees: 240, aiPotential: 41, aiReadiness: 40, reskillPriority: 'Monitor' as const },
+    ],
+    Legal: [
+      { title: 'Corporate Counsel', employees: 100, aiPotential: 36, aiReadiness: 22, reskillPriority: 'Monitor' as const },
+      { title: 'Corporate Paralegal', employees: 95, aiPotential: 52, aiReadiness: 15, reskillPriority: 'This year' as const },
+      { title: 'Contract Manager', employees: 95, aiPotential: 58, aiReadiness: 19, reskillPriority: 'This year' as const },
     ],
   },
   tasks: {
@@ -371,6 +405,174 @@ export const ORG = {
       { task: 'Board reporting input', score: 15 },
       { task: 'Fraud indicators', score: 8 },
     ],
+    'Marketing Manager': [
+      { task: 'Campaign planning', score: 72 },
+      { task: 'Budget forecasting', score: 55 },
+      { task: 'Vendor briefing', score: 48 },
+      { task: 'Stakeholder reviews', score: 38 },
+      { task: 'Market research synthesis', score: 62 },
+      { task: 'Executive narrative', score: 22 },
+    ],
+    'Content Marketing Specialist': [
+      { task: 'SEO content drafting', score: 78 },
+      { task: 'Editorial calendar', score: 65 },
+      { task: 'Social scheduling', score: 58 },
+      { task: 'Asset localization', score: 42 },
+      { task: 'Performance reporting', score: 35 },
+      { task: 'Brand guideline checks', score: 18 },
+    ],
+    'Digital Campaign Analyst': [
+      { task: 'Audience segmentation', score: 82 },
+      { task: 'Bid optimization', score: 88 },
+      { task: 'Attribution modeling', score: 48 },
+      { task: 'A/B test analysis', score: 55 },
+      { task: 'Creative testing', score: 32 },
+      { task: 'Platform experiments', score: 15 },
+    ],
+    'Brand & Creative Lead': [
+      { task: 'Creative direction', score: 58 },
+      { task: 'Design systems', score: 42 },
+      { task: 'Agency coordination', score: 38 },
+      { task: 'Brand approvals', score: 62 },
+      { task: 'Photo/video briefs', score: 48 },
+      { task: 'Trademark reviews', score: 22 },
+    ],
+    'HR Business Partner': [
+      { task: 'Headcount planning', score: 52 },
+      { task: 'Employee relations cases', score: 35 },
+      { task: 'Policy interpretation', score: 48 },
+      { task: 'Manager coaching', score: 42 },
+      { task: 'Org design input', score: 28 },
+      { task: 'Exit interviews', score: 18 },
+    ],
+    'Talent Acquisition Specialist': [
+      { task: 'Sourcing outreach', score: 68 },
+      { task: 'Screening calls', score: 55 },
+      { task: 'Interview scheduling', score: 72 },
+      { task: 'Offer negotiation support', score: 38 },
+      { task: 'ATS data hygiene', score: 82 },
+      { task: 'Campus events', score: 25 },
+    ],
+    'People Operations Coordinator': [
+      { task: 'Onboarding workflows', score: 75 },
+      { task: 'HRIS updates', score: 88 },
+      { task: 'Benefits inquiries', score: 48 },
+      { task: 'Payroll escalations', score: 62 },
+      { task: 'Policy acknowledgments', score: 35 },
+      { task: 'Employee documentation', score: 22 },
+    ],
+    'Compensation Analyst': [
+      { task: 'Survey benchmarking', score: 58 },
+      { task: 'Merit modeling', score: 48 },
+      { task: 'Equity reporting', score: 35 },
+      { task: 'Job leveling', score: 42 },
+      { task: 'Compliance filings', score: 62 },
+      { task: 'Executive summaries', score: 28 },
+    ],
+    'Account Executive': [
+      { task: 'Pipeline forecasting', score: 55 },
+      { task: 'Discovery calls', score: 42 },
+      { task: 'Proposal drafting', score: 68 },
+      { task: 'Contract redlines', score: 48 },
+      { task: 'QBR preparation', score: 38 },
+      { task: 'Renewal negotiation', score: 62 },
+    ],
+    'Sales Development Representative': [
+      { task: 'Outbound sequences', score: 82 },
+      { task: 'Lead qualification', score: 75 },
+      { task: 'CRM logging', score: 88 },
+      { task: 'Meeting booking', score: 65 },
+      { task: 'Territory research', score: 48 },
+      { task: 'Partner handoffs', score: 32 },
+    ],
+    'Solutions Consultant': [
+      { task: 'Demo scripting', score: 72 },
+      { task: 'Technical discovery', score: 58 },
+      { task: 'POC scoping', score: 62 },
+      { task: 'Solution mapping', score: 48 },
+      { task: 'RFx responses', score: 78 },
+      { task: 'Enablement sessions', score: 35 },
+    ],
+    'Regional Sales Director': [
+      { task: 'Quota planning', score: 48 },
+      { task: 'Deal inspection', score: 42 },
+      { task: 'Team coaching', score: 35 },
+      { task: 'Forecast reviews', score: 58 },
+      { task: 'Channel partner strategy', score: 28 },
+      { task: 'Board summaries', score: 22 },
+    ],
+    'Sales Operations Analyst': [
+      { task: 'CPQ maintenance', score: 78 },
+      { task: 'Commission calculations', score: 85 },
+      { task: 'Territory analytics', score: 62 },
+      { task: 'Sales KPI dashboards', score: 72 },
+      { task: 'Process automation', score: 55 },
+      { task: 'Data quality audits', score: 38 },
+    ],
+    'Software Engineer': [
+      { task: 'Feature implementation', score: 58 },
+      { task: 'Code review', score: 48 },
+      { task: 'Unit testing', score: 62 },
+      { task: 'API integration', score: 55 },
+      { task: 'Bug triage', score: 42 },
+      { task: 'Documentation', score: 28 },
+    ],
+    'Senior Software Engineer': [
+      { task: 'System design', score: 48 },
+      { task: 'Mentoring', score: 35 },
+      { task: 'Architecture RFCs', score: 42 },
+      { task: 'Incident response', score: 55 },
+      { task: 'Performance profiling', score: 62 },
+      { task: 'Security review', score: 38 },
+    ],
+    'Engineering Manager': [
+      { task: 'Sprint planning', score: 42 },
+      { task: 'Hiring loops', score: 35 },
+      { task: 'Performance reviews', score: 38 },
+      { task: 'Roadmap alignment', score: 48 },
+      { task: 'Budget tracking', score: 55 },
+      { task: 'Stakeholder updates', score: 28 },
+    ],
+    'QA Automation Engineer': [
+      { task: 'Test framework build', score: 68 },
+      { task: 'CI pipeline tests', score: 82 },
+      { task: 'Regression suites', score: 75 },
+      { task: 'Flaky test triage', score: 58 },
+      { task: 'Coverage reporting', score: 62 },
+      { task: 'Manual spot checks', score: 32 },
+    ],
+    'DevOps Engineer': [
+      { task: 'Infrastructure as code', score: 72 },
+      { task: 'Deployment pipelines', score: 78 },
+      { task: 'Monitoring & alerts', score: 62 },
+      { task: 'Incident remediation', score: 55 },
+      { task: 'Cost optimization', score: 48 },
+      { task: 'Security patching', score: 68 },
+    ],
+    'Corporate Counsel': [
+      { task: 'Contract drafting', score: 58 },
+      { task: 'Regulatory advisement', score: 42 },
+      { task: 'Litigation liaison', score: 35 },
+      { task: 'Policy drafting', score: 48 },
+      { task: 'Board materials', score: 28 },
+      { task: 'Training sessions', score: 22 },
+    ],
+    'Corporate Paralegal': [
+      { task: 'Discovery support', score: 65 },
+      { task: 'Entity filings', score: 72 },
+      { task: 'Signature routing', score: 78 },
+      { task: 'Docket maintenance', score: 58 },
+      { task: 'Research memos', score: 48 },
+      { task: 'Notary coordination', score: 25 },
+    ],
+    'Contract Manager': [
+      { task: 'Template maintenance', score: 82 },
+      { task: 'Renewal tracking', score: 75 },
+      { task: 'Clause negotiation', score: 62 },
+      { task: 'Vendor onboarding', score: 58 },
+      { task: 'Audit prep', score: 48 },
+      { task: 'Exception logs', score: 35 },
+    ],
   },
 } as const
 
@@ -383,6 +585,175 @@ export function getRolesForDept(name: string): RoleRowType[] {
 
 export function getTasksForRole(title: string): { task: string; score: number }[] {
   return tasksByRole[title] ?? []
+}
+
+/** Learning program completion / enrollment — aligns with role page development bar. */
+export function roleDevelopmentProgress(role: RoleRowType) {
+  const E = role.employees
+  if (E <= 0) return { completed: 0, enrolled: 0, total: 0, pct: 0 }
+  const enrolled = Math.min(E, Math.max(1, Math.round(E * (0.5 + (role.aiPotential - 50) / 500))))
+  const completed = Math.min(enrolled, Math.round(enrolled * (0.35 + role.aiReadiness / 80)))
+  const pct = Math.min(100, Math.round((completed / E) * 100))
+  return { completed, enrolled, total: E, pct }
+}
+
+export type RoleEmployee = {
+  name: string
+  readinessPct: number
+  programStatus: 'Completed' | 'Enrolled' | 'Not enrolled'
+}
+
+const WFR_FIRST_NAMES = [
+  'Jordan',
+  'Alex',
+  'Taylor',
+  'Morgan',
+  'Riley',
+  'Casey',
+  'Quinn',
+  'Avery',
+  'Jamie',
+  'Skyler',
+  'Cameron',
+  'Reese',
+  'Parker',
+  'Drew',
+  'Sam',
+  'Marcus',
+  'Priya',
+  'Diego',
+  'Amara',
+  'Wei',
+  'Yuki',
+  'Elena',
+  'Omar',
+  'Sofia',
+  'James',
+  'Anika',
+  'Lucas',
+  'Maya',
+  'Noah',
+  'Zara',
+  'Henry',
+  'Lin',
+  'Roger',
+  'Fatima',
+  'Kevin',
+  'Nina',
+  'Victor',
+  'Hannah',
+] as const
+
+const WFR_LAST_NAMES = [
+  'Chen',
+  'Patel',
+  'Garcia',
+  'Okonkwo',
+  'Nakamura',
+  'Silva',
+  'Kim',
+  'Martinez',
+  'Johnson',
+  'Williams',
+  'Brown',
+  'Jones',
+  'Miller',
+  'Davis',
+  'Rodriguez',
+  'Wilson',
+  'Anderson',
+  'Thomas',
+  'Jackson',
+  'Lee',
+  'Singh',
+  'Cohen',
+  'Nyong',
+  'Park',
+  'Rivera',
+  'Bauer',
+  'Frost',
+  'Hughes',
+  'Iqbal',
+  'Khan',
+  'Lopez',
+  'Murphy',
+  "O'Brien",
+  'Petrov',
+  'Reyes',
+  'Santos',
+  'Turner',
+  'Vargas',
+] as const
+
+function hashRoleSeed(title: string): number {
+  let h = 2166136261
+  for (let i = 0; i < title.length; i++) {
+    h ^= title.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** Deterministic synthetic roster for the role page (names + readiness + program status). */
+export function getEmployeesForRole(role: RoleRowType): RoleEmployee[] {
+  const E = role.employees
+  if (E <= 0) return []
+  const { completed, enrolled } = roleDevelopmentProgress(role)
+  const statuses: RoleEmployee['programStatus'][] = []
+  for (let i = 0; i < completed; i++) statuses.push('Completed')
+  for (let i = 0; i < Math.max(0, enrolled - completed); i++) statuses.push('Enrolled')
+  for (let i = 0; i < Math.max(0, E - enrolled); i++) statuses.push('Not enrolled')
+
+  const shuffleRng = mulberry32(hashRoleSeed(role.title))
+  for (let i = statuses.length - 1; i > 0; i--) {
+    const j = Math.floor(shuffleRng() * (i + 1))
+    const a = statuses[i]!
+    statuses[i] = statuses[j]!
+    statuses[j] = a
+  }
+
+  const out: RoleEmployee[] = []
+  const used = new Set<string>()
+  const first = WFR_FIRST_NAMES
+  const last = WFR_LAST_NAMES
+  const titleSeed = hashRoleSeed(role.title)
+
+  for (let i = 0; i < E; i++) {
+    const r = mulberry32((titleSeed + i * 2654435761) >>> 0)
+    let name: string
+    let tries = 0
+    do {
+      const fn = first[Math.floor(r() * first.length)]!
+      const ln = last[Math.floor(r() * last.length)]!
+      name = `${fn} ${ln}`
+      tries++
+      if (tries > 20) {
+        name = `${fn} ${ln} (${i + 1})`
+        break
+      }
+    } while (used.has(name))
+    used.add(name)
+
+    const noise = (mulberry32((titleSeed ^ i * 374761393) >>> 0)() - 0.5) * 38
+    let readinessPct = Math.round(Math.min(100, Math.max(0, role.aiReadiness + noise)))
+    const st = statuses[i]!
+    const r2 = mulberry32((titleSeed + i * 1597334677) >>> 0)
+    if (st === 'Completed') readinessPct = Math.min(100, Math.round(readinessPct + 6 + r2() * 18))
+    if (st === 'Not enrolled') readinessPct = Math.max(0, Math.round(readinessPct - r2() * 14))
+
+    out.push({ name, readinessPct, programStatus: st })
+  }
+
+  return out.sort((a, b) => b.readinessPct - a.readinessPct || a.name.localeCompare(b.name))
 }
 
 export type Dept = (typeof ORG.departments)[number]
@@ -398,6 +769,15 @@ export function taskZone(score: number): 'above' | 'augment' | 'below' {
   if (score > 75) return 'above'
   if (score >= 15) return 'augment'
   return 'below'
+}
+
+/** Tasks in automate or augment zones (score in AI-transformable bands, not human-only). */
+export function countTransformableTasksForRole(title: string): number {
+  const tasks = getTasksForRole(title)
+  return tasks.filter((t) => {
+    const z = taskZone(t.score)
+    return z === 'above' || z === 'augment'
+  }).length
 }
 
 export const ZONE = {
