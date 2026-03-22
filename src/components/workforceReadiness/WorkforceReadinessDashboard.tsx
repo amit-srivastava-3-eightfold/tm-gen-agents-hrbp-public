@@ -1477,10 +1477,10 @@ function BoardView({
                 <DataTableHeader>
                   <DataTableRow>
                     <DataTableHead>Department</DataTableHead>
-                    <DataTableHead align="right">Headcount</DataTableHead>
+                    <DataTableHead numeric>Headcount</DataTableHead>
                     <DataTableHead metric>AI readiness</DataTableHead>
                     <DataTableHead metric>AI potential</DataTableHead>
-                    <DataTableHead align="right">Gap</DataTableHead>
+                    <DataTableHead numeric>Gap</DataTableHead>
                     <DataTableHead>Status</DataTableHead>
                     <DataTableHead>Current action</DataTableHead>
                   </DataTableRow>
@@ -1540,10 +1540,10 @@ function BoardView({
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead>Department</DataTableHead>
-                <DataTableHead align="right">Headcount</DataTableHead>
+                <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
-                <DataTableHead align="right">Transformation gap</DataTableHead>
+                <DataTableHead numeric>Transformation gap</DataTableHead>
                 <DataTableHead>Status</DataTableHead>
               </DataTableRow>
             </DataTableHeader>

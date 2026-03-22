@@ -50,7 +50,7 @@ export function CollectionProgressPanel({
         <DataTableRow>
           <DataTableHead>Department</DataTableHead>
           <DataTableHead>HRBP</DataTableHead>
-          <DataTableHead align="right">Employees</DataTableHead>
+          <DataTableHead numeric>Employees</DataTableHead>
           <DataTableHead>Channels</DataTableHead>
           <DataTableHead metric>Progress</DataTableHead>
           <DataTableHead>Last updated</DataTableHead>
