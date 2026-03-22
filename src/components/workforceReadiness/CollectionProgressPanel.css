@@ -1,0 +1,117 @@
+/* Collection status data table — cell-level styles */
+
+.wfr-coll-table__tr--warn {
+  background: #fffbeb;
+}
+
+.wfr-coll-table__badge {
+  display: inline-block;
+  margin-left: 8px;
+  font: var(--typography-caption-semibold);
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+  background: #fff;
+  padding: 1px 7px;
+  border-radius: 99px;
+  border: 1px solid #fde68a;
+  vertical-align: middle;
+}
+
+.wfr-coll-table__tr--warn .wfr-coll-table__badge {
+  background: #fffbeb;
+}
+
+.wfr-coll-table__td--hrbp {
+  color: #475569;
+  white-space: nowrap;
+}
+
+.wfr-coll-table__channels {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--typography-caption);
+  color: #475569;
+}
+
+/* Progress bar in table cell */
+
+.wfr-coll-table__progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 120px;
+}
+
+.wfr-coll-table__track {
+  flex: 1;
+  position: relative;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.wfr-coll-table__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 99px;
+}
+
+.wfr-coll-table__pct {
+  font: var(--typography-body3);
+  font-weight: 700;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Last updated */
+
+.wfr-coll-table__td--activity {
+  color: #94a3b8;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+/* Action buttons */
+
+.wfr-coll-table__td--actions {
+  white-space: nowrap;
+}
+
+.wfr-coll-table__action-btn {
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font: var(--typography-caption-semibold);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wfr-coll-table__action-btn--nudge {
+  border: 1px solid #f59e0b;
+  color: #b45309;
+}
+
+.wfr-coll-table__action-btn--nudge:hover {
+  background: #fffbeb;
+}
+
+.wfr-coll-table__tr--warn .wfr-coll-table__action-btn--nudge {
+  background: #fff;
+}
+
+.wfr-coll-table__action-btn--remind {
+  border: 1px solid #a5b4fc;
+  color: var(--wfr-potential-text, #6366f1);
+}
+
+.wfr-coll-table__action-btn--remind:hover {
+  background: #eef2ff;
+}

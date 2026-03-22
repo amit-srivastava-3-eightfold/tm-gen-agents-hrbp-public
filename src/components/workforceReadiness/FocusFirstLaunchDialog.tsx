@@ -150,14 +150,18 @@ export function FocusFirstLaunchDialog({
       if (deptLaunchScopeKind === 'focus_only') {
         return `${defaultScopeDepartmentName} only`
       }
-      const n = Object.keys(otherDeptSelection).filter((k) => otherDeptSelection[k]).length
-      return n === 0 ? 'No departments selected' : `${n} other department${n === 1 ? '' : 's'}`
+      const selected = Object.keys(otherDeptSelection).filter((k) => otherDeptSelection[k])
+      if (selected.length === 0) return 'No departments selected'
+      if (selected.length === 1) return `${selected[0]} only`
+      return `${selected.length} other departments`
     }
     if (boardScopeMode === 'all') {
       return `All ${ORG.departments.length} departments`
     }
-    const n = Object.keys(boardSelectedDepts).filter((k) => boardSelectedDepts[k]).length
-    return n === 0 ? 'No departments selected' : `${n} department${n === 1 ? '' : 's'}`
+    const selected = Object.keys(boardSelectedDepts).filter((k) => boardSelectedDepts[k])
+    if (selected.length === 0) return 'No departments selected'
+    if (selected.length === 1) return `${selected[0]} only`
+    return `${selected.length} departments`
   }, [
     defaultScopeDepartmentName,
     deptLaunchScopeKind,

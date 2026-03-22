@@ -1,7 +1,8 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useMemo, type MouseEvent } from 'react'
+import { useMemo, type MouseEvent, type ReactNode } from 'react'
 import {
   wfrDemoCollectionSnapshot,
+  wfrDemoCollectionSnapshotForDeptNames,
   wfrDemoDeptCollectionSnapshot,
   type Dept,
   type WfrDemoCollectionSnapshot,
@@ -10,37 +11,36 @@ import { FocusFirstLaunchDialog, type FocusCollectionLaunchSummary } from './Foc
 
 export type { FocusCollectionLaunchSummary }
 
-function focusCollectionUnderwaySubtext(summary: FocusCollectionLaunchSummary): string {
+function focusCollectionUnderwaySubtext(summary: FocusCollectionLaunchSummary): ReactNode {
   if (summary.delegated) {
-    return `This rollout is assigned to HRBPs for ${summary.scopeLabel}. Delegates will choose the collection method for their teams—survey responses will appear as they configure and launch.`
+    return <>This rollout is assigned to HRBPs for <strong>{summary.scopeLabel}</strong>. Delegates will choose the collection method for their teams—survey responses will appear as they configure and launch.</>
   }
-  return `You are running this for ${summary.scopeLabel}, using ${summary.channelsLabel} to reach people. Survey responses are rolling in—check back as participation grows.`
+  return <>You are running this for <strong>{summary.scopeLabel}</strong>, using <strong>{summary.channelsLabel}</strong> to reach people. Survey responses are rolling in—check back as participation grows.</>
 }
 
 function focusCollectionUnderwaySubtextDept(
   deptName: string,
   summary: FocusCollectionLaunchSummary,
   snapshot: WfrDemoCollectionSnapshot,
-): string {
-  const here = `${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} people in ${deptName} have responded so far`
+): ReactNode {
+  const here = <>{snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} people in <strong>{deptName}</strong> have responded so far</>
   if (summary.delegated) {
-    return `In ${deptName}, ${here}. This department is part of the ${summary.scopeLabel} rollout—HRBPs own how collection runs in each unit.`
+    return <>In <strong>{deptName}</strong>, {here}. This department is part of the <strong>{summary.scopeLabel}</strong> rollout—HRBPs own how collection runs in each unit.</>
   }
-  return `In ${deptName}, ${here}. You launched ${summary.scopeLabel} using ${summary.channelsLabel}; the bar reflects participation in this department only.`
+  return <>In <strong>{deptName}</strong>, {here}. You launched <strong>{summary.scopeLabel}</strong> using <strong>{summary.channelsLabel}</strong>; the bar reflects participation in this department only.</>
 }
 
 function focusCollectionUnderwaySubtextDeptNoWizard(
   deptName: string,
   snapshot: WfrDemoCollectionSnapshot,
-): string {
-  return `In ${deptName}, ${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} employees have responded so far. Open details to see employee-level status across departments.`
+): ReactNode {
+  return <>In <strong>{deptName}</strong>, {snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} employees have responded so far. Open details to see employee-level status across departments.</>
 }
 
 export type FocusFirstCollectionAttentionScope = 'org' | 'dept'
 
 export interface FocusFirstCollectionCardProps {
   snapshot: WfrDemoCollectionSnapshot
-  onViewDetails: () => void
   /** Org: “N departments…”; dept: single-dept attention copy. */
   attentionScope?: FocusFirstCollectionAttentionScope
   /** When set, subtext reflects the launch wizard (Review step) choices. */
@@ -52,14 +52,13 @@ export interface FocusFirstCollectionCardProps {
 /** Shared “Data collection is underway” surface — same Focus First card shell as pre-launch (icon + red eyebrow + gradient). */
 export function FocusFirstCollectionCard({
   snapshot,
-  onViewDetails,
   attentionScope = 'org',
   launchSummary = null,
   departmentContextName,
 }: FocusFirstCollectionCardProps) {
   const showAttentionBadge = snapshot.needAttentionDeptCount > 0
   const deptName = departmentContextName
-  const subtext =
+  const subtext: ReactNode =
     attentionScope === 'dept' && deptName
       ? launchSummary
         ? focusCollectionUnderwaySubtextDept(deptName, launchSummary, snapshot)
@@ -105,9 +104,6 @@ export function FocusFirstCollectionCard({
           {snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} employees have responded
           {attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}
         </p>
-        <button type="button" className="wfr-dash__focus-collecting__link" onClick={onViewDetails}>
-          View details&nbsp;→
-        </button>
       </div>
     </div>
   )
@@ -120,7 +116,6 @@ export type FocusFirstModuleBoardProps = {
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
   launchOpen: boolean
   onLaunchOpenChange: (open: boolean) => void
-  onOpenCollectionDetail: () => void
   onRequestCloseMetricSheet?: () => void
   /** When set, collecting state shows this department’s response snapshot and dept attention copy. */
   deptContext?: Dept
@@ -133,7 +128,6 @@ export type FocusFirstModuleCollectingProps = {
   mode: 'collecting'
   snapshot: WfrDemoCollectionSnapshot
   attentionScope: FocusFirstCollectionAttentionScope
-  onOpenCollectionDetail: () => void
   collectionLaunchSummary?: FocusCollectionLaunchSummary | null
   /** Shown in subtext when attentionScope is dept (e.g. role page). */
   departmentContextName?: string
@@ -144,7 +138,6 @@ export type FocusFirstModuleProps = FocusFirstModuleBoardProps | FocusFirstModul
 function FocusFirstModuleCollecting({
   snapshot,
   attentionScope,
-  onOpenCollectionDetail,
   collectionLaunchSummary,
   departmentContextName,
 }: Omit<FocusFirstModuleCollectingProps, 'mode'>) {
@@ -152,7 +145,6 @@ function FocusFirstModuleCollecting({
     <div className="wfr-dash__focus-module">
       <FocusFirstCollectionCard
         snapshot={snapshot}
-        onViewDetails={onOpenCollectionDetail}
         attentionScope={attentionScope}
         launchSummary={collectionLaunchSummary}
         departmentContextName={departmentContextName}
@@ -166,12 +158,15 @@ function FocusFirstModuleBoard({
   onCollectionActiveChange,
   launchOpen,
   onLaunchOpenChange,
-  onOpenCollectionDetail,
   onRequestCloseMetricSheet,
   deptContext,
   collectionLaunchSummary,
 }: Omit<FocusFirstModuleBoardProps, 'mode'>) {
-  const orgCollectionSnap = useMemo(() => wfrDemoCollectionSnapshot(), [])
+  const orgCollectionSnap = useMemo(() => {
+    const scoped = collectionLaunchSummary?.scopedDepartmentNames
+    if (scoped?.length) return wfrDemoCollectionSnapshotForDeptNames(scoped)
+    return wfrDemoCollectionSnapshot()
+  }, [collectionLaunchSummary])
   const collectionSnap = useMemo(() => {
     if (deptContext) return wfrDemoDeptCollectionSnapshot(deptContext)
     return orgCollectionSnap
@@ -184,7 +179,6 @@ function FocusFirstModuleBoard({
         {collectionActive ? (
           <FocusFirstCollectionCard
             snapshot={collectionSnap}
-            onViewDetails={onOpenCollectionDetail}
             attentionScope={attentionScope}
             launchSummary={collectionLaunchSummary}
             departmentContextName={deptContext?.name}
@@ -241,7 +235,6 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       <FocusFirstModuleCollecting
         snapshot={props.snapshot}
         attentionScope={props.attentionScope}
-        onOpenCollectionDetail={props.onOpenCollectionDetail}
         collectionLaunchSummary={props.collectionLaunchSummary}
         departmentContextName={props.departmentContextName}
       />
@@ -253,7 +246,6 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     onCollectionActiveChange,
     launchOpen,
     onLaunchOpenChange,
-    onOpenCollectionDetail,
     onRequestCloseMetricSheet,
     deptContext,
     collectionLaunchSummary,
@@ -265,7 +257,6 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       onCollectionActiveChange={onCollectionActiveChange}
       launchOpen={launchOpen}
       onLaunchOpenChange={onLaunchOpenChange}
-      onOpenCollectionDetail={onOpenCollectionDetail}
       onRequestCloseMetricSheet={onRequestCloseMetricSheet}
       deptContext={deptContext}
       collectionLaunchSummary={collectionLaunchSummary}
