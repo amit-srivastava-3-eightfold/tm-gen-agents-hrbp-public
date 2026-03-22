@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import {
   ORG,
   wfrDemoCollectionSnapshot,
+  wfrDemoCollectionSnapshotForDeptNames,
   wfrDemoDeptCollectionSnapshot,
   wfrDemoDeptResponseRate,
-  wfrDeptCollectionEmployeeRows,
   type Dept,
 } from '../../data/wfrOrgData'
 import './FocusCollectionDetailSheet.css'
@@ -76,49 +76,21 @@ function barColor(rate: number) {
   return '#94a3b8'
 }
 
-const EMP_SAMPLE_FIRST = [
-  'Alex',
-  'Sam',
-  'Jordan',
-  'Riley',
-  'Casey',
-  'Morgan',
-  'Taylor',
-  'Quinn',
-  'Jamie',
-  'Drew',
-  'Skyler',
-  'Reese',
-]
-const EMP_SAMPLE_LI = ['K.', 'R.', 'M.', 'L.', 'T.', 'P.', 'S.', 'N.', 'W.']
-
-/** Deterministic sample rows for employee-level status in the org-wide sheet (per department row). */
-function demoDeptEmployeeStatusRows(deptName: string, ratePct: number) {
-  const h = deptNameHash(deptName)
-  const n = Math.min(8, Math.max(5, 5 + (h % 3)))
-  const respondedInSample = Math.max(0, Math.min(n, Math.round((n * ratePct) / 100)))
-  const rows: { name: string; status: 'responded' | 'pending' }[] = []
-  for (let i = 0; i < n; i++) {
-    const hi = (h + i * 47) % 10000
-    const fn = EMP_SAMPLE_FIRST[hi % EMP_SAMPLE_FIRST.length]
-    const li = EMP_SAMPLE_LI[(hi >> 4) % EMP_SAMPLE_LI.length]
-    rows.push({
-      name: `${fn} ${li}`,
-      status: i < respondedInSample ? 'responded' : 'pending',
-    })
-  }
-  return rows
-}
-
 export function FocusCollectionDetailSheet({
   open,
   onClose,
-  /** When set, sheet shows this department only and lists its employees. */
+  /** When set, sheet shows this department only. */
   scopeDepartment = null,
+  /**
+   * When opening from overview after a scoped launch, limit the department list and summary to these names.
+   * Ignored when `scopeDepartment` is set (drill-down uses that dept only).
+   */
+  launchScopedDepartmentNames = null,
 }: {
   open: boolean
   onClose: () => void
   scopeDepartment?: Dept | null
+  launchScopedDepartmentNames?: string[] | null
 }) {
   useLayoutEffect(() => {
     if (open) document.body.setAttribute(BODY_ATTR, 'true')
@@ -136,29 +108,43 @@ export function FocusCollectionDetailSheet({
 
   useEffect(() => {
     if (!open) setChannelsExpanded({})
-  }, [open, scopeDepartment?.name])
+  }, [open, scopeDepartment?.name, launchScopedDepartmentNames])
 
   const [channelsExpanded, setChannelsExpanded] = useState<Record<string, boolean>>({})
 
-  const orgSnap = useMemo(() => wfrDemoCollectionSnapshot(), [])
+  const orgSnapFull = useMemo(() => wfrDemoCollectionSnapshot(), [])
+
+  const launchScopeFilter = useMemo(() => {
+    if (scopeDepartment || !launchScopedDepartmentNames?.length) return null
+    return new Set(launchScopedDepartmentNames)
+  }, [scopeDepartment, launchScopedDepartmentNames])
+
+  const orgSnap = useMemo(() => {
+    if (launchScopeFilter) {
+      return wfrDemoCollectionSnapshotForDeptNames([...launchScopeFilter])
+    }
+    return orgSnapFull
+  }, [launchScopeFilter, orgSnapFull])
+
   const deptRows = useMemo(() => {
-    const rows = ORG.departments.map((d) => ({
+    const depts = launchScopeFilter
+      ? ORG.departments.filter((d) => launchScopeFilter.has(d.name))
+      : ORG.departments
+    const rows = depts.map((d) => ({
       name: d.name,
       employees: d.employees,
       rate: wfrDemoDeptResponseRate(d.name),
     }))
     return rows.sort((a, b) => a.rate - b.rate)
-  }, [])
+  }, [launchScopeFilter])
 
   const deptScoped = useMemo(() => {
     if (!scopeDepartment) return null
     const meta = deptCollectionRowDemo(scopeDepartment.name)
-    const emp = wfrDeptCollectionEmployeeRows(scopeDepartment)
     const snap = wfrDemoDeptCollectionSnapshot(scopeDepartment)
     return {
       dept: scopeDepartment,
       meta,
-      emp,
       snap,
       rate: wfrDemoDeptResponseRate(scopeDepartment.name),
     }
@@ -184,7 +170,11 @@ export function FocusCollectionDetailSheet({
             <p className="wfr-coll-sheet__sub">
               {isDeptScope ? (
                 <>
-                  <strong>{deptScoped.dept.name}</strong> only · employee responses in this department
+                  <strong>{deptScoped.dept.name}</strong> only · response progress for this department
+                </>
+              ) : launchScopeFilter ? (
+                <>
+                  Departments in your launch ({launchScopeFilter.size}) · response rates below
                 </>
               ) : (
                 'Track response rates and nudge delegates who need a push.'
@@ -306,45 +296,6 @@ export function FocusCollectionDetailSheet({
                 </div>
               ) : null}
             </div>
-
-            <h3 className="wfr-coll-sheet__dept-emp-list-title">
-              Employees in {deptScoped.dept.name}
-              <span className="wfr-coll-sheet__dept-emp-list-count tabular-nums">
-                {deptScoped.emp.rosterSize.toLocaleString()}
-              </span>
-            </h3>
-            {deptScoped.emp.rows.map((emp, idx) => {
-              const pending = emp.status === 'pending'
-              return (
-                <div
-                  key={`${emp.name}-${emp.roleTitle}-${idx}`}
-                  className={`wfr-coll-sheet__emp-dept-row${pending && deptScopedLow ? ' wfr-coll-sheet__emp-dept-row--dim' : ''}`}
-                >
-                  <div className="wfr-coll-sheet__emp-dept-main">
-                    <span className="wfr-coll-sheet__emp-dept-name">{emp.name}</span>
-                    <span className="wfr-coll-sheet__emp-dept-role">{emp.roleTitle}</span>
-                  </div>
-                  <div className="wfr-coll-sheet__emp-dept-actions">
-                    <span
-                      className={`wfr-coll-sheet__emp-pill${emp.status === 'responded' ? ' wfr-coll-sheet__emp-pill--ok' : ''}`}
-                    >
-                      {emp.status === 'responded' ? 'Responded' : 'Pending'}
-                    </span>
-                    {pending ? (
-                      <button type="button" className="wfr-coll-sheet__action-btn wfr-coll-sheet__action-btn--remind">
-                        Remind
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              )
-            })}
-            {deptScoped.emp.truncated ? (
-              <p className="wfr-coll-sheet__dept-emp-list-trunc">
-                Showing first {deptScoped.emp.rows.length.toLocaleString()} of{' '}
-                {deptScoped.emp.rosterSize.toLocaleString()} employees in this department.
-              </p>
-            ) : null}
           </div>
         ) : (
           <div className="wfr-coll-sheet__list">
@@ -363,9 +314,6 @@ export function FocusCollectionDetailSheet({
                   : `Last activity: ${meta.lastActivityDaysAgo} days ago`
               const multiChannel = meta.activeChannelCount > 1 && meta.channelsDetail.length > 1
               const expanded = channelsExpanded[row.name] ?? false
-              const respondedHeadcount = Math.round((row.employees * row.rate) / 100)
-              const pendingHeadcount = Math.max(0, row.employees - respondedHeadcount)
-              const empStatusRows = demoDeptEmployeeStatusRows(row.name, row.rate)
               return (
                 <div
                   key={row.name}
@@ -407,29 +355,6 @@ export function FocusCollectionDetailSheet({
                     <span className="wfr-coll-sheet__row-pct tabular-nums" style={{ color: c }}>
                       {row.rate}%
                     </span>
-                  </div>
-                  <div className="wfr-coll-sheet__emp-block">
-                    <div className="wfr-coll-sheet__emp-head">
-                      <span className="wfr-coll-sheet__emp-title">Employee response status</span>
-                      <span className="wfr-coll-sheet__emp-summary tabular-nums">
-                        {respondedHeadcount.toLocaleString()} responded · {pendingHeadcount.toLocaleString()} pending
-                      </span>
-                    </div>
-                    <ul className="wfr-coll-sheet__emp-list" aria-label={`Employees in ${row.name}`}>
-                      {empStatusRows.map((e, i) => (
-                        <li key={`${row.name}-${e.name}-${i}`} className="wfr-coll-sheet__emp-row">
-                          <span className="wfr-coll-sheet__emp-name">{e.name}</span>
-                          <span
-                            className={`wfr-coll-sheet__emp-pill${e.status === 'responded' ? ' wfr-coll-sheet__emp-pill--ok' : ''}`}
-                          >
-                            {e.status === 'responded' ? 'Responded' : 'Pending'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="wfr-coll-sheet__emp-foot">
-                      Sample of individuals; totals match department headcount ({row.employees.toLocaleString()}).
-                    </p>
                   </div>
                   <div
                     className={`wfr-coll-sheet__row-foot${multiChannel ? ' wfr-coll-sheet__row-foot--multi' : ''}`}

@@ -836,6 +836,29 @@ export function wfrDemoCollectionSnapshot(): WfrDemoCollectionSnapshot {
   }
 }
 
+/** Org-style snapshot limited to named departments (data collection detail sheet / scoped launch). */
+export function wfrDemoCollectionSnapshotForDeptNames(deptNames: string[]): WfrDemoCollectionSnapshot {
+  const nameSet = new Set(deptNames)
+  let responded = 0
+  let needAttention = 0
+  let totalEmployees = 0
+  for (const d of ORG.departments) {
+    if (!nameSet.has(d.name)) continue
+    const r = wfrDemoDeptResponseRate(d.name)
+    responded += Math.round((d.employees * r) / 100)
+    totalEmployees += d.employees
+    if (r < 20) needAttention++
+  }
+  const orgResponseRate =
+    totalEmployees > 0 ? Math.min(100, Math.round((responded / totalEmployees) * 100)) : 0
+  return {
+    orgResponseRate,
+    respondedCount: responded,
+    totalEmployees,
+    needAttentionDeptCount: needAttention,
+  }
+}
+
 /** Dept-level demo counts while org-wide Focus first collection is active. */
 export function wfrDemoDeptCollectionSnapshot(d: Dept): WfrDemoCollectionSnapshot {
   const orgResponseRate = wfrDemoDeptResponseRate(d.name)
@@ -846,100 +869,6 @@ export function wfrDemoDeptCollectionSnapshot(d: Dept): WfrDemoCollectionSnapsho
     totalEmployees: d.employees,
     needAttentionDeptCount: orgResponseRate < 20 ? 1 : 0,
   }
-}
-
-const WFR_DEPT_SHEET_MAX_ROWS = 250
-
-function deptCollectionSheetHash(name: string): number {
-  let h = 2166136261
-  for (let i = 0; i < name.length; i++) {
-    h ^= name.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return h >>> 0
-}
-
-export type WfrDeptCollectionEmployeeRow = {
-  name: string
-  roleTitle: string
-  status: 'responded' | 'pending'
-}
-
-/**
- * Flat employee list for the department-scoped collection detail sheet.
- * Uses role rosters when present; otherwise synthesizes names up to the display cap.
- */
-export function wfrDeptCollectionEmployeeRows(d: Dept): {
-  rows: WfrDeptCollectionEmployeeRow[]
-  /** Roster size used for status assignment (may be capped). */
-  rosterSize: number
-  respondedCount: number
-  pendingCount: number
-  truncated: boolean
-} {
-  const roles = getRolesForDept(d.name)
-  const flat: { name: string; roleTitle: string }[] = []
-  for (const role of roles) {
-    for (const emp of getEmployeesForRole(role)) {
-      flat.push({ name: emp.name, roleTitle: role.title })
-    }
-  }
-
-  if (flat.length === 0) {
-    const n = Math.min(d.employees, WFR_DEPT_SHEET_MAX_ROWS)
-    const seed = deptCollectionSheetHash(d.name)
-    const used = new Set<string>()
-    const first = WFR_FIRST_NAMES
-    const last = WFR_LAST_NAMES
-    for (let i = 0; i < n; i++) {
-      const r = mulberry32((seed + i * 2654435761) >>> 0)
-      let name: string
-      let tries = 0
-      do {
-        const fn = first[Math.floor(r() * first.length)]!
-        const ln = last[Math.floor(r() * last.length)]!
-        name = `${fn} ${ln}`
-        tries++
-        if (tries > 24) {
-          name = `${fn} ${ln} (${i + 1})`
-          break
-        }
-      } while (used.has(name))
-      used.add(name)
-      flat.push({ name, roleTitle: 'Team member' })
-    }
-    flat.sort((a, b) => a.name.localeCompare(b.name) || a.roleTitle.localeCompare(b.roleTitle))
-  } else {
-    flat.sort((a, b) => a.name.localeCompare(b.name) || a.roleTitle.localeCompare(b.roleTitle))
-  }
-
-  const rate = wfrDemoDeptResponseRate(d.name)
-  const rosterSize = flat.length
-  const targetResponded = Math.min(rosterSize, Math.round((rosterSize * rate) / 100))
-
-  const indices = flat.map((_, i) => i)
-  const rng = mulberry32(deptCollectionSheetHash(d.name))
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    const a = indices[i]!
-    indices[i] = indices[j]!
-    indices[j] = a
-  }
-  const respondedIdx = new Set(indices.slice(0, targetResponded))
-
-  const full: WfrDeptCollectionEmployeeRow[] = flat.map((row, i) => ({
-    name: row.name,
-    roleTitle: row.roleTitle,
-    status: respondedIdx.has(i) ? 'responded' : 'pending',
-  }))
-
-  const truncated = full.length > WFR_DEPT_SHEET_MAX_ROWS
-  const rows = truncated ? full.slice(0, WFR_DEPT_SHEET_MAX_ROWS) : full
-
-  const respondedCount = full.filter((x) => x.status === 'responded').length
-  const pendingCount = full.length - respondedCount
-
-  return { rows, rosterSize: full.length, respondedCount, pendingCount, truncated }
 }
 
 function deptHeadcountDenominator() {
@@ -958,6 +887,50 @@ export function deptGapHeadcount(d: Dept): number {
   const aug = deptPeopleInAugRoles(d)
   const ready = Math.round((aug * d.aiReadiness) / 100)
   return Math.max(0, aug - ready)
+}
+
+/** Aggregate org-style metrics for a subset of departments (overview cards / Learn more after Focus launch). */
+export function wfrRollupDepartmentsByName(deptNames: string[]) {
+  const depts = [...new Set(deptNames)]
+    .map((n) => ORG.departments.find((d) => d.name === n))
+    .filter((d): d is Dept => d != null)
+  if (depts.length === 0) return null
+
+  let totalEmployees = 0
+  let peopleInAugRoles = 0
+  let gapPeople = 0
+  let potWeighted = 0
+  for (const d of depts) {
+    totalEmployees += d.employees
+    const aug = deptPeopleInAugRoles(d)
+    const g = deptGapHeadcount(d)
+    peopleInAugRoles += aug
+    gapPeople += g
+    potWeighted += d.aiPotential * aug
+  }
+  const ready = Math.max(0, peopleInAugRoles - gapPeople)
+  const aiReadiness = peopleInAugRoles > 0 ? Math.round((ready / peopleInAugRoles) * 100) : 0
+  const aiPotential = peopleInAugRoles > 0 ? Math.round(potWeighted / peopleInAugRoles) : 0
+  const hrsUnlocked = Math.round(gapPeople * ORG.hrsPerPersonWeek)
+  const share = ORG.totalEmployees > 0 ? totalEmployees / ORG.totalEmployees : 0
+  const tasksInAugZone = Math.max(1, Math.round(ORG.tasksInAugZone * share))
+  const totalRoleTasks = Math.max(tasksInAugZone, Math.round(ORG.totalRoleTasks * share))
+  const tasksAboveThreshold = Math.max(0, Math.round(ORG.tasksAboveThreshold * share))
+  const tasksBelowThreshold = Math.max(0, Math.round(ORG.tasksBelowThreshold * share))
+
+  return {
+    totalEmployees,
+    peopleInAugRoles,
+    ready,
+    gapPeople,
+    aiReadiness,
+    aiPotential,
+    hrsUnlocked,
+    tasksInAugZone,
+    totalRoleTasks,
+    tasksAboveThreshold,
+    tasksBelowThreshold,
+  }
 }
 
 export const PM = {

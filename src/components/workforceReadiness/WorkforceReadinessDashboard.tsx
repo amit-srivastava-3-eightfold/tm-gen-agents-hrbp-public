@@ -19,6 +19,7 @@ import {
   tGap,
   taskZone,
   roleDevelopmentProgress,
+  wfrRollupDepartmentsByName,
   type Dept,
   type RoleEmployee,
   type RoleRowType,
@@ -1194,6 +1195,15 @@ function DeptView({
             gapPeople: gapCount,
             hrsUnlocked: deptHrsUnlocked,
           }}
+          dataCollection={
+            orgCollectionActive && collectionLaunchSummary
+              ? {
+                  scopeLabel: collectionLaunchSummary.scopeLabel,
+                  channelsLabel: collectionLaunchSummary.channelsLabel,
+                  delegated: collectionLaunchSummary.delegated,
+                }
+              : null
+          }
         />
       </div>
 
@@ -1281,32 +1291,67 @@ function BoardView({
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
 
-  const sorted = [...ORG.departments].sort((a, b) => {
-    const pp = tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness)
-    if (pp !== 0) return pp
-    return deptGapHeadcount(b) - deptGapHeadcount(a)
-  })
-  const ready = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
-  const gapPeople = ORG.peopleInAugRoles - ready
-  const hrsUnlocked = Math.round(gapPeople * ORG.hrsPerPersonWeek)
-  const gapSharePct = Math.min(100, Math.round((gapPeople / ORG.peopleInAugRoles) * 100))
+  const scopedRollup = useMemo(() => {
+    if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
+    return wfrRollupDepartmentsByName(collectionLaunchSummary.scopedDepartmentNames)
+  }, [focusCollectionActive, collectionLaunchSummary])
+
+  const sorted = useMemo(() => {
+    const scopeSet =
+      focusCollectionActive && collectionLaunchSummary?.scopedDepartmentNames?.length
+        ? new Set(collectionLaunchSummary.scopedDepartmentNames)
+        : null
+    const list = scopeSet ? ORG.departments.filter((d) => scopeSet.has(d.name)) : [...ORG.departments]
+    return list.sort((a, b) => {
+      const pp = tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness)
+      if (pp !== 0) return pp
+      return deptGapHeadcount(b) - deptGapHeadcount(a)
+    })
+  }, [focusCollectionActive, collectionLaunchSummary])
+
+  const orgReady = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
+  const orgGapPeople = ORG.peopleInAugRoles - orgReady
+  const ready = scopedRollup ? scopedRollup.ready : orgReady
+  const gapPeople = scopedRollup ? scopedRollup.gapPeople : orgGapPeople
+  const peopleInAugForCards = scopedRollup ? scopedRollup.peopleInAugRoles : ORG.peopleInAugRoles
+  const aiReadinessPct = scopedRollup ? scopedRollup.aiReadiness : ORG.aiReadiness
+  const aiPotentialPct = scopedRollup ? scopedRollup.aiPotential : ORG.aiPotential
+  const totalEmployeesHero = scopedRollup ? scopedRollup.totalEmployees : ORG.totalEmployees
+  const hrsUnlocked = scopedRollup ? scopedRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
+  const gapSharePct =
+    peopleInAugForCards > 0 ? Math.min(100, Math.round((gapPeople / peopleInAugForCards) * 100)) : 0
+  const tasksInAug = scopedRollup ? scopedRollup.tasksInAugZone : ORG.tasksInAugZone
+  const totalRoleTasks = scopedRollup ? scopedRollup.totalRoleTasks : ORG.totalRoleTasks
+  const tasksAbove = scopedRollup ? scopedRollup.tasksAboveThreshold : ORG.tasksAboveThreshold
+  const tasksBelow = scopedRollup ? scopedRollup.tasksBelowThreshold : ORG.tasksBelowThreshold
+
+  const learnMoreDataCollection =
+    focusCollectionActive && collectionLaunchSummary
+      ? {
+          scopeLabel: collectionLaunchSummary.scopeLabel,
+          channelsLabel: collectionLaunchSummary.channelsLabel,
+          delegated: collectionLaunchSummary.delegated,
+        }
+      : null
 
   const cards = [
     {
       id: 'readiness' as const,
       label: 'AI readiness',
-      val: `${ORG.aiReadiness}%`,
+      val: `${aiReadinessPct}%`,
       icon: 'school',
-      l1: `${ready.toLocaleString()} AI-ready of ${ORG.peopleInAugRoles.toLocaleString()} in augmentable roles`,
-      hint: 'How much of addressable work the org is already equipped to capture.',
+      l1: `${ready.toLocaleString()} AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles`,
+      hint: scopedRollup
+        ? `Scoped to your launch (${collectionLaunchSummary?.scopeLabel}).`
+        : 'How much of addressable work the org is already equipped to capture.',
     },
     {
       id: 'potential' as const,
       label: 'AI potential',
-      val: `${ORG.aiPotential}%`,
+      val: `${aiPotentialPct}%`,
       icon: 'auto_awesome',
-      l1: `${ORG.tasksInAugZone} of ${ORG.totalRoleTasks} tasks in the augmentation zone`,
-      hint: `${ORG.tasksAboveThreshold} automatable, ${ORG.tasksBelowThreshold} human-only`,
+      l1: `${tasksInAug} of ${totalRoleTasks} tasks in the augmentation zone`,
+      hint: `${tasksAbove} automatable, ${tasksBelow} human-only`,
     },
     {
       id: 'gap' as const,
@@ -1322,17 +1367,18 @@ function BoardView({
     <div className="wfr-dash">
       <div className="wfr-dash__hero">
         <div className="shrink-0">
-          <MetricArc potential={ORG.aiPotential} readiness={ORG.aiReadiness} size="lg" />
+          <MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />
         </div>
         <div className="wfr-dash__hero-copy">
           <p className="wfr-dash__eyebrow">
-            {ORG.totalEmployees.toLocaleString()} employees {EM} Q1 2026
+            {totalEmployeesHero.toLocaleString()} employees {EM} Q1 2026
           </p>
           <h2 className="wfr-dash__headline">
-            <span className="wfr-dash__headline-pct wfr-text-readiness">{ORG.aiReadiness}%</span>
+            <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
             <span className="wfr-dash__headline-text">
               {' '}
-              of people in augmentable roles have the skills to start using AI today.
+              of people in augmentable roles have the skills to start using AI today
+              {scopedRollup ? ' (for departments in your launch).' : '.'}
             </span>
           </h2>
           <div className="wfr-dash__capture-tag-wrap">
@@ -1376,6 +1422,7 @@ function BoardView({
           ready={ready}
           gapPeople={gapPeople}
           hrsUnlocked={hrsUnlocked}
+          dataCollection={learnMoreDataCollection}
         />
 
         <FocusFirstModule
@@ -1593,6 +1640,13 @@ export function WorkforceReadinessDashboard({
         open={collectionDetailOpen}
         onClose={() => setCollectionDetailOpen(false)}
         scopeDepartment={view === 'dept' || view === 'role' ? dept : null}
+        launchScopedDepartmentNames={
+          view === 'board' &&
+          focusCollectionActive &&
+          focusCollectionLaunchSummary?.scopedDepartmentNames?.length
+            ? focusCollectionLaunchSummary.scopedDepartmentNames
+            : null
+        }
       />
     </>
   )

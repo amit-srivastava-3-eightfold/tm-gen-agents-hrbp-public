@@ -16,6 +16,8 @@ export type FocusCollectionLaunchSummary = {
   /** Channel name when user manages; placeholder when delegated. */
   channelsLabel: string
   delegated: boolean
+  /** Departments in scope; drives overview metrics, Learn more copy, and the dept table. */
+  scopedDepartmentNames: string[]
 }
 
 export interface FocusFirstLaunchDialogProps {
@@ -47,32 +49,32 @@ const CHANNEL_OPTIONS: {
   effortLabel: string
 }[] = [
   {
-    id: 'profile_updates',
-    label: 'Profile Updates',
-    desc: 'Employees update their skills and AI tool usage',
-    icon: '\u270f\ufe0f',
-    effort: 'low',
-    effortLabel: 'Light signal',
+    id: 'ai_agent_interviews',
+    label: 'AI Agent Interviews',
+    desc: 'AI conversations to map real workflows.',
+    icon: '\ud83e\udd16',
+    effort: 'deep',
+    effortLabel: 'Deepest signal',
   },
   {
     id: 'contextual_surveys',
     label: 'Contextual Surveys',
-    desc: 'Role-specific questions about actual AI usage',
+    desc: 'Role-specific questions about actual AI usage.',
     icon: '\ud83d\udccb',
     effort: 'medium',
     effortLabel: 'Strong signal',
   },
   {
-    id: 'ai_agent_interviews',
-    label: 'AI Agent Interviews',
-    desc: 'AI conversations to map real workflows',
-    icon: '\ud83e\udd16',
-    effort: 'deep',
-    effortLabel: 'Deepest signal',
+    id: 'career_hub_profiles',
+    label: 'Career Hub Profiles',
+    desc: 'Employees update their skills and AI tool usage in Career Hub.',
+    icon: '\u270f\ufe0f',
+    effort: 'low',
+    effortLabel: 'Light signal',
   },
 ]
 
-const DEFAULT_CHANNEL_ID = CHANNEL_OPTIONS[0].id
+const DEFAULT_CHANNEL_ID = 'ai_agent_interviews'
 
 function channelEffortPillClass(effort: ChannelEffort) {
   if (effort === 'low') return 'wfr-focus-launch__effort-pill wfr-focus-launch__effort-pill--low'
@@ -164,6 +166,28 @@ export function FocusFirstLaunchDialog({
     boardSelectedDepts,
   ])
 
+  const scopedDepartmentNames = useMemo((): string[] => {
+    if (defaultScopeDepartmentName) {
+      if (deptLaunchScopeKind === 'all') {
+        return ORG.departments.map((d) => d.name)
+      }
+      if (deptLaunchScopeKind === 'focus_only') {
+        return [defaultScopeDepartmentName]
+      }
+      return Object.keys(otherDeptSelection).filter((k) => otherDeptSelection[k])
+    }
+    if (boardScopeMode === 'all') {
+      return ORG.departments.map((d) => d.name)
+    }
+    return Object.keys(boardSelectedDepts).filter((k) => boardSelectedDepts[k])
+  }, [
+    defaultScopeDepartmentName,
+    deptLaunchScopeKind,
+    otherDeptSelection,
+    boardScopeMode,
+    boardSelectedDepts,
+  ])
+
   const ownerLabel = assignOwner === 'hrbp' ? 'HRBPs' : 'You'
 
   const canProceedScope = defaultScopeDepartmentName
@@ -226,6 +250,7 @@ export function FocusFirstLaunchDialog({
       scopeLabel,
       channelsLabel,
       delegated,
+      scopedDepartmentNames,
     })
     onOpenChange(false)
   }
