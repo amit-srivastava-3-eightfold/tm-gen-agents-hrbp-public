@@ -359,10 +359,11 @@
 }
 
 .wfr-metric-card__label {
-  font: var(--typography-caption-semibold);
+  font: var(--typography-body3);
+  font-weight: 600;
   color: #4f5666;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   margin: 0 0 4px;
 }
 
@@ -947,7 +948,7 @@
 
 /* Focus first: keep new states under .wfr-dash__focus-*; reuse --wfr-focus-module-* tokens */
 .wfr-dash__focus-module {
-  margin-top: var(--wfr-focus-module-mt);
+  /* spacing handled by parent flex gap */
 }
 
 .wfr-dash__focus-module-eyebrow {
@@ -966,7 +967,7 @@
 }
 
 .wfr-dash__focus-card {
-  margin-top: var(--wfr-focus-module-mt);
+  /* spacing handled by parent flex gap */
   background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
   border: 1px solid #fecaca;
   border-radius: var(--wfr-focus-module-radius);
@@ -1629,4 +1630,200 @@
   background: #f8fafc;
   color: #64748b;
   border-color: #e2e8f0;
+}
+
+/* Readiness trend indicators (post-collection complete) */
+
+.wfr-dash__trend-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wfr-dash__trend-link:hover {
+  opacity: 0.8;
+}
+
+.wfr-dash__trend {
+  font: var(--typography-caption-semibold);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wfr-dash__trend--up {
+  color: #15803d;
+}
+
+.wfr-dash__trend--down {
+  color: #dc2626;
+}
+
+/* Readiness cell: bar + trend+info grouped together */
+.wfr-dash__readiness-with-trend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wfr-dash__trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  padding: 2px 6px 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  line-height: 1;
+}
+
+.wfr-dash__trend-badge:hover {
+  filter: brightness(0.95);
+}
+
+.wfr-dash__trend-badge--up {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.wfr-dash__trend-badge--down {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.wfr-dash__trend-badge-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.wfr-dash__trend-badge-icon {
+  font-size: 13px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.wfr-dash__trend-badge:hover .wfr-dash__trend-badge-icon {
+  opacity: 1;
+}
+
+/* Upskilling priority cards in complete-state RA card */
+
+.wfr-dash__focus-priorities {
+  display: flex;
+  gap: 12px;
+  padding: 0 32px 16px;
+  overflow-x: auto;
+}
+
+.wfr-dash__focus-priority-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.wfr-dash__focus-priority-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.wfr-dash__focus-priority-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.wfr-dash__focus-priority-card-name {
+  font: var(--typography-body2);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.wfr-dash__focus-priority-card-gap {
+  font: var(--typography-caption-semibold);
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid #fecaca;
+  white-space: nowrap;
+}
+
+.wfr-dash__focus-priority-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wfr-dash__focus-priority-card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wfr-dash__focus-priority-card-stat--people {
+  margin-left: auto;
+}
+
+.wfr-dash__focus-priority-card-stat-val {
+  font: var(--typography-body2);
+  font-weight: 700;
+  font-size: 16px;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.wfr-dash__focus-priority-card-stat--people .wfr-dash__focus-priority-card-stat-val {
+  color: #dc2626;
+}
+
+.wfr-dash__focus-priority-card-stat-label {
+  font: var(--typography-caption);
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.wfr-dash__focus-priority-card-arrow {
+  color: #cbd5e1;
+  font-size: 14px;
+  margin-top: -12px;
+}
+
+.wfr-dash__focus-priority-card-cta {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--typography-caption-semibold);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wfr-potential-text, #6366f1);
+  text-align: left;
+  text-decoration: none;
+}
+
+.wfr-dash__focus-priority-card-cta:hover {
+  text-decoration: underline;
 }

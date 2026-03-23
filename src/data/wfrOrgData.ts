@@ -41,92 +41,136 @@ export const ORG = {
   ],
   roles: {
     Administrative: [
-      { title: 'Data Entry Clerk', employees: 182, aiPotential: 74, aiReadiness: 7, reskillPriority: 'Immediate' as const },
-      { title: 'Administrative Assistant', employees: 215, aiPotential: 68, aiReadiness: 12, reskillPriority: 'Immediate' as const },
-      { title: 'Document Controller', employees: 140, aiPotential: 62, aiReadiness: 11, reskillPriority: 'This year' as const },
-      { title: 'Executive Assistant', employees: 140, aiPotential: 45, aiReadiness: 21, reskillPriority: 'Monitor' as const },
+      { title: 'Data Entry Clerk', employees: 120, aiPotential: 74, aiReadiness: 7 },
+      { title: 'Administrative Assistant', employees: 150, aiPotential: 68, aiReadiness: 12 },
+      { title: 'Document Controller', employees: 95, aiPotential: 62, aiReadiness: 11 },
+      { title: 'Executive Assistant', employees: 110, aiPotential: 45, aiReadiness: 21 },
+      { title: 'Records Manager', employees: 82, aiPotential: 58, aiReadiness: 9 },
+      { title: 'Office Coordinator', employees: 70, aiPotential: 50, aiReadiness: 15 },
+      { title: 'Receptionist', employees: 50, aiPotential: 42, aiReadiness: 18 },
     ],
     Finance: [
-      { title: 'Financial Clerk', employees: 318, aiPotential: 63, aiReadiness: 11, reskillPriority: 'Immediate' as const },
-      { title: 'Accounts Payable Specialist', employees: 210, aiPotential: 58, aiReadiness: 13, reskillPriority: 'This year' as const },
-      { title: 'Financial Analyst', employees: 149, aiPotential: 42, aiReadiness: 22, reskillPriority: 'Monitor' as const },
+      { title: 'Financial Clerk', employees: 180, aiPotential: 63, aiReadiness: 11 },
+      { title: 'Accounts Payable Specialist', employees: 120, aiPotential: 58, aiReadiness: 13 },
+      { title: 'Financial Analyst', employees: 110, aiPotential: 42, aiReadiness: 22 },
+      { title: 'Revenue Accountant', employees: 95, aiPotential: 55, aiReadiness: 10 },
+      { title: 'Payroll Specialist', employees: 82, aiPotential: 60, aiReadiness: 14 },
+      { title: 'Tax Analyst', employees: 90, aiPotential: 48, aiReadiness: 18 },
     ],
     Operations: [
-      { title: 'Logistics Coordinator', employees: 310, aiPotential: 53, aiReadiness: 15, reskillPriority: 'This year' as const },
-      { title: 'Supply Chain Analyst', employees: 220, aiPotential: 39, aiReadiness: 19, reskillPriority: 'Monitor' as const },
-      { title: 'Operations Manager', employees: 317, aiPotential: 25, aiReadiness: 27, reskillPriority: 'Monitor' as const },
+      { title: 'Logistics Coordinator', employees: 190, aiPotential: 53, aiReadiness: 15 },
+      { title: 'Supply Chain Analyst', employees: 140, aiPotential: 39, aiReadiness: 19 },
+      { title: 'Operations Manager', employees: 130, aiPotential: 25, aiReadiness: 27 },
+      { title: 'Process Improvement Specialist', employees: 110, aiPotential: 46, aiReadiness: 14 },
+      { title: 'Warehouse Supervisor', employees: 147, aiPotential: 38, aiReadiness: 11 },
+      { title: 'Fleet Coordinator', employees: 130, aiPotential: 42, aiReadiness: 13 },
     ],
     'Customer Success': [
-      { title: 'Customer Success Manager', employees: 340, aiPotential: 45, aiReadiness: 23, reskillPriority: 'This year' as const },
-      { title: 'Implementation Consultant', employees: 280, aiPotential: 48, aiReadiness: 20, reskillPriority: 'This year' as const },
-      { title: 'Support Specialist', employees: 200, aiPotential: 37, aiReadiness: 17, reskillPriority: 'Monitor' as const },
+      { title: 'Customer Success Manager', employees: 200, aiPotential: 45, aiReadiness: 23 },
+      { title: 'Implementation Consultant', employees: 150, aiPotential: 48, aiReadiness: 20 },
+      { title: 'Support Specialist', employees: 140, aiPotential: 37, aiReadiness: 17 },
+      { title: 'Onboarding Manager', employees: 110, aiPotential: 42, aiReadiness: 22 },
+      { title: 'Renewals Specialist', employees: 120, aiPotential: 50, aiReadiness: 19 },
+      { title: 'Customer Insights Analyst', employees: 100, aiPotential: 55, aiReadiness: 28 },
     ],
     Product: [
-      { title: 'Product Manager', employees: 245, aiPotential: 41, aiReadiness: 35, reskillPriority: 'Monitor' as const },
-      { title: 'Product Designer', employees: 110, aiPotential: 34, aiReadiness: 29, reskillPriority: 'Monitor' as const },
-      { title: 'Technical Program Manager', employees: 60, aiPotential: 30, aiReadiness: 44, reskillPriority: 'Monitor' as const },
+      { title: 'Product Manager', employees: 140, aiPotential: 41, aiReadiness: 35 },
+      { title: 'Product Designer', employees: 80, aiPotential: 34, aiReadiness: 29 },
+      { title: 'Technical Program Manager', employees: 55, aiPotential: 30, aiReadiness: 44 },
+      { title: 'UX Researcher', employees: 65, aiPotential: 38, aiReadiness: 32 },
+      { title: 'Product Analyst', employees: 75, aiPotential: 52, aiReadiness: 30 },
     ],
     'IT & Security': [
-      { title: 'IT Support Specialist', employees: 220, aiPotential: 37, aiReadiness: 40, reskillPriority: 'Monitor' as const },
-      { title: 'Security Operations Analyst', employees: 155, aiPotential: 33, aiReadiness: 44, reskillPriority: 'Monitor' as const },
-      { title: 'Systems Administrator', employees: 90, aiPotential: 27, aiReadiness: 43, reskillPriority: 'Monitor' as const },
+      { title: 'IT Support Specialist', employees: 130, aiPotential: 37, aiReadiness: 40 },
+      { title: 'Security Operations Analyst', employees: 95, aiPotential: 33, aiReadiness: 44 },
+      { title: 'Systems Administrator', employees: 70, aiPotential: 27, aiReadiness: 43 },
+      { title: 'Network Engineer', employees: 85, aiPotential: 35, aiReadiness: 41 },
+      { title: 'Cloud Infrastructure Engineer', employees: 85, aiPotential: 40, aiReadiness: 45 },
     ],
     'Data & Analytics': [
-      { title: 'Data Analyst', employees: 180, aiPotential: 48, aiReadiness: 35, reskillPriority: 'Monitor' as const },
-      { title: 'Analytics Engineer', employees: 135, aiPotential: 42, aiReadiness: 42, reskillPriority: 'Monitor' as const },
-      { title: 'BI Developer', employees: 80, aiPotential: 45, aiReadiness: 38, reskillPriority: 'Monitor' as const },
+      { title: 'Data Analyst', employees: 115, aiPotential: 48, aiReadiness: 35 },
+      { title: 'Analytics Engineer', employees: 90, aiPotential: 42, aiReadiness: 42 },
+      { title: 'BI Developer', employees: 65, aiPotential: 45, aiReadiness: 38 },
+      { title: 'Data Scientist', employees: 70, aiPotential: 50, aiReadiness: 44 },
+      { title: 'Data Engineer', employees: 55, aiPotential: 40, aiReadiness: 36 },
     ],
     Partnerships: [
-      { title: 'Partnerships Manager', employees: 140, aiPotential: 35, aiReadiness: 26, reskillPriority: 'Monitor' as const },
-      { title: 'Alliance Director', employees: 105, aiPotential: 25, aiReadiness: 22, reskillPriority: 'Monitor' as const },
+      { title: 'Partnerships Manager', employees: 80, aiPotential: 35, aiReadiness: 26 },
+      { title: 'Alliance Director', employees: 55, aiPotential: 25, aiReadiness: 22 },
+      { title: 'Channel Development Rep', employees: 60, aiPotential: 40, aiReadiness: 20 },
+      { title: 'Business Development Manager', employees: 50, aiPotential: 32, aiReadiness: 28 },
     ],
     Procurement: [
-      { title: 'Procurement Specialist', employees: 120, aiPotential: 60, aiReadiness: 14, reskillPriority: 'Immediate' as const },
-      { title: 'Category Manager', employees: 75, aiPotential: 52, aiReadiness: 18, reskillPriority: 'This year' as const },
+      { title: 'Procurement Specialist', employees: 65, aiPotential: 60, aiReadiness: 14 },
+      { title: 'Category Manager', employees: 45, aiPotential: 52, aiReadiness: 18 },
+      { title: 'Vendor Relations Analyst', employees: 45, aiPotential: 55, aiReadiness: 12 },
+      { title: 'Sourcing Coordinator', employees: 40, aiPotential: 48, aiReadiness: 16 },
     ],
     Facilities: [
-      { title: 'Workplace Coordinator', employees: 95, aiPotential: 54, aiReadiness: 11, reskillPriority: 'This year' as const },
-      { title: 'Facilities Manager', employees: 60, aiPotential: 45, aiReadiness: 14, reskillPriority: 'Monitor' as const },
+      { title: 'Workplace Coordinator', employees: 50, aiPotential: 54, aiReadiness: 11 },
+      { title: 'Facilities Manager', employees: 35, aiPotential: 45, aiReadiness: 14 },
+      { title: 'Space Planner', employees: 35, aiPotential: 42, aiReadiness: 10 },
+      { title: 'Building Services Technician', employees: 35, aiPotential: 30, aiReadiness: 13 },
     ],
     Communications: [
-      { title: 'Corporate Communications Manager', employees: 70, aiPotential: 45, aiReadiness: 29, reskillPriority: 'Monitor' as const },
-      { title: 'Internal Communications Specialist', employees: 55, aiPotential: 40, aiReadiness: 25, reskillPriority: 'Monitor' as const },
+      { title: 'Corporate Communications Manager', employees: 35, aiPotential: 45, aiReadiness: 29 },
+      { title: 'Internal Communications Specialist', employees: 30, aiPotential: 40, aiReadiness: 25 },
+      { title: 'PR Specialist', employees: 30, aiPotential: 48, aiReadiness: 27 },
+      { title: 'Content Editor', employees: 30, aiPotential: 52, aiReadiness: 24 },
     ],
     'Quality & Compliance': [
-      { title: 'Quality Assurance Lead', employees: 165, aiPotential: 40, aiReadiness: 21, reskillPriority: 'This year' as const },
-      { title: 'Compliance Specialist', employees: 125, aiPotential: 37, aiReadiness: 18, reskillPriority: 'This year' as const },
-      { title: 'Internal Auditor', employees: 74, aiPotential: 34, aiReadiness: 17, reskillPriority: 'Monitor' as const },
+      { title: 'Quality Assurance Lead', employees: 100, aiPotential: 40, aiReadiness: 21 },
+      { title: 'Compliance Specialist', employees: 80, aiPotential: 37, aiReadiness: 18 },
+      { title: 'Internal Auditor', employees: 60, aiPotential: 34, aiReadiness: 17 },
+      { title: 'Risk Analyst', employees: 64, aiPotential: 42, aiReadiness: 19 },
+      { title: 'Regulatory Affairs Coordinator', employees: 60, aiPotential: 36, aiReadiness: 16 },
     ],
     Marketing: [
-      { title: 'Marketing Manager', employees: 155, aiPotential: 52, aiReadiness: 24, reskillPriority: 'Monitor' as const },
-      { title: 'Content Marketing Specialist', employees: 148, aiPotential: 58, aiReadiness: 19, reskillPriority: 'This year' as const },
-      { title: 'Digital Campaign Analyst', employees: 152, aiPotential: 61, aiReadiness: 22, reskillPriority: 'This year' as const },
-      { title: 'Brand & Creative Lead', employees: 155, aiPotential: 46, aiReadiness: 28, reskillPriority: 'Monitor' as const },
+      { title: 'Marketing Manager', employees: 100, aiPotential: 52, aiReadiness: 24 },
+      { title: 'Content Marketing Specialist', employees: 95, aiPotential: 58, aiReadiness: 19 },
+      { title: 'Digital Campaign Analyst', employees: 90, aiPotential: 61, aiReadiness: 22 },
+      { title: 'Brand & Creative Lead', employees: 85, aiPotential: 46, aiReadiness: 28 },
+      { title: 'SEO Specialist', employees: 70, aiPotential: 55, aiReadiness: 20 },
+      { title: 'Marketing Operations Analyst', employees: 80, aiPotential: 50, aiReadiness: 25 },
+      { title: 'Growth Marketing Manager', employees: 90, aiPotential: 48, aiReadiness: 23 },
     ],
     HR: [
-      { title: 'HR Business Partner', employees: 82, aiPotential: 44, aiReadiness: 26, reskillPriority: 'Monitor' as const },
-      { title: 'Talent Acquisition Specialist', employees: 78, aiPotential: 55, aiReadiness: 16, reskillPriority: 'This year' as const },
-      { title: 'People Operations Coordinator', employees: 80, aiPotential: 48, aiReadiness: 14, reskillPriority: 'Immediate' as const },
-      { title: 'Compensation Analyst', employees: 80, aiPotential: 38, aiReadiness: 20, reskillPriority: 'Monitor' as const },
+      { title: 'Talent Acquisition Specialist', employees: 55, aiPotential: 55, aiReadiness: 16 },
+      { title: 'People Operations Coordinator', employees: 50, aiPotential: 48, aiReadiness: 14 },
+      { title: 'HR Business Partner', employees: 52, aiPotential: 44, aiReadiness: 26 },
+      { title: 'Compensation Analyst', employees: 45, aiPotential: 38, aiReadiness: 20 },
+      { title: 'L&D Manager', employees: 48, aiPotential: 42, aiReadiness: 18 },
+      { title: 'Employee Experience Lead', employees: 35, aiPotential: 35, aiReadiness: 22 },
+      { title: 'HRIS Analyst', employees: 35, aiPotential: 50, aiReadiness: 15 },
     ],
     Sales: [
-      { title: 'Account Executive', employees: 380, aiPotential: 42, aiReadiness: 28, reskillPriority: 'Monitor' as const },
-      { title: 'Sales Development Representative', employees: 260, aiPotential: 49, aiReadiness: 21, reskillPriority: 'This year' as const },
-      { title: 'Solutions Consultant', employees: 220, aiPotential: 51, aiReadiness: 31, reskillPriority: 'Monitor' as const },
-      { title: 'Regional Sales Director', employees: 200, aiPotential: 35, aiReadiness: 24, reskillPriority: 'Monitor' as const },
-      { title: 'Sales Operations Analyst', employees: 180, aiPotential: 56, aiReadiness: 18, reskillPriority: 'This year' as const },
+      { title: 'Account Executive', employees: 250, aiPotential: 42, aiReadiness: 28 },
+      { title: 'Sales Development Representative', employees: 180, aiPotential: 49, aiReadiness: 21 },
+      { title: 'Solutions Consultant', employees: 160, aiPotential: 51, aiReadiness: 31 },
+      { title: 'Regional Sales Director', employees: 120, aiPotential: 35, aiReadiness: 24 },
+      { title: 'Sales Operations Analyst', employees: 110, aiPotential: 56, aiReadiness: 18 },
+      { title: 'Enterprise Account Manager', employees: 140, aiPotential: 40, aiReadiness: 30 },
+      { title: 'Channel Sales Manager', employees: 100, aiPotential: 38, aiReadiness: 26 },
+      { title: 'Sales Enablement Specialist', employees: 80, aiPotential: 52, aiReadiness: 22 },
+      { title: 'Inside Sales Representative', employees: 100, aiPotential: 46, aiReadiness: 20 },
     ],
     Engineering: [
-      { title: 'Software Engineer', employees: 720, aiPotential: 44, aiReadiness: 38, reskillPriority: 'Monitor' as const },
-      { title: 'Senior Software Engineer', employees: 540, aiPotential: 39, aiReadiness: 42, reskillPriority: 'Monitor' as const },
-      { title: 'Engineering Manager', employees: 320, aiPotential: 33, aiReadiness: 35, reskillPriority: 'Monitor' as const },
-      { title: 'QA Automation Engineer', employees: 280, aiPotential: 47, aiReadiness: 29, reskillPriority: 'This year' as const },
-      { title: 'DevOps Engineer', employees: 240, aiPotential: 41, aiReadiness: 40, reskillPriority: 'Monitor' as const },
+      { title: 'Software Engineer', employees: 520, aiPotential: 44, aiReadiness: 38 },
+      { title: 'Senior Software Engineer', employees: 380, aiPotential: 39, aiReadiness: 42 },
+      { title: 'Engineering Manager', employees: 200, aiPotential: 33, aiReadiness: 35 },
+      { title: 'QA Automation Engineer', employees: 200, aiPotential: 47, aiReadiness: 29 },
+      { title: 'DevOps Engineer', employees: 180, aiPotential: 41, aiReadiness: 40 },
+      { title: 'Frontend Engineer', employees: 240, aiPotential: 43, aiReadiness: 36 },
+      { title: 'Platform Engineer', employees: 160, aiPotential: 38, aiReadiness: 41 },
+      { title: 'Mobile Developer', employees: 120, aiPotential: 42, aiReadiness: 34 },
+      { title: 'Site Reliability Engineer', employees: 100, aiPotential: 36, aiReadiness: 43 },
     ],
     Legal: [
-      { title: 'Corporate Counsel', employees: 100, aiPotential: 36, aiReadiness: 22, reskillPriority: 'Monitor' as const },
-      { title: 'Corporate Paralegal', employees: 95, aiPotential: 52, aiReadiness: 15, reskillPriority: 'This year' as const },
-      { title: 'Contract Manager', employees: 95, aiPotential: 58, aiReadiness: 19, reskillPriority: 'This year' as const },
+      { title: 'Corporate Counsel', employees: 70, aiPotential: 36, aiReadiness: 22 },
+      { title: 'Corporate Paralegal', employees: 65, aiPotential: 52, aiReadiness: 15 },
+      { title: 'Contract Manager', employees: 60, aiPotential: 58, aiReadiness: 19 },
+      { title: 'Employment Law Specialist', employees: 50, aiPotential: 34, aiReadiness: 16 },
+      { title: 'IP Counsel', employees: 45, aiPotential: 30, aiReadiness: 20 },
     ],
   },
   tasks: {
@@ -573,14 +617,373 @@ export const ORG = {
       { task: 'Audit prep', score: 48 },
       { task: 'Exception logs', score: 35 },
     ],
+    // --- New roles added below ---
+    'Records Manager': [
+      { task: 'Document indexing', score: 88 },
+      { task: 'Retention scheduling', score: 72 },
+      { task: 'Archive retrieval', score: 80 },
+      { task: 'Compliance audits', score: 45 },
+      { task: 'Policy documentation', score: 55 },
+      { task: 'Vendor coordination', score: 20 },
+    ],
+    'Office Coordinator': [
+      { task: 'Calendar management', score: 78 },
+      { task: 'Meeting logistics', score: 62 },
+      { task: 'Supply ordering', score: 85 },
+      { task: 'Visitor check-in', score: 42 },
+      { task: 'Expense reporting', score: 72 },
+      { task: 'Team event planning', score: 18 },
+    ],
+    'Receptionist': [
+      { task: 'Call routing', score: 82 },
+      { task: 'Visitor scheduling', score: 68 },
+      { task: 'Package tracking', score: 75 },
+      { task: 'Badge management', score: 55 },
+      { task: 'Client greeting', score: 8 },
+    ],
+    'Revenue Accountant': [
+      { task: 'Revenue recognition', score: 78 },
+      { task: 'Journal entries', score: 88 },
+      { task: 'Period close', score: 72 },
+      { task: 'Variance analysis', score: 58 },
+      { task: 'Audit documentation', score: 52 },
+      { task: 'Cross-team reconciliation', score: 25 },
+    ],
+    'Payroll Specialist': [
+      { task: 'Payroll processing', score: 90 },
+      { task: 'Tax withholding', score: 82 },
+      { task: 'Benefits deductions', score: 78 },
+      { task: 'Compliance reporting', score: 60 },
+      { task: 'Employee inquiries', score: 35 },
+      { task: 'Audit support', score: 45 },
+    ],
+    'Tax Analyst': [
+      { task: 'Tax return prep', score: 72 },
+      { task: 'Provision calculations', score: 68 },
+      { task: 'Transfer pricing research', score: 55 },
+      { task: 'Compliance filings', score: 62 },
+      { task: 'Regulatory monitoring', score: 48 },
+      { task: 'Advisory consultation', score: 22 },
+    ],
+    'SEO Specialist': [
+      { task: 'Keyword research', score: 82 },
+      { task: 'Content optimization', score: 75 },
+      { task: 'Technical audits', score: 68 },
+      { task: 'Link strategy', score: 55 },
+      { task: 'Performance reporting', score: 78 },
+      { task: 'Competitor analysis', score: 62 },
+    ],
+    'Marketing Operations Analyst': [
+      { task: 'Campaign analytics', score: 78 },
+      { task: 'Lead scoring', score: 72 },
+      { task: 'Marketing automation', score: 82 },
+      { task: 'Data hygiene', score: 88 },
+      { task: 'Attribution modeling', score: 65 },
+      { task: 'Stakeholder reporting', score: 35 },
+    ],
+    'Growth Marketing Manager': [
+      { task: 'Experiment design', score: 55 },
+      { task: 'Funnel analysis', score: 72 },
+      { task: 'Ad copy generation', score: 78 },
+      { task: 'Budget allocation', score: 48 },
+      { task: 'Channel strategy', score: 38 },
+      { task: 'Partnership outreach', score: 15 },
+    ],
+    'Process Improvement Specialist': [
+      { task: 'Process mapping', score: 68 },
+      { task: 'Bottleneck analysis', score: 72 },
+      { task: 'KPI dashboards', score: 78 },
+      { task: 'Root cause analysis', score: 55 },
+      { task: 'Change management', score: 22 },
+      { task: 'Stakeholder workshops', score: 12 },
+    ],
+    'Warehouse Supervisor': [
+      { task: 'Inventory tracking', score: 82 },
+      { task: 'Shipment scheduling', score: 72 },
+      { task: 'Safety compliance', score: 35 },
+      { task: 'Staff scheduling', score: 55 },
+      { task: 'Quality checks', score: 28 },
+      { task: 'Floor management', score: 8 },
+    ],
+    'Fleet Coordinator': [
+      { task: 'Route optimization', score: 85 },
+      { task: 'Maintenance scheduling', score: 72 },
+      { task: 'Fuel tracking', score: 78 },
+      { task: 'Driver assignment', score: 55 },
+      { task: 'Compliance documentation', score: 48 },
+      { task: 'Incident response', score: 12 },
+    ],
+    'L&D Manager': [
+      { task: 'Training needs analysis', score: 62 },
+      { task: 'Course creation', score: 72 },
+      { task: 'Learning path design', score: 55 },
+      { task: 'Vendor evaluation', score: 42 },
+      { task: 'Impact measurement', score: 58 },
+      { task: 'Facilitation', score: 15 },
+    ],
+    'Employee Experience Lead': [
+      { task: 'Survey analysis', score: 72 },
+      { task: 'Engagement reporting', score: 68 },
+      { task: 'Program design', score: 38 },
+      { task: 'Event coordination', score: 22 },
+      { task: 'Focus group facilitation', score: 12 },
+    ],
+    'HRIS Analyst': [
+      { task: 'System configuration', score: 68 },
+      { task: 'Data migration', score: 78 },
+      { task: 'Report building', score: 82 },
+      { task: 'Integration management', score: 62 },
+      { task: 'User support', score: 42 },
+      { task: 'Vendor liaison', score: 18 },
+    ],
+    'Enterprise Account Manager': [
+      { task: 'Account planning', score: 48 },
+      { task: 'QBR preparation', score: 65 },
+      { task: 'Upsell identification', score: 58 },
+      { task: 'Contract renewals', score: 52 },
+      { task: 'Executive alignment', score: 15 },
+      { task: 'Relationship management', score: 10 },
+    ],
+    'Channel Sales Manager': [
+      { task: 'Partner enablement', score: 48 },
+      { task: 'Deal registration', score: 72 },
+      { task: 'Pipeline reporting', score: 68 },
+      { task: 'Co-marketing plans', score: 42 },
+      { task: 'Partner recruitment', score: 18 },
+      { task: 'Conflict resolution', score: 10 },
+    ],
+    'Sales Enablement Specialist': [
+      { task: 'Playbook creation', score: 72 },
+      { task: 'Competitive intelligence', score: 78 },
+      { task: 'Training content', score: 68 },
+      { task: 'Win/loss analysis', score: 65 },
+      { task: 'Tool administration', score: 55 },
+      { task: 'Coaching sessions', score: 15 },
+    ],
+    'Inside Sales Representative': [
+      { task: 'Lead qualification', score: 72 },
+      { task: 'Outreach sequences', score: 82 },
+      { task: 'CRM updates', score: 85 },
+      { task: 'Demo scheduling', score: 68 },
+      { task: 'Objection handling', score: 22 },
+      { task: 'Relationship building', score: 10 },
+    ],
+    'Frontend Engineer': [
+      { task: 'Component development', score: 62 },
+      { task: 'Code review', score: 55 },
+      { task: 'Unit testing', score: 72 },
+      { task: 'Performance optimization', score: 58 },
+      { task: 'Accessibility audits', score: 48 },
+      { task: 'Design collaboration', score: 15 },
+    ],
+    'Platform Engineer': [
+      { task: 'Infrastructure provisioning', score: 72 },
+      { task: 'CI/CD pipelines', score: 78 },
+      { task: 'Service mesh config', score: 55 },
+      { task: 'Monitoring setup', score: 68 },
+      { task: 'Capacity planning', score: 48 },
+      { task: 'Incident triage', score: 22 },
+    ],
+    'Mobile Developer': [
+      { task: 'Feature development', score: 58 },
+      { task: 'App store submissions', score: 72 },
+      { task: 'Crash analysis', score: 68 },
+      { task: 'UI implementation', score: 55 },
+      { task: 'API integration', score: 62 },
+      { task: 'User testing coordination', score: 18 },
+    ],
+    'Site Reliability Engineer': [
+      { task: 'Incident response', score: 42 },
+      { task: 'Runbook authoring', score: 68 },
+      { task: 'SLO monitoring', score: 72 },
+      { task: 'Chaos engineering', score: 48 },
+      { task: 'Capacity forecasting', score: 62 },
+      { task: 'Post-mortem facilitation', score: 18 },
+    ],
+    'Employment Law Specialist': [
+      { task: 'Policy review', score: 52 },
+      { task: 'Compliance monitoring', score: 48 },
+      { task: 'Investigation support', score: 35 },
+      { task: 'Training development', score: 42 },
+      { task: 'Dispute resolution', score: 12 },
+    ],
+    'IP Counsel': [
+      { task: 'Patent analysis', score: 48 },
+      { task: 'Trademark filings', score: 65 },
+      { task: 'License negotiation', score: 35 },
+      { task: 'Portfolio management', score: 52 },
+      { task: 'Infringement assessment', score: 28 },
+    ],
+    'Onboarding Manager': [
+      { task: 'Implementation planning', score: 55 },
+      { task: 'Milestone tracking', score: 72 },
+      { task: 'Training delivery', score: 48 },
+      { task: 'Stakeholder updates', score: 62 },
+      { task: 'Risk assessment', score: 42 },
+      { task: 'Relationship building', score: 10 },
+    ],
+    'Renewals Specialist': [
+      { task: 'Renewal forecasting', score: 78 },
+      { task: 'Usage analysis', score: 72 },
+      { task: 'Contract generation', score: 82 },
+      { task: 'Pricing adjustments', score: 55 },
+      { task: 'Churn risk scoring', score: 68 },
+      { task: 'Negotiation', score: 15 },
+    ],
+    'Customer Insights Analyst': [
+      { task: 'Survey analysis', score: 78 },
+      { task: 'NPS tracking', score: 72 },
+      { task: 'Cohort analysis', score: 68 },
+      { task: 'Journey mapping', score: 55 },
+      { task: 'Stakeholder reporting', score: 62 },
+      { task: 'Interview synthesis', score: 25 },
+    ],
+    'UX Researcher': [
+      { task: 'Usability testing', score: 42 },
+      { task: 'Survey design', score: 58 },
+      { task: 'Interview analysis', score: 55 },
+      { task: 'Competitive benchmarking', score: 68 },
+      { task: 'Report generation', score: 72 },
+      { task: 'Participant recruitment', score: 35 },
+    ],
+    'Product Analyst': [
+      { task: 'Feature analytics', score: 78 },
+      { task: 'A/B test analysis', score: 82 },
+      { task: 'Funnel optimization', score: 72 },
+      { task: 'Metric dashboards', score: 75 },
+      { task: 'User segmentation', score: 68 },
+      { task: 'Stakeholder presentations', score: 25 },
+    ],
+    'Network Engineer': [
+      { task: 'Network monitoring', score: 72 },
+      { task: 'Configuration management', score: 68 },
+      { task: 'Capacity planning', score: 55 },
+      { task: 'Troubleshooting', score: 42 },
+      { task: 'Firmware updates', score: 62 },
+      { task: 'Physical installations', score: 8 },
+    ],
+    'Cloud Infrastructure Engineer': [
+      { task: 'Cloud provisioning', score: 75 },
+      { task: 'Cost optimization', score: 72 },
+      { task: 'Security configuration', score: 55 },
+      { task: 'Migration planning', score: 48 },
+      { task: 'Automation scripting', score: 78 },
+      { task: 'Disaster recovery testing', score: 35 },
+    ],
+    'Data Scientist': [
+      { task: 'Model development', score: 62 },
+      { task: 'Feature engineering', score: 72 },
+      { task: 'Experiment design', score: 55 },
+      { task: 'Data exploration', score: 78 },
+      { task: 'Stakeholder communication', score: 28 },
+      { task: 'Model monitoring', score: 68 },
+    ],
+    'Data Engineer': [
+      { task: 'Pipeline development', score: 72 },
+      { task: 'Schema design', score: 58 },
+      { task: 'Data quality monitoring', score: 78 },
+      { task: 'ETL optimization', score: 68 },
+      { task: 'Documentation', score: 55 },
+      { task: 'Stakeholder requirements', score: 22 },
+    ],
+    'Channel Development Rep': [
+      { task: 'Partner prospecting', score: 62 },
+      { task: 'Outreach campaigns', score: 78 },
+      { task: 'CRM management', score: 82 },
+      { task: 'Proposal generation', score: 68 },
+      { task: 'Relationship building', score: 12 },
+    ],
+    'Business Development Manager': [
+      { task: 'Market research', score: 68 },
+      { task: 'Partnership evaluation', score: 48 },
+      { task: 'Proposal writing', score: 62 },
+      { task: 'Pipeline management', score: 55 },
+      { task: 'Contract negotiation', score: 22 },
+      { task: 'Executive networking', score: 10 },
+    ],
+    'Vendor Relations Analyst': [
+      { task: 'Vendor scoring', score: 82 },
+      { task: 'Contract tracking', score: 78 },
+      { task: 'Performance reporting', score: 72 },
+      { task: 'RFP preparation', score: 68 },
+      { task: 'Spend analysis', score: 75 },
+      { task: 'Relationship management', score: 15 },
+    ],
+    'Sourcing Coordinator': [
+      { task: 'Bid management', score: 72 },
+      { task: 'Supplier research', score: 78 },
+      { task: 'Order tracking', score: 82 },
+      { task: 'Price comparison', score: 75 },
+      { task: 'Documentation', score: 55 },
+      { task: 'Supplier visits', score: 8 },
+    ],
+    'Space Planner': [
+      { task: 'Floor plan design', score: 62 },
+      { task: 'Utilization analysis', score: 78 },
+      { task: 'Move coordination', score: 48 },
+      { task: 'Capacity forecasting', score: 65 },
+      { task: 'Stakeholder surveys', score: 42 },
+    ],
+    'Building Services Technician': [
+      { task: 'Work order management', score: 68 },
+      { task: 'Preventive maintenance', score: 42 },
+      { task: 'Inventory tracking', score: 72 },
+      { task: 'Vendor scheduling', score: 55 },
+      { task: 'Equipment inspections', score: 15 },
+    ],
+    'PR Specialist': [
+      { task: 'Press release drafting', score: 78 },
+      { task: 'Media monitoring', score: 82 },
+      { task: 'Coverage reporting', score: 72 },
+      { task: 'Pitch development', score: 55 },
+      { task: 'Crisis preparation', score: 35 },
+      { task: 'Journalist relations', score: 12 },
+    ],
+    'Content Editor': [
+      { task: 'Copy editing', score: 72 },
+      { task: 'Content planning', score: 65 },
+      { task: 'SEO optimization', score: 78 },
+      { task: 'Style guide maintenance', score: 55 },
+      { task: 'Stakeholder review coordination', score: 42 },
+      { task: 'Creative direction', score: 18 },
+    ],
+    'Risk Analyst': [
+      { task: 'Risk assessment', score: 62 },
+      { task: 'Control testing', score: 55 },
+      { task: 'Incident tracking', score: 72 },
+      { task: 'Compliance monitoring', score: 68 },
+      { task: 'Report generation', score: 78 },
+      { task: 'Stakeholder advisory', score: 18 },
+    ],
+    'Regulatory Affairs Coordinator': [
+      { task: 'Filing preparation', score: 72 },
+      { task: 'Regulation tracking', score: 78 },
+      { task: 'Document management', score: 82 },
+      { task: 'Agency correspondence', score: 48 },
+      { task: 'Audit coordination', score: 42 },
+      { task: 'Training delivery', score: 15 },
+    ],
   },
 } as const
 
 const rolesByDept = ORG.roles as unknown as Record<string, RoleRowType[]>
 const tasksByRole = ORG.tasks as unknown as Record<string, { task: string; score: number }[]>
 
+/** Compute aiPotential from task data per Octave: Tasks in Augmentation Zone / Total Tasks × 100 */
+function computeAiPotential(title: string): number {
+  const tasks = tasksByRole[title]
+  if (!tasks?.length) return 0
+  const augCount = tasks.filter((t) => {
+    const s = t.score
+    return s >= 15 && s <= 75 // augmentation zone
+  }).length
+  return Math.round((augCount / tasks.length) * 100)
+}
+
 export function getRolesForDept(name: string): RoleRowType[] {
-  return rolesByDept[name] ?? []
+  const raw = rolesByDept[name] ?? []
+  // Override hardcoded aiPotential with computed value from task data
+  return raw.map((r) => ({ ...r, aiPotential: computeAiPotential(r.title) }))
 }
 
 export function getTasksForRole(title: string): { task: string; score: number }[] {
@@ -756,13 +1159,31 @@ export function getEmployeesForRole(role: RoleRowType): RoleEmployee[] {
   return out.sort((a, b) => b.readinessPct - a.readinessPct || a.name.localeCompare(b.name))
 }
 
+/** Compute dept-level aiPotential as weighted average of role potentials (by employee count). */
+function computeDeptAiPotential(deptName: string): number {
+  const roles = getRolesForDept(deptName)
+  if (!roles.length) return 0
+  let totalEmpl = 0
+  let weighted = 0
+  for (const r of roles) {
+    totalEmpl += r.employees
+    weighted += r.aiPotential * r.employees
+  }
+  return totalEmpl > 0 ? Math.round(weighted / totalEmpl) : 0
+}
+
+/** Departments with aiPotential computed from task data (Octave formula). */
+export const departments: Dept[] = ORG.departments.map((d) => ({
+  ...d,
+  aiPotential: computeDeptAiPotential(d.name),
+})) as unknown as Dept[]
+
 export type Dept = (typeof ORG.departments)[number]
 export type RoleRowType = {
   title: string
   employees: number
   aiPotential: number
   aiReadiness: number
-  reskillPriority: 'Immediate' | 'This year' | 'Monitor'
 }
 
 export function taskZone(score: number): 'above' | 'augment' | 'below' {
@@ -892,7 +1313,7 @@ export function deptGapHeadcount(d: Dept): number {
 /** Aggregate org-style metrics for a subset of departments (overview cards / Learn more after Focus launch). */
 export function wfrRollupDepartmentsByName(deptNames: string[]) {
   const depts = [...new Set(deptNames)]
-    .map((n) => ORG.departments.find((d) => d.name === n))
+    .map((n) => departments.find((d) => d.name === n))
     .filter((d): d is Dept => d != null)
   if (depts.length === 0) return null
 

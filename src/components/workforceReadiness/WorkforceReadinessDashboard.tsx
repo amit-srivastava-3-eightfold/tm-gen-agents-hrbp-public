@@ -1,29 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Badge, Button, Pill, Tabs, TabsList, TabsTrigger, TabsContent,
+  Badge, Pill, Tabs, TabsList, TabsTrigger, TabsContent,
   DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
 import {
+  departments,
   EM,
   ORG,
   WFR_DEMO_COLLECTION_WINDOW,
-  wfrDemoDeptCollectionSnapshot,
-  OUTCOME,
   ZONE,
-  countTransformableTasksForRole,
   deptGapHeadcount,
   deptPeopleInAugRoles,
-  deptStatus,
   getEmployeesForRole,
   getRolesForDept,
   getTasksForRole,
-  peopleOutcome,
   tGap,
   taskZone,
-  roleDevelopmentProgress,
   wfrRollupDepartmentsByName,
   type Dept,
-  type RoleEmployee,
   type RoleRowType,
 } from '../../data/wfrOrgData'
 import {
@@ -35,17 +29,14 @@ import {
   BreadcrumbSeparator,
 } from '../ui/Breadcrumb'
 import { CollectionProgressPanel } from './CollectionProgressPanel'
+import { deptReadinessTrend, deptManagerTeams } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
+import { MetricCard } from './MetricCard'
+import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMetricSheet'
 import './WorkforceReadinessDashboard.css'
-
-function gapStatusBadgeVariant(label: string): 'destructive' | 'outline' | 'secondary' {
-  if (label === 'Immediate action') return 'destructive'
-  if (label === 'Monitor closely') return 'outline'
-  return 'secondary'
-}
 
 const READINESS_SEMICIRCLE = {
   hero: {
@@ -259,96 +250,17 @@ function DeptTableSoloBar({
   )
 }
 
-function priorityPillVariant(p: RoleRowType['reskillPriority']): 'critical' | 'orange' | 'neutral' {
-  if (p === 'Immediate') return 'critical'
-  if (p === 'This year') return 'orange'
-  return 'neutral'
-}
+const ROLE_OUTLOOK = {
+  urgent: { label: 'Urgent', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  developing: { label: 'Developing', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+  'on-track': { label: 'On track', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
+} as const
 
-function RoleRow({
-  role,
-  isFirst,
-  onTakeAction,
-  onOpenRole,
-}: {
-  role: RoleRowType
-  isFirst: boolean
-  /** Scroll to roles panel (prototype). Shown when role has Automate/Augment tasks. */
-  onTakeAction?: () => void
-  /** Opens full role page (dept view). */
-  onOpenRole?: () => void
-}) {
-  const tasks = getTasksForRole(role.title)
-  const outcome = peopleOutcome(tasks)
-  const o = outcome ? OUTCOME[outcome] : null
-  const transformableTasks = countTransformableTasksForRole(role.title)
-  const showTakeAction = Boolean(onTakeAction && transformableTasks > 0)
-  return (
-    <tr className="wfr-dash__tr">
-      <td className="wfr-dash__td wfr-role-row__cell">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          {onOpenRole ? (
-            <button
-              type="button"
-              className="wfr-role-row__title-link wfr-type-h6"
-              onClick={() => onOpenRole()}
-            >
-              {role.title}
-            </button>
-          ) : (
-            <span className="wfr-type-h6">{role.title}</span>
-          )}
-          {isFirst && (
-            <Pill variant="orange" size="small">
-              Recommended actions
-            </Pill>
-          )}
-          {o && (
-            <Badge
-              variant="outline"
-              size="24"
-              className="shrink-0 font-semibold"
-              style={{ background: o.bg, color: o.color, borderColor: o.border }}
-            >
-              {o.label}
-            </Badge>
-          )}
-        </div>
-        <span className="wfr-type-caption tabular-nums text-slate-500">
-          {role.employees.toLocaleString()} employees
-        </span>
-      </td>
-      <td className="wfr-dash__td wfr-dash__td--metric-col">
-        <DeptTableSoloBar variant="readiness" pct={role.aiReadiness} width={120} />
-      </td>
-      <td className="wfr-dash__td wfr-dash__td--metric-col">
-        <DeptTableSoloBar variant="potential" pct={role.aiPotential} width={120} />
-      </td>
-      <td className="wfr-dash__td wfr-dash__td--num">
-        <span className="wfr-type-h6 tabular-nums text-[#1a212e]">
-          {countTransformableTasksForRole(role.title)}
-        </span>
-      </td>
-      <td className="wfr-dash__td">
-        <Pill variant={priorityPillVariant(role.reskillPriority)} size="small">
-          {role.reskillPriority}
-        </Pill>
-      </td>
-      <td className="wfr-dash__td wfr-dash__td--action wfr-dash__td--roles-action">
-        {showTakeAction ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            aria-label={`Take action for role ${role.title}`}
-            onClick={() => onTakeAction?.()}
-          >
-            Take action
-          </Button>
-        ) : null}
-      </td>
-    </tr>
-  )
+function roleOutlook(role: RoleRowType): keyof typeof ROLE_OUTLOOK {
+  const gap = tGap(role.aiPotential, role.aiReadiness)
+  if (gap >= 35) return 'urgent'
+  if (gap >= 15) return 'developing'
+  return 'on-track'
 }
 
 function computeDeptTaskBandRollup(sortedRoles: RoleRowType[]) {
@@ -392,35 +304,6 @@ function computeDeptTaskBandRollup(sortedRoles: RoleRowType[]) {
 }
 
 /** Single-role task band counts + headcount split (same logic as one iteration of dept rollup). */
-function roleTaskBandRollup(role: RoleRowType) {
-  const roleTasks = getTasksForRole(role.title)
-  const n = roleTasks.length
-  const E = role.employees
-  if (n === 0) {
-    return { aboveTasks: 0, augmentTasks: 0, belowTasks: 0, aboveEmpl: 0, augmentEmpl: 0, belowEmpl: 0 }
-  }
-  let a = 0
-  let b = 0
-  let c = 0
-  for (const t of roleTasks) {
-    const z = taskZone(t.score)
-    if (z === 'above') a += 1
-    else if (z === 'augment') b += 1
-    else c += 1
-  }
-  const aboveEmpl = Math.round((E * a) / n)
-  const augmentEmpl = Math.round((E * b) / n)
-  const belowEmpl = Math.max(0, E - aboveEmpl - augmentEmpl)
-  return {
-    aboveTasks: a,
-    augmentTasks: b,
-    belowTasks: c,
-    aboveEmpl,
-    augmentEmpl,
-    belowEmpl,
-  }
-}
-
 function TaskBandStatCards({
   bands,
   ariaLabel = 'Tasks by automation band',
@@ -516,24 +399,23 @@ function DeptTasksTable({ sortedRoles }: { sortedRoles: RoleRowType[] }) {
           belowEmpl={bandRollup.belowEmpl}
         />
       )}
-      <div className="wfr-dash__table-scroll">
-        <table className="wfr-dash__table wfr-dash__table--tasks">
-          <thead>
-            <tr>
-              <th className="wfr-dash__th wfr-dash__th--tasks">Task</th>
-              <th className="wfr-dash__th wfr-dash__th--tasks">Score</th>
-              <th className="wfr-dash__th wfr-dash__th--tasks">Zone</th>
-              <th className="wfr-dash__th wfr-dash__th--tasks">Appears in</th>
-              <th className="wfr-dash__th wfr-dash__th--tasks wfr-dash__th--num">Employees affected</th>
-            </tr>
-          </thead>
-          <tbody>
+      <DataTable bordered>
+        <DataTableHeader>
+          <DataTableRow>
+            <DataTableHead>Task</DataTableHead>
+            <DataTableHead metric>Score</DataTableHead>
+            <DataTableHead>Zone</DataTableHead>
+            <DataTableHead>Appears in</DataTableHead>
+            <DataTableHead numeric>Employees affected</DataTableHead>
+          </DataTableRow>
+        </DataTableHeader>
+        <DataTableBody>
             {rows.map((row) => {
               const z = ZONE[row.zone]
               return (
-                <tr key={`${row.roleTitle}-${row.task}`} className="wfr-dash__tr wfr-dash__tr--tasks">
-                  <td className="wfr-dash__td wfr-dash__td--task-name">{row.task}</td>
-                  <td className="wfr-dash__td wfr-dash__td--score-cell">
+                <DataTableRow key={`${row.roleTitle}-${row.task}`}>
+                  <DataTableCell className="font-semibold">{row.task}</DataTableCell>
+                  <DataTableCell metric>
                     <div className="wfr-dash__task-score" title={`${row.score}% AI task score`}>
                       <div className="wfr-dash__task-score__track" aria-hidden>
                         <div
@@ -545,8 +427,8 @@ function DeptTasksTable({ sortedRoles }: { sortedRoles: RoleRowType[] }) {
                         {row.score}%
                       </span>
                     </div>
-                  </td>
-                  <td className="wfr-dash__td wfr-dash__td--zone-cell">
+                  </DataTableCell>
+                  <DataTableCell>
                     <span
                       className="wfr-dash__zone-pill"
                       style={{
@@ -557,533 +439,46 @@ function DeptTasksTable({ sortedRoles }: { sortedRoles: RoleRowType[] }) {
                     >
                       {z.short}
                     </span>
-                  </td>
-                  <td className="wfr-dash__td wfr-dash__td--appears-in">{row.roleTitle}</td>
-                  <td className="wfr-dash__td wfr-dash__td--num wfr-dash__td--employees-affected tabular-nums">
+                  </DataTableCell>
+                  <DataTableCell>{row.roleTitle}</DataTableCell>
+                  <DataTableCell align="right" numeric>
                     {row.employeesAffected.toLocaleString()}
-                  </td>
-                </tr>
+                  </DataTableCell>
+                </DataTableRow>
               )
             })}
-          </tbody>
-        </table>
-      </div>
+        </DataTableBody>
+      </DataTable>
       <p className="wfr-dash__panel-table-foot">Sorted by AI task score (highest first).</p>
     </>
   )
 }
 
 
-function outcomeShortLabel(outcome: 'at-risk' | 'transforms' | 'survives'): string {
-  if (outcome === 'at-risk') return 'At risk'
-  if (outcome === 'transforms') return 'Transforms'
-  return 'Survives'
-}
-
-function formatReadinessDeltaPp(roleReadiness: number): string {
-  const d = roleReadiness - ORG.aiReadiness
-  const sign = d > 0 ? '+' : ''
-  return `${sign}${d}pp`
-}
-
-/** Same four stages as the Employees tab stat bar; one row below = one bucket here. */
-type RoleEmployeeReadinessStage = 'ai-ready' | 'in-training' | 'completed' | 'not-started'
-
-function employeeReadinessStage(employee: RoleEmployee): RoleEmployeeReadinessStage {
-  if (employee.programStatus === 'Completed') return 'completed'
-  if (employee.programStatus === 'Enrolled') return 'in-training'
-  if (employee.readinessPct >= ORG.aiReadiness) return 'ai-ready'
-  return 'not-started'
-}
-
-const READINESS_STAGE_LABEL: Record<RoleEmployeeReadinessStage, string> = {
-  'ai-ready': 'AI-ready',
-  'in-training': 'In training',
-  completed: 'Completed plan',
-  'not-started': 'Not started',
-}
-
-/** Progress bar + % text on role employee rows — matches Status stage, not raw % alone. */
-const READINESS_BAR_COLOR: Record<RoleEmployeeReadinessStage, string> = {
-  'ai-ready': 'var(--wfr-readiness-text)',
-  'not-started': '#64748b',
-  'in-training': '#5b21b6',
-  completed: '#5b21b6',
-}
-
-function roleEmployeeReadinessStatBuckets(employees: RoleEmployee[]) {
-  let aiReady = 0
-  let inTraining = 0
-  let completed = 0
-  let notStarted = 0
-  for (const e of employees) {
-    switch (employeeReadinessStage(e)) {
-      case 'ai-ready':
-        aiReady += 1
-        break
-      case 'in-training':
-        inTraining += 1
-        break
-      case 'completed':
-        completed += 1
-        break
-      case 'not-started':
-        notStarted += 1
-        break
-    }
-  }
-  return { aiReady, inTraining, completed, notStarted }
-}
-
-function RoleEmployeeReadinessStatBar({
-  aiReady,
-  inTraining,
-  completed,
-  notStarted,
-}: {
-  aiReady: number
-  inTraining: number
-  completed: number
-  notStarted: number
-}) {
-  const threshold = ORG.aiReadiness
-  const items = [
-    {
-      id: 'ai-ready' as const,
-      count: aiReady,
-      title: 'AI-ready',
-      subtitle: `Crossed ≥${threshold}% threshold`,
-    },
-    {
-      id: 'completed' as const,
-      count: completed,
-      title: 'Completed plan',
-      subtitle: 'Needs follow-up to cross threshold',
-    },
-    {
-      id: 'in-training' as const,
-      count: inTraining,
-      title: 'In training',
-      subtitle: 'Enrolled, not yet completed',
-    },
-    {
-      id: 'not-started' as const,
-      count: notStarted,
-      title: 'Not started',
-      subtitle: 'No plan assigned',
-    },
-  ]
-  return (
-    <div className="wfr-role-page__emp-stat-bar" role="group" aria-label="Employees by readiness stage">
-      {items.map(({ id, count, title, subtitle }) => (
-        <div key={id} className={`wfr-role-page__emp-stat-card wfr-role-page__emp-stat-card--${id}`}>
-          <div className="wfr-role-page__emp-stat-card__value">{count.toLocaleString()}</div>
-          <div className="wfr-role-page__emp-stat-card__title">{title}</div>
-          <div className="wfr-role-page__emp-stat-card__subtitle">{subtitle}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function RoleEmployeeRow({ employee }: { employee: RoleEmployee }) {
-  const stage = employeeReadinessStage(employee)
-  const readinessColor = READINESS_BAR_COLOR[stage]
-  const barTitle = `${employee.readinessPct}% AI readiness (status: ${READINESS_STAGE_LABEL[stage]}; org threshold ${ORG.aiReadiness}%)`
-  return (
-    <tr className="wfr-dash__tr wfr-dash__tr--tasks">
-      <td className="wfr-dash__td wfr-dash__td--task-name">{employee.name}</td>
-      <td className="wfr-dash__td wfr-dash__td--score-cell">
-        <div className="wfr-dash__task-score" title={barTitle}>
-          <div className="wfr-dash__task-score__track" aria-hidden>
-            <div
-              className="wfr-dash__task-score__fill"
-              style={{
-                width: `${Math.min(100, Math.max(0, employee.readinessPct))}%`,
-                backgroundColor: readinessColor,
-              }}
-            />
-          </div>
-          <span className="wfr-dash__task-score__pct" style={{ color: readinessColor }}>
-            {employee.readinessPct}%
-          </span>
-        </div>
-      </td>
-      <td className="wfr-dash__td wfr-dash__td--zone-cell">
-        <span
-          className={`wfr-role-page__emp-status wfr-role-page__emp-status--${stage}`}
-          title={`${READINESS_STAGE_LABEL[stage]} (org AI readiness threshold ${ORG.aiReadiness}%)`}
-        >
-          {READINESS_STAGE_LABEL[stage]}
-        </span>
-      </td>
-    </tr>
-  )
-}
-
-function RolePageView({
-  dept,
-  role,
-  orgCollectionActive,
-  collectionLaunchSummary,
-}: {
-  dept: Dept
-  role: RoleRowType
-  orgCollectionActive: boolean
-  collectionLaunchSummary: FocusCollectionLaunchSummary | null
-}) {
-  const tasks = getTasksForRole(role.title)
-  const sortedTasks = [...tasks].sort((a, b) => b.score - a.score || a.task.localeCompare(b.task))
-  const outcome = peopleOutcome(tasks)
-  const o = outcome ? OUTCOME[outcome] : null
-  const dev = roleDevelopmentProgress(role)
-  const [roleTab, setRoleTab] = useState<'collection' | 'tasks' | 'employees'>(orgCollectionActive ? 'collection' : 'tasks')
-  const roleTabsPanelRef = useRef<HTMLDivElement>(null)
-  const roleEmployees = useMemo(() => getEmployeesForRole(role), [role])
-  const taskBandRollup = useMemo(() => roleTaskBandRollup(role), [role])
-  const empReadinessStats = useMemo(() => roleEmployeeReadinessStatBuckets(roleEmployees), [roleEmployees])
-
-  return (
-    <div className="wfr-dash wfr-dash--role-page">
-      <header className="wfr-role-page__hero">
-        <div className="wfr-role-page__hero-top">
-          <div className="min-w-0">
-            <div className="wfr-role-page__title-row">
-              <h1 className="wfr-role-page__title">{role.title}</h1>
-              {outcome && o && (
-                <Badge
-                  variant="outline"
-                  size="24"
-                  className="shrink-0 font-semibold"
-                  style={{ background: o.bg, color: o.color, borderColor: o.border }}
-                >
-                  {outcomeShortLabel(outcome)}
-                </Badge>
-              )}
-            </div>
-            <p className="wfr-role-page__sub">
-              {dept.name} {EM} {role.employees.toLocaleString()} employees
-            </p>
-          </div>
-          <div className="wfr-role-page__hero-metrics" aria-label="Role AI readiness and potential">
-            <div className="wfr-role-page__hero-metric">
-              <div className="wfr-role-page__hero-metric-pct wfr-text-readiness">{role.aiReadiness}%</div>
-              <div className="wfr-role-page__hero-metric-label">readiness</div>
-              <div className="wfr-role-page__hero-metric-delta">{formatReadinessDeltaPp(role.aiReadiness)}</div>
-            </div>
-            <div className="wfr-role-page__hero-metric">
-              <div className="wfr-role-page__hero-metric-pct wfr-text-potential">{role.aiPotential}%</div>
-              <div className="wfr-role-page__hero-metric-label">potential</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="wfr-role-page__dev" aria-label="Development program progress for this role">
-          <div className="wfr-role-page__dev-head">
-            <span className="wfr-role-page__dev-eyebrow">Development progress</span>
-            <span className="wfr-role-page__dev-stats">
-              {dev.completed.toLocaleString()} completed, {dev.enrolled.toLocaleString()} enrolled of{' '}
-              {dev.total.toLocaleString()}
-            </span>
-          </div>
-          <div className="wfr-role-page__dev-track">
-            <div
-              className="wfr-role-page__dev-fill"
-              style={{ width: `${dev.pct}%` }}
-            />
-          </div>
-        </div>
-      </header>
-
-      {orgCollectionActive ? (
-        <FocusFirstModule
-          mode="collecting"
-          snapshot={wfrDemoDeptCollectionSnapshot(dept)}
-          attentionScope="dept"
-          collectionLaunchSummary={collectionLaunchSummary}
-          departmentContextName={dept.name}
-        />
-      ) : null}
-
-      <DeptFocusFirstCard
-        role={role}
-        employeeRoster={roleEmployees}
-        footerLinkLabel="View tasks & employees below."
-        onExpandBelow={() => {
-          setRoleTab('tasks')
-          requestAnimationFrame(() =>
-            roleTabsPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-          )
-        }}
-      />
-
-      <div ref={roleTabsPanelRef} className="wfr-dash__panel wfr-role-page__tabs-panel">
-        <Tabs value={roleTab} onValueChange={(v) => setRoleTab(v as 'collection' | 'tasks' | 'employees')} className="wfr-dash__panel-tabs">
-          <div className="wfr-role-page__tabs-bar">
-            <TabsList variant="line" className="wfr-dash__panel-tabs-list wfr-role-page__tabs-list" aria-label="Role detail">
-              {orgCollectionActive ? (
-                <TabsTrigger className="wfr-dash__panel-tab wfr-role-page__tab" value="collection">
-                  Collection status
-                </TabsTrigger>
-              ) : null}
-              <TabsTrigger className="wfr-dash__panel-tab wfr-role-page__tab" value="tasks">
-                Tasks
-              </TabsTrigger>
-              <TabsTrigger className="wfr-dash__panel-tab wfr-role-page__tab" value="employees">
-                Employees
-              </TabsTrigger>
-            </TabsList>
-            {roleTab === 'tasks' && sortedTasks.length > 0 && (
-              <span className="wfr-role-page__sorted-hint">Sorted by score</span>
-            )}
-            {roleTab === 'employees' && roleEmployees.length > 0 && (
-              <span className="wfr-role-page__sorted-hint">
-                Sorted by readiness · {roleEmployees.length.toLocaleString()} employees
-              </span>
-            )}
-          </div>
-          {orgCollectionActive ? (
-            <TabsContent value="collection" className="wfr-dash__panel-tabs-content">
-              <CollectionProgressPanel scopeDepartment={dept} />
-            </TabsContent>
-          ) : null}
-          <TabsContent value="tasks" className="wfr-dash__panel-tabs-content">
-            <div className="wfr-role-page__tasks-tab">
-              <TaskBandStatCards
-                bands={[
-                  {
-                    zone: 'above',
-                    css: 'above',
-                    taskCount: taskBandRollup.aboveTasks,
-                    employees: taskBandRollup.aboveEmpl,
-                  },
-                  {
-                    zone: 'augment',
-                    css: 'augment',
-                    taskCount: taskBandRollup.augmentTasks,
-                    employees: taskBandRollup.augmentEmpl,
-                  },
-                  {
-                    zone: 'below',
-                    css: 'below',
-                    taskCount: taskBandRollup.belowTasks,
-                    employees: taskBandRollup.belowEmpl,
-                  },
-                ]}
-              />
-              {sortedTasks.length === 0 ? (
-                <div className="wfr-type-body3-muted px-8 py-10 text-center">
-                  No task-level data for this role in the prototype.
-                </div>
-              ) : (
-                <div className="wfr-dash__table-scroll">
-                  <table className="wfr-dash__table wfr-dash__table--tasks wfr-role-page__task-table">
-                    <thead>
-                      <tr>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">Task</th>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">Score</th>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">Zone</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedTasks.map((t) => {
-                        const zone = taskZone(t.score)
-                        const z = ZONE[zone]
-                        return (
-                          <tr key={t.task} className="wfr-dash__tr wfr-dash__tr--tasks">
-                            <td className="wfr-dash__td wfr-dash__td--task-name">{t.task}</td>
-                            <td className="wfr-dash__td wfr-dash__td--score-cell">
-                              <div className="wfr-dash__task-score" title={`${t.score}% AI task score`}>
-                                <div className="wfr-dash__task-score__track" aria-hidden>
-                                  <div
-                                    className="wfr-dash__task-score__fill"
-                                    style={{
-                                      width: `${Math.min(100, Math.max(0, t.score))}%`,
-                                      backgroundColor: z.color,
-                                    }}
-                                  />
-                                </div>
-                                <span className="wfr-dash__task-score__pct" style={{ color: z.color }}>
-                                  {t.score}%
-                                </span>
-                              </div>
-                            </td>
-                            <td className="wfr-dash__td wfr-dash__td--zone-cell">
-                              <span
-                                className="wfr-dash__zone-pill"
-                                style={{
-                                  backgroundColor: z.bg,
-                                  color: z.color,
-                                  borderColor: `${z.color}4d`,
-                                }}
-                              >
-                                {z.short}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="employees" className="wfr-dash__panel-tabs-content">
-            {roleEmployees.length === 0 ? (
-              <div className="wfr-role-page__employees-placeholder wfr-type-body3-muted">
-                No employees listed for this role in the prototype.
-              </div>
-            ) : (
-              <div className="wfr-role-page__employees-tab">
-                <RoleEmployeeReadinessStatBar
-                  aiReady={empReadinessStats.aiReady}
-                  inTraining={empReadinessStats.inTraining}
-                  completed={empReadinessStats.completed}
-                  notStarted={empReadinessStats.notStarted}
-                />
-                <div className="wfr-dash__table-scroll">
-                  <table className="wfr-dash__table wfr-dash__table--tasks wfr-role-page__employees-table">
-                    <thead>
-                      <tr>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">Employee</th>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">AI readiness</th>
-                        <th className="wfr-dash__th wfr-dash__th--tasks">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {roleEmployees.map((emp, i) => (
-                        <RoleEmployeeRow key={`${emp.name}-${i}`} employee={emp} />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  )
-}
-
-function DeptFocusFirstCard({
-  role,
-  onExpandBelow,
-  footerLinkLabel = 'View roles & tasks below.',
-  employeeRoster,
-}: {
-  role: RoleRowType
-  onExpandBelow: () => void
-  /** Role page: scrolls to this role’s tasks panel. */
-  footerLinkLabel?: string
-  /** When set (role page), body uses readiness / development plan counts from this roster. */
-  employeeRoster?: RoleEmployee[]
-}) {
-  const head = (
-    <div className="wfr-dash__focus-card-head">
-      <div className="wfr-dash__focus-card-icon-wrap" aria-hidden>
-        <span className="material-symbols-outlined wfr-dash__focus-card-icon">priority_high</span>
-      </div>
-      <span className="wfr-dash__focus-card-label wfr-dash__focus-module-eyebrow wfr-dash__focus-module-eyebrow--alert">
-        Recommended actions
-      </span>
-    </div>
-  )
-
-  if (employeeRoster !== undefined) {
-    const total = employeeRoster.length
-    const { aiReady, inTraining, completed, notStarted } = roleEmployeeReadinessStatBuckets(employeeRoster)
-    const notYetAiReady = total - aiReady
-
-    return (
-      <div className="wfr-dash__focus-card">
-        {head}
-        <p className="wfr-dash__focus-card-body">
-          {total === 0 ? (
-            <>No employee roster in this prototype. </>
-          ) : (
-            <>
-              <strong className="wfr-dash__focus-card-headcount">{notYetAiReady.toLocaleString()}</strong>
-              {' '}of{' '}
-              <strong className="wfr-dash__focus-card-headcount">{total.toLocaleString()}</strong>
-              {' '}
-              employees in this role are not yet AI-ready.{' '}
-              <strong className="wfr-dash__focus-card-primary-name">{inTraining.toLocaleString()}</strong>
-              {' '}are enrolled in development plans,{' '}
-              <strong className="wfr-dash__focus-card-primary-name">{completed.toLocaleString()}</strong>
-              {' '}have completed.{' '}
-              <strong className="wfr-dash__focus-card-headcount">{notStarted.toLocaleString()}</strong>
-              {' '}
-              employees have no development plan yet {EM} assign development plans to close the gap.{' '}
-            </>
-          )}
-          <button type="button" className="wfr-dash__focus-card-dept-link" onClick={onExpandBelow}>
-            {footerLinkLabel}
-          </button>
-        </p>
-      </div>
-    )
-  }
-
-  const tasks = getTasksForRole(role.title)
-  const n = tasks.length
-  const augCount = tasks.filter((t) => taskZone(t.score) === 'augment').length
-  const belowCount = tasks.filter((t) => taskZone(t.score) === 'below').length
-  const aboveCount = tasks.filter((t) => taskZone(t.score) === 'above').length
-  const gap = tGap(role.aiPotential, role.aiReadiness)
-  const stayPhrase =
-    belowCount === 0
-      ? ''
-      : belowCount === 1
-        ? '1 task stays fully human.'
-        : `${belowCount} tasks stay fully human.`
-
-  return (
-    <div className="wfr-dash__focus-card">
-      {head}
-      <p className="wfr-dash__focus-card-body">
-        <strong className="wfr-dash__focus-card-primary-name">{role.title}</strong> {EM}{' '}
-        <strong className="wfr-dash__focus-card-headcount">{role.employees.toLocaleString()} employees</strong>,{' '}
-        <span className="wfr-dash__focus-card-meta">{gap}pp gap</span>.{' '}
-        {n > 0 ? (
-          <>
-            {aboveCount} of {n} tasks score above 75% and should be automated.
-            {augCount > 0
-              ? ` ${augCount === 1 ? '1 remaining task needs' : `${augCount} remaining tasks need`} AI-augmented workflows.`
-              : ''}
-            {stayPhrase ? ` ${stayPhrase}` : ''}{' '}
-          </>
-        ) : (
-          <>Task-level automation scores aren&apos;t available for this role yet. </>
-        )}
-        <button type="button" className="wfr-dash__focus-card-dept-link" onClick={onExpandBelow}>
-          {footerLinkLabel}
-        </button>
-      </p>
-    </div>
-  )
-}
-
 function DeptView({
   dept,
-  onOpenRole,
   orgCollectionActive,
+  orgCollectionComplete,
   onCollectionActiveChange,
+  onCollectionComplete,
   collectionLaunchSummary,
   focusLaunchOpen,
   setFocusLaunchOpen,
 }: {
   dept: Dept
-  onOpenRole: (role: RoleRowType) => void
   orgCollectionActive: boolean
+  orgCollectionComplete?: boolean
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
+  onCollectionComplete?: () => void
   collectionLaunchSummary: FocusCollectionLaunchSummary | null
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
-  const [rolesTab, setRolesTab] = useState<'collection' | 'roles' | 'tasks'>(orgCollectionActive ? 'collection' : 'roles')
+  const showCollectionTab = orgCollectionActive && !orgCollectionComplete
+  // Tabs are uncontrolled with defaultValue; showCollectionTab drives which tabs render
+  const [expandedRoles, setExpandedRoles] = useState<Record<string, boolean>>({})
+  const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
   const roles = getRolesForDept(dept.name)
   const sorted = [...roles].sort((a, b) => tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness))
@@ -1092,10 +487,6 @@ function DeptView({
   const deptReady = Math.max(0, deptAug - gapCount)
   const gapSharePct = deptAug > 0 ? Math.min(100, Math.round((gapCount / deptAug) * 100)) : 0
   const deptHrsUnlocked = Math.round(gapCount * ORG.hrsPerPersonWeek)
-
-  useEffect(() => {
-    setRolesTab('roles')
-  }, [dept.name])
 
   const deptCards = [
     {
@@ -1156,39 +547,33 @@ function DeptView({
         </div>
       </header>
 
-      <div className="flex flex-col gap-0">
-        <div className="wfr-dash__cards-row">
-          {deptCards.map((c) => (
-            <article key={c.id} className={`wfr-metric-card wfr-metric-card--${c.id}`}>
-              <div className="wfr-metric-card__top">
-                <div className="wfr-metric-card__icon-wrap" aria-hidden>
-                  <span className="material-symbols-outlined wfr-metric-card__icon">{c.icon}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="wfr-metric-card__label">{c.label}</p>
-                </div>
-              </div>
-              <p className="wfr-metric-card__value">{c.val}</p>
-              <p className="wfr-metric-card__primary">{c.l1}</p>
-              <div className="wfr-metric-card__footer">
-                <p className="wfr-metric-card__hint">{c.hint}</p>
-                <Button type="button" variant="secondary" onClick={() => setOpenMetric(c.id)} className="shrink-0">
-                  Learn more
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>
-
+      <div className="flex flex-col gap-6">
         <FocusFirstModule
           collectionActive={orgCollectionActive}
+          collectionComplete={orgCollectionComplete}
           onCollectionActiveChange={onCollectionActiveChange}
+          onCollectionComplete={onCollectionComplete}
           launchOpen={focusLaunchOpen}
           onLaunchOpenChange={setFocusLaunchOpen}
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
           deptContext={dept}
           collectionLaunchSummary={collectionLaunchSummary}
         />
+
+        <div className="wfr-dash__cards-row">
+          {deptCards.map((c) => (
+            <MetricCard
+              key={c.id}
+              variant={c.id}
+              icon={c.icon}
+              label={c.label}
+              value={c.val}
+              description={c.l1}
+              hint={c.hint}
+              onLearnMore={() => setOpenMetric(c.id)}
+            />
+          ))}
+        </div>
 
         <WorkforceMetricSheet
           metric={openMetric}
@@ -1215,67 +600,155 @@ function DeptView({
         />
       </div>
 
-      <div ref={deptRolesPanelRef} id="wfr-dept-roles-panel" className="wfr-dash__panel">
-        <div className="wfr-dash__panel-head">
-          <h3 className="wfr-dash__panel-title">Roles &amp; tasks</h3>
-          <span className="wfr-dash__panel-hint">{dept.name}</span>
-        </div>
+      <div ref={deptRolesPanelRef} id="wfr-dept-roles-panel">
         {roles.length === 0 ? (
-          <div className="wfr-type-body3-muted px-8 py-8 text-center">Role-level data not available in prototype.</div>
+          <div className="wfr-dash__panel">
+            <div className="wfr-type-body3-muted px-8 py-8 text-center">Role-level data not available in prototype.</div>
+          </div>
         ) : (
+          <>
           <Tabs
-            value={rolesTab}
-            onValueChange={(v: string) => setRolesTab(v as 'collection' | 'roles' | 'tasks')}
-            className="wfr-dash__panel-tabs"
+            defaultValue={showCollectionTab ? 'collection' : 'roles'}
           >
-            <TabsList variant="line" className="wfr-dash__panel-tabs-list" aria-label="Roles and tasks">
-              {orgCollectionActive ? (
-                <TabsTrigger className="wfr-dash__panel-tab" value="collection">
+            <TabsList variant="line" className="mb-4" aria-label="Roles and tasks">
+              {showCollectionTab ? (
+                <TabsTrigger value="collection">
                   Collection status
                 </TabsTrigger>
               ) : null}
-              <TabsTrigger className="wfr-dash__panel-tab" value="roles">
+              <TabsTrigger value="roles">
                 Roles
               </TabsTrigger>
-              <TabsTrigger className="wfr-dash__panel-tab" value="tasks">
+              <TabsTrigger value="tasks">
                 Tasks
               </TabsTrigger>
             </TabsList>
-            {orgCollectionActive ? (
+            {showCollectionTab ? (
               <TabsContent value="collection" className="wfr-dash__panel-tabs-content">
-                <CollectionProgressPanel scopeDepartment={dept} />
+                <CollectionProgressPanel scopeDepartment={dept} channelsLabel={collectionLaunchSummary?.channelsLabel} />
               </TabsContent>
             ) : null}
             <TabsContent value="roles" className="wfr-dash__panel-tabs-content">
-              <div className="wfr-dash__table-scroll">
-                <table className="wfr-dash__table wfr-dash__table--roles">
-                  <thead>
-                    <tr>
-                      <th className="wfr-dash__th">Role</th>
-                      <th className="wfr-dash__th wfr-dash__th--metric-col">AI readiness</th>
-                      <th className="wfr-dash__th wfr-dash__th--metric-col">AI potential</th>
-                      <th className="wfr-dash__th wfr-dash__th--num">Tasks transformable</th>
-                      <th className="wfr-dash__th">Reskill priority</th>
-                      <th className="wfr-dash__th wfr-dash__th--action" aria-hidden="true" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.map((r, i) => (
-                      <RoleRow
-                        key={r.title}
-                        role={r}
-                        isFirst={i === 0}
-                        onTakeAction={() => {
-                          requestAnimationFrame(() =>
-                            deptRolesPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+              <DataTable bordered>
+                <DataTableHeader>
+                  <DataTableRow>
+                    <DataTableHead>Role</DataTableHead>
+                    <DataTableHead numeric>Employees</DataTableHead>
+                    <DataTableHead numeric>Tasks</DataTableHead>
+                    <DataTableHead metric>AI readiness</DataTableHead>
+                    <DataTableHead metric>AI potential</DataTableHead>
+                    <DataTableHead>Role outlook</DataTableHead>
+                  </DataTableRow>
+                </DataTableHeader>
+                <DataTableBody>
+                  {sorted.map((r) => {
+                    const outlook = roleOutlook(r)
+                    const ol = ROLE_OUTLOOK[outlook]
+                    const isRoleExpanded = expandedRoles[r.title] ?? false
+                    // Generate managers for this role using role title hash + dept employee pool
+                    const roleManagers = deptManagerTeams(r.title, r.employees)
+                    // Get employees for this role (split across managers later)
+                    const roleEmployees = getEmployeesForRole(r)
+                    return (
+                      <Fragment key={r.title}>
+                        {/* Level 1: Role row */}
+                        <DataTableRow
+                          onClick={() => setExpandedRoles(prev => ({ ...prev, [r.title]: !isRoleExpanded }))}
+                        >
+                          <DataTableCell className="font-semibold">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="material-symbols-outlined text-[#94a3b8] text-base transition-transform"
+                                style={{ transform: isRoleExpanded ? 'rotate(90deg)' : undefined }}
+                              >
+                                chevron_right
+                              </span>
+                              {r.title}
+                            </div>
+                          </DataTableCell>
+                          <DataTableCell align="right" numeric>{r.employees.toLocaleString()}</DataTableCell>
+                          <DataTableCell align="right" numeric>{getTasksForRole(r.title).length}</DataTableCell>
+                          <DataTableCell metric>
+                            <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} width={120} />
+                          </DataTableCell>
+                          <DataTableCell metric>
+                            <DeptTableSoloBar variant="potential" pct={r.aiPotential} width={120} />
+                          </DataTableCell>
+                          <DataTableCell>
+                            <Badge
+                              variant="outline"
+                              size="24"
+                              className="shrink-0 font-semibold"
+                              style={{ background: ol.bg, color: ol.color, borderColor: ol.border }}
+                            >
+                              {ol.label}
+                            </Badge>
+                          </DataTableCell>
+                        </DataTableRow>
+                        {/* Level 2: Manager rows */}
+                        {isRoleExpanded && roleManagers.map((mgr, mi) => {
+                          const mgrKey = `${r.title}-${mgr.manager}`
+                          const isMgrExpanded = expandedManagers[mgrKey] ?? false
+                          // Split employees among managers proportionally
+                          const startIdx = roleManagers.slice(0, mi).reduce((s, m) => s + m.employees, 0)
+                          const mgrEmployees = roleEmployees.slice(startIdx, startIdx + mgr.employees)
+                          // Weighted average readiness for this manager's team
+                          const mgrReadiness = mgrEmployees.length > 0
+                            ? Math.round(mgrEmployees.reduce((s, e) => s + e.readinessPct, 0) / mgrEmployees.length)
+                            : 0
+                          return (
+                            <Fragment key={mgrKey}>
+                              <DataTableRow
+                                className="bg-[#f8fafc]"
+                                onClick={() => setExpandedManagers(prev => ({ ...prev, [mgrKey]: !isMgrExpanded }))}
+                              >
+                                <DataTableCell className="!pl-12">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="material-symbols-outlined text-[#94a3b8] text-sm transition-transform"
+                                      style={{ transform: isMgrExpanded ? 'rotate(90deg)' : undefined }}
+                                    >
+                                      chevron_right
+                                    </span>
+                                    <div>
+                                      <div className="text-[#475569] text-[13px] font-medium">{mgr.manager}</div>
+                                      <div className="text-[#94a3b8] text-[11px]">{mgr.title}</div>
+                                    </div>
+                                  </div>
+                                </DataTableCell>
+                                <DataTableCell align="right" numeric className="text-[13px]">{mgr.employees.toLocaleString()}</DataTableCell>
+                                <DataTableCell />
+                                <DataTableCell metric>
+                                  <DeptTableSoloBar variant="readiness" pct={mgrReadiness} width={80} />
+                                </DataTableCell>
+                                <DataTableCell metric>
+                                  <DeptTableSoloBar variant="potential" pct={r.aiPotential} width={80} />
+                                </DataTableCell>
+                                <DataTableCell />
+                              </DataTableRow>
+                              {/* Level 3: Employee rows */}
+                              {isMgrExpanded && mgrEmployees.map((emp, ei) => (
+                                <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#f1f5f9]">
+                                  <DataTableCell className="!pl-20 text-[13px] text-[#475569]">
+                                    {emp.name}
+                                  </DataTableCell>
+                                  <DataTableCell />
+                                  <DataTableCell />
+                                  <DataTableCell metric>
+                                    <DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} />
+                                  </DataTableCell>
+                                  <DataTableCell />
+                                  <DataTableCell />
+                                </DataTableRow>
+                              ))}
+                            </Fragment>
                           )
-                        }}
-                        onOpenRole={() => onOpenRole(r)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        })}
+                      </Fragment>
+                    )
+                  })}
+                </DataTableBody>
+              </DataTable>
               <p className="wfr-dash__panel-table-foot">
                 Sorted by gap (potential vs. readiness). Open a role for detail, or use the Tasks tab for scores.
               </p>
@@ -1284,6 +757,7 @@ function DeptView({
               <DeptTasksTable sortedRoles={sorted} />
             </TabsContent>
           </Tabs>
+          </>
         )}
       </div>
     </div>
@@ -1293,37 +767,42 @@ function DeptView({
 function BoardView({
   onDeptClick,
   focusCollectionActive,
+  focusCollectionComplete,
   onCollectionActiveChange,
+  onCollectionComplete,
   collectionLaunchSummary,
   focusLaunchOpen,
   setFocusLaunchOpen,
 }: {
   onDeptClick: (d: Dept) => void
   focusCollectionActive: boolean
+  focusCollectionComplete?: boolean
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
+  onCollectionComplete?: () => void
   collectionLaunchSummary: FocusCollectionLaunchSummary | null
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
+  const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
 
   const scopedRollup = useMemo(() => {
     if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
     return wfrRollupDepartmentsByName(collectionLaunchSummary.scopedDepartmentNames)
   }, [focusCollectionActive, collectionLaunchSummary])
 
+  const allDeptsSorted = useMemo(() => {
+    return [...departments].sort((a, b) => a.aiReadiness - b.aiReadiness)
+  }, [])
+
   const sorted = useMemo(() => {
     const scopeSet =
       focusCollectionActive && collectionLaunchSummary?.scopedDepartmentNames?.length
         ? new Set(collectionLaunchSummary.scopedDepartmentNames)
         : null
-    const list = scopeSet ? ORG.departments.filter((d) => scopeSet.has(d.name)) : [...ORG.departments]
-    return list.sort((a, b) => {
-      const pp = tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness)
-      if (pp !== 0) return pp
-      return deptGapHeadcount(b) - deptGapHeadcount(a)
-    })
-  }, [focusCollectionActive, collectionLaunchSummary])
+    if (!scopeSet) return allDeptsSorted
+    return allDeptsSorted.filter((d) => scopeSet.has(d.name))
+  }, [focusCollectionActive, collectionLaunchSummary, allDeptsSorted])
 
   const orgReady = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
   const orgGapPeople = ORG.peopleInAugRoles - orgReady
@@ -1408,27 +887,30 @@ function BoardView({
         </div>
       </div>
 
-      <div className="flex flex-col gap-0">
+      <div className="flex flex-col gap-6">
+        <FocusFirstModule
+          collectionActive={focusCollectionActive}
+          collectionComplete={focusCollectionComplete}
+          onCollectionActiveChange={onCollectionActiveChange}
+          onCollectionComplete={onCollectionComplete}
+          launchOpen={focusLaunchOpen}
+          onLaunchOpenChange={setFocusLaunchOpen}
+          onRequestCloseMetricSheet={() => setOpenMetric(null)}
+          collectionLaunchSummary={collectionLaunchSummary}
+        />
+
         <div className="wfr-dash__cards-row">
           {cards.map((c) => (
-            <article key={c.id} className={`wfr-metric-card wfr-metric-card--${c.id}`}>
-              <div className="wfr-metric-card__top">
-                <div className="wfr-metric-card__icon-wrap" aria-hidden>
-                  <span className="material-symbols-outlined wfr-metric-card__icon">{c.icon}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="wfr-metric-card__label">{c.label}</p>
-                </div>
-              </div>
-              <p className="wfr-metric-card__value">{c.val}</p>
-              <p className="wfr-metric-card__primary">{c.l1}</p>
-              <div className="wfr-metric-card__footer">
-                <p className="wfr-metric-card__hint">{c.hint}</p>
-                <Button type="button" variant="secondary" onClick={() => setOpenMetric(c.id)} className="shrink-0">
-                  Learn more
-                </Button>
-              </div>
-            </article>
+            <MetricCard
+              key={c.id}
+              variant={c.id}
+              icon={c.icon}
+              label={c.label}
+              value={c.val}
+              description={c.l1}
+              hint={c.hint}
+              onLearnMore={() => setOpenMetric(c.id)}
+            />
           ))}
         </div>
 
@@ -1441,39 +923,92 @@ function BoardView({
           dataCollection={learnMoreDataCollection}
         />
 
-        <FocusFirstModule
-          collectionActive={focusCollectionActive}
-          onCollectionActiveChange={onCollectionActiveChange}
-          launchOpen={focusLaunchOpen}
-          onLaunchOpenChange={setFocusLaunchOpen}
-          onRequestCloseMetricSheet={() => setOpenMetric(null)}
-          collectionLaunchSummary={collectionLaunchSummary}
-        />
-
       </div>
 
-      {focusCollectionActive ? (
-        <div className="wfr-dash__panel">
-          <Tabs defaultValue="collection">
-            <TabsList variant="line" className="px-6 pt-3" aria-label="Department view">
-              <TabsTrigger value="collection">
-                Collection status
-              </TabsTrigger>
-              <TabsTrigger value="gap">
-                Departmental readiness
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="collection">
+      {focusCollectionComplete ? (
+        <div>
+          <div className="wfr-dash__panel-head">
+            <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
+            <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
+          </div>
+          <DataTable bordered>
+            <DataTableHeader>
+              <DataTableRow>
+                <DataTableHead>Department</DataTableHead>
+                <DataTableHead numeric>Headcount</DataTableHead>
+                <DataTableHead metric>AI readiness</DataTableHead>
+                <DataTableHead metric>AI potential</DataTableHead>
+                <DataTableHead numeric>Transformation gap</DataTableHead>
+              </DataTableRow>
+            </DataTableHeader>
+            <DataTableBody>
+              {allDeptsSorted.map((d) => {
+                const gapPp = tGap(d.aiPotential, d.aiReadiness)
+                const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
+                const gapCount = deptGapHeadcount(d)
+                const trend = deptReadinessTrend(d.name)
+                return (
+                  <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
+                    <DataTableCell className="font-semibold">{d.name}</DataTableCell>
+                    <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
+                    <DataTableCell metric>
+                      <div className="wfr-dash__readiness-with-trend">
+                        <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
+                        <button
+                          type="button"
+                          className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}
+                          onClick={(e) => { e.stopPropagation(); setTrendSheetDept(d) }}
+                          title="View readiness trend details"
+                        >
+                          <span className="wfr-dash__trend-badge-text">
+                            {trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt
+                          </span>
+                          <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
+                        </button>
+                      </div>
+                    </DataTableCell>
+                    <DataTableCell metric>
+                      <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
+                    </DataTableCell>
+                    <DataTableCell
+                      align="right"
+                      title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}
+                    >
+                      <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>
+                        {gapCount.toLocaleString()}
+                      </span>
+                    </DataTableCell>
+                  </DataTableRow>
+                )
+              })}
+            </DataTableBody>
+          </DataTable>
+        </div>
+      ) : focusCollectionActive ? (
+        <Tabs defaultValue="collection">
+          <TabsList variant="line" className="mb-4" aria-label="Department view">
+            <TabsTrigger value="collection">
+              Collection status
+            </TabsTrigger>
+            <TabsTrigger value="gap">
+              Departmental readiness
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="collection">
+            <div>
               <CollectionProgressPanel
                 scopedDepartmentNames={collectionLaunchSummary?.scopedDepartmentNames}
+                channelsLabel={collectionLaunchSummary?.channelsLabel}
               />
-            </TabsContent>
-            <TabsContent value="gap">
+            </div>
+          </TabsContent>
+          <TabsContent value="gap">
+            <div>
               <div className="wfr-dash__panel-head">
                 <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
-                <span className="wfr-dash__panel-hint">Sorted by gap (readiness vs. potential) {EM} click to drill down</span>
+                <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
               </div>
-              <DataTable>
+              <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
                     <DataTableHead>Department</DataTableHead>
@@ -1481,16 +1016,16 @@ function BoardView({
                     <DataTableHead metric>AI readiness</DataTableHead>
                     <DataTableHead metric>AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
-                    <DataTableHead>Status</DataTableHead>
                     <DataTableHead>Current action</DataTableHead>
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
-                  {sorted.map((d) => {
-                    const st = deptStatus(d)
+                  {allDeptsSorted.map((d) => {
+
                     const gapPp = tGap(d.aiPotential, d.aiReadiness)
                     const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                     const gapCount = deptGapHeadcount(d)
+                    const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(d.name)
                     return (
                       <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
                         <DataTableCell className="font-semibold">{d.name}</DataTableCell>
@@ -1510,33 +1045,30 @@ function BoardView({
                           </span>
                         </DataTableCell>
                         <DataTableCell>
-                          <Badge variant={gapStatusBadgeVariant(st.label)} size="24" className="whitespace-nowrap">
-                            {st.label}
-                          </Badge>
-                        </DataTableCell>
-                        <DataTableCell>
-                          <div className="wfr-dash__dept-current-action">
-                            <span className="wfr-dash__dept-current-action__status">Collecting data</span>
-                            <span className="wfr-dash__dept-current-action__dates">
-                              {WFR_DEMO_COLLECTION_WINDOW.datesLine}
-                            </span>
-                          </div>
+                          {inScope ? (
+                            <div className="wfr-dash__dept-current-action">
+                              <span className="wfr-dash__dept-current-action__status">Collecting data</span>
+                              <span className="wfr-dash__dept-current-action__dates">
+                                {WFR_DEMO_COLLECTION_WINDOW.datesLine}
+                              </span>
+                            </div>
+                          ) : null}
                         </DataTableCell>
                       </DataTableRow>
                     )
                   })}
                 </DataTableBody>
               </DataTable>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       ) : (
-        <div className="wfr-dash__panel">
+        <div>
           <div className="wfr-dash__panel-head">
             <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
-            <span className="wfr-dash__panel-hint">Sorted by gap (readiness vs. potential) {EM} click to drill down</span>
+            <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
           </div>
-          <DataTable>
+          <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead>Department</DataTableHead>
@@ -1544,12 +1076,11 @@ function BoardView({
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead numeric>Transformation gap</DataTableHead>
-                <DataTableHead>Status</DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {sorted.map((d) => {
-                const st = deptStatus(d)
+
                 const gapPp = tGap(d.aiPotential, d.aiReadiness)
                 const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = deptGapHeadcount(d)
@@ -1571,11 +1102,6 @@ function BoardView({
                         {gapCount.toLocaleString()}
                       </span>
                     </DataTableCell>
-                    <DataTableCell>
-                      <Badge variant={gapStatusBadgeVariant(st.label)} size="24" className="whitespace-nowrap">
-                        {st.label}
-                      </Badge>
-                    </DataTableCell>
                   </DataTableRow>
                 )
               })}
@@ -1583,6 +1109,14 @@ function BoardView({
           </DataTable>
         </div>
       )}
+
+      {/* Readiness trend detail sheet — opens when clicking a trend badge in complete state */}
+      <ReadinessTrendSheet
+        open={trendSheetDept != null}
+        onClose={() => setTrendSheetDept(null)}
+        dept={trendSheetDept}
+        channelsLabel={collectionLaunchSummary?.channelsLabel}
+      />
     </div>
   )
 }
@@ -1590,15 +1124,15 @@ function BoardView({
 export function WorkforceReadinessDashboard({
   onViewChange,
 }: {
-  onViewChange?: (view: 'board' | 'dept' | 'role') => void
+  onViewChange?: (view: 'board' | 'dept') => void
 } = {}) {
-  const [view, setView] = useState<'board' | 'dept' | 'role'>('board')
+  const [view, setView] = useState<'board' | 'dept'>('board')
   const [dept, setDept] = useState<Dept | null>(null)
-  const [roleFocus, setRoleFocus] = useState<RoleRowType | null>(null)
   const [focusCollectionActive, setFocusCollectionActive] = useState(false)
   const [focusCollectionLaunchSummary, setFocusCollectionLaunchSummary] =
     useState<FocusCollectionLaunchSummary | null>(null)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(false)
+  const [focusCollectionComplete, setFocusCollectionComplete] = useState(false)
 
   const handleFocusCollectionActiveChange = (
     active: boolean,
@@ -1625,10 +1159,6 @@ export function WorkforceReadinessDashboard({
     onViewChange?.(view)
   }, [view, onViewChange])
 
-  useEffect(() => {
-    setRoleFocus(null)
-  }, [dept?.name])
-
   return (
     <>
       {dept && (
@@ -1639,35 +1169,15 @@ export function WorkforceReadinessDashboard({
                 onClick={() => {
                   setView('board')
                   setDept(null)
-                  setRoleFocus(null)
                 }}
               >
                 Overview
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            {view === 'role' && roleFocus ? (
-              <>
-                <BreadcrumbItem>
-                  <BreadcrumbLink
-                    onClick={() => {
-                      setView('dept')
-                      setRoleFocus(null)
-                    }}
-                  >
-                    {dept.name}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{roleFocus.title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </>
-            ) : (
-              <BreadcrumbItem>
-                <BreadcrumbPage>{dept.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            )}
+            <BreadcrumbItem>
+              <BreadcrumbPage>{dept.name}</BreadcrumbPage>
+            </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       )}
@@ -1676,11 +1186,12 @@ export function WorkforceReadinessDashboard({
           <BoardView
             onDeptClick={(d) => {
               setDept(d)
-              setRoleFocus(null)
               setView('dept')
             }}
             focusCollectionActive={focusCollectionActive}
+            focusCollectionComplete={focusCollectionComplete}
             onCollectionActiveChange={handleFocusCollectionActiveChange}
+            onCollectionComplete={() => setFocusCollectionComplete(true)}
             collectionLaunchSummary={focusCollectionLaunchSummary}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
@@ -1690,22 +1201,12 @@ export function WorkforceReadinessDashboard({
           <DeptView
             dept={dept}
             orgCollectionActive={focusCollectionActive}
+            orgCollectionComplete={focusCollectionComplete}
             onCollectionActiveChange={handleFocusCollectionActiveChange}
+            onCollectionComplete={() => setFocusCollectionComplete(true)}
             collectionLaunchSummary={focusCollectionLaunchSummary}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
-            onOpenRole={(r) => {
-              setRoleFocus(r)
-              setView('role')
-            }}
-          />
-        )}
-        {view === 'role' && dept && roleFocus && (
-          <RolePageView
-            dept={dept}
-            role={roleFocus}
-            orgCollectionActive={focusCollectionActive}
-            collectionLaunchSummary={focusCollectionLaunchSummary}
           />
         )}
       </div>

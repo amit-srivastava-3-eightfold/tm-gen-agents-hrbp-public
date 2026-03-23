@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { ORG, tGap, type Dept } from '../../data/wfrOrgData'
+import { departments, ORG, tGap, type Dept } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
 const ARROW = '\u2192'
@@ -118,7 +118,7 @@ export function FocusFirstLaunchDialog({
 
   const deptsByGap = useMemo(
     () =>
-      [...ORG.departments].sort(
+      [...departments].sort(
         (a, b) => tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness),
       ),
     [],
@@ -127,7 +127,7 @@ export function FocusFirstLaunchDialog({
   const launchDept = useMemo(
     () =>
       defaultScopeDepartmentName
-        ? ORG.departments.find((d) => d.name === defaultScopeDepartmentName)
+        ? departments.find((d) => d.name === defaultScopeDepartmentName)
         : undefined,
     [defaultScopeDepartmentName],
   )
@@ -378,7 +378,7 @@ export function FocusFirstLaunchDialog({
                 <span className="wfr-focus-launch__dept-meta tabular-nums">
                   {d.employees.toLocaleString()} employees
                 </span>
-                <span className={gapPillClass(pp)}>{pp}pp gap</span>
+                <span className={gapPillClass(pp)}>{pp}pt gap</span>
               </button>
             )
           })}
@@ -467,7 +467,7 @@ export function FocusFirstLaunchDialog({
                   <span className="wfr-focus-launch__dept-meta tabular-nums">
                     {d.employees.toLocaleString()} employees
                   </span>
-                  <span className={gapPillClass(pp)}>{pp}pp gap</span>
+                  <span className={gapPillClass(pp)}>{pp}pt gap</span>
                 </button>
               )
             })}

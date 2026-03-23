@@ -1,6 +1,8 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { useMemo, type MouseEvent, type ReactNode } from 'react'
 import {
+  departments,
+  ORG,
   wfrDemoCollectionSnapshot,
   wfrDemoCollectionSnapshotForDeptNames,
   wfrDemoDeptCollectionSnapshot,
@@ -47,14 +49,23 @@ export interface FocusFirstCollectionCardProps {
   launchSummary?: FocusCollectionLaunchSummary | null
   /** Department name for dept drill-down copy (subtext + foot). */
   departmentContextName?: string
+  /** Called when user wants to add more departments to the collection. */
+  onAddDepartments?: () => void
+  /** Whether collection has reached the sample threshold. */
+  collectionComplete?: boolean
+  /** Called when user clicks the progress bar to simulate completion. */
+  onCollectionComplete?: () => void
 }
 
-/** Shared “Data collection is underway” surface — same Focus First card shell as pre-launch (icon + red eyebrow + gradient). */
+/** Shared Focus First card — collecting state or complete state. */
 export function FocusFirstCollectionCard({
   snapshot,
   attentionScope = 'org',
   launchSummary = null,
   departmentContextName,
+  onAddDepartments,
+  collectionComplete = false,
+  onCollectionComplete,
 }: FocusFirstCollectionCardProps) {
   const showAttentionBadge = snapshot.needAttentionDeptCount > 0
   const deptName = departmentContextName
@@ -66,6 +77,76 @@ export function FocusFirstCollectionCard({
       : launchSummary
         ? focusCollectionUnderwaySubtext(launchSummary)
         : 'Survey responses are rolling in. Check back as participation grows.'
+
+  if (collectionComplete) {
+    const scopedNames = launchSummary?.scopedDepartmentNames ?? []
+    const scopedDepts = scopedNames.length
+      ? departments.filter((d) => scopedNames.includes(d.name))
+      : departments
+    // Top 3 departments by gap (potential − readiness)
+    const topGapDepts = [...scopedDepts]
+      .sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+      .slice(0, 3)
+    const gapPeople = Math.round(ORG.peopleInAugRoles * (1 - ORG.aiReadiness / 100))
+    const hrsUnlocked = gapPeople * ORG.hrsPerPersonWeek
+    const measuredReadiness = ORG.aiReadiness + 11 // simulate post-collection bump (estimated 24% → measured 35%)
+
+    return (
+      <div className="wfr-dash__focus-card">
+        <div className="wfr-dash__focus-card-head">
+          <div className="wfr-dash__focus-card-icon-wrap" aria-hidden>
+            <span className="material-symbols-outlined wfr-dash__focus-card-icon">trending_up</span>
+          </div>
+          <span className="wfr-dash__focus-card-label wfr-dash__focus-module-eyebrow wfr-dash__focus-module-eyebrow--success">
+            Recommended actions
+          </span>
+        </div>
+        <div className="wfr-dash__focus-collecting__top">
+          <h3 className="wfr-dash__focus-collecting__title">
+            Readiness up to {measuredReadiness}% — {gapPeople.toLocaleString()} employees still in the gap
+          </h3>
+          <p className="wfr-dash__focus-collecting__sub">
+            Survey data shows measured readiness at <strong>{measuredReadiness}%</strong>, up from the{' '}
+            <strong>{ORG.aiReadiness}%</strong> estimate.{' '}
+            Closing the gap unlocks an estimated <strong>{hrsUnlocked.toLocaleString()} hours/week</strong> of productivity.
+            Focus upskilling on these departments first:
+          </p>
+        </div>
+        <div className="wfr-dash__focus-priorities">
+          {topGapDepts.map((d) => {
+            const gap = d.aiPotential - d.aiReadiness
+            const gapCount = Math.round(d.employees * (1 - d.aiReadiness / 100))
+            return (
+              <div key={d.name} className="wfr-dash__focus-priority-card">
+                <div className="wfr-dash__focus-priority-card-header">
+                  <span className="wfr-dash__focus-priority-card-name">{d.name}</span>
+                  <span className="wfr-dash__focus-priority-card-gap">{gap}pt gap</span>
+                </div>
+                <div className="wfr-dash__focus-priority-card-stats">
+                  <div className="wfr-dash__focus-priority-card-stat">
+                    <span className="wfr-dash__focus-priority-card-stat-val">{d.aiReadiness}%</span>
+                    <span className="wfr-dash__focus-priority-card-stat-label">readiness</span>
+                  </div>
+                  <span className="wfr-dash__focus-priority-card-arrow">→</span>
+                  <div className="wfr-dash__focus-priority-card-stat">
+                    <span className="wfr-dash__focus-priority-card-stat-val">{d.aiPotential}%</span>
+                    <span className="wfr-dash__focus-priority-card-stat-label">potential</span>
+                  </div>
+                  <div className="wfr-dash__focus-priority-card-stat wfr-dash__focus-priority-card-stat--people">
+                    <span className="wfr-dash__focus-priority-card-stat-val">{gapCount.toLocaleString()}</span>
+                    <span className="wfr-dash__focus-priority-card-stat-label">to upskill</span>
+                  </div>
+                </div>
+                <button type="button" className="wfr-dash__focus-priority-card-cta">
+                  View plan&nbsp;→
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="wfr-dash__focus-card">
@@ -90,7 +171,12 @@ export function FocusFirstCollectionCard({
         </div>
         <p className="wfr-dash__focus-collecting__sub">{subtext}</p>
       </div>
-      <div className="wfr-dash__focus-collecting__bar-row">
+      <div
+        className="wfr-dash__focus-collecting__bar-row"
+        onClick={onCollectionComplete}
+        style={onCollectionComplete ? { cursor: 'pointer' } : undefined}
+        title={onCollectionComplete ? 'Click to simulate collection complete' : undefined}
+      >
         <div className="wfr-dash__focus-collecting__track" aria-hidden>
           <div
             className="wfr-dash__focus-collecting__fill"
@@ -104,6 +190,11 @@ export function FocusFirstCollectionCard({
           {snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} employees have responded
           {attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}
         </p>
+        {onAddDepartments ? (
+          <button type="button" className="wfr-dash__focus-collecting__link" onClick={onAddDepartments}>
+            Add more departments&nbsp;→
+          </button>
+        ) : null}
       </div>
     </div>
   )
@@ -113,11 +204,13 @@ export function FocusFirstCollectionCard({
 export type FocusFirstModuleBoardProps = {
   mode?: 'board'
   collectionActive: boolean
+  collectionComplete?: boolean
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
+  onCollectionComplete?: () => void
   launchOpen: boolean
   onLaunchOpenChange: (open: boolean) => void
   onRequestCloseMetricSheet?: () => void
-  /** When set, collecting state shows this department’s response snapshot and dept attention copy. */
+  /** When set, collecting state shows this department's response snapshot and dept attention copy. */
   deptContext?: Dept
   /** Last completed launch; used for underway subtext when collection is active. */
   collectionLaunchSummary?: FocusCollectionLaunchSummary | null
@@ -155,7 +248,9 @@ function FocusFirstModuleCollecting({
 
 function FocusFirstModuleBoard({
   collectionActive,
+  collectionComplete,
   onCollectionActiveChange,
+  onCollectionComplete,
   launchOpen,
   onLaunchOpenChange,
   onRequestCloseMetricSheet,
@@ -182,6 +277,12 @@ function FocusFirstModuleBoard({
             attentionScope={attentionScope}
             launchSummary={collectionLaunchSummary}
             departmentContextName={deptContext?.name}
+            collectionComplete={collectionComplete}
+            onCollectionComplete={onCollectionComplete}
+            onAddDepartments={collectionComplete ? undefined : () => {
+              onRequestCloseMetricSheet?.()
+              onLaunchOpenChange(true)
+            }}
           />
         ) : (
           <div className="wfr-dash__focus-card">
@@ -243,7 +344,9 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
 
   const {
     collectionActive,
+    collectionComplete,
     onCollectionActiveChange,
+    onCollectionComplete,
     launchOpen,
     onLaunchOpenChange,
     onRequestCloseMetricSheet,
@@ -254,7 +357,9 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
   return (
     <FocusFirstModuleBoard
       collectionActive={collectionActive}
+      collectionComplete={collectionComplete}
       onCollectionActiveChange={onCollectionActiveChange}
+      onCollectionComplete={onCollectionComplete}
       launchOpen={launchOpen}
       onLaunchOpenChange={onLaunchOpenChange}
       onRequestCloseMetricSheet={onRequestCloseMetricSheet}
