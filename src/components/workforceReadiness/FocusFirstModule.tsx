@@ -3,6 +3,9 @@ import { useMemo, type MouseEvent, type ReactNode } from 'react'
 import {
   departments,
   ORG,
+  getRolesForDept,
+  deptPeopleInAugRoles,
+  deptGapHeadcount,
   wfrDemoCollectionSnapshot,
   wfrDemoCollectionSnapshotForDeptNames,
   wfrDemoDeptCollectionSnapshot,
@@ -79,6 +82,81 @@ export function FocusFirstCollectionCard({
         : 'Survey responses are rolling in. Check back as participation grows.'
 
   if (collectionComplete) {
+    const isDeptView = !!deptName
+    const currentDept = isDeptView ? departments.find((d) => d.name === deptName) : null
+
+    if (isDeptView && currentDept) {
+      // Dept-scoped complete state: only reference this department
+      const roles = getRolesForDept(currentDept.name)
+      const augPeople = deptPeopleInAugRoles(currentDept)
+      const gapCount = deptGapHeadcount(currentDept)
+      const measuredReadiness = currentDept.aiReadiness + 8 // simulate post-collection bump
+      const topRoles = [...roles]
+        .sort((a, b) => {
+          const gapA = a.aiPotential - a.aiReadiness
+          const gapB = b.aiPotential - b.aiReadiness
+          return gapB - gapA
+        })
+        .slice(0, 3)
+
+      return (
+        <div className="wfr-dash__focus-card">
+          <div className="wfr-dash__focus-card-head">
+            <div className="wfr-dash__focus-card-icon-wrap" aria-hidden>
+              <span className="material-symbols-outlined wfr-dash__focus-card-icon">trending_up</span>
+            </div>
+            <span className="wfr-dash__focus-card-label wfr-dash__focus-module-eyebrow wfr-dash__focus-module-eyebrow--success">
+              Recommended actions
+            </span>
+          </div>
+          <div className="wfr-dash__focus-collecting__top">
+            <h3 className="wfr-dash__focus-collecting__title">
+              {currentDept.name} readiness up to {measuredReadiness}% — {gapCount.toLocaleString()} employees still in the gap
+            </h3>
+            <p className="wfr-dash__focus-collecting__sub">
+              Survey data shows <strong>{currentDept.name}</strong> measured readiness at <strong>{measuredReadiness}%</strong>, up from the{' '}
+              <strong>{currentDept.aiReadiness}%</strong> estimate.{' '}
+              {augPeople.toLocaleString()} employees are in augmentable roles.
+              Focus upskilling on these roles first:
+            </p>
+          </div>
+          <div className="wfr-dash__focus-priorities">
+            {topRoles.map((r) => {
+              const gap = r.aiPotential - r.aiReadiness
+              const roleGapCount = Math.round(r.employees * (1 - r.aiReadiness / 100))
+              return (
+                <div key={r.title} className="wfr-dash__focus-priority-card">
+                  <div className="wfr-dash__focus-priority-card-header">
+                    <span className="wfr-dash__focus-priority-card-name">{r.title}</span>
+                    <span className="wfr-dash__focus-priority-card-gap">{gap}pt gap</span>
+                  </div>
+                  <div className="wfr-dash__focus-priority-card-stats">
+                    <div className="wfr-dash__focus-priority-card-stat">
+                      <span className="wfr-dash__focus-priority-card-stat-val">{r.aiReadiness}%</span>
+                      <span className="wfr-dash__focus-priority-card-stat-label">readiness</span>
+                    </div>
+                    <span className="wfr-dash__focus-priority-card-arrow">→</span>
+                    <div className="wfr-dash__focus-priority-card-stat">
+                      <span className="wfr-dash__focus-priority-card-stat-val">{r.aiPotential}%</span>
+                      <span className="wfr-dash__focus-priority-card-stat-label">potential</span>
+                    </div>
+                    <div className="wfr-dash__focus-priority-card-stat wfr-dash__focus-priority-card-stat--people">
+                      <span className="wfr-dash__focus-priority-card-stat-val">{roleGapCount.toLocaleString()}</span>
+                      <span className="wfr-dash__focus-priority-card-stat-label">to upskill</span>
+                    </div>
+                  </div>
+                  <button type="button" className="wfr-dash__focus-priority-card-cta">
+                    View plan&nbsp;→
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    // Org-level complete state: show top departments
     const scopedNames = launchSummary?.scopedDepartmentNames ?? []
     const scopedDepts = scopedNames.length
       ? departments.filter((d) => scopedNames.includes(d.name))
