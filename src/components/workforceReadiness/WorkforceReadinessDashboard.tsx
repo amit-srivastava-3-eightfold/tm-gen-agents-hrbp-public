@@ -32,6 +32,7 @@ import { CollectionProgressPanel } from './CollectionProgressPanel'
 import { deptReadinessTrend, deptManagerTeams } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
+import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
 import { MetricCard } from './MetricCard'
 import { ReadinessTrendSheet } from './ReadinessTrendSheet'
@@ -464,6 +465,8 @@ function DeptView({
   collectionLaunchSummary,
   focusLaunchOpen,
   setFocusLaunchOpen,
+  upskillingActive,
+  setUpskillingLaunchOpen,
 }: {
   dept: Dept
   orgCollectionActive: boolean
@@ -473,6 +476,8 @@ function DeptView({
   collectionLaunchSummary: FocusCollectionLaunchSummary | null
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
+  upskillingActive: boolean
+  setUpskillingLaunchOpen: (open: boolean) => void
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const showCollectionTab = orgCollectionActive && !orgCollectionComplete
@@ -558,6 +563,9 @@ function DeptView({
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
           deptContext={dept}
           collectionLaunchSummary={collectionLaunchSummary}
+          onScrollToTable={() => document.getElementById('dept-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onStartUpskilling={() => setUpskillingLaunchOpen(true)}
+          upskillingActive={upskillingActive}
         />
 
         <div className="wfr-dash__cards-row">
@@ -608,6 +616,7 @@ function DeptView({
         ) : (
           <>
           <Tabs
+            id="dept-collection-table"
             defaultValue={showCollectionTab ? 'collection' : 'roles'}
           >
             <TabsList variant="line" className="mb-4" aria-label="Roles and tasks">
@@ -773,6 +782,12 @@ function BoardView({
   collectionLaunchSummary,
   focusLaunchOpen,
   setFocusLaunchOpen,
+  upskillingActive,
+  upskillingLaunchSummary,
+  upskillingLaunchOpen,
+  setUpskillingLaunchOpen,
+  setUpskillingActive,
+  setUpskillingLaunchSummary,
 }: {
   onDeptClick: (d: Dept) => void
   focusCollectionActive: boolean
@@ -782,6 +797,12 @@ function BoardView({
   collectionLaunchSummary: FocusCollectionLaunchSummary | null
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
+  upskillingActive: boolean
+  upskillingLaunchSummary: UpskillingLaunchSummary | null
+  upskillingLaunchOpen: boolean
+  setUpskillingLaunchOpen: (open: boolean) => void
+  setUpskillingActive: (active: boolean) => void
+  setUpskillingLaunchSummary: (summary: UpskillingLaunchSummary | null) => void
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
@@ -793,6 +814,14 @@ function BoardView({
 
   const allDeptsSorted = useMemo(() => {
     return [...departments].sort((a, b) => a.aiReadiness - b.aiReadiness)
+  }, [])
+
+  // Top 3 departments by gap for opportunity tags in complete state
+  const topGapDeptRanks = useMemo(() => {
+    const byGap = [...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+    const map = new Map<string, number>()
+    byGap.slice(0, 3).forEach((d, i) => map.set(d.name, i))
+    return map
   }, [])
 
   const sorted = useMemo(() => {
@@ -897,6 +926,10 @@ function BoardView({
           onLaunchOpenChange={setFocusLaunchOpen}
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
           collectionLaunchSummary={collectionLaunchSummary}
+          onScrollToTable={() => document.getElementById('board-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onStartUpskilling={() => setUpskillingLaunchOpen(true)}
+          upskillingActive={upskillingActive}
+          upskillingLaunchSummary={upskillingLaunchSummary}
         />
 
         <div className="wfr-dash__cards-row">
@@ -929,7 +962,7 @@ function BoardView({
         <div>
           <div className="wfr-dash__panel-head">
             <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
-            <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
+            <span className="wfr-dash__panel-hint">Sorted by priority {EM} click to drill down</span>
           </div>
           <DataTable bordered>
             <DataTableHeader>
@@ -939,17 +972,37 @@ function BoardView({
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead numeric>Transformation gap</DataTableHead>
+                {upskillingActive ? <DataTableHead>Upskilling</DataTableHead> : null}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {allDeptsSorted.map((d) => {
+              {[...allDeptsSorted].sort((a, b) => {
+                const aRank = topGapDeptRanks.get(a.name) ?? 999
+                const bRank = topGapDeptRanks.get(b.name) ?? 999
+                if (aRank !== bRank) return aRank - bRank
+                return a.aiReadiness - b.aiReadiness
+              }).map((d) => {
                 const gapPp = tGap(d.aiPotential, d.aiReadiness)
                 const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = deptGapHeadcount(d)
                 const trend = deptReadinessTrend(d.name)
+                const priorityRank = topGapDeptRanks.get(d.name)
+                const isPriority = priorityRank !== undefined
                 return (
-                  <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                    <DataTableCell className="font-semibold">{d.name}</DataTableCell>
+                  <DataTableRow key={d.name} variant={isPriority ? 'warn' : 'default'} onClick={() => onDeptClick(d)}>
+                    <DataTableCell className="font-semibold">
+                      {d.name}
+                      {isPriority ? (
+                        <Badge
+                          variant="outline"
+                          size="24"
+                          className="ml-2 shrink-0 font-semibold"
+                          style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}
+                        >
+                          {priorityRank === 0 ? 'Top priority' : 'High priority'}
+                        </Badge>
+                      ) : null}
+                    </DataTableCell>
                     <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
                     <DataTableCell metric>
                       <div className="wfr-dash__readiness-with-trend">
@@ -978,6 +1031,27 @@ function BoardView({
                         {gapCount.toLocaleString()}
                       </span>
                     </DataTableCell>
+                    {upskillingActive ? (
+                      <DataTableCell>
+                        {upskillingLaunchSummary?.departmentNames.includes(d.name) ? (
+                          <Badge
+                            variant="outline"
+                            size="24"
+                            className="font-semibold"
+                            style={
+                              // Simulate: most are "In progress", a couple "Not started"
+                              (d.aiReadiness > 30)
+                                ? { background: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' }
+                                : { background: '#f8fafc', color: '#64748b', borderColor: '#e2e8f0' }
+                            }
+                          >
+                            {d.aiReadiness > 30 ? 'In progress' : 'Not started'}
+                          </Badge>
+                        ) : (
+                          <span className="text-[#cbd5e1]">—</span>
+                        )}
+                      </DataTableCell>
+                    ) : null}
                   </DataTableRow>
                 )
               })}
@@ -985,7 +1059,7 @@ function BoardView({
           </DataTable>
         </div>
       ) : focusCollectionActive ? (
-        <Tabs defaultValue="collection">
+        <Tabs id="board-collection-table" defaultValue="collection">
           <TabsList variant="line" className="mb-4" aria-label="Department view">
             <TabsTrigger value="collection">
               Collection status
@@ -1117,6 +1191,17 @@ function BoardView({
         dept={trendSheetDept}
         channelsLabel={collectionLaunchSummary?.channelsLabel}
       />
+
+      {/* Upskilling launch wizard */}
+      <UpskillingLaunchDialog
+        open={upskillingLaunchOpen}
+        onOpenChange={setUpskillingLaunchOpen}
+        onLaunch={(summary) => {
+          setUpskillingActive(true)
+          setUpskillingLaunchSummary(summary)
+        }}
+        priorityDeptNames={[...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness)).slice(0, 3).map(d => d.name)}
+      />
     </div>
   )
 }
@@ -1133,6 +1218,9 @@ export function WorkforceReadinessDashboard({
     useState<FocusCollectionLaunchSummary | null>(null)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(false)
   const [focusCollectionComplete, setFocusCollectionComplete] = useState(false)
+  const [upskillingActive, setUpskillingActive] = useState(false)
+  const [upskillingLaunchSummary, setUpskillingLaunchSummary] = useState<UpskillingLaunchSummary | null>(null)
+  const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
 
   const handleFocusCollectionActiveChange = (
     active: boolean,
@@ -1195,6 +1283,12 @@ export function WorkforceReadinessDashboard({
             collectionLaunchSummary={focusCollectionLaunchSummary}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
+            upskillingActive={upskillingActive}
+            upskillingLaunchSummary={upskillingLaunchSummary}
+            upskillingLaunchOpen={upskillingLaunchOpen}
+            setUpskillingLaunchOpen={setUpskillingLaunchOpen}
+            setUpskillingActive={setUpskillingActive}
+            setUpskillingLaunchSummary={setUpskillingLaunchSummary}
           />
         )}
         {view === 'dept' && dept && (
@@ -1207,6 +1301,8 @@ export function WorkforceReadinessDashboard({
             collectionLaunchSummary={focusCollectionLaunchSummary}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
+            upskillingActive={upskillingActive}
+            setUpskillingLaunchOpen={setUpskillingLaunchOpen}
           />
         )}
       </div>

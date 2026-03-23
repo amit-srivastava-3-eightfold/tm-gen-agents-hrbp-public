@@ -1092,6 +1092,22 @@
   white-space: nowrap;
 }
 
+.wfr-dash__focus-collecting__badge--clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wfr-dash__focus-collecting__badge--clickable:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.wfr-dash__focus-collecting__foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .wfr-dash__focus-collecting__bar-row {
   display: flex;
   align-items: center;
@@ -1163,6 +1179,273 @@
 .wfr-dash__focus-card-body strong {
   color: #1a212e;
   font-weight: 600;
+}
+
+/* ─── RA Card v2 — clean, compact layout ─── */
+
+.wfr-ra-card {
+  background: linear-gradient(180deg, #fee2e2 0%, #fff5f5 100%);
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wfr-ra-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wfr-ra-card__eyebrow {
+  font: var(--typography-caption-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.wfr-ra-card__attention {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--typography-caption-semibold);
+  color: #b45309;
+  transition: color 0.15s ease;
+}
+
+.wfr-ra-card__attention:hover {
+  color: #92400e;
+  text-decoration: underline;
+}
+
+.wfr-ra-card__attention-icon {
+  font-size: 15px;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+.wfr-ra-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wfr-ra-card__progress-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.wfr-ra-card__progress-pct {
+  font: var(--typography-header4);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.wfr-ra-card__progress-label {
+  font: var(--typography-body3);
+  color: #64748b;
+}
+
+.wfr-ra-card__track {
+  position: relative;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.wfr-ra-card__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 99px;
+  background: #6366f1;
+  transition: width 0.4s ease;
+}
+
+.wfr-ra-card__sub {
+  font: var(--typography-body3);
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.wfr-ra-card__sub strong {
+  color: #1a212e;
+  font-weight: 600;
+}
+
+.wfr-ra-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.wfr-ra-card__link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--typography-body3);
+  font-weight: 500;
+  color: #6366f1;
+}
+
+.wfr-ra-card__link:hover {
+  text-decoration: underline;
+}
+
+.wfr-ra-card__link:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* RA Card metrics row (state 3) */
+.wfr-ra-card__metrics {
+  display: flex;
+  gap: 32px;
+}
+
+.wfr-ra-card__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wfr-ra-card__metric-val {
+  font: var(--typography-header4);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.wfr-ra-card__metric-label {
+  font: var(--typography-caption);
+  color: #64748b;
+}
+
+.wfr-ra-card__hint {
+  font: var(--typography-body3);
+  color: #64748b;
+  margin: -4px 0 0;
+}
+
+/* State 1: Get started CTA row */
+.wfr-ra-card__cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 20px;
+}
+
+.wfr-ra-card__cta-text {
+  font: var(--typography-body1);
+  font-weight: 600;
+  color: #1a212e;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .wfr-ra-card__cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wfr-ra-card__cta-btn {
+    width: 100%;
+  }
+}
+
+/* State 3: Success / complete variant — same red wash, content changes */
+.wfr-ra-card--success {
+  /* inherits red wash from base .wfr-ra-card */
+}
+
+/* Readiness bump indicator */
+.wfr-ra-card__readiness-bump {
+  font: var(--typography-caption-semibold);
+  color: #15803d;
+}
+
+.wfr-ra-card__readiness-bump strong {
+  font-weight: 700;
+}
+
+/* Priority cards inside complete state */
+.wfr-ra-card__priorities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.wfr-ra-card__priority {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wfr-ra-card__priority-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.wfr-ra-card__priority-name {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.wfr-ra-card__priority-gap {
+  font: var(--typography-caption-semibold);
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.wfr-ra-card__priority-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wfr-ra-card__priority-stat {
+  font: var(--typography-caption);
+  color: #64748b;
+}
+
+.wfr-ra-card__priority-arrow {
+  font: var(--typography-caption);
+  color: #94a3b8;
+}
+
+.wfr-ra-card__priority-people {
+  font: var(--typography-caption-semibold);
+  color: #b91c1c;
+  margin-left: auto;
 }
 
 .wfr-dash__focus-card-body .wfr-dash__focus-card-headcount {
