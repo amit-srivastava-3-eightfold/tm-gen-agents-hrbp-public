@@ -20,6 +20,8 @@ export interface UpskillingLaunchDialogProps {
   onLaunch?: (summary: UpskillingLaunchSummary) => void
   /** Department names to pre-select (priority departments). */
   priorityDeptNames?: string[]
+  /** Department names already in an upskilling launch — excluded from the list. */
+  excludeDeptNames?: string[]
 }
 
 const ASSIGN_OPTIONS: { value: UpskillingAssignOwner; label: string; desc: string }[] = [
@@ -32,6 +34,7 @@ export function UpskillingLaunchDialog({
   onOpenChange,
   onLaunch,
   priorityDeptNames = [],
+  excludeDeptNames = [],
 }: UpskillingLaunchDialogProps) {
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<UpskillingAssignOwner>('hrbp')
@@ -54,9 +57,12 @@ export function UpskillingLaunchDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, priorityKey])
 
+  const excludeSet = useMemo(() => new Set(excludeDeptNames), [excludeDeptNames])
   const deptsByGap = useMemo(() => {
-    return [...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-  }, [])
+    return [...departments]
+      .filter((d) => !excludeSet.has(d.name))
+      .sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+  }, [excludeSet])
 
   const selectedNames = useMemo(() => {
     return Object.keys(selectedDepts).filter((k) => selectedDepts[k])

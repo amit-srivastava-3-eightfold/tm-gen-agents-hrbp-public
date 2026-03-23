@@ -938,6 +938,29 @@ function BoardView({
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
 
+  const [expandedBoardDepts, setExpandedBoardDepts] = useState<Record<string, boolean>>({})
+  // onDeptClick is available for drill-down from nested rows
+  void onDeptClick
+  const [expandedBoardMgrs, setExpandedBoardMgrs] = useState<Record<string, boolean>>({})
+
+  /** Generate deterministic employees for a manager in a dept. */
+  const getDeptMgrEmployees = (deptName: string, mgrName: string, count: number) => {
+    const FIRST = ['Alex', 'Jordan', 'Sam', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Blake', 'Drew', 'Sage', 'Reese', 'Skyler', 'Dakota', 'Finley', 'Rowan', 'Hayden', 'Emery', 'Peyton']
+    const LAST = ['Patel', 'Kim', 'Chen', 'Garcia', 'Singh', 'Nakamura', 'Obi', 'Martinez', 'Thompson', 'Rivera', 'Duval', 'Nguyen', 'Sullivan', 'Okonkwo', 'Andersson', 'Kapoor', 'Shah', 'Müller', 'Santos', 'Park']
+    let h = 0
+    for (let i = 0; i < (deptName + mgrName).length; i++) h = ((h << 5) - h + (deptName + mgrName).charCodeAt(i)) | 0
+    const n = Math.min(count, 6)
+    const emps: { name: string; readinessPct: number; planProgress: number }[] = []
+    for (let i = 0; i < n; i++) {
+      const fi = Math.abs((h * (i + 1) * 7) % FIRST.length)
+      const li = Math.abs((h * (i + 1) * 13) % LAST.length)
+      const readiness = 5 + Math.abs((h * (i + 3)) % 45)
+      const planProg = Math.abs((h * (i + 7) * 11) % 100)
+      emps.push({ name: `${FIRST[fi]} ${LAST[li]}`, readinessPct: readiness, planProgress: planProg })
+    }
+    return { employees: emps, remaining: count - n }
+  }
+
   const scopedRollup = useMemo(() => {
     if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
     return wfrRollupDepartmentsByName(collectionLaunchSummary.scopedDepartmentNames)
@@ -1099,11 +1122,12 @@ function BoardView({
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead>Department</DataTableHead>
+                <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead numeric>Transformation gap</DataTableHead>
-                <DataTableHead>Status</DataTableHead>
+                <DataTableHead>Upskilling status</DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1119,76 +1143,114 @@ function BoardView({
                 const trend = deptReadinessTrend(d.name)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
+                const isDeptExp = expandedBoardDepts[d.name] ?? false
+                const managers = deptManagerTeams(d.name, d.employees)
+                const hrbp = managers[0]
+                const inLaunch = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(d.name)
+                const nameHash = d.name.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+                const hasDemoPlan = focusCollectionComplete && (Math.abs(nameHash) % 5 < 2)
+                const hasPlan = inLaunch || hasDemoPlan
+                const deptPlanPct = hasPlan ? (35 + Math.abs(nameHash * 3) % 45) : 0
+                const statusCell = hasPlan ? (
+                  <div className="wfr-dash__plan-progress">
+                    <div className="wfr-dash__plan-progress-bar">
+                      <div className="wfr-dash__plan-progress-fill" style={{ width: `${deptPlanPct}%` }} />
+                    </div>
+                    <span className="wfr-dash__plan-progress-label">{deptPlanPct}%</span>
+                  </div>
+                ) : null
                 return (
-                  <DataTableRow key={d.name} variant={isPriority ? 'warn' : 'default'} onClick={() => onDeptClick(d)}>
-                    <DataTableCell className="font-semibold">
-                      {d.name}
-                      {isPriority ? (
-                        <Badge
-                          variant="outline"
-                          size="24"
-                          className="ml-2 shrink-0 font-semibold"
-                          style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}
-                        >
-                          {priorityRank === 0 ? 'Top priority' : 'High priority'}
-                        </Badge>
-                      ) : null}
-                    </DataTableCell>
-                    <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
-                    <DataTableCell metric>
-                      <div className="wfr-dash__readiness-with-trend">
-                        <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
-                        <button
-                          type="button"
-                          className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}
-                          onClick={(e) => { e.stopPropagation(); setTrendSheetDept(d) }}
-                          title="View readiness trend details"
-                        >
-                          <span className="wfr-dash__trend-badge-text">
-                            {trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt
-                          </span>
-                          <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
-                        </button>
-                      </div>
-                    </DataTableCell>
-                    <DataTableCell metric>
-                      <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
-                    </DataTableCell>
-                    <DataTableCell
-                      align="right"
-                      title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}
-                    >
-                      <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>
-                        {gapCount.toLocaleString()}
-                      </span>
-                    </DataTableCell>
-                    <DataTableCell>
-                      {(() => {
-                        const inLaunch = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(d.name)
-                        // Simulate some depts having pre-existing plans (deterministic from name)
-                        const nameHash = d.name.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-                        const hasDemoPlan = focusCollectionComplete && (Math.abs(nameHash) % 5 < 2)
-                        if (inLaunch || hasDemoPlan) {
-                          const enrolled = inLaunch
-                            ? gapCount
-                            : Math.round(gapCount * (0.3 + (Math.abs(nameHash) % 40) / 100))
-                          const planCount = inLaunch
-                            ? Math.max(2, Math.round(gapCount / 30))
-                            : Math.max(1, Math.round(enrolled / 30))
-                          return (
-                            <div style={{ lineHeight: 1.4 }}>
-                              <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span>
-                                {' '}{planCount} {planCount === 1 ? 'plan' : 'plans'} created
-                              </span>
-                              <div style={{ fontSize: 11, color: '#94a3b8' }}>{enrolled.toLocaleString()} employees</div>
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
-                    </DataTableCell>
-                  </DataTableRow>
+                  <Fragment key={d.name}>
+                    <DataTableRow variant={isPriority ? 'warn' : 'default'} onClick={() => setExpandedBoardDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}>
+                      <DataTableCell className="font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[#94a3b8] text-base transition-transform" style={{ transform: isDeptExp ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                          {d.name}
+                          {isPriority ? (
+                            <Badge variant="outline" size="24" className="ml-1 shrink-0 font-semibold" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
+                              {priorityRank === 0 ? 'Top priority' : 'High priority'}
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell className="text-[13px] text-[#475569]">{hrbp?.manager ?? '—'}</DataTableCell>
+                      <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
+                      <DataTableCell metric>
+                        <div className="wfr-dash__readiness-with-trend">
+                          <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
+                          <button type="button" className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetDept(d) }} title="View readiness trend details">
+                            <span className="wfr-dash__trend-badge-text">{trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt</span>
+                            <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
+                          </button>
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
+                        <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                      </DataTableCell>
+                      <DataTableCell>{statusCell}</DataTableCell>
+                    </DataTableRow>
+                    {isDeptExp && managers.map((mgr) => {
+                      const mgrKey = `complete-${d.name}-${mgr.manager}`
+                      const isMgrExp = expandedBoardMgrs[mgrKey] ?? false
+                      const mgrReadiness = d.aiReadiness + ((mgr.manager.length % 10) - 5)
+                      const { employees: emps, remaining } = getDeptMgrEmployees(d.name, mgr.manager, mgr.employees)
+                      const mgrPlanPct = hasPlan ? Math.round(emps.reduce((s, e) => s + e.planProgress, 0) / emps.length) : 0
+                      return (
+                        <Fragment key={mgrKey}>
+                          <DataTableRow className="bg-[#f8fafc]" onClick={() => setExpandedBoardMgrs((prev) => ({ ...prev, [mgrKey]: !prev[mgrKey] }))}>
+                            <DataTableCell className="!pl-12">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#94a3b8] text-sm transition-transform" style={{ transform: isMgrExp ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                                <div>
+                                  <div className="text-[#475569] text-[13px] font-medium">{mgr.manager}</div>
+                                  <div className="text-[#94a3b8] text-[11px]">{mgr.title}</div>
+                                </div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell />
+                            <DataTableCell align="right" numeric className="text-[13px]">{mgr.employees.toLocaleString()}</DataTableCell>
+                            <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={Math.max(5, Math.min(95, mgrReadiness))} width={80} /></DataTableCell>
+                            <DataTableCell /><DataTableCell />
+                            <DataTableCell>
+                              {hasPlan ? (
+                                <div className="wfr-dash__plan-progress">
+                                  <div className="wfr-dash__plan-progress-bar">
+                                    <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrPlanPct}%` }} />
+                                  </div>
+                                  <span className="wfr-dash__plan-progress-label">{mgrPlanPct}%</span>
+                                </div>
+                              ) : null}
+                            </DataTableCell>
+                          </DataTableRow>
+                          {isMgrExp && emps.map((emp, ei) => (
+                            <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#f1f5f9]">
+                              <DataTableCell className="!pl-20 text-[13px] text-[#475569]">{emp.name}</DataTableCell>
+                              <DataTableCell /><DataTableCell />
+                              <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} /></DataTableCell>
+                              <DataTableCell /><DataTableCell />
+                              <DataTableCell>
+                                {hasPlan ? (
+                                  <div className="wfr-dash__plan-progress">
+                                    <div className="wfr-dash__plan-progress-bar">
+                                      <div className="wfr-dash__plan-progress-fill" style={{ width: `${emp.planProgress}%` }} />
+                                    </div>
+                                    <span className="wfr-dash__plan-progress-label">{emp.planProgress}%</span>
+                                  </div>
+                                ) : null}
+                              </DataTableCell>
+                            </DataTableRow>
+                          ))}
+                          {isMgrExp && remaining > 0 && (
+                            <DataTableRow className="bg-[#f1f5f9]">
+                              <DataTableCell className="!pl-20 text-[11px] text-[#94a3b8]">+{remaining.toLocaleString()} more</DataTableCell>
+                              <DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell />
+                            </DataTableRow>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </Fragment>
                 )
               })}
             </DataTableBody>
@@ -1222,6 +1284,7 @@ function BoardView({
                 <DataTableHeader>
                   <DataTableRow>
                     <DataTableHead>Department</DataTableHead>
+                    <DataTableHead>HRBP</DataTableHead>
                     <DataTableHead numeric>Headcount</DataTableHead>
                     <DataTableHead metric>AI readiness</DataTableHead>
                     <DataTableHead metric>AI potential</DataTableHead>
@@ -1231,40 +1294,78 @@ function BoardView({
                 </DataTableHeader>
                 <DataTableBody>
                   {allDeptsSorted.map((d) => {
-
                     const gapPp = tGap(d.aiPotential, d.aiReadiness)
                     const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                     const gapCount = deptGapHeadcount(d)
                     const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(d.name)
+                    const isDeptExp = expandedBoardDepts[d.name] ?? false
+                    const managers = deptManagerTeams(d.name, d.employees)
+                    const hrbp = managers[0]
                     return (
-                      <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                        <DataTableCell className="font-semibold">{d.name}</DataTableCell>
-                        <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
-                        <DataTableCell metric>
-                          <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
-                        </DataTableCell>
-                        <DataTableCell metric>
-                          <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
-                        </DataTableCell>
-                        <DataTableCell
-                          align="right"
-                          title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}
-                        >
-                          <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>
-                            {gapCount.toLocaleString()}
-                          </span>
-                        </DataTableCell>
-                        <DataTableCell>
-                          {inScope ? (
-                            <div className="wfr-dash__dept-current-action">
-                              <span className="wfr-dash__dept-current-action__status">Collecting data</span>
-                              <span className="wfr-dash__dept-current-action__dates">
-                                {WFR_DEMO_COLLECTION_WINDOW.datesLine}
-                              </span>
+                      <Fragment key={d.name}>
+                        <DataTableRow onClick={() => setExpandedBoardDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}>
+                          <DataTableCell className="font-semibold">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[#94a3b8] text-base transition-transform" style={{ transform: isDeptExp ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                              {d.name}
                             </div>
-                          ) : null}
-                        </DataTableCell>
-                      </DataTableRow>
+                          </DataTableCell>
+                          <DataTableCell className="text-[13px] text-[#475569]">{hrbp?.manager ?? '—'}</DataTableCell>
+                          <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
+                          <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
+                          <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                          <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
+                            <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                          </DataTableCell>
+                          <DataTableCell>
+                            {inScope ? (
+                              <div className="wfr-dash__dept-current-action">
+                                <span className="wfr-dash__dept-current-action__status">Collecting data</span>
+                                <span className="wfr-dash__dept-current-action__dates">{WFR_DEMO_COLLECTION_WINDOW.datesLine}</span>
+                              </div>
+                            ) : null}
+                          </DataTableCell>
+                        </DataTableRow>
+                        {isDeptExp && managers.map((mgr) => {
+                          const mgrKey = `coll-${d.name}-${mgr.manager}`
+                          const isMgrExp = expandedBoardMgrs[mgrKey] ?? false
+                          const mgrReadiness = d.aiReadiness + ((mgr.manager.length % 10) - 5)
+                          const { employees: emps, remaining } = getDeptMgrEmployees(d.name, mgr.manager, mgr.employees)
+                          return (
+                            <Fragment key={mgrKey}>
+                              <DataTableRow className="bg-[#f8fafc]" onClick={() => setExpandedBoardMgrs((prev) => ({ ...prev, [mgrKey]: !prev[mgrKey] }))}>
+                                <DataTableCell className="!pl-12">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[#94a3b8] text-sm transition-transform" style={{ transform: isMgrExp ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                                    <div>
+                                      <div className="text-[#475569] text-[13px] font-medium">{mgr.manager}</div>
+                                      <div className="text-[#94a3b8] text-[11px]">{mgr.title}</div>
+                                    </div>
+                                  </div>
+                                </DataTableCell>
+                                <DataTableCell />
+                                <DataTableCell align="right" numeric className="text-[13px]">{mgr.employees.toLocaleString()}</DataTableCell>
+                                <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={Math.max(5, Math.min(95, mgrReadiness))} width={80} /></DataTableCell>
+                                <DataTableCell /><DataTableCell /><DataTableCell />
+                              </DataTableRow>
+                              {isMgrExp && emps.map((emp, ei) => (
+                                <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#f1f5f9]">
+                                  <DataTableCell className="!pl-20 text-[13px] text-[#475569]">{emp.name}</DataTableCell>
+                                  <DataTableCell /><DataTableCell />
+                                  <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} /></DataTableCell>
+                                  <DataTableCell /><DataTableCell /><DataTableCell />
+                                </DataTableRow>
+                              ))}
+                              {isMgrExp && remaining > 0 && (
+                                <DataTableRow className="bg-[#f1f5f9]">
+                                  <DataTableCell className="!pl-20 text-[11px] text-[#94a3b8]">+{remaining.toLocaleString()} more</DataTableCell>
+                                  <DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell />
+                                </DataTableRow>
+                              )}
+                            </Fragment>
+                          )
+                        })}
+                      </Fragment>
                     )
                   })}
                 </DataTableBody>
@@ -1282,6 +1383,7 @@ function BoardView({
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead>Department</DataTableHead>
+                <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
@@ -1290,29 +1392,80 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {sorted.map((d) => {
-
                 const gapPp = tGap(d.aiPotential, d.aiReadiness)
                 const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = deptGapHeadcount(d)
+                const isDeptExpanded = expandedBoardDepts[d.name] ?? false
+                const managers = deptManagerTeams(d.name, d.employees)
+                const hrbp = managers[0]
                 return (
-                  <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                    <DataTableCell className="font-semibold">{d.name}</DataTableCell>
-                    <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
-                    <DataTableCell metric>
-                      <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
-                    </DataTableCell>
-                    <DataTableCell metric>
-                      <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
-                    </DataTableCell>
-                    <DataTableCell
-                      align="right"
-                      title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}
-                    >
-                      <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>
-                        {gapCount.toLocaleString()}
-                      </span>
-                    </DataTableCell>
-                  </DataTableRow>
+                  <Fragment key={d.name}>
+                    <DataTableRow onClick={() => setExpandedBoardDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}>
+                      <DataTableCell className="font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[#94a3b8] text-base transition-transform" style={{ transform: isDeptExpanded ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                          {d.name}
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell className="text-[13px] text-[#475569]">{hrbp?.manager ?? '—'}</DataTableCell>
+                      <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
+                      <DataTableCell metric>
+                        <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
+                      </DataTableCell>
+                      <DataTableCell metric>
+                        <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
+                      </DataTableCell>
+                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
+                        <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                      </DataTableCell>
+                    </DataTableRow>
+                    {isDeptExpanded && managers.map((mgr) => {
+                      const mgrKey = `${d.name}-${mgr.manager}`
+                      const isMgrExpanded = expandedBoardMgrs[mgrKey] ?? false
+                      const mgrReadiness = d.aiReadiness + ((mgr.manager.length % 10) - 5)
+                      const { employees: emps, remaining } = getDeptMgrEmployees(d.name, mgr.manager, mgr.employees)
+                      return (
+                        <Fragment key={mgrKey}>
+                          <DataTableRow className="bg-[#f8fafc]" onClick={() => setExpandedBoardMgrs((prev) => ({ ...prev, [mgrKey]: !prev[mgrKey] }))}>
+                            <DataTableCell className="!pl-12">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#94a3b8] text-sm transition-transform" style={{ transform: isMgrExpanded ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                                <div>
+                                  <div className="text-[#475569] text-[13px] font-medium">{mgr.manager}</div>
+                                  <div className="text-[#94a3b8] text-[11px]">{mgr.title}</div>
+                                </div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell />
+                            <DataTableCell align="right" numeric className="text-[13px]">{mgr.employees.toLocaleString()}</DataTableCell>
+                            <DataTableCell metric>
+                              <DeptTableSoloBar variant="readiness" pct={Math.max(5, Math.min(95, mgrReadiness))} width={80} />
+                            </DataTableCell>
+                            <DataTableCell />
+                            <DataTableCell />
+                          </DataTableRow>
+                          {isMgrExpanded && emps.map((emp, ei) => (
+                            <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#f1f5f9]">
+                              <DataTableCell className="!pl-20 text-[13px] text-[#475569]">{emp.name}</DataTableCell>
+                              <DataTableCell />
+                              <DataTableCell />
+                              <DataTableCell metric>
+                                <DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} />
+                              </DataTableCell>
+                              <DataTableCell />
+                              <DataTableCell />
+                            </DataTableRow>
+                          ))}
+                          {isMgrExpanded && remaining > 0 && (
+                            <DataTableRow className="bg-[#f1f5f9]">
+                              <DataTableCell className="!pl-20 text-[11px] text-[#94a3b8]">+{remaining.toLocaleString()} more</DataTableCell>
+                              <DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell /><DataTableCell />
+                            </DataTableRow>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </Fragment>
                 )
               })}
             </DataTableBody>
@@ -1334,9 +1487,25 @@ function BoardView({
         onOpenChange={setUpskillingLaunchOpen}
         onLaunch={(summary) => {
           setUpskillingActive(true)
-          setUpskillingLaunchSummary(summary)
+          // Merge new departments with any existing launch
+          const existingNames = upskillingLaunchSummary?.departmentNames ?? []
+          const mergedNames = [...new Set([...existingNames, ...summary.departmentNames])]
+          setUpskillingLaunchSummary({
+            ...summary,
+            departmentNames: mergedNames,
+            totalEmployees: departments
+              .filter((d) => mergedNames.includes(d.name))
+              .reduce((sum, d) => sum + d.employees, 0),
+          })
         }}
-        priorityDeptNames={[...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness)).slice(0, 3).map(d => d.name)}
+        priorityDeptNames={
+          [...departments]
+            .filter((d) => !upskillingLaunchSummary?.departmentNames?.includes(d.name))
+            .sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+            .slice(0, 3)
+            .map(d => d.name)
+        }
+        excludeDeptNames={upskillingLaunchSummary?.departmentNames ?? []}
       />
     </div>
   )

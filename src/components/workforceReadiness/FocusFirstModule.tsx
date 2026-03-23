@@ -124,7 +124,7 @@ export function FocusFirstCollectionCard({
       return (
         <div className="wfr-ra-card">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow">Recommended action</span>
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling</span>
           </div>
           <div className="wfr-ra-card__cta-row">
             <div>
@@ -161,22 +161,46 @@ export function FocusFirstCollectionCard({
       return sum + Math.round(augPeople * (1 - d.aiReadiness / 100))
     }, 0)
 
-    // All departments are upskilling — show "all underway" message
-    if (upskillingActive && nextPriorityDepts.length === 0) {
+    // After upskilling is launched — show progress + option to add more
+    if (upskillingActive) {
+      const launchedDepts = scopedDepts.filter((d) => upskillingDeptSet.has(d.name))
+      const totalPlans = launchedDepts.reduce((sum, d) => sum + Math.max(2, Math.round(deptGapHeadcount(d) / 30)), 0)
+      const totalEmployeesInPlans = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
+      // Simulate ~60% completion progress
+      const completionPct = Math.min(95, 35 + ((launchedDepts.length * 13) % 30))
+      const hasMore = nextPriorityDepts.length > 0
+
       return (
         <div className="wfr-ra-card">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow">Upskilling</span>
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling in progress
+            </span>
           </div>
           <p className="wfr-ra-card__cta-text">
-            Upskilling is underway across all departments. HRBPs are creating development plans.
+            <strong>{totalPlans}</strong> development plans across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'} — <strong>{totalEmployeesInPlans.toLocaleString()}</strong> employees enrolled.
           </p>
-          <p className="wfr-ra-card__hint">Track progress in the table below.</p>
-          {onScrollToTable ? (
-            <button type="button" className="wfr-ra-card__link" onClick={onScrollToTable}>
-              View details&nbsp;↓
-            </button>
-          ) : null}
+          <div className="wfr-ra-card__progress" style={{ cursor: 'default' }}>
+            <div className="wfr-ra-card__progress-info">
+              <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#15803d' }}>{completionPct}%</span>
+              <span className="wfr-ra-card__progress-label">plan completion</span>
+            </div>
+            <div className="wfr-ra-card__track">
+              <div className="wfr-ra-card__fill" style={{ width: `${completionPct}%`, background: '#15803d' }} />
+            </div>
+          </div>
+          <div className="wfr-ra-card__actions">
+            {onScrollToTable ? (
+              <button type="button" className="wfr-ra-card__link" onClick={onScrollToTable}>
+                View details&nbsp;↓
+              </button>
+            ) : null}
+            {hasMore ? (
+              <button type="button" className="wfr-ra-card__link" onClick={onStartUpskilling}>
+                Add more departments&nbsp;→
+              </button>
+            ) : null}
+          </div>
         </div>
       )
     }
@@ -184,7 +208,7 @@ export function FocusFirstCollectionCard({
     return (
       <div className="wfr-ra-card">
         <div className="wfr-ra-card__header">
-          <span className="wfr-ra-card__eyebrow">Recommended action</span>
+          <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling</span>
         </div>
         <div className="wfr-ra-card__cta-row">
           <div>
