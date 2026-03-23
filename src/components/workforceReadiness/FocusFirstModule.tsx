@@ -105,16 +105,18 @@ export function FocusFirstCollectionCard({
         .sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
         .slice(0, 3)
 
-      if (upskillingActive) {
+      const deptHasUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(currentDept.name)
+
+      if (deptHasUpskilling) {
         return (
           <div className="wfr-ra-card">
             <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow">Upskilling</span>
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Upskilling</span>
             </div>
             <p className="wfr-ra-card__cta-text">
-              Upskilling is underway in <strong>{currentDept.name}</strong>. Development plans are being created for priority roles.
+              Development plans are being created for priority roles in <strong>{currentDept.name}</strong>.
             </p>
-            <p className="wfr-ra-card__hint">Track progress in the table below.</p>
+            <p className="wfr-ra-card__hint">Track enrollment progress in the roles table below.</p>
           </div>
         )
       }
@@ -125,18 +127,21 @@ export function FocusFirstCollectionCard({
             <span className="wfr-ra-card__eyebrow">Recommended action</span>
           </div>
           <div className="wfr-ra-card__cta-row">
-            <p className="wfr-ra-card__cta-text">
-              <strong>{gapCount.toLocaleString()}</strong> employees in {currentDept.name} need upskilling.
-              Prioritize{' '}
-              {topRoles.map((r, i) => (
-                <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
-              ))}.
-            </p>
+            <div>
+              <p className="wfr-ra-card__cta-text">
+                Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
+                {topRoles.map((r, i) => (
+                  <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
+                ))}.
+              </p>
+              <p className="wfr-ra-card__hint">
+                Create development plans for these roles to close the readiness gap.
+              </p>
+            </div>
             <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
               Start upskilling&nbsp;→
             </Button>
           </div>
-          <p className="wfr-ra-card__hint">Create development plans for these roles to close the readiness gap.</p>
         </div>
       )
     }
@@ -182,18 +187,20 @@ export function FocusFirstCollectionCard({
           <span className="wfr-ra-card__eyebrow">Recommended action</span>
         </div>
         <div className="wfr-ra-card__cta-row">
-          <p className="wfr-ra-card__cta-text">
-            <strong>{remainingGapPeople.toLocaleString()}</strong> employees need upskilling.
-            Prioritize{' '}
-            {nextPriorityDepts.map((d, i) => (
-              <span key={d.name}><strong>{d.name}</strong>{i < nextPriorityDepts.length - 1 ? (i === nextPriorityDepts.length - 2 ? ' and ' : ', ') : ''}</span>
-            ))}.
-          </p>
+          <div>
+            <p className="wfr-ra-card__cta-text">
+              <strong>{remainingGapPeople.toLocaleString()}</strong> employees need upskilling.
+              Prioritize{' '}
+              {nextPriorityDepts.map((d, i) => (
+                <span key={d.name}><strong>{d.name}</strong>{i < nextPriorityDepts.length - 1 ? (i === nextPriorityDepts.length - 2 ? ' and ' : ', ') : ''}</span>
+              ))}.
+            </p>
+            <p className="wfr-ra-card__hint">Assign development plans to close readiness gaps across these departments.</p>
+          </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             Start upskilling&nbsp;→
           </Button>
         </div>
-        <p className="wfr-ra-card__hint">Assign development plans to close readiness gaps across these departments.</p>
       </div>
     )
   }
@@ -201,7 +208,7 @@ export function FocusFirstCollectionCard({
   return (
     <div className="wfr-ra-card">
       <div className="wfr-ra-card__header">
-        <span className="wfr-ra-card__eyebrow">Data collection</span>
+        <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Collection in progress</span>
         {showAttentionBadge ? (
           <button
             type="button"
@@ -358,12 +365,17 @@ function FocusFirstModuleBoard({
         ) : (
           <div className="wfr-ra-card">
             <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow">Recommended action</span>
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>flag</span> First priority</span>
             </div>
             <div className="wfr-ra-card__cta-row">
-              <p className="wfr-ra-card__cta-text">
-                Your readiness score gets sharper when employees weigh in. Let&apos;s collect that data.
-              </p>
+              <div>
+                <p className="wfr-ra-card__cta-text">
+                  Your readiness score gets sharper when employees weigh in. Let&apos;s collect that data.
+                </p>
+                <p className="wfr-ra-card__hint">
+                  Choose departments and a collection method — results refine your readiness scores and surface upskilling priorities.
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="primary"

@@ -23,8 +23,8 @@ import {
 import './CollectionProgressPanel.css'
 
 /** Channel config matching the launch wizard options. */
-const CHANNEL_MAP: Record<string, { label: string; icon: string }> = {
-  ai_agent_interviews: { label: 'AI Agent Interviews', icon: '🤖' },
+const CHANNEL_MAP: Record<string, { label: string; icon: string; iconSrc?: string }> = {
+  ai_agent_interviews: { label: 'AI Agent Interviews', icon: '', iconSrc: '/ai-agent-icon.svg' },
   contextual_surveys: { label: 'Contextual Surveys', icon: '📋' },
   career_hub_profiles: { label: 'Career Hub Profiles', icon: '✏️' },
 }
@@ -47,7 +47,7 @@ export function CollectionProgressPanel({
   const resolvedChannel = useMemo(() => {
     if (!channelsLabel) return CHANNEL_MAP.ai_agent_interviews // default
     const entry = Object.values(CHANNEL_MAP).find((c) => c.label === channelsLabel)
-    return entry ?? { label: channelsLabel, icon: '📋' }
+    return entry ?? { label: channelsLabel, icon: '📋', iconSrc: undefined }
   }, [channelsLabel])
   const isDeptScope = scopeDepartment != null
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -129,7 +129,7 @@ export function CollectionProgressPanel({
                   <DataTableCell align="right" numeric>{team.employees.toLocaleString()}</DataTableCell>
                   <DataTableCell>
                     <span className="wfr-coll-table__channels">
-                      <span aria-hidden>{resolvedChannel.icon}</span>
+                      <span aria-hidden>{resolvedChannel.iconSrc ? <img src={resolvedChannel.iconSrc} alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2 }} /> : resolvedChannel.icon}</span>
                       {resolvedChannel.label}
                     </span>
                   </DataTableCell>
@@ -217,7 +217,7 @@ export function CollectionProgressPanel({
                 <DataTableCell align="right" numeric>{row.employees.toLocaleString()}</DataTableCell>
                 <DataTableCell>
                   <span className="wfr-coll-table__channels">
-                    <span aria-hidden>{resolvedChannel.icon}</span>
+                    <span aria-hidden>{resolvedChannel.iconSrc ? <img src={resolvedChannel.iconSrc} alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2 }} /> : resolvedChannel.icon}</span>
                     {resolvedChannel.label}
                   </span>
                 </DataTableCell>

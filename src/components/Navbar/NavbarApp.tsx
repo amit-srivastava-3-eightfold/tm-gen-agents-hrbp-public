@@ -104,30 +104,34 @@ const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO> = {
 const NAVBAR_PRODUCT = getNavbarProductConfig('career-hub', 'medium')
 const PRODUCT_ICON_SRC = '/career-hub-icon.svg' // app serves this; DS default path
 
-/** TM app Navbar: the account selected in the user menu drives the navbar variant (tabs). */
-export function NavbarApp() {
+/** Returns the NavbarProps for the current user — use with CareerHubShell or standalone Navbar. */
+export function useNavbarProps() {
   const { currentUser, setCurrentUser } = useUser()
   const location = useLocation()
   const tabs = NAVBAR_TABS_BY_USER_ID[currentUser.id] ?? CAREER_HUB_TABS
 
-  return (
-    <Navbar
-      tabs={tabs}
-      avatarMenuItems={AVATAR_MENU_ITEMS}
-      user={{
-        name: currentUser.name,
-        avatarType: currentUser.avatarType,
-        avatarPhotoSrc: currentUser.avatarPhotoSrc,
-        avatarInitials: currentUser.avatarInitials,
-        avatarColor: currentUser.avatarColor,
-      }}
-      switchOptions={SWITCH_OPTIONS}
-      onSwitchUser={(userId: string) => setCurrentUser(USER_MAP[userId] ?? MATEO)}
-      activePath={location.pathname}
-      LinkComponent={Link}
-      NavLinkComponent={NavLink}
-      productName={NAVBAR_PRODUCT.productName}
-      productIconSrc={PRODUCT_ICON_SRC}
-    />
-  )
+  return {
+    tabs,
+    avatarMenuItems: AVATAR_MENU_ITEMS,
+    user: {
+      name: currentUser.name,
+      avatarType: currentUser.avatarType as 'photo' | 'initials',
+      avatarPhotoSrc: currentUser.avatarPhotoSrc,
+      avatarInitials: currentUser.avatarInitials,
+      avatarColor: currentUser.avatarColor,
+    },
+    switchOptions: SWITCH_OPTIONS,
+    onSwitchUser: (userId: string) => setCurrentUser(USER_MAP[userId] ?? MATEO),
+    activePath: location.pathname,
+    LinkComponent: Link,
+    NavLinkComponent: NavLink,
+    productName: NAVBAR_PRODUCT.productName,
+    productIconSrc: PRODUCT_ICON_SRC,
+  }
+}
+
+/** TM app Navbar: the account selected in the user menu drives the navbar variant (tabs). */
+export function NavbarApp() {
+  const navbarProps = useNavbarProps()
+  return <Navbar {...navbarProps} />
 }

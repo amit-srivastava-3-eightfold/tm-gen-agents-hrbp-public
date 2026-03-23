@@ -45,6 +45,7 @@ const CHANNEL_OPTIONS: {
   label: string
   desc: string
   icon: string
+  iconSrc?: string
   effort: ChannelEffort
   effortLabel: string
 }[] = [
@@ -52,7 +53,8 @@ const CHANNEL_OPTIONS: {
     id: 'ai_agent_interviews',
     label: 'AI Agent Interviews',
     desc: 'AI conversations to map real workflows.',
-    icon: '\ud83e\udd16',
+    icon: '',
+    iconSrc: '/ai-agent-icon.svg',
     effort: 'deep',
     effortLabel: 'Deepest signal',
   },
@@ -502,7 +504,7 @@ export function FocusFirstLaunchDialog({
                 {selected ? <span className="wfr-focus-launch__radio-dot" /> : null}
               </span>
               <span className="wfr-focus-launch__channel-icon" aria-hidden>
-                {ch.icon}
+                {ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 24, height: 24 }} /> : ch.icon}
               </span>
               <span className="wfr-focus-launch__option-text wfr-focus-launch__option-text--channel">
                 <span className="wfr-focus-launch__option-label">{ch.label}</span>

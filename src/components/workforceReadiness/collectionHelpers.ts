@@ -187,11 +187,7 @@ export function deptReadinessTrend(deptName: string): ReadinessTrend {
 export function activityLabel(deptName: string) {
   const meta = deptCollectionRowDemo(deptName)
   if (meta.useHours) {
-    return meta.lastActivityHoursAgo === 1
-      ? 'Last activity: 1 hour ago'
-      : `Last activity: ${meta.lastActivityHoursAgo} hours ago`
+    return meta.lastActivityHoursAgo === 1 ? '1h ago' : `${meta.lastActivityHoursAgo}h ago`
   }
-  return meta.lastActivityDaysAgo === 1
-    ? 'Last activity: 1 day ago'
-    : `Last activity: ${meta.lastActivityDaysAgo} days ago`
+  return meta.lastActivityDaysAgo === 1 ? '1d ago' : `${meta.lastActivityDaysAgo}d ago`
 }

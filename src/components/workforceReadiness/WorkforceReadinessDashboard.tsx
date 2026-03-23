@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Badge, Pill, Tabs, TabsList, TabsTrigger, TabsContent,
+  Badge, Button, Pill, Tabs, TabsList, TabsTrigger, TabsContent,
   DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
 import {
@@ -466,7 +466,7 @@ function DeptView({
   focusLaunchOpen,
   setFocusLaunchOpen,
   upskillingActive,
-  setUpskillingLaunchOpen,
+  upskillingLaunchSummary,
 }: {
   dept: Dept
   orgCollectionActive: boolean
@@ -477,13 +477,14 @@ function DeptView({
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
   upskillingActive: boolean
-  setUpskillingLaunchOpen: (open: boolean) => void
+  upskillingLaunchSummary: UpskillingLaunchSummary | null
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const showCollectionTab = orgCollectionActive && !orgCollectionComplete
-  // Tabs are uncontrolled with defaultValue; showCollectionTab drives which tabs render
   const [expandedRoles, setExpandedRoles] = useState<Record<string, boolean>>({})
   const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
+  const [deptUpskillingOpen, setDeptUpskillingOpen] = useState(false)
+  const [deptUpskillingRoles, setDeptUpskillingRoles] = useState<Record<string, boolean>>({})
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
   const roles = getRolesForDept(dept.name)
   const sorted = [...roles].sort((a, b) => tGap(b.aiPotential, b.aiReadiness) - tGap(a.aiPotential, a.aiReadiness))
@@ -564,7 +565,16 @@ function DeptView({
           deptContext={dept}
           collectionLaunchSummary={collectionLaunchSummary}
           onScrollToTable={() => document.getElementById('dept-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          onStartUpskilling={() => setUpskillingLaunchOpen(true)}
+          onStartUpskilling={() => {
+            // Pre-select urgent and developing roles
+            const preSelected: Record<string, boolean> = {}
+            sorted.forEach((r) => {
+              const ol = roleOutlook(r)
+              if (ol === 'urgent' || ol === 'developing') preSelected[r.title] = true
+            })
+            setDeptUpskillingRoles(preSelected)
+            setDeptUpskillingOpen(true)
+          }}
           upskillingActive={upskillingActive}
         />
 
@@ -647,6 +657,7 @@ function DeptView({
                     <DataTableHead metric>AI readiness</DataTableHead>
                     <DataTableHead metric>AI potential</DataTableHead>
                     <DataTableHead>Role outlook</DataTableHead>
+                    <DataTableHead>Actions</DataTableHead>
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -693,6 +704,42 @@ function DeptView({
                               {ol.label}
                             </Badge>
                           </DataTableCell>
+                          <DataTableCell>
+                            {(() => {
+                              const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
+                              if (!deptInUpskilling) {
+                                return (
+                                  <button type="button" className="wfr-dash__create-plan-btn" onClick={(e) => e.stopPropagation()}>
+                                    Create plan
+                                  </button>
+                                )
+                              }
+                              if (outlook === 'urgent') {
+                                const pct = 35 + ((r.title.length * 7) % 40)
+                                return (
+                                  <div className="wfr-dash__plan-progress">
+                                    <div className="wfr-dash__plan-progress-bar">
+                                      <div className="wfr-dash__plan-progress-fill" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="wfr-dash__plan-progress-label">{pct}% enrolled</span>
+                                  </div>
+                                )
+                              }
+                              if (outlook === 'developing') {
+                                return (
+                                  <span className="wfr-dash__plan-created">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, color: '#6366f1' }}>check_circle</span>
+                                    {' '}Plan created
+                                  </span>
+                                )
+                              }
+                              return (
+                                <button type="button" className="wfr-dash__create-plan-btn" onClick={(e) => e.stopPropagation()}>
+                                  Create plan
+                                </button>
+                              )
+                            })()}
+                          </DataTableCell>
                         </DataTableRow>
                         {/* Level 2: Manager rows */}
                         {isRoleExpanded && roleManagers.map((mgr, mi) => {
@@ -734,6 +781,7 @@ function DeptView({
                                   <DeptTableSoloBar variant="potential" pct={r.aiPotential} width={80} />
                                 </DataTableCell>
                                 <DataTableCell />
+                                <DataTableCell />
                               </DataTableRow>
                               {/* Level 3: Employee rows */}
                               {isMgrExpanded && mgrEmployees.map((emp, ei) => (
@@ -746,6 +794,7 @@ function DeptView({
                                   <DataTableCell metric>
                                     <DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} />
                                   </DataTableCell>
+                                  <DataTableCell />
                                   <DataTableCell />
                                   <DataTableCell />
                                 </DataTableRow>
@@ -769,6 +818,88 @@ function DeptView({
           </>
         )}
       </div>
+
+      {/* Dept-level upskilling role selection dialog */}
+      {deptUpskillingOpen && (
+        <>
+          <div className="wfr-focus-launch__overlay" onClick={() => setDeptUpskillingOpen(false)} />
+          <div className="wfr-focus-launch__content" style={{ width: 'min(520px, calc(100vw - 32px))' }}>
+            <div className="wfr-focus-launch__header">
+              <div className="wfr-focus-launch__header-top">
+                <h2 className="wfr-focus-launch__dialog-title">Start upskilling — {dept.name}</h2>
+                <button type="button" className="wfr-focus-launch__close" onClick={() => setDeptUpskillingOpen(false)}>
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="wfr-focus-launch__body">
+              <h3 className="wfr-focus-launch__title">Which roles should start upskilling?</h3>
+              <p className="wfr-focus-launch__sub">Priority roles are pre-selected based on readiness gaps.</p>
+              <div className="wfr-focus-launch__dept-list-header">
+                <button
+                  type="button"
+                  className="wfr-focus-launch__select-all"
+                  onClick={() => {
+                    const allSelected = sorted.every((r) => deptUpskillingRoles[r.title])
+                    const next: Record<string, boolean> = {}
+                    sorted.forEach((r) => { next[r.title] = !allSelected })
+                    setDeptUpskillingRoles(next)
+                  }}
+                >
+                  {sorted.every((r) => deptUpskillingRoles[r.title]) ? 'Deselect all' : 'Select all'}
+                </button>
+                <span className="wfr-focus-launch__dept-count">
+                  {sorted.filter((r) => deptUpskillingRoles[r.title]).length} of {sorted.length} selected
+                </span>
+              </div>
+              <div className="wfr-focus-launch__dept-list">
+                {sorted.map((r) => {
+                  const checked = !!deptUpskillingRoles[r.title]
+                  const ol = roleOutlook(r)
+                  const olData = ROLE_OUTLOOK[ol]
+                  const gap = r.aiPotential - r.aiReadiness
+                  const isTopPriority = ol === 'urgent'
+                  return (
+                    <button
+                      key={r.title}
+                      type="button"
+                      className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                      onClick={() => setDeptUpskillingRoles((prev) => ({ ...prev, [r.title]: !prev[r.title] }))}
+                    >
+                      <span className="wfr-focus-launch__check">
+                        {checked ? '✓' : ''}
+                      </span>
+                      <div className="wfr-focus-launch__dept-info">
+                        <div className="wfr-focus-launch__dept-name-row">
+                          <span className="wfr-focus-launch__dept-name">{r.title}</span>
+                          {isTopPriority && (
+                            <span className="wfr-focus-launch__recommended-tag">Top priority</span>
+                          )}
+                        </div>
+                        <span className="wfr-focus-launch__dept-detail">
+                          {r.employees.toLocaleString()} employees · {gap}pt gap · {olData.label}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="wfr-focus-launch__footer">
+              <Button variant="outline" onClick={() => setDeptUpskillingOpen(false)}>Cancel</Button>
+              <Button
+                variant="primary"
+                disabled={sorted.filter((r) => deptUpskillingRoles[r.title]).length === 0}
+                onClick={() => {
+                  setDeptUpskillingOpen(false)
+                }}
+              >
+                Create plans&nbsp;→
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -813,7 +944,7 @@ function BoardView({
   }, [focusCollectionActive, collectionLaunchSummary])
 
   const allDeptsSorted = useMemo(() => {
-    return [...departments].sort((a, b) => a.aiReadiness - b.aiReadiness)
+    return [...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
   }, [])
 
   // Top 3 departments by gap for opportunity tags in complete state
@@ -972,7 +1103,7 @@ function BoardView({
                 <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead numeric>Transformation gap</DataTableHead>
-                {upskillingActive ? <DataTableHead>Upskilling</DataTableHead> : null}
+                <DataTableHead>Status</DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1031,27 +1162,32 @@ function BoardView({
                         {gapCount.toLocaleString()}
                       </span>
                     </DataTableCell>
-                    {upskillingActive ? (
-                      <DataTableCell>
-                        {upskillingLaunchSummary?.departmentNames.includes(d.name) ? (
-                          <Badge
-                            variant="outline"
-                            size="24"
-                            className="font-semibold"
-                            style={
-                              // Simulate: most are "In progress", a couple "Not started"
-                              (d.aiReadiness > 30)
-                                ? { background: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' }
-                                : { background: '#f8fafc', color: '#64748b', borderColor: '#e2e8f0' }
-                            }
-                          >
-                            {d.aiReadiness > 30 ? 'In progress' : 'Not started'}
-                          </Badge>
-                        ) : (
-                          <span className="text-[#cbd5e1]">—</span>
-                        )}
-                      </DataTableCell>
-                    ) : null}
+                    <DataTableCell>
+                      {(() => {
+                        const inLaunch = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(d.name)
+                        // Simulate some depts having pre-existing plans (deterministic from name)
+                        const nameHash = d.name.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+                        const hasDemoPlan = focusCollectionComplete && (Math.abs(nameHash) % 5 < 2)
+                        if (inLaunch || hasDemoPlan) {
+                          const enrolled = inLaunch
+                            ? gapCount
+                            : Math.round(gapCount * (0.3 + (Math.abs(nameHash) % 40) / 100))
+                          const planCount = inLaunch
+                            ? Math.max(2, Math.round(gapCount / 30))
+                            : Math.max(1, Math.round(enrolled / 30))
+                          return (
+                            <div style={{ lineHeight: 1.4 }}>
+                              <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span>
+                                {' '}{planCount} {planCount === 1 ? 'plan' : 'plans'} created
+                              </span>
+                              <div style={{ fontSize: 11, color: '#94a3b8' }}>{enrolled.toLocaleString()} employees</div>
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
+                    </DataTableCell>
                   </DataTableRow>
                 )
               })}
@@ -1080,7 +1216,7 @@ function BoardView({
             <div>
               <div className="wfr-dash__panel-head">
                 <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
-                <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
+                <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
               </div>
               <DataTable bordered>
                 <DataTableHeader>
@@ -1140,7 +1276,7 @@ function BoardView({
         <div>
           <div className="wfr-dash__panel-head">
             <h3 className="wfr-dash__panel-title">Departmental readiness</h3>
-            <span className="wfr-dash__panel-hint">Sorted by AI readiness (lowest first) {EM} click to drill down</span>
+            <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
           </div>
           <DataTable bordered>
             <DataTableHeader>
@@ -1302,7 +1438,7 @@ export function WorkforceReadinessDashboard({
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
             upskillingActive={upskillingActive}
-            setUpskillingLaunchOpen={setUpskillingLaunchOpen}
+            upskillingLaunchSummary={upskillingLaunchSummary}
           />
         )}
       </div>

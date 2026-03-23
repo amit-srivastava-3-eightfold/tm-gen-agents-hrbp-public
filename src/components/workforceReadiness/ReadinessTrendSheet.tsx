@@ -1,5 +1,5 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
-import { useEffect, useLayoutEffect, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { wfrDemoDeptResponseRate, type Dept } from '../../data/wfrOrgData'
 import {
@@ -8,6 +8,7 @@ import {
   deptReadinessTrend,
   deptCollectionRowDemo,
   activityLabel,
+  type DeptManagerTeam,
 } from './collectionHelpers'
 import './ReadinessTrendSheet.css'
 
@@ -47,10 +48,36 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel }: Read
     return { trend, responseRate, respondedCount, estimated, measured, meta, teams }
   }, [dept])
 
+  const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
+
+  // Reset expanded state when dept changes
+  useEffect(() => { setExpandedManagers({}) }, [dept?.name])
+
   if (!open || !dept || !data) return null
 
   const { trend, responseRate, respondedCount, estimated, measured, teams } = data
   const channel = channelsLabel ?? 'AI Agent Interviews'
+
+  const toggleManager = (manager: string) => {
+    setExpandedManagers((prev) => ({ ...prev, [manager]: !prev[manager] }))
+  }
+
+  /** Generate deterministic employee names for a manager's team. */
+  const getTeamEmployees = (team: DeptManagerTeam) => {
+    const FIRST = ['Alex', 'Jordan', 'Sam', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Blake', 'Drew', 'Sage', 'Reese', 'Skyler', 'Dakota', 'Finley', 'Rowan', 'Hayden', 'Emery', 'Peyton']
+    const LAST = ['Patel', 'Kim', 'Chen', 'Garcia', 'Singh', 'Nakamura', 'Obi', 'Martinez', 'Thompson', 'Rivera', 'Duval', 'Nguyen', 'Sullivan', 'Okonkwo', 'Andersson', 'Kapoor', 'Shah', 'Müller', 'Santos', 'Park']
+    let h = 0
+    for (let i = 0; i < team.manager.length; i++) h = ((h << 5) - h + team.manager.charCodeAt(i)) | 0
+    const count = Math.min(team.employees, 8) // show up to 8
+    const emps: { name: string; responded: boolean }[] = []
+    for (let i = 0; i < count; i++) {
+      const fi = Math.abs((h * (i + 1) * 7) % FIRST.length)
+      const li = Math.abs((h * (i + 1) * 13) % LAST.length)
+      const responded = ((h * (i + 1)) % 100) < team.responseRate
+      emps.push({ name: `${FIRST[fi]} ${LAST[li]}`, responded })
+    }
+    return { employees: emps, remaining: team.employees - count }
+  }
   const deltaLabel = `${trend.direction === 'up' ? '↑' : '↓'}${Math.abs(trend.delta)}pt`
   const isUp = trend.direction === 'up'
 
@@ -79,7 +106,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel }: Read
           {/* Before → After */}
           <div className="wfr-trend-sheet__comparison">
             <div className="wfr-trend-sheet__metric">
-              <span className="wfr-trend-sheet__metric-label">Estimated</span>
+              <span className="wfr-trend-sheet__metric-label">Previous</span>
               <span className="wfr-trend-sheet__metric-value wfr-trend-sheet__metric-value--muted">{estimated}%</span>
               <span className="wfr-trend-sheet__metric-caption">Profile-based</span>
             </div>
@@ -114,7 +141,14 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel }: Read
             </div>
             <div className="wfr-trend-sheet__stat">
               <span className="wfr-trend-sheet__stat-label">Channel</span>
-              <span className="wfr-trend-sheet__stat-value">{channel}</span>
+              <span className="wfr-trend-sheet__stat-value">
+                {channel === 'AI Agent Interviews'
+                  ? <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />
+                  : channel === 'Contextual Surveys' ? <span style={{ marginRight: 4 }}>📋</span>
+                  : channel === 'Career Hub Profiles' ? <span style={{ marginRight: 4 }}>✏️</span>
+                  : null}
+                {channel}
+              </span>
             </div>
             <div className="wfr-trend-sheet__stat">
               <span className="wfr-trend-sheet__stat-label">Last activity</span>
@@ -136,28 +170,62 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel }: Read
               </div>
               {teams.map((team) => {
                 const c = barColor(team.responseRate)
+                const expanded = !!expandedManagers[team.manager]
+                const { employees: emps, remaining } = getTeamEmployees(team)
                 return (
-                  <div key={team.manager} className="wfr-trend-sheet__teams-row">
-                    <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--name">
-                      <div className="wfr-trend-sheet__team-manager">{team.manager}</div>
-                      <div className="wfr-trend-sheet__team-title">{team.title}</div>
-                    </div>
-                    <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--empl">
-                      {team.employees.toLocaleString()}
-                    </div>
-                    <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--rate">
-                      <div className="wfr-trend-sheet__team-bar">
-                        <div className="wfr-trend-sheet__team-bar-track">
-                          <div
-                            className="wfr-trend-sheet__team-bar-fill"
-                            style={{ width: `${team.responseRate}%`, background: c }}
-                          />
-                        </div>
-                        <span className="wfr-trend-sheet__team-bar-pct" style={{ color: c }}>
-                          {team.responseRate}%
+                  <div key={team.manager}>
+                    <div
+                      className="wfr-trend-sheet__teams-row wfr-trend-sheet__teams-row--expandable"
+                      onClick={() => toggleManager(team.manager)}
+                    >
+                      <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--name">
+                        <span className={`material-symbols-outlined wfr-trend-sheet__expand-icon ${expanded ? 'wfr-trend-sheet__expand-icon--open' : ''}`} style={{ fontSize: 16, color: '#94a3b8', marginRight: 4 }}>
+                          chevron_right
                         </span>
+                        <div>
+                          <div className="wfr-trend-sheet__team-manager">{team.manager}</div>
+                          <div className="wfr-trend-sheet__team-title">{team.title}</div>
+                        </div>
+                      </div>
+                      <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--empl">
+                        {team.employees.toLocaleString()}
+                      </div>
+                      <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--rate">
+                        <div className="wfr-trend-sheet__team-bar">
+                          <div className="wfr-trend-sheet__team-bar-track">
+                            <div
+                              className="wfr-trend-sheet__team-bar-fill"
+                              style={{ width: `${team.responseRate}%`, background: c }}
+                            />
+                          </div>
+                          <span className="wfr-trend-sheet__team-bar-pct" style={{ color: c }}>
+                            {team.responseRate}%
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    {expanded && (
+                      <div className="wfr-trend-sheet__employees">
+                        {emps.map((emp) => (
+                          <div key={emp.name} className="wfr-trend-sheet__employee-row">
+                            <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--name wfr-trend-sheet__employee-name">
+                              {emp.name}
+                            </div>
+                            <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--empl" />
+                            <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--rate">
+                              <span className={`wfr-trend-sheet__emp-status ${emp.responded ? 'wfr-trend-sheet__emp-status--done' : ''}`}>
+                                {emp.responded ? '✓ Responded' : 'Pending'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {remaining > 0 && (
+                          <div className="wfr-trend-sheet__employee-row wfr-trend-sheet__employee-more">
+                            +{remaining.toLocaleString()} more employees
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}

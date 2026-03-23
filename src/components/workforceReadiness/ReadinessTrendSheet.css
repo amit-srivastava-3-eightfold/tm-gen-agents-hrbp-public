@@ -344,3 +344,67 @@
   min-width: 32px;
   text-align: right;
 }
+
+/* Expandable manager rows */
+.wfr-trend-sheet__teams-row--expandable {
+  cursor: pointer;
+}
+
+.wfr-trend-sheet__teams-row--expandable:hover {
+  background: #f8fafc;
+}
+
+.wfr-trend-sheet__teams-row--expandable .wfr-trend-sheet__teams-td--name {
+  display: flex;
+  align-items: center;
+}
+
+.wfr-trend-sheet__expand-icon {
+  transition: transform 0.15s ease;
+}
+
+.wfr-trend-sheet__expand-icon--open {
+  transform: rotate(90deg);
+}
+
+/* Nested employees */
+.wfr-trend-sheet__employees {
+  padding-left: 24px;
+  border-left: 2px solid #f1f5f9;
+  margin-left: 8px;
+}
+
+.wfr-trend-sheet__employee-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #fafbfc;
+}
+
+.wfr-trend-sheet__employee-row:last-child {
+  border-bottom: none;
+}
+
+.wfr-trend-sheet__employee-name {
+  font-weight: 400 !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  padding-left: 4px;
+}
+
+.wfr-trend-sheet__emp-status {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.wfr-trend-sheet__emp-status--done {
+  color: #15803d;
+}
+
+.wfr-trend-sheet__employee-more {
+  font-size: 11px;
+  color: #94a3b8;
+  padding-left: 4px;
+  padding-top: 4px;
+  padding-bottom: 8px;
+}

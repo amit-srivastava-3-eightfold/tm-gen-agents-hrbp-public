@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
-import { NavbarApp } from '../components/Navbar'
-import { PageHeader } from '../components/PageHeader'
-import '../components/PageHeader.css'
+import { useNavbarProps } from '../components/Navbar'
+import { CareerHubShell } from '@tonyh-2-eightfold/ef-design-system'
 import { WorkforceReadinessDashboard } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import './WorkforceReadinessPage.css'
 
 export function WorkforceReadinessPage() {
   const { currentUser } = useUser()
+  const navbarProps = useNavbarProps()
   const [wfrView, setWfrView] = useState<'board' | 'dept'>('board')
 
   if (currentUser.id !== 'chro') {
@@ -16,12 +16,11 @@ export function WorkforceReadinessPage() {
   }
 
   return (
-    <div className="workforce-readiness-page">
-      <NavbarApp />
-      <PageHeader
-        title="Workforce Readiness"
-        size={wfrView === 'dept' ? 'medium' : 'default'}
-      />
+    <CareerHubShell
+      chSize={wfrView === 'dept' ? 'child' : 'parent'}
+      title="Workforce Readiness"
+      navbarProps={navbarProps}
+    >
       <main className="workforce-readiness-page__main">
         <div className="workforce-readiness-page__content">
           <div className="grid w-full grid-cols-12 gap-6">
@@ -31,6 +30,6 @@ export function WorkforceReadinessPage() {
           </div>
         </div>
       </main>
-    </div>
+    </CareerHubShell>
   )
 }
