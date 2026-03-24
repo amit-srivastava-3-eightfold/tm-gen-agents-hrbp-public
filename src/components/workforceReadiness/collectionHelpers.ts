@@ -109,8 +109,8 @@ const FALLBACK_TITLES = ['Team Lead', 'Senior Manager', 'Group Manager', 'Direct
  *  Manager response rates are computed so their weighted average equals the department rate. */
 export function deptManagerTeams(deptName: string, totalEmployees: number, deptRate?: number): DeptManagerTeam[] {
   const h = deptNameHash(deptName)
-  const avgTeamSize = 50 + (h % 30) // 50–79
-  const count = Math.max(2, Math.round(totalEmployees / avgTeamSize))
+  const avgTeamSize = 25 + (h % 20) // 25–44
+  const count = Math.max(4, Math.round(totalEmployees / avgTeamSize))
   const titles = DEPT_TITLES[deptName] ?? FALLBACK_TITLES
   const teams: DeptManagerTeam[] = []
   let remaining = totalEmployees

@@ -1,5 +1,5 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useMemo, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import {
   departments,
   ORG,
@@ -56,8 +56,12 @@ export interface FocusFirstCollectionCardProps {
   onAddDepartments?: () => void
   /** Whether collection has reached the sample threshold. */
   collectionComplete?: boolean
+  /** Transition state: collection just finished, show 100% green before moving to state 3. */
+  collectionJustCompleted?: boolean
   /** Called when user clicks the progress bar to simulate completion. */
   onCollectionComplete?: () => void
+  /** Called when user clicks "View results" in the 2b transition state. */
+  onViewResults?: () => void
   /** Called when user clicks attention badge or "View details" to scroll to the table. */
   onScrollToTable?: () => void
   /** Called when user clicks "Start upskilling" in the complete state. */
@@ -76,12 +80,30 @@ export function FocusFirstCollectionCard({
   departmentContextName,
   onAddDepartments,
   collectionComplete = false,
+  collectionJustCompleted = false,
   onCollectionComplete,
+  onViewResults: _onViewResults,
   onScrollToTable,
   onStartUpskilling,
   upskillingActive = false,
   upskillingLaunchSummary = null,
 }: FocusFirstCollectionCardProps) {
+  // Animation phases: idle → filling → bell → hold → done
+  const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
+  const handleProgressClick = useCallback(() => {
+    if (animPhase !== 'idle' || collectionJustCompleted || collectionComplete) return
+    setAnimPhase('filling')
+    // Phase 1: bar fills (3s)
+    setTimeout(() => {
+      setAnimPhase('bell')
+      // Phase 2+3: bell rings + hold (3s)
+      setTimeout(() => {
+        setAnimPhase('idle')
+        onCollectionComplete?.()
+      }, 3000)
+    }, 3000)
+  }, [animPhase, collectionJustCompleted, collectionComplete, onCollectionComplete])
+
   const showAttentionBadge = snapshot.needAttentionDeptCount > 0
   const deptName = departmentContextName
   const subtext: ReactNode =
@@ -93,7 +115,7 @@ export function FocusFirstCollectionCard({
         ? focusCollectionUnderwaySubtext(launchSummary)
         : 'Survey responses are rolling in. Check back as participation grows.'
 
-  if (collectionComplete) {
+  if (collectionJustCompleted || collectionComplete) {
     const isDeptView = !!deptName
     const currentDept = isDeptView ? departments.find((d) => d.name === deptName) : null
 
@@ -109,22 +131,42 @@ export function FocusFirstCollectionCard({
 
       if (deptHasUpskilling) {
         return (
-          <div className="wfr-ra-card">
+          <div className="wfr-ra-card wfr-ra-card--warn">
             <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Upskilling</span>
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#92400e' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling in progress
+              </span>
             </div>
             <p className="wfr-ra-card__cta-text">
-              Development plans are being created for priority roles in <strong>{currentDept.name}</strong>.
+              <strong>{Math.max(2, Math.round(gapCount / 30))}</strong> development plans in <strong>{currentDept.name}</strong> — <strong>{gapCount.toLocaleString()}</strong> employees enrolled.
             </p>
-            <p className="wfr-ra-card__hint">Track enrollment progress in the roles table below.</p>
+            <div className="wfr-ra-card__progress" style={{ cursor: 'default' }}>
+              <div className="wfr-ra-card__progress-info">
+                <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#92400e' }}>{35 + Math.abs((currentDept.name.length * 13) % 30)}%</span>
+                <span className="wfr-ra-card__progress-label">plan completion</span>
+              </div>
+              <div className="wfr-ra-card__track">
+                <div className="wfr-ra-card__fill" style={{ width: `${35 + Math.abs((currentDept.name.length * 13) % 30)}%` }} />
+              </div>
+            </div>
+            <p className="wfr-ra-card__hint">Track enrollment progress in the table below.</p>
           </div>
         )
       }
 
       return (
-        <div className="wfr-ra-card">
+        <div className="wfr-ra-card wfr-ra-card--success">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling</span>
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
+            </span>
+            <div className="wfr-ra-card__mini-progress">
+              <span className="wfr-ra-card__mini-pct">100%</span>
+              <div className="wfr-ra-card__mini-track">
+                <div className="wfr-ra-card__mini-fill" />
+              </div>
+              <span className="wfr-ra-card__mini-label">Sample threshold reached — {currentDept.name} ready for upskilling</span>
+            </div>
           </div>
           <div className="wfr-ra-card__cta-row">
             <div>
@@ -171,9 +213,9 @@ export function FocusFirstCollectionCard({
       const hasMore = nextPriorityDepts.length > 0
 
       return (
-        <div className="wfr-ra-card">
+        <div className="wfr-ra-card wfr-ra-card--warn">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#92400e' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling in progress
             </span>
           </div>
@@ -182,11 +224,11 @@ export function FocusFirstCollectionCard({
           </p>
           <div className="wfr-ra-card__progress" style={{ cursor: 'default' }}>
             <div className="wfr-ra-card__progress-info">
-              <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#15803d' }}>{completionPct}%</span>
+              <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#92400e' }}>{completionPct}%</span>
               <span className="wfr-ra-card__progress-label">plan completion</span>
             </div>
             <div className="wfr-ra-card__track">
-              <div className="wfr-ra-card__fill" style={{ width: `${completionPct}%`, background: '#15803d' }} />
+              <div className="wfr-ra-card__fill" style={{ width: `${completionPct}%` }} />
             </div>
           </div>
           <div className="wfr-ra-card__actions">
@@ -206,9 +248,20 @@ export function FocusFirstCollectionCard({
     }
 
     return (
-      <div className="wfr-ra-card">
+      <div className="wfr-ra-card wfr-ra-card--success">
         <div className="wfr-ra-card__header">
-          <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling</span>
+          <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
+          </span>
+          <div className="wfr-ra-card__mini-progress">
+            <span className="wfr-ra-card__mini-pct">100%</span>
+            <div className="wfr-ra-card__mini-track">
+              <div className="wfr-ra-card__mini-fill" />
+            </div>
+            <span className="wfr-ra-card__mini-label">
+              Sample threshold reached — {scopedDepts.length} department{scopedDepts.length === 1 ? '' : 's'} ready for upskilling
+            </span>
+          </div>
         </div>
         <div className="wfr-ra-card__cta-row">
           <div>
@@ -229,46 +282,74 @@ export function FocusFirstCollectionCard({
     )
   }
 
+  const isFilling = animPhase === 'filling'
+  const showBell = animPhase === 'bell' || animPhase === 'hold'
+  const isAnimating = animPhase !== 'idle'
+  const cardClass = showBell ? 'wfr-ra-card wfr-ra-card--success wfr-ra-card--animate-in' : 'wfr-ra-card wfr-ra-card--warn'
+
   return (
-    <div className="wfr-ra-card">
+    <div className={cardClass}>
       <div className="wfr-ra-card__header">
-        <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Collection in progress</span>
-        {showAttentionBadge ? (
-          <button
-            type="button"
-            className="wfr-ra-card__attention"
-            onClick={onScrollToTable}
-          >
-            <span className="material-symbols-outlined wfr-ra-card__attention-icon">warning</span>
-            {attentionScope === 'dept'
-              ? 'This department needs attention'
-              : `${snapshot.needAttentionDeptCount} department${snapshot.needAttentionDeptCount === 1 ? '' : 's'} need attention`}
-          </button>
-        ) : null}
+        {showBell ? (
+          <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
+          </span>
+        ) : (
+          <>
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#92400e' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Collection in progress</span>
+            {showAttentionBadge && !isAnimating ? (
+              <button
+                type="button"
+                className="wfr-ra-card__attention"
+                onClick={onScrollToTable}
+              >
+                <span className="material-symbols-outlined wfr-ra-card__attention-icon">warning</span>
+                {attentionScope === 'dept'
+                  ? 'This department needs attention'
+                  : `${snapshot.needAttentionDeptCount} department${snapshot.needAttentionDeptCount === 1 ? '' : 's'} need attention`}
+              </button>
+            ) : null}
+          </>
+        )}
       </div>
 
       <div
         className="wfr-ra-card__progress"
-        onClick={onCollectionComplete}
-        style={onCollectionComplete ? { cursor: 'pointer' } : undefined}
-        title={onCollectionComplete ? 'Click to simulate collection complete' : undefined}
+        onClick={handleProgressClick}
+        style={onCollectionComplete && !isAnimating ? { cursor: 'pointer' } : undefined}
+        title={onCollectionComplete && !isAnimating ? 'Click to simulate collection complete' : undefined}
       >
         <div className="wfr-ra-card__progress-info">
-          <span className="wfr-ra-card__progress-pct tabular-nums">{snapshot.orgResponseRate}%</span>
+          <span className="wfr-ra-card__progress-pct tabular-nums" style={showBell ? { color: '#15803d' } : undefined}>
+            {isAnimating ? '100' : snapshot.orgResponseRate}%
+          </span>
           <span className="wfr-ra-card__progress-label">
-            {snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} responded
-            {attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}
+            {isAnimating
+              ? 'Sample threshold reached!'
+              : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+            }
           </span>
         </div>
-        <div className="wfr-ra-card__track">
+        <div className="wfr-ra-card__track" style={showBell ? { position: 'relative', overflow: 'visible' } : undefined}>
           <div
-            className="wfr-ra-card__fill"
-            style={{ width: `${snapshot.orgResponseRate}%` }}
+            className={`wfr-ra-card__fill${isFilling ? ' wfr-ra-card__fill--animating' : ''}`}
+            style={{ width: isAnimating ? '100%' : `${snapshot.orgResponseRate}%` }}
           />
+          {showBell ? (
+            <div className="wfr-ra-card__bell-wrap">
+              <span className="material-symbols-outlined wfr-ra-card__bell-icon">notifications_active</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <p className="wfr-ra-card__sub">{subtext}</p>
+      {showBell ? (
+        <p className="wfr-ra-card__sub" style={{ color: '#15803d' }}>
+          Enough responses are in for statistically accurate results. Preparing upskilling priorities…
+        </p>
+      ) : (
+        <p className="wfr-ra-card__sub">{subtext}</p>
+      )}
 
       <div className="wfr-ra-card__actions">
         {onScrollToTable ? (
@@ -291,8 +372,10 @@ export type FocusFirstModuleBoardProps = {
   mode?: 'board'
   collectionActive: boolean
   collectionComplete?: boolean
+  collectionJustCompleted?: boolean
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
   onCollectionComplete?: () => void
+  onViewResults?: () => void
   launchOpen: boolean
   onLaunchOpenChange: (open: boolean) => void
   onRequestCloseMetricSheet?: () => void
@@ -343,8 +426,10 @@ function FocusFirstModuleCollecting({
 function FocusFirstModuleBoard({
   collectionActive,
   collectionComplete,
+  collectionJustCompleted,
   onCollectionActiveChange,
   onCollectionComplete,
+  onViewResults,
   launchOpen,
   onLaunchOpenChange,
   onRequestCloseMetricSheet,
@@ -376,8 +461,10 @@ function FocusFirstModuleBoard({
             launchSummary={collectionLaunchSummary}
             departmentContextName={deptContext?.name}
             collectionComplete={collectionComplete}
+            collectionJustCompleted={collectionJustCompleted}
             onScrollToTable={onScrollToTable}
             onCollectionComplete={onCollectionComplete}
+            onViewResults={onViewResults}
             onStartUpskilling={onStartUpskilling}
             upskillingActive={upskillingActive}
             upskillingLaunchSummary={boardUpskillingLaunchSummary}
@@ -447,8 +534,10 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
   const {
     collectionActive,
     collectionComplete,
+    collectionJustCompleted,
     onCollectionActiveChange,
     onCollectionComplete,
+    onViewResults,
     launchOpen,
     onLaunchOpenChange,
     onRequestCloseMetricSheet,
@@ -464,8 +553,10 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     <FocusFirstModuleBoard
       collectionActive={collectionActive}
       collectionComplete={collectionComplete}
+      collectionJustCompleted={collectionJustCompleted}
       onCollectionActiveChange={onCollectionActiveChange}
       onCollectionComplete={onCollectionComplete}
+      onViewResults={onViewResults}
       launchOpen={launchOpen}
       onLaunchOpenChange={onLaunchOpenChange}
       onRequestCloseMetricSheet={onRequestCloseMetricSheet}

@@ -38,6 +38,7 @@ export function UpskillingLaunchDialog({
 }: UpskillingLaunchDialogProps) {
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<UpskillingAssignOwner>('hrbp')
+  const [scopeMode, setScopeMode] = useState<'all' | 'select'>('select')
   const [selectedDepts, setSelectedDepts] = useState<Record<string, boolean>>({})
 
   const delegated = assignOwner === 'hrbp'
@@ -50,6 +51,7 @@ export function UpskillingLaunchDialog({
     if (open) {
       setStep(1)
       setAssignOwner('hrbp')
+      setScopeMode('select')
       const initial: Record<string, boolean> = {}
       for (const name of priorityDeptNames) initial[name] = true
       setSelectedDepts(initial)
@@ -85,13 +87,6 @@ export function UpskillingLaunchDialog({
 
   const toggleDept = (name: string) => {
     setSelectedDepts((prev) => ({ ...prev, [name]: !prev[name] }))
-  }
-
-  const toggleAll = () => {
-    const allSelected = departments.every((d) => selectedDepts[d.name])
-    const next: Record<string, boolean> = {}
-    for (const d of departments) next[d.name] = !allSelected
-    setSelectedDepts(next)
   }
 
   const handleLaunch = () => {
@@ -135,53 +130,94 @@ export function UpskillingLaunchDialog({
   }
 
   function renderDepartments(): ReactNode {
-    const allSelected = departments.every((d) => selectedDepts[d.name])
+    const totalGapCount = deptsByGap.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
+    const totalEmployeeCount = deptsByGap.reduce((sum, d) => sum + d.employees, 0)
     return (
       <>
         <h2 className="wfr-focus-launch__title">Which departments should start upskilling?</h2>
-        <p className="wfr-focus-launch__sub">Priority departments are pre-selected based on readiness gaps.</p>
-        <div className="wfr-focus-launch__dept-list-header">
-          <button type="button" className="wfr-focus-launch__select-all" onClick={toggleAll}>
-            {allSelected ? 'Deselect all' : 'Select all'}
+        <p className="wfr-focus-launch__sub">Roll out everywhere or start with priority departments.</p>
+        <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Upskilling scope">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={scopeMode === 'all'}
+            className={`wfr-focus-launch__option${scopeMode === 'all' ? ' wfr-focus-launch__option--selected' : ''}`}
+            onClick={() => {
+              setScopeMode('all')
+              const next: Record<string, boolean> = {}
+              for (const d of deptsByGap) next[d.name] = true
+              setSelectedDepts(next)
+            }}
+          >
+            <span className="wfr-focus-launch__radio" aria-hidden>
+              {scopeMode === 'all' ? <span className="wfr-focus-launch__radio-dot" /> : null}
+            </span>
+            <span className="wfr-focus-launch__option-text">
+              <span className="wfr-focus-launch__option-label">All departments</span>
+              <span className="wfr-focus-launch__option-desc">
+                {deptsByGap.length} departments, {totalEmployeeCount.toLocaleString()} employees — {totalGapCount.toLocaleString()} to upskill
+              </span>
+            </span>
           </button>
-          <span className="wfr-focus-launch__dept-count">{selectedNames.length} of {departments.length} selected</span>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={scopeMode === 'select'}
+            className={`wfr-focus-launch__option${scopeMode === 'select' ? ' wfr-focus-launch__option--selected' : ''}`}
+            onClick={() => setScopeMode('select')}
+          >
+            <span className="wfr-focus-launch__radio" aria-hidden>
+              {scopeMode === 'select' ? <span className="wfr-focus-launch__radio-dot" /> : null}
+            </span>
+            <span className="wfr-focus-launch__option-text">
+              <span className="wfr-focus-launch__option-label">Start with specific departments</span>
+              <span className="wfr-focus-launch__option-desc">Recommended: begin where the gaps are largest</span>
+            </span>
+          </button>
         </div>
-        <div className="wfr-focus-launch__dept-list">
-          {deptsByGap.map((d, idx) => {
-            const checked = !!selectedDepts[d.name]
-            const gapPp = tGap(d.aiPotential, d.aiReadiness)
-            const gapCount = deptGapHeadcount(d)
-            const severity = gapPp >= 50 ? 'high' : gapPp >= 30 ? 'mid' : 'low'
-            const isRecommended = idx < 3
-            const mgrCount = Math.max(2, Math.round(d.employees / 60))
-            return (
-              <button
-                key={d.name}
-                type="button"
-                className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                onClick={() => toggleDept(d.name)}
-              >
-                <span className="wfr-focus-launch__check">
-                  {checked ? '✓' : ''}
-                </span>
-                <div className="wfr-focus-launch__dept-info">
-                  <div className="wfr-focus-launch__dept-name-row">
-                    <span className="wfr-focus-launch__dept-name">{d.name}</span>
-                    {isRecommended && (
-                      <span className="wfr-focus-launch__recommended-tag">Top priority</span>
-                    )}
-                  </div>
-                  <span className="wfr-focus-launch__dept-detail">
-                    {mgrCount} HRBPs · {d.employees.toLocaleString()} employees
-                  </span>
-                </div>
-                <span className={`wfr-focus-launch__gap-pill wfr-focus-launch__gap-pill--${severity}`}>
-                  {gapCount.toLocaleString()} to upskill
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {scopeMode === 'select' ? (
+          <div style={{ marginTop: 16 }}>
+            <div className="wfr-focus-launch__dept-list-header">
+              <span className="wfr-focus-launch__dept-count" style={{ paddingLeft: 14 }}>{selectedNames.length} of {deptsByGap.length} selected</span>
+            </div>
+            <div className="wfr-focus-launch__dept-list">
+              {deptsByGap.map((d, idx) => {
+                const checked = !!selectedDepts[d.name]
+                const gapPp = tGap(d.aiPotential, d.aiReadiness)
+                const gapCount = deptGapHeadcount(d)
+                const severity = gapPp >= 50 ? 'high' : gapPp >= 30 ? 'mid' : 'low'
+                const isRecommended = idx < 3
+                const mgrCount = Math.max(2, Math.round(d.employees / 60))
+                return (
+                  <button
+                    key={d.name}
+                    type="button"
+                    className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                    onClick={() => toggleDept(d.name)}
+                  >
+                    <span className="wfr-focus-launch__check">
+                      {checked ? '✓' : ''}
+                    </span>
+                    <div className="wfr-focus-launch__dept-info">
+                      <div className="wfr-focus-launch__dept-name-row">
+                        <span className="wfr-focus-launch__dept-name">{d.name}</span>
+                        {isRecommended && (
+                          <span className="wfr-focus-launch__recommended-tag">Top priority</span>
+                        )}
+                      </div>
+                      <span className="wfr-focus-launch__dept-detail">
+                        {mgrCount} HRBPs · {d.employees.toLocaleString()} employees
+                      </span>
+                    </div>
+                    <span className={`wfr-focus-launch__gap-pill wfr-focus-launch__gap-pill--${severity}`}>
+                      {gapCount.toLocaleString()} to upskill
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
       </>
     )
   }
