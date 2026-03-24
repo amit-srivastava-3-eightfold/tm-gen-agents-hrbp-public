@@ -24,7 +24,7 @@ import './CollectionProgressPanel.css'
 
 /** Channel config matching the launch wizard options. */
 const CHANNEL_MAP: Record<string, { label: string; icon: string; iconSrc?: string }> = {
-  ai_agent_interviews: { label: 'AI Agent Interviews', icon: '', iconSrc: '/ai-agent-icon.svg' },
+  ai_agent_interviews: { label: 'AI Interviews', icon: '', iconSrc: '/ai-agent-icon.svg' },
   contextual_surveys: { label: 'Contextual Surveys', icon: '📋' },
   career_hub_profiles: { label: 'Career Hub Profiles', icon: '✏️' },
 }
@@ -34,7 +34,7 @@ export interface CollectionProgressPanelProps {
   scopedDepartmentNames?: string[] | null
   /** When set, show single-department view. */
   scopeDepartment?: Dept | null
-  /** The channel label selected during launch (e.g. "AI Agent Interviews"). Falls back to default. */
+  /** The channel label selected during launch (e.g. "AI Interviews"). Falls back to default. */
   channelsLabel?: string
 }
 

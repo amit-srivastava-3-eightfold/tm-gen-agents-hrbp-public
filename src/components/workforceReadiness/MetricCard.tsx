@@ -48,7 +48,7 @@ export function MetricCard({
       <div className="wfr-metric-card__footer">
         <p className="wfr-metric-card__hint">{hint}</p>
         {onLearnMore ? (
-          <Button type="button" variant="secondary" onClick={onLearnMore} className="shrink-0">
+          <Button type="button" variant="secondary" size="sm" onClick={onLearnMore} className="shrink-0">
             {actionLabel}
           </Button>
         ) : null}

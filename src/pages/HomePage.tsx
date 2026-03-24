@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
@@ -9,51 +10,76 @@ import { EM, ORG } from '../data/wfrOrgData'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
 
+/* Inline compact semicircle — readiness only, matches WFR overview hero */
+function WfrReadinessArc({ readiness }: { readiness: number }) {
+  const dim = 120, r = 46, sw = 8
+  const cx = dim / 2, cy = dim / 2
+  const rad = (d: number) => (d * Math.PI) / 180
+  // Upper semicircle: 180° to 360°
+  const arcPath = (pct: number) => {
+    const sweep = (pct / 100) * 180
+    const startAngle = 180
+    const x1 = cx + r * Math.cos(rad(startAngle))
+    const y1 = cy + r * Math.sin(rad(startAngle))
+    const x2 = cx + r * Math.cos(rad(startAngle + sweep))
+    const y2 = cy + r * Math.sin(rad(startAngle + sweep))
+    return `M${x1} ${y1} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${x2} ${y2}`
+  }
+  return (
+    <div className="home-wfr-arc">
+      <svg width={dim} height={dim / 2 + 16} viewBox={`0 0 ${dim} ${dim / 2 + 16}`} overflow="visible" aria-hidden>
+        <path d={arcPath(100)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
+        <path d={arcPath(readiness)} fill="none" stroke="var(--wfr-readiness, #22c55e)" strokeWidth={sw} strokeLinecap="round" />
+        <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">AI READINESS</text>
+      </svg>
+    </div>
+  )
+}
+
 function ChroWorkforceReadinessTeaser() {
   const gapPeople =
     ORG.peopleInAugRoles - Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
 
   return (
     <article className="home-page__wfr-compact" aria-label="Workforce Readiness">
+      <div className="home-page__wfr-compact__title-row">
+        <h3 className="home-page__wfr-compact__title">Workforce Readiness</h3>
+        <Link to="/workforce" className="home-page__wfr-compact__view-link">View dashboard&nbsp;→</Link>
+      </div>
       <header className="home-page__wfr-compact__hero">
-        <p className="home-page__wfr-compact__eyebrow">
-          {ORG.totalEmployees.toLocaleString()} employees {EM} Q1 2026
-        </p>
-        <p className="home-page__wfr-compact__mini-metrics" aria-label="AI readiness and potential">
-          <span className="home-page__wfr-compact__mini-metric home-page__wfr-compact__mini-metric--readiness">
-            {ORG.aiReadiness}% readiness
+        <WfrReadinessArc readiness={ORG.aiReadiness} />
+        <div className="home-page__wfr-compact__hero-text">
+          <p className="home-page__wfr-compact__eyebrow">
+            {ORG.totalEmployees.toLocaleString()} employees {EM} Q1 2026
+          </p>
+          <h2 className="home-page__wfr-compact__headline">
+            <span className="home-page__wfr-compact__headline-pct">{ORG.aiReadiness}%</span>
+            <span className="home-page__wfr-compact__headline-rest">
+              {' '}of people in augmentable roles have the skills to start using AI today.
+            </span>
+          </h2>
+          <span className="home-page__wfr-compact__gap-badge">
+            ~<strong>{gapPeople.toLocaleString()}</strong> not yet AI-ready
           </span>
-          <span className="home-page__wfr-compact__mini-dot" aria-hidden>
-            ·
-          </span>
-          <span className="home-page__wfr-compact__mini-metric home-page__wfr-compact__mini-metric--potential">
-            {ORG.aiPotential}% potential
-          </span>
-        </p>
-        <h2 className="home-page__wfr-compact__headline">
-          <span className="home-page__wfr-compact__headline-pct">{ORG.aiReadiness}%</span>
-          <span className="home-page__wfr-compact__headline-rest">
-            {' '}
-            of people in augmentable roles have the skills to start using AI today.
-          </span>
-        </h2>
-        <p className="home-page__wfr-compact__gap">
-          ~<strong>{gapPeople.toLocaleString()}</strong> employees in augmentable roles are not yet AI-ready.
-        </p>
+        </div>
       </header>
       <div className="home-page__wfr-compact__rec">
         <div className="home-page__wfr-compact__rec-head">
-          <span className="material-symbols-outlined home-page__wfr-compact__rec-icon" aria-hidden>
-            priority_high
+          <span className="home-page__wfr-compact__rec-eyebrow">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>flag</span> First priority
           </span>
-          <span className="home-page__wfr-compact__rec-label">Recommended actions</span>
         </div>
-        <p className="home-page__wfr-compact__rec-body">
-          Your readiness score gets sharper when employees weigh in. Let&apos;s collect that data.
-        </p>
-        <Link to="/workforce" className="home-page__wfr-compact__cta">
-          Get started <span aria-hidden>→</span>
-        </Link>
+        <div className="home-page__wfr-compact__rec-row">
+          <p className="home-page__wfr-compact__rec-body">
+            Collect employee data to sharpen your readiness scores and surface upskilling priorities.
+          </p>
+          <Link to="/workforce?action=launch">
+            <Button variant="primary" size="sm">
+              Get started&nbsp;→
+            </Button>
+          </Link>
+        </div>
       </div>
     </article>
   )
@@ -105,7 +131,7 @@ export function HomePage() {
             <HomeSidebar />
           </div>
           <div className="home-page__content col-span-8" aria-label="Main content">
-            {currentUser.id === 'chro' ? <ChroWorkforceReadinessTeaser /> : null}
+            {(currentUser.id === 'chro' || currentUser.id === 'laura-shah') ? <ChroWorkforceReadinessTeaser /> : null}
             <CareerHubExploreCards />
             <ErrorBoundary>
               <FavoritesSection />

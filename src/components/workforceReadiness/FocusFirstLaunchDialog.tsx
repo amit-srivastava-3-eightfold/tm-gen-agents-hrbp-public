@@ -51,7 +51,7 @@ const CHANNEL_OPTIONS: {
 }[] = [
   {
     id: 'ai_agent_interviews',
-    label: 'AI Agent Interviews',
+    label: 'AI Interviews',
     desc: 'AI conversations to map real workflows.',
     icon: '',
     iconSrc: '/ai-agent-icon.svg',

@@ -38,7 +38,7 @@ export function UpskillingLaunchDialog({
 }: UpskillingLaunchDialogProps) {
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<UpskillingAssignOwner>('hrbp')
-  const [scopeMode, setScopeMode] = useState<'all' | 'select'>('select')
+  const [scopeMode, setScopeMode] = useState<'all' | 'select'>('all')
   const [selectedDepts, setSelectedDepts] = useState<Record<string, boolean>>({})
 
   const delegated = assignOwner === 'hrbp'
@@ -51,7 +51,7 @@ export function UpskillingLaunchDialog({
     if (open) {
       setStep(1)
       setAssignOwner('hrbp')
-      setScopeMode('select')
+      setScopeMode('all')
       const initial: Record<string, boolean> = {}
       for (const name of priorityDeptNames) initial[name] = true
       setSelectedDepts(initial)
@@ -90,12 +90,21 @@ export function UpskillingLaunchDialog({
   }
 
   const handleLaunch = () => {
+    const finalNames = scopeMode === 'all'
+      ? deptsByGap.map((d) => d.name)
+      : selectedNames
+    const finalEmployees = scopeMode === 'all'
+      ? deptsByGap.reduce((sum, d) => sum + d.employees, 0)
+      : selectedEmployeeCount
+    const finalLabel = scopeMode === 'all'
+      ? `All ${deptsByGap.length} departments`
+      : scopeLabel
     onLaunch?.({
       assignOwner,
       delegated,
-      scopeLabel,
-      departmentNames: selectedNames,
-      totalEmployees: selectedEmployeeCount,
+      scopeLabel: finalLabel,
+      departmentNames: finalNames,
+      totalEmployees: finalEmployees,
     })
     onOpenChange(false)
   }
@@ -117,7 +126,9 @@ export function UpskillingLaunchDialog({
               className={`wfr-focus-launch__option ${assignOwner === opt.value ? 'wfr-focus-launch__option--selected' : ''}`}
               onClick={() => setAssignOwner(opt.value)}
             >
-              <span className={`wfr-focus-launch__radio ${assignOwner === opt.value ? 'wfr-focus-launch__radio--checked' : ''}`} />
+              <span className="wfr-focus-launch__radio">
+                {assignOwner === opt.value ? <span className="wfr-focus-launch__radio-dot" /> : null}
+              </span>
               <span className="wfr-focus-launch__option-text">
                 <span className="wfr-focus-launch__option-label">{opt.label}</span>
                 <span className="wfr-focus-launch__option-desc">{opt.desc}</span>

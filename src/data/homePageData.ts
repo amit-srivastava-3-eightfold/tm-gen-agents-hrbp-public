@@ -61,7 +61,31 @@ const MATEO_TASKS: HomeTask[] = [
   },
 ]
 
+const CHRO_TASKS: HomeTask[] = [
+  {
+    label: 'Review workforce readiness scores',
+    href: '/workforce',
+    meta: '17 departments',
+    tag: 'People strategy',
+    tagIcon: 'trending_up',
+  },
+  {
+    label: 'Approve upskilling budget for Q2',
+    href: '#',
+    meta: 'Due Apr 1',
+    tag: 'Planning',
+    tagIcon: 'account_balance',
+  },
+]
+
 const LAURA_TASKS: HomeTask[] = [
+  {
+    label: 'Review workforce readiness for your departments',
+    href: '/workforce',
+    meta: '3 departments',
+    tag: 'Workforce readiness',
+    tagIcon: 'trending_up',
+  },
   {
     label: 'Complete talent review for Q1',
     href: '#',
@@ -84,6 +108,12 @@ const MATEO_ACTIVITY: HomeActivity = {
   referrals: 0,
 }
 
+const CHRO_ACTIVITY: HomeActivity = {
+  projectApplications: 0,
+  jobApplications: 0,
+  referrals: 5,
+}
+
 const LAURA_ACTIVITY: HomeActivity = {
   projectApplications: 1,
   jobApplications: 0,
@@ -98,12 +128,20 @@ const MATEO_MENTOR: HomeMentor = {
   matchCount: 3,
 }
 
-const LAURA_MENTOR: HomeMentor = {
-  name: 'Sarah Chen',
-  role: 'Chief Human Resources Officer',
-  avatarSrc: 'https://i.pravatar.cc/56?u=sarah-chen',
-  matchText: 'Your manager, strong in talent strategy',
+const CHRO_MENTOR: HomeMentor = {
+  name: 'Michael Torres',
+  role: 'CEO',
+  avatarSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=56&h=56&fit=crop&crop=face',
+  matchText: 'Executive sponsor',
   matchCount: 0,
+}
+
+const LAURA_MENTOR: HomeMentor = {
+  name: 'Rachel Kim',
+  role: 'Senior HRBP, Product & Engineering',
+  avatarSrc: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=56&h=56&fit=crop&crop=face',
+  matchText: 'Matched 4 of your skill interests',
+  matchCount: 4,
 }
 
 const MATEO_JOB: HomeRecommendedJob = {
@@ -112,6 +150,15 @@ const MATEO_JOB: HomeRecommendedJob = {
     { label: 'Technical Demos' },
     { label: 'Solutions Arch...', checked: true },
     { label: 'Enterprise POC...' },
+  ],
+}
+
+const CHRO_JOB: HomeRecommendedJob = {
+  title: 'Chief People Officer',
+  tags: [
+    { label: 'People Strategy' },
+    { label: 'Org Development', checked: true },
+    { label: 'AI Readiness' },
   ],
 }
 
@@ -127,6 +174,11 @@ const LAURA_JOB: HomeRecommendedJob = {
 const MATEO_PROJECT: HomeRecommendedProject = {
   title: 'Enterprise Demo Platform',
   tags: ['Backend', 'Solutions'],
+}
+
+const CHRO_PROJECT: HomeRecommendedProject = {
+  title: 'AI Workforce Transformation',
+  tags: ['Strategy', 'HR'],
 }
 
 const LAURA_PROJECT: HomeRecommendedProject = {
@@ -163,17 +215,18 @@ function getCareerPathForHome(user: CurrentUser): HomeCareerPath {
 }
 
 export function getHomePageData(user: CurrentUser): HomePageData {
+  const isChro = user.id === 'chro'
   const isLaura = user.id === 'laura-shah'
-  const tasks = isLaura ? LAURA_TASKS : MATEO_TASKS
+  const tasks = isChro ? CHRO_TASKS : isLaura ? LAURA_TASKS : MATEO_TASKS
   const taskCount = tasks.length
 
   return {
     tasks,
     taskCount,
-    activity: isLaura ? LAURA_ACTIVITY : MATEO_ACTIVITY,
+    activity: isChro ? CHRO_ACTIVITY : isLaura ? LAURA_ACTIVITY : MATEO_ACTIVITY,
     careerPath: getCareerPathForHome(user),
-    mentor: isLaura ? LAURA_MENTOR : MATEO_MENTOR,
-    recommendedJob: isLaura ? LAURA_JOB : MATEO_JOB,
-    recommendedProject: isLaura ? LAURA_PROJECT : MATEO_PROJECT,
+    mentor: isChro ? CHRO_MENTOR : isLaura ? LAURA_MENTOR : MATEO_MENTOR,
+    recommendedJob: isChro ? CHRO_JOB : isLaura ? LAURA_JOB : MATEO_JOB,
+    recommendedProject: isChro ? CHRO_PROJECT : isLaura ? LAURA_PROJECT : MATEO_PROJECT,
   }
 }

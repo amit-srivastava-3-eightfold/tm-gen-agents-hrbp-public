@@ -221,6 +221,27 @@ function MetricArc({
   )
 }
 
+const METRIC_INFO = {
+  readiness: 'People in augmentable roles using AI effectively ÷ total people in augmentable roles',
+  potential: 'Tasks in augmentation zone (15–75%) ÷ total role tasks',
+  gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
+} as const
+
+function MetricHeaderLabel({ label, metric }: { label: string; metric: keyof typeof METRIC_INFO }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {label}
+      <span
+        className="material-symbols-outlined wfr-dash__header-info"
+        title={METRIC_INFO[metric]}
+        style={{ fontSize: 14, color: '#94a3b8', cursor: 'help', verticalAlign: -1 }}
+      >
+        info
+      </span>
+    </span>
+  )
+}
+
 function DeptTableSoloBar({
   variant,
   pct,
@@ -291,7 +312,8 @@ function DeptView({
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
-  const [trendSheetOpen, setTrendSheetOpen] = useState(false)
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [trendSheetManager, setTrendSheetManager] = useState<{ manager: string; mgrIndex: number } | null>(null)
   const [deptUpskillingOpen, setDeptUpskillingOpen] = useState(false)
   const [deptUpskillingRoles, setDeptUpskillingRoles] = useState<Record<string, boolean>>({})
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
@@ -338,7 +360,7 @@ function DeptView({
         </div>
         <div className="wfr-dash__hero-copy">
           <p className="wfr-dash__eyebrow">
-            {dept.employees.toLocaleString()} employees {EM} {dept.name} {EM} Q1 2026
+            {dept.employees.toLocaleString()} employees {EM} {dept.name} {EM} HRBP: {deptManagerTeams(dept.name, dept.employees)[0]?.manager ?? '—'} {EM} Q1 2026
           </p>
           <h2 className="wfr-dash__headline">
             <span className="wfr-dash__headline-pct wfr-text-readiness">{dept.aiReadiness}%</span>
@@ -433,7 +455,12 @@ function DeptView({
       <div ref={deptRolesPanelRef} id="wfr-dept-roles-panel">
         {(() => {
           const managers = deptManagerTeams(dept.name, dept.employees)
-          const allDeptEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as RoleRowType)
+          const deptRoles = getRolesForDept(dept.name)
+          const rawEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as RoleRowType)
+          const allDeptEmps = rawEmps.map((e, i) => ({
+            ...e,
+            title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined,
+          }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
           return (
             <div>
@@ -444,19 +471,44 @@ function DeptView({
               <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
+                    {orgCollectionComplete ? (
+                      <DataTableHead shrink>
+                        <input
+                          type="checkbox"
+                          className="wfr-dash__table-check"
+                          checked={selectedRows.size > 0 && managers.every((m) => selectedRows.has(`dept-${dept.name}-${m.manager}`))}
+                          onChange={() => {
+                            const allSelected = managers.every((m) => selectedRows.has(`dept-${dept.name}-${m.manager}`))
+                            const next = new Set(selectedRows)
+                            managers.forEach((m) => {
+                              const key = `dept-${dept.name}-${m.manager}`
+                              if (allSelected) next.delete(key)
+                              else next.add(key)
+                            })
+                            setSelectedRows(next)
+                          }}
+                        />
+                      </DataTableHead>
+                    ) : null}
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
-                    <DataTableHead metric>AI readiness</DataTableHead>
-                    <DataTableHead metric>AI potential</DataTableHead>
-                    <DataTableHead numeric>Gap</DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                    <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
                       <>
-                        <DataTableHead metric className="bg-[#fffbeb] border-l border-[#fcd34d]/30">Collection progress</DataTableHead>
-                        <DataTableHead className="bg-[#fffbeb]">Channels</DataTableHead>
+                        <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
+                        <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
                       </>
                     ) : null}
                     {deptInUpskilling ? (
-                      <DataTableHead className="bg-[#fffbeb] border-l border-[#fcd34d]/30">Upskilling status</DataTableHead>
+                      <DataTableHead className="">Upskilling status</DataTableHead>
+                    ) : null}
+                    {orgCollectionComplete ? (
+                      <>
+                        <DataTableHead>Development plan</DataTableHead>
+                        <DataTableHead shrink />
+                      </>
                     ) : null}
                   </DataTableRow>
                 </DataTableHeader>
@@ -478,9 +530,25 @@ function DeptView({
                     return (
                       <Fragment key={mgrKey}>
                         <DataTableRow onClick={() => setExpandedManagers(prev => ({ ...prev, [mgrKey]: !isMgrExpanded }))}>
+                          {orgCollectionComplete ? (
+                            <DataTableCell className="!w-[1%] !pl-3 !pr-0">
+                              <input
+                                type="checkbox"
+                                className="wfr-dash__table-check"
+                                checked={selectedRows.has(mgrKey)}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={() => {
+                                  const next = new Set(selectedRows)
+                                  if (next.has(mgrKey)) next.delete(mgrKey)
+                                  else next.add(mgrKey)
+                                  setSelectedRows(next)
+                                }}
+                              />
+                            </DataTableCell>
+                          ) : null}
                           <DataTableCell className="font-semibold">
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-[#94a3b8] text-base transition-transform" style={{ transform: isMgrExpanded ? 'rotate(90deg)' : undefined }}>chevron_right</span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="material-symbols-outlined text-[16px] transition-transform" style={{ color: isMgrExpanded ? '#3b5bdb' : '#94a3b8', transform: isMgrExpanded ? 'rotate(90deg)' : undefined }}>chevron_right</span>
                               <div>
                                 <div>{mgr.manager}</div>
                                 <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
@@ -494,7 +562,7 @@ function DeptView({
                               return (
                                 <div className="wfr-dash__readiness-with-trend">
                                   <DeptTableSoloBar variant="readiness" pct={mgrReadiness} />
-                                  <button type="button" className={`wfr-dash__trend-badge ${deptTrend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetOpen(true) }} title="View readiness trend details">
+                                  <button type="button" className={`wfr-dash__trend-badge ${deptTrend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetManager({ manager: mgr.manager, mgrIndex: mi }) }} title="View readiness trend details">
                                     <span className="wfr-dash__trend-badge-text">{deptTrend.direction === 'up' ? '↑' : '↓'}{Math.abs(deptTrend.delta)}pt</span>
                                     <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                                   </button>
@@ -510,7 +578,7 @@ function DeptView({
                           </DataTableCell>
                           {showCollection ? (
                             <>
-                              <DataTableCell metric className="bg-[#fffdf5] border-l border-[#fcd34d]/20">
+                              <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
                                 {inScope ? (
                                   <div className="wfr-dash__plan-progress">
                                     <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
@@ -520,10 +588,10 @@ function DeptView({
                                   </div>
                                 ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
                               </DataTableCell>
-                              <DataTableCell className="bg-[#fffdf5]">
+                              <DataTableCell className="bg-[#fafbfc]">
                                 {inScope ? (
                                   <span className="inline-flex items-center gap-1.5 text-[13px] text-[#1a212e]">
-                                    {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI Agent') ? (
+                                    {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI') ? (
                                       <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
                                     ) : (
                                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment</span>
@@ -535,7 +603,7 @@ function DeptView({
                             </>
                           ) : null}
                           {deptInUpskilling ? (
-                            <DataTableCell className="bg-[#fffdf5] border-l border-[#fcd34d]/20">
+                            <DataTableCell className="">
                               {(() => {
                                 const mgrPlanPct = 35 + Math.abs((mgr.manager.length * 7) % 40)
                                 return (
@@ -549,18 +617,97 @@ function DeptView({
                               })()}
                             </DataTableCell>
                           ) : null}
+                          {orgCollectionComplete ? (
+                            <>
+                              <DataTableCell>
+                                <span className="text-[12px] text-[#94a3b8]">—</span>
+                              </DataTableCell>
+                              <DataTableCell>
+                                <button
+                                  type="button"
+                                  className="wfr-dash__assign-btn"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Assign
+                                </button>
+                              </DataTableCell>
+                            </>
+                          ) : null}
                         </DataTableRow>
-                        {isMgrExpanded && mgrEmployees.map((emp, ei) => (
-                          <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#f1f5f9]">
-                            <DataTableCell className="!pl-12 text-[13px] text-[#475569]">{emp.name}</DataTableCell>
-                            <DataTableCell />
-                            <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} width={80} /></DataTableCell>
-                            <DataTableCell />
-                            <DataTableCell />
-                            {showCollection ? <><DataTableCell className="bg-[#fffdf5] border-l border-[#fcd34d]/20" /><DataTableCell className="bg-[#fffdf5]" /></> : null}
-                            {deptInUpskilling ? <DataTableCell className="bg-[#fffdf5] border-l border-[#fcd34d]/20" /> : null}
-                          </DataTableRow>
-                        ))}
+                        {isMgrExpanded && mgrEmployees.map((emp, ei) => {
+                          // Deterministic responded status per employee
+                          const empHash = emp.name.split('').reduce((h: number, c: string) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+                          const empResponded = inScope && (Math.abs(empHash) % 100) < Math.max(0, mgrResponseRate)
+                          return (
+                            <DataTableRow key={`${mgrKey}-${ei}`} className="bg-[#fdfdfe]">
+                              {orgCollectionComplete ? <DataTableCell className="!w-[1%]" /> : null}
+                              <DataTableCell className="!pl-[52px]">
+                                <div className="text-[13px] text-[#475569]">{emp.name}</div>
+                                {emp.title ? <div className="text-[11px] text-[#94a3b8]">{emp.title}</div> : null}
+                              </DataTableCell>
+                              <DataTableCell className="text-[12px] text-[#94a3b8]" />
+                              <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} /></DataTableCell>
+                              <DataTableCell metric>
+                                {emp.title ? (
+                                  <div>
+                                    <DeptTableSoloBar variant="potential" pct={deptRoles.find(r => r.title === emp.title)?.aiPotential ?? dept.aiPotential} />
+                                    <div className="text-[10px] text-[#94a3b8] mt-0.5">Role: {emp.title}</div>
+                                  </div>
+                                ) : null}
+                              </DataTableCell>
+                              <DataTableCell align="right">
+                                {emp.readinessPct < 50 ? (
+                                  <span className="text-[12px] font-medium text-[#dc2626]">Not AI-ready</span>
+                                ) : (
+                                  <span className="text-[12px] font-medium text-[#15803d]">AI-ready</span>
+                                )}
+                              </DataTableCell>
+                              {showCollection ? (
+                                <>
+                                  <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                                    {inScope ? (
+                                      <span className={`inline-flex items-center gap-1 text-[12px] ${empResponded ? 'text-[#15803d]' : 'text-[#94a3b8]'}`}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                          {empResponded ? 'check_circle' : 'pending'}
+                                        </span>
+                                        {empResponded ? 'Responded' : 'Pending'}
+                                      </span>
+                                    ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
+                                  </DataTableCell>
+                                  <DataTableCell className="bg-[#fafbfc]">
+                                    {inScope ? (
+                                      <span className="inline-flex items-center gap-1 text-[12px] text-[#1a212e]">
+                                        {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI') ? (
+                                          <img src="/ai-agent-icon.svg" alt="" style={{ width: 14, height: 14 }} />
+                                        ) : (
+                                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>assignment</span>
+                                        )}
+                                        {collectionLaunchSummary?.channelsLabel ?? 'Survey'}
+                                      </span>
+                                    ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
+                                  </DataTableCell>
+                                </>
+                              ) : null}
+                              {deptInUpskilling ? <DataTableCell className="" /> : null}
+                              {orgCollectionComplete ? (
+                                <>
+                                  <DataTableCell>
+                                    <span className="text-[12px] text-[#94a3b8]">—</span>
+                                  </DataTableCell>
+                                  <DataTableCell>
+                                    <button
+                                      type="button"
+                                      className="wfr-dash__assign-btn"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Assign
+                                    </button>
+                                  </DataTableCell>
+                                </>
+                              ) : null}
+                            </DataTableRow>
+                          )
+                        })}
                       </Fragment>
                     )
                   })}
@@ -573,10 +720,11 @@ function DeptView({
 
       {/* Readiness trend detail sheet for dept view */}
       <ReadinessTrendSheet
-        open={trendSheetOpen}
-        onClose={() => setTrendSheetOpen(false)}
+        open={trendSheetManager != null}
+        onClose={() => setTrendSheetManager(null)}
         dept={dept}
         channelsLabel={collectionLaunchSummary?.channelsLabel}
+        managerContext={trendSheetManager}
       />
 
       {/* Dept-level upskilling role selection dialog */}
@@ -664,6 +812,76 @@ function DeptView({
   )
 }
 
+type UpskillingState = 'not_started' | 'delegated' | 'plans_created' | 'in_progress' | 'completed'
+
+function getDeptUpskillingState(deptName: string, launchedDeptNames: string[]): { state: UpskillingState; index: number } {
+  const idx = launchedDeptNames.indexOf(deptName)
+  if (idx === -1) return { state: 'not_started', index: -1 }
+  // Distribute states across launched depts deterministically
+  const total = launchedDeptNames.length
+  if (total <= 1) return { state: 'delegated', index: idx }
+  if (total <= 2) return { state: idx === 0 ? 'in_progress' : 'delegated', index: idx }
+  // For 3+ depts: first = completed, next = in_progress, next = plans_created, rest = delegated
+  if (idx === 0) return { state: 'completed', index: idx }
+  if (idx <= Math.ceil(total * 0.3)) return { state: 'in_progress', index: idx }
+  if (idx <= Math.ceil(total * 0.55)) return { state: 'plans_created', index: idx }
+  return { state: 'delegated', index: idx }
+}
+
+function UpskillingCell({ deptName, gapCount, launchedDeptNames, onStart }: {
+  deptName: string
+  gapCount: number
+  launchedDeptNames: string[]
+  onStart: () => void
+}) {
+  const { state } = getDeptUpskillingState(deptName, launchedDeptNames)
+  const planCount = Math.max(2, Math.round(gapCount / 30))
+  const nameHash = deptName.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+
+  // Not started — always show button so CHRO can ad hoc add any dept
+  if (state === 'not_started') {
+    return (
+      <Button type="button" variant="secondary" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onStart() }}>
+        Start upskilling
+      </Button>
+    )
+  }
+
+  const pctMap: Record<UpskillingState, number> = {
+    not_started: 0,
+    delegated: 0,
+    plans_created: 10 + Math.abs(nameHash % 8),
+    in_progress: 35 + Math.abs(nameHash * 3) % 45,
+    completed: 100,
+  }
+  const pct = pctMap[state]
+  const isComplete = state === 'completed'
+  const fillColor = isComplete ? '#22c55e' : '#818cf8'
+  const trackColor = isComplete ? 'rgba(34, 197, 94, 0.1)' : 'rgba(99, 102, 241, 0.08)'
+
+  const labelMap: Record<UpskillingState, string> = {
+    not_started: 'Not started',
+    delegated: 'Delegated to HRBP',
+    plans_created: `${planCount} plans created · ${gapCount.toLocaleString()} employees`,
+    in_progress: `${planCount} plans · ${gapCount.toLocaleString()} enrolled`,
+    completed: `${gapCount.toLocaleString()} employees upskilled`,
+  }
+
+  return (
+    <div>
+      <div className="wfr-dash__plan-progress">
+        <div className="wfr-dash__plan-progress-bar" style={{ background: trackColor }}>
+          <div className="wfr-dash__plan-progress-fill" style={{ width: `${pct}%`, background: fillColor }} />
+        </div>
+        <span className="wfr-dash__plan-progress-label" style={isComplete ? { color: '#15803d' } : undefined}>{pct}%</span>
+      </div>
+      <div className="text-[11px] mt-0.5" style={{ color: isComplete ? '#15803d' : '#64748b' }}>
+        {labelMap[state]}
+      </div>
+    </div>
+  )
+}
+
 function BoardView({
   onDeptClick,
   focusCollectionActive,
@@ -681,6 +899,7 @@ function BoardView({
   setUpskillingLaunchOpen,
   setUpskillingActive,
   setUpskillingLaunchSummary,
+  scopedDepartments,
 }: {
   onDeptClick: (d: Dept) => void
   focusCollectionActive: boolean
@@ -698,6 +917,7 @@ function BoardView({
   setUpskillingLaunchOpen: (open: boolean) => void
   setUpskillingActive: (active: boolean) => void
   setUpskillingLaunchSummary: (summary: UpskillingLaunchSummary | null) => void
+  scopedDepartments?: string[]
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
@@ -708,8 +928,11 @@ function BoardView({
   }, [focusCollectionActive, collectionLaunchSummary])
 
   const allDeptsSorted = useMemo(() => {
-    return [...departments].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-  }, [])
+    const base = scopedDepartments?.length
+      ? departments.filter((d) => scopedDepartments.includes(d.name))
+      : departments
+    return [...base].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+  }, [scopedDepartments])
 
   // Top 3 departments by gap for opportunity tags in complete state
   const topGapDeptRanks = useMemo(() => {
@@ -867,12 +1090,10 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric>AI readiness</DataTableHead>
-                <DataTableHead metric>AI potential</DataTableHead>
-                <DataTableHead numeric>Transformation gap</DataTableHead>
-                {upskillingActive ? (
-                  <DataTableHead className="bg-[#fffbeb] border-l border-[#fcd34d]/30">Upskilling status</DataTableHead>
-                ) : null}
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                <DataTableHead className={upskillingActive ? "" : ""}>Upskilling</DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -891,13 +1112,8 @@ function BoardView({
                 const isPriority = priorityRank !== undefined
                 const managers = deptManagerTeams(d.name, d.employees)
                 const hrbp = managers[0]
-                const inUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(d.name)
-                const nameHash = d.name.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-                const deptPlanPct = inUpskilling ? (35 + Math.abs(nameHash * 3) % 45) : 0
-                const deptPlanCount = inUpskilling ? Math.max(2, Math.round(deptGapHeadcount(d) / 30)) : 0
-                const deptEnrolled = inUpskilling ? deptGapHeadcount(d) : 0
                 return (
-                    <DataTableRow key={d.name} variant={isPriority ? 'warn' : 'default'} onClick={() => onDeptClick(d)}>
+                    <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
                       <DataTableCell className="font-semibold">
                         <div className="flex items-center gap-2">
                           {d.name}
@@ -923,25 +1139,28 @@ function BoardView({
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
                       </DataTableCell>
-                      {upskillingActive ? (
-                        <DataTableCell className="bg-[#fffdf5] border-l border-[#fcd34d]/20">
-                          {inUpskilling ? (
-                            <div>
-                              <div className="wfr-dash__plan-progress">
-                                <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
-                                  <div className="wfr-dash__plan-progress-fill" style={{ width: `${deptPlanPct}%`, background: '#d97706' }} />
-                                </div>
-                                <span className="wfr-dash__plan-progress-label">{deptPlanPct}%</span>
-                              </div>
-                              <div className="text-[11px] text-[#92400e] mt-1">
-                                {deptPlanCount} plans · {deptEnrolled.toLocaleString()} enrolled
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] text-[#94a3b8]">Not started</span>
-                          )}
-                        </DataTableCell>
-                      ) : null}
+                      <DataTableCell>
+                        <UpskillingCell
+                          deptName={d.name}
+                          gapCount={gapCount}
+                          launchedDeptNames={upskillingLaunchSummary?.departmentNames ?? []}
+                          onStart={() => {
+                            const prev = upskillingLaunchSummary?.departmentNames ?? []
+                            const merged = [...new Set([...prev, d.name])]
+                            setUpskillingLaunchSummary({
+                              assignOwner: 'hrbp',
+                              departmentNames: merged,
+                              scopeLabel: merged.length === 1 ? d.name : `${merged.length} departments`,
+                              delegated: true,
+                              totalEmployees: merged.reduce((sum, name) => {
+                                const dept2 = departments.find((x) => x.name === name)
+                                return sum + (dept2?.employees ?? 0)
+                              }, 0),
+                            })
+                            setUpskillingActive(true)
+                          }}
+                        />
+                      </DataTableCell>
                     </DataTableRow>
                 )
               })}
@@ -960,11 +1179,11 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric>AI readiness</DataTableHead>
-                <DataTableHead metric>AI potential</DataTableHead>
-                <DataTableHead numeric>Gap</DataTableHead>
-                <DataTableHead metric className="bg-[#fffbeb] border-l border-[#fcd34d]/30">Collection progress</DataTableHead>
-                <DataTableHead className="bg-[#fffbeb]">Channels</DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
+                <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -986,7 +1205,7 @@ function BoardView({
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
                       </DataTableCell>
-                      <DataTableCell metric className="bg-[#fffdf5] border-l border-[#fcd34d]/20">
+                      <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
                         {inScope ? (
                           <div className="wfr-dash__plan-progress">
                             <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
@@ -998,10 +1217,10 @@ function BoardView({
                           <span className="text-[11px] text-[#94a3b8]">—</span>
                         )}
                       </DataTableCell>
-                      <DataTableCell className="bg-[#fffdf5]">
+                      <DataTableCell className="bg-[#fafbfc]">
                         {inScope ? (
                           <span className="inline-flex items-center gap-1.5 text-[13px] text-[#1a212e]">
-                            {(collectionLaunchSummary?.channelsLabel ?? 'Survey').includes('AI Agent') ? (
+                            {(collectionLaunchSummary?.channelsLabel ?? 'Survey').includes('AI') ? (
                               <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block' }} />
                             ) : (
                               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment</span>
@@ -1030,9 +1249,9 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric>AI readiness</DataTableHead>
-                <DataTableHead metric>AI potential</DataTableHead>
-                <DataTableHead numeric>Transformation gap</DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1104,15 +1323,20 @@ function BoardView({
 
 export function WorkforceReadinessDashboard({
   onViewChange,
+  autoLaunchCollection = false,
+  scopedDepartments,
 }: {
   onViewChange?: (view: 'board' | 'dept') => void
+  autoLaunchCollection?: boolean
+  /** When set, only show these departments (HRBP scoped view) */
+  scopedDepartments?: string[]
 } = {}) {
   const [view, setView] = useState<'board' | 'dept'>('board')
   const [dept, setDept] = useState<Dept | null>(null)
   const [focusCollectionActive, setFocusCollectionActive] = useState(false)
   const [focusCollectionLaunchSummary, setFocusCollectionLaunchSummary] =
     useState<FocusCollectionLaunchSummary | null>(null)
-  const [focusLaunchOpen, setFocusLaunchOpen] = useState(false)
+  const [focusLaunchOpen, setFocusLaunchOpen] = useState(autoLaunchCollection)
   const [focusCollectionComplete, setFocusCollectionComplete] = useState(false)
   const [collectionJustCompleted, setCollectionJustCompleted] = useState(false)
   const [upskillingActive, setUpskillingActive] = useState(false)
@@ -1188,6 +1412,7 @@ export function WorkforceReadinessDashboard({
             setUpskillingLaunchOpen={setUpskillingLaunchOpen}
             setUpskillingActive={setUpskillingActive}
             setUpskillingLaunchSummary={setUpskillingLaunchSummary}
+            scopedDepartments={scopedDepartments}
           />
         )}
         {view === 'dept' && dept && (

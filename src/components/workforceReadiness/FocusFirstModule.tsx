@@ -168,22 +168,15 @@ export function FocusFirstCollectionCard({
               <span className="wfr-ra-card__mini-label">Sample threshold reached — {currentDept.name} ready for upskilling</span>
             </div>
           </div>
-          <div className="wfr-ra-card__cta-row">
-            <div>
-              <p className="wfr-ra-card__cta-text">
-                Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
-                {topRoles.map((r, i) => (
-                  <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
-                ))}.
-              </p>
-              <p className="wfr-ra-card__hint">
-                Create development plans for these roles to close the readiness gap.
-              </p>
-            </div>
-            <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
-              Start upskilling&nbsp;→
-            </Button>
-          </div>
+          <p className="wfr-ra-card__cta-text">
+            Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
+            {topRoles.map((r, i) => (
+              <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
+            ))}.
+          </p>
+          <p className="wfr-ra-card__hint">
+            Select employees in the table below to create development plans.
+          </p>
         </div>
       )
     }

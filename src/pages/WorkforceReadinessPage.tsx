@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { useNavbarProps } from '../components/Navbar'
 import { CareerHubShell } from '@tonyh-2-eightfold/ef-design-system'
@@ -9,9 +9,18 @@ import './WorkforceReadinessPage.css'
 export function WorkforceReadinessPage() {
   const { currentUser } = useUser()
   const navbarProps = useNavbarProps()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [wfrView, setWfrView] = useState<'board' | 'dept'>('board')
+  const autoLaunch = searchParams.get('action') === 'launch'
+  const isHrbp = currentUser.id === 'laura-shah'
+  const hrbpDepartments = isHrbp ? ['Sales', 'Engineering', 'Customer Success'] : undefined
 
-  if (currentUser.id !== 'chro') {
+  // Clear the action param after reading it so it doesn't persist on refresh
+  if (autoLaunch) {
+    setSearchParams((prev) => { prev.delete('action'); return prev }, { replace: true })
+  }
+
+  if (currentUser.id !== 'chro' && currentUser.id !== 'laura-shah') {
     return <Navigate to="/" replace />
   }
 
@@ -25,7 +34,7 @@ export function WorkforceReadinessPage() {
         <div className="workforce-readiness-page__content">
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
-              <WorkforceReadinessDashboard onViewChange={setWfrView} />
+              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} />
             </div>
           </div>
         </div>

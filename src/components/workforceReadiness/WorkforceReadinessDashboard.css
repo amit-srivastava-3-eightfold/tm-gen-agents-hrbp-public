@@ -307,7 +307,7 @@
   background: #fff;
   border: 1px solid #d9dce1;
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   text-align: left;
   transition:
@@ -324,22 +324,22 @@
 .wfr-metric-card__top {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .wfr-metric-card__icon-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   flex-shrink: 0;
 }
 
 .wfr-metric-card__icon {
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -371,7 +371,7 @@
   font: var(--typography-header2);
   letter-spacing: var(--typography-header2-letter-spacing, -0.01em);
   color: #1a212e;
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   line-height: 1.12;
 }
 
@@ -388,10 +388,10 @@
 }
 
 .wfr-metric-card__primary {
-  font: var(--typography-body2);
+  font: var(--typography-body3);
   color: #1a212e;
-  margin: 0 0 16px;
-  line-height: 1.45;
+  margin: 0 0 12px;
+  line-height: 1.4;
   flex: 1;
   min-height: 0;
 }
@@ -408,8 +408,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 10px;
+  padding-top: 12px;
   margin-top: auto;
   border-top: 1px solid #eef0f3;
 }
@@ -1229,6 +1229,35 @@
     background: linear-gradient(180deg, #dcfce7 0%, #f0fdf4 100%);
     border-color: #86efac;
   }
+}
+
+/* Assign button in table */
+.wfr-dash__assign-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font: var(--typography-caption-semibold, 600 12px/16px var(--font-family));
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.wfr-dash__assign-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Table checkbox */
+.wfr-dash__table-check {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
 }
 
 /* Mini progress bar for collection complete state */
@@ -2301,4 +2330,24 @@
   font-weight: 600;
   color: #6366f1;
   white-space: nowrap;
+}
+
+.wfr-dash__start-upskilling-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border: 1px solid #d9dce1;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b5bdb;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wfr-dash__start-upskilling-btn:hover {
+  background: #f0f4ff;
+  border-color: #3b5bdb;
 }
