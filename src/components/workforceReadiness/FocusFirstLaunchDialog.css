@@ -5,6 +5,7 @@
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
   animation: wfr-focus-launch-fade-in 0.15s ease;
+  pointer-events: auto;
 }
 
 @keyframes wfr-focus-launch-fade-in {
@@ -30,6 +31,7 @@
   border: none;
   border-radius: 16px;
   background: #fff;
+  pointer-events: auto;
   box-shadow:
     0 24px 48px rgba(15, 23, 42, 0.12),
     0 0 0 1px rgba(15, 23, 42, 0.06);

@@ -12,6 +12,7 @@ import {
   type WfrDemoCollectionSnapshot,
 } from '../../data/wfrOrgData'
 import { FocusFirstLaunchDialog, type FocusCollectionLaunchSummary } from './FocusFirstLaunchDialog'
+import { deptManagerTeams } from './collectionHelpers'
 import type { UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 
 export type { FocusCollectionLaunchSummary }
@@ -128,8 +129,38 @@ export function FocusFirstCollectionCard({
         .slice(0, 3)
 
       const deptHasUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(currentDept.name)
+      const deptPlansAssigned = deptHasUpskilling && upskillingLaunchSummary?.plansAssigned?.includes(currentDept.name)
+      const deptTeams = deptManagerTeams(currentDept.name, currentDept.employees)
+      const planCount = gapCount // one plan per person in the gap
+      const teamCount = deptTeams.length
 
-      if (deptHasUpskilling) {
+      // State 3a: Plans created but not yet assigned
+      if (deptHasUpskilling && !deptPlansAssigned) {
+        return (
+          <div className="wfr-ra-card wfr-ra-card--success">
+            <div className="wfr-ra-card__header">
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span> Development plans created
+              </span>
+            </div>
+            <div className="wfr-ra-card__cta-row">
+              <div>
+                <p className="wfr-ra-card__cta-text">
+                  <strong>{planCount}</strong> development plans created for <strong>{teamCount}</strong> teams in <strong>{currentDept.name}</strong>.
+                </p>
+                <p className="wfr-ra-card__hint">Review and edit individual plans in the table below, then assign to employees.</p>
+              </div>
+              <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
+                Assign plans&nbsp;→
+              </Button>
+            </div>
+          </div>
+        )
+      }
+
+      // State 3b: Plans assigned, in progress
+      if (deptPlansAssigned) {
+        const pct = 35 + Math.abs((currentDept.name.length * 13) % 30)
         return (
           <div className="wfr-ra-card wfr-ra-card--warn">
             <div className="wfr-ra-card__header">
@@ -138,15 +169,15 @@ export function FocusFirstCollectionCard({
               </span>
             </div>
             <p className="wfr-ra-card__cta-text">
-              <strong>{Math.max(2, Math.round(gapCount / 30))}</strong> development plans in <strong>{currentDept.name}</strong> — <strong>{gapCount.toLocaleString()}</strong> employees enrolled.
+              <strong>{planCount}</strong> development plans in <strong>{currentDept.name}</strong> — <strong>{gapCount.toLocaleString()}</strong> employees enrolled.
             </p>
             <div className="wfr-ra-card__progress" style={{ cursor: 'default' }}>
               <div className="wfr-ra-card__progress-info">
-                <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#92400e' }}>{35 + Math.abs((currentDept.name.length * 13) % 30)}%</span>
+                <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#92400e' }}>{pct}%</span>
                 <span className="wfr-ra-card__progress-label">plan completion</span>
               </div>
               <div className="wfr-ra-card__track">
-                <div className="wfr-ra-card__fill" style={{ width: `${35 + Math.abs((currentDept.name.length * 13) % 30)}%` }} />
+                <div className="wfr-ra-card__fill" style={{ width: `${pct}%` }} />
               </div>
             </div>
             <p className="wfr-ra-card__hint">Track enrollment progress in the table below.</p>
@@ -168,15 +199,22 @@ export function FocusFirstCollectionCard({
               <span className="wfr-ra-card__mini-label">Sample threshold reached — {currentDept.name} ready for upskilling</span>
             </div>
           </div>
-          <p className="wfr-ra-card__cta-text">
-            Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
-            {topRoles.map((r, i) => (
-              <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
-            ))}.
-          </p>
-          <p className="wfr-ra-card__hint">
-            Select employees in the table below to create development plans.
-          </p>
+          <div className="wfr-ra-card__cta-row">
+            <div>
+              <p className="wfr-ra-card__cta-text">
+                Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
+                {topRoles.map((r, i) => (
+                  <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
+                ))}.
+              </p>
+              <p className="wfr-ra-card__hint">
+                Choose teams and assign development plans to close readiness gaps.
+              </p>
+            </div>
+            <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
+              Start upskilling&nbsp;→
+            </Button>
+          </div>
         </div>
       )
     }

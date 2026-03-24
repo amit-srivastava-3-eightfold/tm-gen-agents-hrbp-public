@@ -12,6 +12,8 @@ export type UpskillingLaunchSummary = {
   scopeLabel: string
   departmentNames: string[]
   totalEmployees: number
+  /** Departments whose plans have been assigned to employees */
+  plansAssigned?: string[]
 }
 
 export interface UpskillingLaunchDialogProps {
@@ -145,8 +147,8 @@ export function UpskillingLaunchDialog({
     const totalEmployeeCount = deptsByGap.reduce((sum, d) => sum + d.employees, 0)
     return (
       <>
-        <h2 className="wfr-focus-launch__title">Which departments should start upskilling?</h2>
-        <p className="wfr-focus-launch__sub">Roll out everywhere or start with priority departments.</p>
+        <h2 className="wfr-focus-launch__title">Which departments need development plans?</h2>
+        <p className="wfr-focus-launch__sub">Development plans will be created and assigned to close readiness gaps across selected departments.</p>
         <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Upskilling scope">
           <button
             type="button"
@@ -347,7 +349,7 @@ export function UpskillingLaunchDialog({
             ) : (
               <>
                 <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>Back</Button>
-                <Button type="button" variant="primary" onClick={handleLaunch}>Launch&nbsp;→</Button>
+                <Button type="button" variant="primary" onClick={handleLaunch}>Create development plans&nbsp;→</Button>
               </>
             )}
           </div>

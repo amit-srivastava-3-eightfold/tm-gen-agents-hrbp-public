@@ -76,11 +76,18 @@ export function barColor(rate: number) {
   return '#94a3b8'
 }
 
+export type LineManager = {
+  name: string
+  title: string
+  employees: number
+}
+
 export type DeptManagerTeam = {
   manager: string
   title: string
   employees: number
   responseRate: number
+  lineManagers?: LineManager[]
 }
 
 const DEPT_TITLES: Record<string, string[]> = {
@@ -159,6 +166,45 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
     // Fallback: random rates (no dept rate provided)
     for (let i = 0; i < teams.length; i++) {
       teams[i].responseRate = Math.min(100, Math.max(5, 10 + ((h + i * 17) % 70)))
+    }
+  }
+
+  // Add line managers for larger teams (25+ employees)
+  const LINE_MGR_TITLES: Record<string, string[]> = {
+    Administrative: ['Senior Admin Coordinator', 'Office Services Lead', 'Executive Support Lead'],
+    Finance: ['Senior Accountant', 'Financial Analyst Lead', 'AP/AR Supervisor'],
+    Procurement: ['Senior Buyer', 'Vendor Coordinator Lead', 'Contract Specialist'],
+    Facilities: ['Senior Facilities Coordinator', 'Maintenance Supervisor', 'Workplace Services Lead'],
+    Operations: ['Shift Supervisor', 'Process Lead', 'Operations Coordinator'],
+    Marketing: ['Senior Marketing Specialist', 'Campaign Lead', 'Content Lead'],
+    HR: ['Senior HR Coordinator', 'Talent Partner', 'Benefits Specialist Lead'],
+    Sales: ['Senior Account Manager', 'Sales Team Lead', 'Territory Lead'],
+    Engineering: ['Tech Lead', 'Senior Developer', 'Platform Lead'],
+    Legal: ['Senior Paralegal', 'Contracts Lead', 'Compliance Specialist'],
+    'Customer Success': ['Senior CSM', 'Onboarding Lead', 'Renewals Lead'],
+    Product: ['Senior Product Analyst', 'UX Lead', 'Product Ops Lead'],
+    'IT & Security': ['IT Operations Lead', 'Security Analyst Lead', 'Helpdesk Supervisor'],
+    'Data & Analytics': ['Senior Data Analyst', 'BI Lead', 'Data Ops Lead'],
+    Partnerships: ['Partner Development Lead', 'Alliance Manager', 'Channel Lead'],
+    Communications: ['Senior Communications Specialist', 'PR Lead', 'Content Editor Lead'],
+    'Quality & Compliance': ['Senior QA Analyst', 'Audit Coordinator', 'Regulatory Specialist'],
+  }
+  const lineTitles = LINE_MGR_TITLES[deptName] ?? ['Team Lead', 'Senior Coordinator', 'Group Lead']
+  for (const team of teams) {
+    if (team.employees >= 15) {
+      const lmCount = team.employees >= 40 ? 3 : 2
+      const lmNames: LineManager[] = []
+      let lmRemaining = team.employees
+      for (let j = 0; j < lmCount; j++) {
+        const lmIdx = (deptNameHash(team.manager) + j * 7) % DEMO_MANAGERS.length
+        const lmName = DEMO_MANAGERS[(lmIdx + teams.length + j) % DEMO_MANAGERS.length]
+        if (lmName === team.manager) continue
+        const isLast = j === lmCount - 1
+        const lmShare = isLast ? lmRemaining : Math.round(team.employees / lmCount) + ((j % 3) - 1)
+        lmRemaining -= lmShare
+        lmNames.push({ name: lmName, title: lineTitles[j % lineTitles.length], employees: Math.max(5, lmShare) })
+      }
+      team.lineManagers = lmNames
     }
   }
 
