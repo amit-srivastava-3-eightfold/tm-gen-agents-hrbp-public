@@ -34,7 +34,7 @@ export function WorkforceReadinessPage() {
         <div className="workforce-readiness-page__content">
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
-              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} />
+              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} />
             </div>
           </div>
         </div>

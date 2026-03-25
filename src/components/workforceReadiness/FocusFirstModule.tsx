@@ -71,6 +71,10 @@ export interface FocusFirstCollectionCardProps {
   upskillingActive?: boolean
   /** Summary of upskilling launch (departments selected, etc.) */
   upskillingLaunchSummary?: UpskillingLaunchSummary | null
+  /** HRBP persona */
+  isHrbp?: boolean
+  /** HRBP has created development plans */
+  hrbpPlansCreated?: boolean
 }
 
 /** Shared Focus First card — collecting state or complete state. */
@@ -88,6 +92,8 @@ export function FocusFirstCollectionCard({
   onStartUpskilling,
   upskillingActive = false,
   upskillingLaunchSummary = null,
+  isHrbp = false,
+  hrbpPlansCreated = false,
 }: FocusFirstCollectionCardProps) {
   // Animation phases: idle → filling → bell → hold → done
   const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
@@ -115,6 +121,64 @@ export function FocusFirstCollectionCard({
       : launchSummary
         ? focusCollectionUnderwaySubtext(launchSummary)
         : 'Survey responses are rolling in. Check back as participation grows.'
+
+  // HRBP view: after CHRO delegated upskilling
+  if (isHrbp && upskillingActive && (collectionJustCompleted || collectionComplete)) {
+    const scopedDeptNames = upskillingLaunchSummary?.departmentNames ?? []
+    const scopedDepts = scopedDeptNames.length ? departments.filter(d => scopedDeptNames.includes(d.name)) : departments
+    const totalGap = scopedDepts.reduce((s, d) => s + deptGapHeadcount(d), 0)
+    const totalRoles = scopedDepts.reduce((s, d) => s + getRolesForDept(d.name).length, 0)
+
+    if (hrbpPlansCreated) {
+      // Plans created — show green success card with plan count
+      return (
+        <div className="wfr-ra-card wfr-ra-card--success">
+          <div className="wfr-ra-card__header">
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span> Development plans created
+            </span>
+          </div>
+          <div className="wfr-ra-card__cta-row">
+            <div>
+              <p className="wfr-ra-card__cta-text">
+                <strong>{totalGap.toLocaleString()}</strong> development plans created across <strong>{totalRoles}</strong> roles. Review and assign plans to employees.
+              </p>
+              <p className="wfr-ra-card__hint">
+                Use the table below to view plans, edit courses, and assign to individual employees.
+              </p>
+            </div>
+            <Button type="button" variant="primary" className="shrink-0" onClick={onScrollToTable}>
+              Assign plans&nbsp;→
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // Plans not yet created — show action required
+    return (
+      <div className="wfr-ra-card wfr-ra-card--warn">
+        <div className="wfr-ra-card__header">
+          <span className="wfr-ra-card__eyebrow" style={{ color: '#92400e' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>assignment</span> Action required
+          </span>
+        </div>
+        <div className="wfr-ra-card__cta-row">
+          <div>
+            <p className="wfr-ra-card__cta-text">
+              Create development plans for <strong>{totalGap.toLocaleString()}</strong> employees across <strong>{totalRoles}</strong> roles in your departments.
+            </p>
+            <p className="wfr-ra-card__hint">
+              Review roles in the table below and create plans to close readiness gaps.
+            </p>
+          </div>
+          <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
+            Create development plans&nbsp;→
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   if (collectionJustCompleted || collectionComplete) {
     const isDeptView = !!deptName
@@ -226,53 +290,36 @@ export function FocusFirstCollectionCard({
       : departments
     const upskillingDeptSet = new Set(upskillingLaunchSummary?.departmentNames ?? [])
     const remainingDepts = scopedDepts.filter((d) => !upskillingDeptSet.has(d.name))
-    const nextPriorityDepts = [...remainingDepts]
-      .sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-      .slice(0, 3)
     const remainingGapPeople = remainingDepts.reduce((sum, d) => {
       const augPeople = Math.round((d.employees / ORG.totalEmployees) * ORG.peopleInAugRoles)
       return sum + Math.round(augPeople * (1 - d.aiReadiness / 100))
     }, 0)
 
-    // After upskilling is launched — show progress + option to add more
+    // After upskilling is launched — show plans created card
     if (upskillingActive) {
       const launchedDepts = scopedDepts.filter((d) => upskillingDeptSet.has(d.name))
-      const totalPlans = launchedDepts.reduce((sum, d) => sum + Math.max(2, Math.round(deptGapHeadcount(d) / 30)), 0)
       const totalEmployeesInPlans = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
-      // Simulate ~60% completion progress
-      const completionPct = Math.min(95, 35 + ((launchedDepts.length * 13) % 30))
-      const hasMore = nextPriorityDepts.length > 0
+      const totalRoles = launchedDepts.reduce((sum, d) => sum + getRolesForDept(d.name).length, 0)
 
       return (
-        <div className="wfr-ra-card wfr-ra-card--warn">
+        <div className="wfr-ra-card wfr-ra-card--success">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow" style={{ color: '#92400e' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>school</span> Upskilling in progress
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span> Development plans created
             </span>
           </div>
-          <p className="wfr-ra-card__cta-text">
-            <strong>{totalPlans}</strong> development plans across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'} — <strong>{totalEmployeesInPlans.toLocaleString()}</strong> employees enrolled.
-          </p>
-          <div className="wfr-ra-card__progress" style={{ cursor: 'default' }}>
-            <div className="wfr-ra-card__progress-info">
-              <span className="wfr-ra-card__progress-pct tabular-nums" style={{ color: '#92400e' }}>{completionPct}%</span>
-              <span className="wfr-ra-card__progress-label">plan completion</span>
+          <div className="wfr-ra-card__cta-row">
+            <div>
+              <p className="wfr-ra-card__cta-text">
+                <strong>{totalEmployeesInPlans.toLocaleString()}</strong> development plans created across <strong>{totalRoles}</strong> roles in <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}. Review and assign plans to employees.
+              </p>
+              <p className="wfr-ra-card__hint">
+                Use the table below to view plans, edit courses, and assign to individual employees.
+              </p>
             </div>
-            <div className="wfr-ra-card__track">
-              <div className="wfr-ra-card__fill" style={{ width: `${completionPct}%` }} />
-            </div>
-          </div>
-          <div className="wfr-ra-card__actions">
-            {onScrollToTable ? (
-              <button type="button" className="wfr-ra-card__link" onClick={onScrollToTable}>
-                View details&nbsp;↓
-              </button>
-            ) : null}
-            {hasMore ? (
-              <button type="button" className="wfr-ra-card__link" onClick={onStartUpskilling}>
-                Add more departments&nbsp;→
-              </button>
-            ) : null}
+            <Button type="button" variant="primary" className="shrink-0" onClick={onScrollToTable}>
+              Assign plans&nbsp;→
+            </Button>
           </div>
         </div>
       )
@@ -297,13 +344,9 @@ export function FocusFirstCollectionCard({
         <div className="wfr-ra-card__cta-row">
           <div>
             <p className="wfr-ra-card__cta-text">
-              <strong>{remainingGapPeople.toLocaleString()}</strong> employees need upskilling.
-              Prioritize{' '}
-              {nextPriorityDepts.map((d, i) => (
-                <span key={d.name}><strong>{d.name}</strong>{i < nextPriorityDepts.length - 1 ? (i === nextPriorityDepts.length - 2 ? ' and ' : ', ') : ''}</span>
-              ))}.
+              Based on the AI agent interviews, improve your organization's productivity by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
             </p>
-            <p className="wfr-ra-card__hint">Assign development plans to close readiness gaps across these departments.</p>
+            <p className="wfr-ra-card__hint">Create development plans to close readiness gaps across these departments.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             Start upskilling&nbsp;→
@@ -422,6 +465,8 @@ export type FocusFirstModuleBoardProps = {
   upskillingActive?: boolean
   /** Summary of upskilling launch */
   upskillingLaunchSummary?: UpskillingLaunchSummary | null
+  isHrbp?: boolean
+  hrbpPlansCreated?: boolean
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -470,6 +515,8 @@ function FocusFirstModuleBoard({
   onStartUpskilling,
   upskillingActive,
   upskillingLaunchSummary: boardUpskillingLaunchSummary,
+  isHrbp = false,
+  hrbpPlansCreated = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'>) {
   const orgCollectionSnap = useMemo(() => {
     const scoped = collectionLaunchSummary?.scopedDepartmentNames
@@ -499,6 +546,8 @@ function FocusFirstModuleBoard({
             onStartUpskilling={onStartUpskilling}
             upskillingActive={upskillingActive}
             upskillingLaunchSummary={boardUpskillingLaunchSummary}
+            isHrbp={isHrbp}
+            hrbpPlansCreated={hrbpPlansCreated}
             onAddDepartments={collectionComplete ? undefined : () => {
               onRequestCloseMetricSheet?.()
               onLaunchOpenChange(true)
@@ -578,6 +627,8 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     onStartUpskilling,
     upskillingActive,
     upskillingLaunchSummary: propsUpskillingLaunchSummary,
+    isHrbp: propsIsHrbp,
+    hrbpPlansCreated: propsHrbpPlansCreated,
   } = props
 
   return (
@@ -597,6 +648,8 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       onStartUpskilling={onStartUpskilling}
       upskillingActive={upskillingActive}
       upskillingLaunchSummary={propsUpskillingLaunchSummary}
+      isHrbp={propsIsHrbp}
+      hrbpPlansCreated={propsHrbpPlansCreated}
     />
   )
 }

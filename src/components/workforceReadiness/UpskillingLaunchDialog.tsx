@@ -349,7 +349,7 @@ export function UpskillingLaunchDialog({
             ) : (
               <>
                 <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>Back</Button>
-                <Button type="button" variant="primary" onClick={handleLaunch}>Create development plans&nbsp;→</Button>
+                <Button type="button" variant="primary" onClick={handleLaunch}>Start upskilling&nbsp;→</Button>
               </>
             )}
           </div>

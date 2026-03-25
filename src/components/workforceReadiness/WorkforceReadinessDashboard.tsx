@@ -1461,6 +1461,7 @@ function BoardView({
   setUpskillingActive,
   setUpskillingLaunchSummary,
   scopedDepartments,
+  isHrbp = false,
 }: {
   onDeptClick: (d: Dept) => void
   focusCollectionActive: boolean
@@ -1479,12 +1480,19 @@ function BoardView({
   setUpskillingActive: (active: boolean) => void
   setUpskillingLaunchSummary: (summary: UpskillingLaunchSummary | null) => void
   scopedDepartments?: string[]
+  isHrbp?: boolean
 }) {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [boardTab, setBoardTab] = useState<'roles' | 'departments'>('roles')
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+
+  const [hrbpDevPlanDialogOpen, setHrbpDevPlanDialogOpen] = useState(false)
+  const [hrbpDevPlanScope, setHrbpDevPlanScope] = useState<'all' | 'select'>('all')
+  const [hrbpSelectedRoles, setHrbpSelectedRoles] = useState<Record<string, boolean>>({})
+  const [hrbpPlansCreated, setHrbpPlansCreated] = useState(false)
+  const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
 
   const scopedRollup = useMemo(() => {
     if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
@@ -1625,9 +1633,19 @@ function BoardView({
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
           collectionLaunchSummary={collectionLaunchSummary}
           onScrollToTable={() => document.getElementById('board-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          onStartUpskilling={() => setUpskillingLaunchOpen(true)}
+          onStartUpskilling={() => {
+            if (isHrbp) {
+              setHrbpDevPlanScope('all')
+              setHrbpSelectedRoles({})
+              setHrbpDevPlanDialogOpen(true)
+            } else {
+              setUpskillingLaunchOpen(true)
+            }
+          }}
           upskillingActive={upskillingActive}
           upskillingLaunchSummary={upskillingLaunchSummary}
+          isHrbp={isHrbp}
+          hrbpPlansCreated={hrbpPlansCreated}
         />
 
         <div className="wfr-dash__cards-row">
@@ -1663,7 +1681,7 @@ function BoardView({
       {focusCollectionComplete ? (
         <div>
           <div className="wfr-dash__panel-head">
-            <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>
+            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by priority {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1752,7 +1770,7 @@ function BoardView({
       ) : focusCollectionActive ? (
         <div id="board-collection-table">
           <div className="wfr-dash__panel-head">
-            <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>
+            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1822,7 +1840,7 @@ function BoardView({
       ) : (
         <div>
           <div className="wfr-dash__panel-head">
-            <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>
+            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1869,34 +1887,42 @@ function BoardView({
 
         <TabsContent value="roles">
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <TabsList className="wfr-dash__board-tabs" style={{ background: '#e8ecf1', borderRadius: 10, padding: 3 }}>
-              <TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger>
-              <TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger>
-            </TabsList>
-            <span className="wfr-dash__panel-hint">{allRoles.length} roles across {allDeptsSorted.length} departments</span>
+            {!isHrbp ? (
+              <TabsList className="wfr-dash__board-tabs" style={{ background: '#e8ecf1', borderRadius: 10, padding: 3 }}>
+                <TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger>
+                <TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger>
+              </TabsList>
+            ) : null}
+            <span className="wfr-dash__panel-hint">{allRoles.length} roles{!isHrbp ? ` across ${allDeptsSorted.length} departments` : ''}</span>
           </div>
+
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead>Role</DataTableHead>
-                <DataTableHead>Department</DataTableHead>
+                {!isHrbp && <DataTableHead>Department</DataTableHead>}
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                {(upskillingActive || hrbpPlansCreated) && (
+                  <>
+                    <DataTableHead className="sticky right-0 bg-[#f8fafc] z-10 border-l border-[#e5e7eb]">Upskilling</DataTableHead>
+                  </>
+                )}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {allRoles.map((r) => {
                 const gapColor = r.gap > r.employees * 0.5 ? '#dc2626' : r.gap > r.employees * 0.3 ? '#d97706' : '#15803d'
                 return (
-                  <DataTableRow key={`${r.dept}-${r.title}`} onClick={() => {
+                  <DataTableRow key={`${r.dept}-${r.title}`} onClick={isHrbp ? undefined : () => {
                     const d = allDeptsSorted.find(x => x.name === r.dept)
                     if (d) onDeptClick(d)
                   }}>
                     <DataTableCell className="font-semibold">{r.title}</DataTableCell>
-                    <DataTableCell className="text-[13px] text-[#475569] !max-w-[120px] truncate">{r.dept}</DataTableCell>
+                    {!isHrbp && <DataTableCell className="text-[13px] text-[#475569] !max-w-[120px] truncate">{r.dept}</DataTableCell>}
                     <DataTableCell align="right" numeric className="!w-[60px]">{r.employees.toLocaleString()}</DataTableCell>
                     <DataTableCell align="right">
                       <button
@@ -1909,12 +1935,8 @@ function BoardView({
                     </DataTableCell>
                     <DataTableCell metric>
                       {focusCollectionComplete ? (
-                        <div className="flex items-start gap-3">
-                          <div style={{ opacity: 0.4 }}>
-                            <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} width={90} />
-                          </div>
-                          <span className="text-[12px] text-[#94a3b8]" style={{ lineHeight: 1, marginTop: 1 }}>→</span>
-                          <DeptTableSoloBar variant="readiness" pct={r.measuredReadiness} width={90} />
+                        <div className="wfr-dash__readiness-with-trend">
+                          <DeptTableSoloBar variant="readiness" pct={r.measuredReadiness} />
                           <button
                             type="button"
                             className={`wfr-dash__trend-badge ${r.measuredReadiness >= r.aiReadiness ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}
@@ -1933,6 +1955,64 @@ function BoardView({
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{r.gap.toLocaleString()}</span>
                     </DataTableCell>
+                    {(upskillingActive || hrbpPlansCreated) && (
+                      <>
+                      <DataTableCell className="sticky right-0 bg-white z-10 border-l border-[#e5e7eb]">
+                        {assignedPlans.has(r.title) ? (
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
+                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                              onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
+                                View plan
+                              </span>
+                            </button>
+                            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[#d97706]">
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>sync</span>
+                              In progress
+                            </span>
+                          </div>
+                        ) : (upskillingActive || hrbpPlansCreated) ? (
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
+                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                              onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
+                                View plan
+                              </span>
+                            </button>
+                            <button type="button" className="wfr-dash__assign-btn" onClick={(e) => {
+                              e.stopPropagation()
+                              setAssignedPlans(prev => new Set([...prev, r.title]))
+                            }}>
+                              Assign
+                            </button>
+                          </div>
+                        ) : (
+                          <Button type="button" variant="secondary" size="sm" onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation()
+                            if (isHrbp) {
+                              setHrbpDevPlanScope('all')
+                              setHrbpSelectedRoles({})
+                              setHrbpDevPlanDialogOpen(true)
+                            } else {
+                              setUpskillingLaunchOpen(true)
+                            }
+                          }}>
+                            Create plans
+                          </Button>
+                        )}
+                      </DataTableCell>
+                      </>
+                    )}
                   </DataTableRow>
                 )
               })}
@@ -1975,43 +2055,136 @@ function BoardView({
                 const belowCount = tasks.filter(t => t.score < 15).length
                 return (
                   <>
-                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-                      <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">Total tasks</div>
-                        <span className="text-[16px] font-bold text-[#1a212e]">{tasks.length}</span>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">Augmentation zone</div>
-                        <span className="text-[16px] font-bold text-[#15803d]">{augCount}</span>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">Above threshold</div>
-                        <span className="text-[16px] font-bold text-[#6366f1]">{aboveCount}</span>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">Below threshold</div>
-                        <span className="text-[16px] font-bold text-[#94a3b8]">{belowCount}</span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {[...tasks].sort((a, b) => b.score - a.score).map((t, i) => {
-                        const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
-                        const zoneColor = zone === 'augment' ? '#15803d' : zone === 'above' ? '#6366f1' : '#94a3b8'
-                        const zoneBg = zone === 'augment' ? '#f0fdf4' : zone === 'above' ? '#eef2ff' : '#f8fafc'
-                        const zoneLabel = zone === 'augment' ? 'Augmentation zone' : zone === 'above' ? 'Above threshold' : 'Below threshold'
-                        return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                            <div style={{ flex: 1 }}>
-                              <div className="text-[13px] font-medium text-[#1a212e]">{t.task}</div>
+                    {/* Visual stats */}
+                    {(() => {
+                      // Simulate task movement from last collection
+                      // Some tasks moved from Human → Augment, some from Augment → Automate
+                      const roleHash = taskSheetRole.title.split('').reduce((h: number, c: string) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+                      const movedToAugment = Math.abs(roleHash) % 3 // 0-2 tasks moved from Human → Augment
+                      const movedToAutomate = Math.abs(roleHash * 7) % 2 // 0-1 tasks moved from Augment → Automate
+                      const movedFromHuman = movedToAugment
+                      const augDelta = movedToAugment - movedToAutomate
+                      const autoDelta = movedToAutomate
+                      const humanDelta = -movedFromHuman
+
+                      return (
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #bbf7d0', background: '#f0fdf4' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 20, fontWeight: 700, color: '#15803d' }}>{augCount}</span>
+                              {augDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: augDelta > 0 ? '#15803d' : '#dc2626' }}>{augDelta > 0 ? '↑' : '↓'}{Math.abs(augDelta)}</span>}
                             </div>
-                            <span className="text-[12px] font-semibold tabular-nums" style={{ color: zoneColor, minWidth: 32, textAlign: 'right' }}>{t.score}%</span>
-                            <span style={{ padding: '2px 8px', borderRadius: 4, background: zoneBg, border: '1px solid ' + zoneColor + '20', fontSize: 11, fontWeight: 500, color: zoneColor, whiteSpace: 'nowrap' }}>
-                              {zoneLabel}
-                            </span>
+                            <div style={{ fontSize: 11, color: '#166534', fontWeight: 500 }}>Augment</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>Human leads, AI assists</div>
                           </div>
-                        )
-                      })}
-                    </div>
+                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#eef2ff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 20, fontWeight: 700, color: '#6366f1' }}>{aboveCount}</span>
+                              {autoDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#6366f1' }}>↑{autoDelta}</span>}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#4338ca', fontWeight: 500 }}>Automate</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>AI runs autonomously</div>
+                          </div>
+                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 20, fontWeight: 700, color: '#94a3b8' }}>{belowCount}</span>
+                              {humanDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#dc2626' }}>↓{Math.abs(humanDelta)}</span>}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>Human</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>Requires judgment or trust</div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Grouped task list by Octave classification */}
+                    {(() => {
+                      // Skills associated with tasks by zone
+                      const augmentSkills: Record<string, string[]> = {
+                        'research': ['AI-assisted research', 'Data synthesis'],
+                        'draft': ['AI writing', 'Content generation'],
+                        'analys': ['Data interpretation', 'Pattern recognition'],
+                        'plan': ['AI-assisted planning', 'Scenario modeling'],
+                        'review': ['Quality evaluation', 'AI output review'],
+                        'track': ['AI analytics', 'Trend detection'],
+                        'coordinat': ['AI scheduling', 'Workflow automation'],
+                        'report': ['Automated reporting', 'Data visualization'],
+                        'forecast': ['Predictive analytics', 'AI modeling'],
+                        'screen': ['AI screening', 'Candidate matching'],
+                        'document': ['AI documentation', 'Template generation'],
+                        'budget': ['Financial modeling', 'AI forecasting'],
+                      }
+                      const automateSkills = ['Process automation', 'AI pipeline', 'Zero-touch processing']
+                      const humanSkills: Record<string, string[]> = {
+                        'negotiat': ['Persuasion', 'Relationship building'],
+                        'conflict': ['Mediation', 'Emotional intelligence'],
+                        'client': ['Trust building', 'Empathy'],
+                        'mentor': ['Coaching', 'Leadership'],
+                        'train': ['Facilitation', 'Knowledge transfer'],
+                        'strateg': ['Vision', 'Business judgment'],
+                      }
+
+                      function getSkillsForTask(task: string, zone: string): string[] {
+                        const lower = task.toLowerCase()
+                        if (zone === 'augment') {
+                          for (const [key, skills] of Object.entries(augmentSkills)) {
+                            if (lower.includes(key)) return skills
+                          }
+                          return ['AI collaboration', 'Tool fluency']
+                        }
+                        if (zone === 'above') return automateSkills.slice(0, 2)
+                        // below
+                        for (const [key, skills] of Object.entries(humanSkills)) {
+                          if (lower.includes(key)) return skills
+                        }
+                        return ['Critical thinking', 'Human judgment']
+                      }
+
+                      const groups = [
+                        { label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
+                        { label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
+                        { label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
+                      ]
+
+                      return groups.filter(g => g.tasks.length > 0).map((group) => (
+                        <div key={group.label} style={{ marginBottom: 16 }}>
+                          <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
+                              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{group.desc}</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {group.tasks.sort((a, b) => b.score - a.score).map((t, i) => {
+                              const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
+                              const skills = getSkillsForTask(t.task, zone)
+                              // Only show trend on tasks that moved zones (simulate: tasks near zone boundaries)
+                              const taskHash = t.task.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
+                              const movedUp = zone === 'augment' && t.score >= 15 && t.score <= 20 && Math.abs(taskHash) % 3 === 0 // near lower boundary = recently moved from Human
+                              const movedFromAug = zone === 'above' && t.score > 75 && t.score <= 82 && Math.abs(taskHash) % 2 === 0 // near upper boundary = recently moved from Augment
+                              const moved = movedUp || movedFromAug
+                              return (
+                                <div key={i} style={{ padding: '10px 12px', borderRadius: 6, border: moved ? '1px solid #bbf7d0' : '1px solid #e5e7eb', background: moved ? '#fafff9' : undefined }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
+                                    {moved && <span style={{ fontSize: 12, fontWeight: 600, color: '#15803d', marginLeft: 8 }}>↑ New</span>}
+                                  </div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {skills.map((skill) => (
+                                      <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>
+                                        {skill}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    })()}
                   </>
                 )
               })()}
@@ -2020,6 +2193,112 @@ function BoardView({
         </div>,
         document.body,
       )}
+
+      {/* HRBP dev plan role selection dialog */}
+      {hrbpDevPlanDialogOpen && (() => {
+        const selectedRoleNames = Object.keys(hrbpSelectedRoles).filter(k => hrbpSelectedRoles[k])
+        const selectedCount = hrbpDevPlanScope === 'all' ? allRoles.length : selectedRoleNames.length
+        return (
+          <>
+            <div className="wfr-focus-launch__overlay" onClick={() => setHrbpDevPlanDialogOpen(false)} />
+            <div className="wfr-focus-launch__content" style={{ width: 'min(520px, calc(100vw - 32px))' }}>
+              <div className="wfr-focus-launch__header">
+                <div className="wfr-focus-launch__header-top">
+                  <h2 className="wfr-focus-launch__dialog-title">Create development plans</h2>
+                  <button type="button" className="wfr-focus-launch__close" onClick={() => setHrbpDevPlanDialogOpen(false)}>
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              </div>
+              <div className="wfr-focus-launch__body">
+                <h3 className="wfr-focus-launch__title">Which roles need development plans?</h3>
+                <p className="wfr-focus-launch__sub">Create plans for all roles or select specific ones to prioritize.</p>
+                <div className="wfr-focus-launch__options">
+                  <button
+                    type="button"
+                    className={`wfr-focus-launch__option ${hrbpDevPlanScope === 'all' ? 'wfr-focus-launch__option--selected' : ''}`}
+                    onClick={() => setHrbpDevPlanScope('all')}
+                  >
+                    <span className="wfr-focus-launch__radio">
+                      {hrbpDevPlanScope === 'all' ? <span className="wfr-focus-launch__radio-dot" /> : null}
+                    </span>
+                    <span className="wfr-focus-launch__option-text">
+                      <span className="wfr-focus-launch__option-label">All roles</span>
+                      <span className="wfr-focus-launch__option-desc">{allRoles.length} roles across your departments</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`wfr-focus-launch__option ${hrbpDevPlanScope === 'select' ? 'wfr-focus-launch__option--selected' : ''}`}
+                    onClick={() => setHrbpDevPlanScope('select')}
+                  >
+                    <span className="wfr-focus-launch__radio">
+                      {hrbpDevPlanScope === 'select' ? <span className="wfr-focus-launch__radio-dot" /> : null}
+                    </span>
+                    <span className="wfr-focus-launch__option-text">
+                      <span className="wfr-focus-launch__option-label">Select specific roles</span>
+                      <span className="wfr-focus-launch__option-desc">Choose which roles to create plans for first</span>
+                    </span>
+                  </button>
+                </div>
+                {hrbpDevPlanScope === 'select' && (
+                  <>
+                    <div className="wfr-focus-launch__dept-list-header" style={{ marginTop: 16 }}>
+                      <span className="wfr-focus-launch__dept-count" style={{ paddingLeft: 4 }}>
+                        {selectedRoleNames.length} of {allRoles.length} selected
+                      </span>
+                    </div>
+                    <div className="wfr-focus-launch__dept-list">
+                      {allRoles.map((r) => {
+                        const checked = !!hrbpSelectedRoles[`${r.dept}-${r.title}`]
+                        return (
+                          <button
+                            key={`${r.dept}-${r.title}`}
+                            type="button"
+                            className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                            onClick={() => setHrbpSelectedRoles(prev => ({ ...prev, [`${r.dept}-${r.title}`]: !prev[`${r.dept}-${r.title}`] }))}
+                          >
+                            <span className="wfr-focus-launch__check">{checked ? '✓' : ''}</span>
+                            <div className="wfr-focus-launch__dept-info">
+                              <div className="wfr-focus-launch__dept-name-row">
+                                <span className="wfr-focus-launch__dept-name">{r.title}</span>
+                              </div>
+                              <span className="wfr-focus-launch__dept-detail">
+                                {r.dept} · {r.employees} employees · {r.gap} to upskill
+                              </span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="wfr-focus-launch__footer">
+                <Button variant="outline" onClick={() => setHrbpDevPlanDialogOpen(false)}>Cancel</Button>
+                <Button
+                  variant="primary"
+                  disabled={hrbpDevPlanScope === 'select' && selectedCount === 0}
+                  onClick={() => {
+                    setHrbpDevPlanDialogOpen(false)
+                    setHrbpPlansCreated(true)
+                    // Mark all scoped departments as having upskilling launched
+                    const deptNames = [...new Set(allRoles.map(r => r.dept))]
+                    const merged = [...new Set([...(upskillingLaunchSummary?.departmentNames ?? []), ...deptNames])]
+                    setUpskillingLaunchSummary({
+                      ...upskillingLaunchSummary!,
+                      departmentNames: merged,
+                    })
+                    setUpskillingActive(true)
+                  }}
+                >
+                  Create plans&nbsp;→
+                </Button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
 
       {/* Upskilling launch wizard */}
       <UpskillingLaunchDialog
@@ -2055,11 +2334,14 @@ export function WorkforceReadinessDashboard({
   onViewChange,
   autoLaunchCollection = false,
   scopedDepartments,
+  isHrbp = false,
 }: {
   onViewChange?: (view: 'board' | 'dept') => void
   autoLaunchCollection?: boolean
   /** When set, only show these departments (HRBP scoped view) */
   scopedDepartments?: string[]
+  /** HRBP persona — different RA card, no departments tab, scoped roles */
+  isHrbp?: boolean
 } = {}) {
   const [view, setView] = useState<'board' | 'dept'>('board')
   const [dept, setDept] = useState<Dept | null>(null)
@@ -2143,6 +2425,7 @@ export function WorkforceReadinessDashboard({
             setUpskillingActive={setUpskillingActive}
             setUpskillingLaunchSummary={setUpskillingLaunchSummary}
             scopedDepartments={scopedDepartments}
+            isHrbp={isHrbp}
           />
         )}
         {view === 'dept' && dept && (
