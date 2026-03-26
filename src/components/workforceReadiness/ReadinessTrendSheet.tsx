@@ -96,7 +96,6 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
 
   const { trend, estimated, measured } = data
 
-  const deltaLabel = `${trend.direction === 'up' ? '↑' : '↓'}${Math.abs(trend.delta)}pt`
   const isUp = trend.direction === 'up'
 
   const sheetTitle = roleContext ? roleContext.title : managerContext ? managerContext.manager : dept.name

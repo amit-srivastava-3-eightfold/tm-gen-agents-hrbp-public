@@ -51,49 +51,8 @@ export type WfrPersistedState = {
 
 const WFR_STATE_KEY = 'tm:wfr-state'
 
-function readWfrState(): WfrPersistedState {
-  try {
-    const raw = localStorage.getItem(WFR_STATE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch { /* ignore */ }
-  return { state: 1 }
-}
-
 function writeWfrState(s: WfrPersistedState) {
   try { localStorage.setItem(WFR_STATE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
-}
-
-/** One-time migration from old per-persona localStorage keys to universal state. */
-function migrateOldWfrState(): WfrPersistedState | null {
-  try {
-    const hrbpAssigned = localStorage.getItem('tm:wfr-hrbp-plans-assigned') === 'true'
-    const chroRaw = localStorage.getItem('tm:wfr-chro-state')
-    const chro = chroRaw ? JSON.parse(chroRaw) : null
-
-    if (!hrbpAssigned && !chro) return null
-
-    let state: WfrProgramState = 1
-    let collectionLaunchSummary: FocusCollectionLaunchSummary | null = null
-    let upskillingLaunchSummary: UpskillingLaunchSummary | null = null
-
-    if (hrbpAssigned) {
-      state = 5
-      collectionLaunchSummary = { assignOwner: 'self', scopeLabel: 'Customer Success', channelsLabel: 'AI Agent Interviews', delegated: false, scopedDepartmentNames: ['Customer Success'] }
-      upskillingLaunchSummary = { assignOwner: 'hrbp', delegated: false, scopeLabel: 'Customer Success', departmentNames: ['Customer Success'], totalEmployees: 820, plansAssigned: ['Customer Success'] }
-    } else if (chro) {
-      if (chro.upskillingActive) state = 4
-      else if (chro.collectionComplete) state = 3
-      else if (chro.collectionActive) state = 2
-      collectionLaunchSummary = chro.collectionLaunchSummary ?? null
-      upskillingLaunchSummary = chro.upskillingLaunchSummary ?? null
-    }
-
-    const migrated: WfrPersistedState = { state, collectionLaunchSummary, upskillingLaunchSummary }
-    writeWfrState(migrated)
-    localStorage.removeItem('tm:wfr-hrbp-plans-assigned')
-    localStorage.removeItem('tm:wfr-chro-state')
-    return migrated
-  } catch { return null }
 }
 
 /** Derive boolean convenience flags from the universal state. */
@@ -1536,76 +1495,6 @@ function DeptView({
   )
 }
 
-type UpskillingState = 'not_started' | 'delegated' | 'plans_created' | 'in_progress' | 'completed'
-
-function getDeptUpskillingState(deptName: string, launchedDeptNames: string[]): { state: UpskillingState; index: number } {
-  const idx = launchedDeptNames.indexOf(deptName)
-  if (idx === -1) return { state: 'not_started', index: -1 }
-  // Distribute states across launched depts deterministically
-  const total = launchedDeptNames.length
-  if (total <= 1) return { state: 'delegated', index: idx }
-  if (total <= 2) return { state: idx === 0 ? 'in_progress' : 'delegated', index: idx }
-  // For 3+ depts: first = completed, next = in_progress, next = plans_created, rest = delegated
-  if (idx === 0) return { state: 'completed', index: idx }
-  if (idx <= Math.ceil(total * 0.3)) return { state: 'in_progress', index: idx }
-  if (idx <= Math.ceil(total * 0.55)) return { state: 'plans_created', index: idx }
-  return { state: 'delegated', index: idx }
-}
-
-function UpskillingCell({ deptName, gapCount, launchedDeptNames, onStart }: {
-  deptName: string
-  gapCount: number
-  launchedDeptNames: string[]
-  onStart: () => void
-}) {
-  const { state } = getDeptUpskillingState(deptName, launchedDeptNames)
-  const planCount = Math.max(2, Math.round(gapCount / 30))
-  const nameHash = deptName.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-
-  // Not started — always show button so CHRO can ad hoc add any dept
-  if (state === 'not_started') {
-    return (
-      <Button type="button" variant="secondary" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onStart() }}>
-        Create plans
-      </Button>
-    )
-  }
-
-  const pctMap: Record<UpskillingState, number> = {
-    not_started: 0,
-    delegated: 0,
-    plans_created: 10 + Math.abs(nameHash % 8),
-    in_progress: 35 + Math.abs(nameHash * 3) % 45,
-    completed: 100,
-  }
-  const pct = pctMap[state]
-  const isComplete = state === 'completed'
-  const fillColor = isComplete ? '#22c55e' : '#818cf8'
-  const trackColor = isComplete ? 'rgba(34, 197, 94, 0.1)' : 'rgba(99, 102, 241, 0.08)'
-
-  const labelMap: Record<UpskillingState, string> = {
-    not_started: 'Not started',
-    delegated: 'Delegated to HRBP',
-    plans_created: `${planCount} plans created · ${gapCount.toLocaleString()} employees`,
-    in_progress: `${planCount} plans · ${gapCount.toLocaleString()} enrolled`,
-    completed: `${gapCount.toLocaleString()} employees upskilled`,
-  }
-
-  return (
-    <div>
-      <div className="wfr-dash__plan-progress">
-        <div className="wfr-dash__plan-progress-bar" style={{ background: trackColor }}>
-          <div className="wfr-dash__plan-progress-fill" style={{ width: `${pct}%`, background: fillColor }} />
-        </div>
-        <span className="wfr-dash__plan-progress-label" style={isComplete ? { color: '#15803d' } : undefined}>{pct}%</span>
-      </div>
-      <div className="text-[11px] mt-0.5" style={{ color: isComplete ? '#15803d' : '#64748b' }}>
-        {labelMap[state]}
-      </div>
-    </div>
-  )
-}
-
 function BoardView({
   onDeptClick,
   wfrState,
@@ -1650,7 +1539,6 @@ function BoardView({
   const [hrbpDevPlanDialogOpen, setHrbpDevPlanDialogOpen] = useState(false)
   const [hrbpDevPlanScope, setHrbpDevPlanScope] = useState<'all' | 'select'>('all')
   const [hrbpSelectedRoles, setHrbpSelectedRoles] = useState<Record<string, boolean>>({})
-  const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
 
   const scopedRollup = useMemo(() => {
     if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
@@ -1705,8 +1593,6 @@ function BoardView({
   }, [scopedDepartments])
 
   const effectiveRollup = hrbpRollup ?? scopedRollup
-
-  const orgReady = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
 
   // Collection calibration: when data collection is complete, AI readiness changes based on calibrated scores
   // This is a weighted average of per-dept deltas
@@ -2426,8 +2312,6 @@ function BoardView({
                   disabled={hrbpDevPlanScope === 'select' && selectedCount === 0}
                   onClick={() => {
                     setHrbpDevPlanDialogOpen(false)
-                    const deptNames = [...new Set(allRoles.map(r => r.dept))]
-                    const merged = [...new Set([...(upskillingLaunchSummary?.departmentNames ?? []), ...deptNames])]
                     onCompleteUpskilling()
                   }}
                 >
