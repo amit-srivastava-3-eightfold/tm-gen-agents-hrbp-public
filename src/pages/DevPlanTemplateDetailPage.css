@@ -1,0 +1,9 @@
+/* Hide the add/bookmark icon buttons on course object cards in template detail */
+.dev-plan-template-courses .course-object-card__banner-actions {
+  display: none !important;
+}
+
+/* Hide "completed this" text — we use the facepile slot for the remove button */
+.dev-plan-template-courses .course-object-card__completed-text {
+  display: none !important;
+}

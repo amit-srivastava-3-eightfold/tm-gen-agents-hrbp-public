@@ -13,7 +13,7 @@ export function WorkforceReadinessPage() {
   const [wfrView, setWfrView] = useState<'board' | 'dept'>('board')
   const autoLaunch = searchParams.get('action') === 'launch'
   const isHrbp = currentUser.id === 'laura-shah'
-  const hrbpDepartments = isHrbp ? ['Sales', 'Engineering', 'Customer Success'] : undefined
+  const hrbpDepartments = isHrbp ? ['Customer Success'] : undefined
 
   // Clear the action param after reading it so it doesn't persist on refresh
   if (autoLaunch) {
@@ -29,6 +29,7 @@ export function WorkforceReadinessPage() {
       chSize={wfrView === 'dept' ? 'child' : 'parent'}
       title="Workforce Readiness"
       navbarProps={navbarProps}
+      {...(isHrbp ? { hexagonsVariant: 'default' as const } : {})}
     >
       <main className="workforce-readiness-page__main">
         <div className="workforce-readiness-page__content">

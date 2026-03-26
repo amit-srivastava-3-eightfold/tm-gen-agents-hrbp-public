@@ -58,11 +58,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: 1px solid #D9DCE1;
-  border-radius: 24px;
+  border-radius: 18px;
   background: #FFFFFF;
   color: #4F5666;
   cursor: pointer;
@@ -75,19 +75,20 @@
 }
 
 .profile-page__settings-btn .material-symbols-outlined {
-  font-size: 20px !important;
+  font-size: 16px !important;
 }
 
-/* View select - default size button (matches .btn) */
+/* View select - small size button */
 .profile-page__view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 18px;
   border: 1px solid #1999AC;
   background: #FFFFFF;
-  font: var(--typography-button3);
+  font-size: 13px;
+  font-weight: 500;
   color: #146DA6;
   cursor: pointer;
   transition: background 0.15s;
@@ -98,12 +99,13 @@
 }
 
 .profile-page__view-label--static {
-  font: var(--typography-button3);
+  font-size: 13px;
+  font-weight: 500;
   color: #4F5666;
 }
 
 .profile-page__view-chevron {
-  font-size: 18px !important;
+  font-size: 16px !important;
   color: inherit;
 }
 

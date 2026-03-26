@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Badge, Button, Pill,
@@ -38,6 +38,77 @@ import { MetricCard } from './MetricCard'
 import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMetricSheet'
 import './WorkforceReadinessDashboard.css'
+
+/* ─── WFR Universal Program State ─── */
+
+export type WfrProgramState = 1 | 2 | '2b' | 3 | 4 | 5
+
+export type WfrPersistedState = {
+  state: WfrProgramState
+  collectionLaunchSummary?: FocusCollectionLaunchSummary | null
+  upskillingLaunchSummary?: UpskillingLaunchSummary | null
+}
+
+const WFR_STATE_KEY = 'tm:wfr-state'
+
+function readWfrState(): WfrPersistedState {
+  try {
+    const raw = localStorage.getItem(WFR_STATE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  return { state: 1 }
+}
+
+function writeWfrState(s: WfrPersistedState) {
+  try { localStorage.setItem(WFR_STATE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
+}
+
+/** One-time migration from old per-persona localStorage keys to universal state. */
+function migrateOldWfrState(): WfrPersistedState | null {
+  try {
+    const hrbpAssigned = localStorage.getItem('tm:wfr-hrbp-plans-assigned') === 'true'
+    const chroRaw = localStorage.getItem('tm:wfr-chro-state')
+    const chro = chroRaw ? JSON.parse(chroRaw) : null
+
+    if (!hrbpAssigned && !chro) return null
+
+    let state: WfrProgramState = 1
+    let collectionLaunchSummary: FocusCollectionLaunchSummary | null = null
+    let upskillingLaunchSummary: UpskillingLaunchSummary | null = null
+
+    if (hrbpAssigned) {
+      state = 5
+      collectionLaunchSummary = { assignOwner: 'self', scopeLabel: 'Customer Success', channelsLabel: 'AI Agent Interviews', delegated: false, scopedDepartmentNames: ['Customer Success'] }
+      upskillingLaunchSummary = { assignOwner: 'hrbp', delegated: false, scopeLabel: 'Customer Success', departmentNames: ['Customer Success'], totalEmployees: 820, plansAssigned: ['Customer Success'] }
+    } else if (chro) {
+      if (chro.upskillingActive) state = 4
+      else if (chro.collectionComplete) state = 3
+      else if (chro.collectionActive) state = 2
+      collectionLaunchSummary = chro.collectionLaunchSummary ?? null
+      upskillingLaunchSummary = chro.upskillingLaunchSummary ?? null
+    }
+
+    const migrated: WfrPersistedState = { state, collectionLaunchSummary, upskillingLaunchSummary }
+    writeWfrState(migrated)
+    localStorage.removeItem('tm:wfr-hrbp-plans-assigned')
+    localStorage.removeItem('tm:wfr-chro-state')
+    return migrated
+  } catch { return null }
+}
+
+/** Derive boolean convenience flags from the universal state. */
+export function deriveWfrFlags(state: WfrProgramState) {
+  const n = state === '2b' ? 2.5 : (state as number)
+  return {
+    collectionActive: n >= 2,
+    collectionJustCompleted: state === '2b',
+    collectionComplete: n >= 3,
+    upskillingActive: n >= 4,
+    hrbpPlansCreated: n >= 5,
+  }
+}
+
+/* ─── End WFR state helpers ─── */
 
 const READINESS_SEMICIRCLE = {
   hero: {
@@ -230,14 +301,112 @@ const METRIC_INFO = {
   gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
 } as const
 
-function MetricHeaderLabel({ label, metric }: { label: string; metric: keyof typeof METRIC_INFO }) {
+function MetricInfoDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', width: 'min(820px, calc(100vw - 48px))', maxHeight: 'calc(100vh - 48px)', overflow: 'auto', background: '#1e1e2e', borderRadius: 16, padding: '40px 44px', color: '#e2e8f0' }}>
+        <button type="button" onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 20 }}>
+          <span className="material-symbols-outlined">close</span>
+        </button>
+
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px' }}>Understanding your two core metrics</h2>
+        <p style={{ fontSize: 14, color: '#94a3b8', textAlign: 'center', margin: '0 0 28px' }}>Two numbers work together to tell you where your workforce stands — and what it takes to close the gap.</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+          {/* AI Potential card */}
+          <div style={{ border: '1.5px solid #6366f1', borderRadius: 12, padding: '24px 20px', background: 'rgba(99,102,241,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#818cf8', background: 'rgba(99,102,241,0.15)', borderRadius: 8, padding: 6 }}>layers</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#818cf8' }}>AI Potential</span>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 600, color: '#fff', lineHeight: 1.35, margin: '0 0 10px' }}>How much of your workforce's work can AI meaningfully improve?</h3>
+            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: '0 0 16px' }}>We map every role into its tasks and score each one for how much AI can help — either by taking it over entirely or by making the person doing it faster and better.</p>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#818cf8', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#fff' }}>High score</strong> = significant capacity to free people from low-value work and redirect effort toward judgment-intensive tasks.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#818cf8', marginTop: 6, flexShrink: 0 }} />
+                <span>Scores are based on 8 research sources including real-world adoption data, academic studies, and government labor statistics — not a single model's opinion.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#818cf8', marginTop: 6, flexShrink: 0 }} />
+                <span>A high score is an opportunity, not a threat.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Readiness card */}
+          <div style={{ border: '1.5px solid #22c55e', borderRadius: 12, padding: '24px 20px', background: 'rgba(34,197,94,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#22c55e', background: 'rgba(34,197,94,0.15)', borderRadius: 8, padding: 6 }}>verified</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#22c55e' }}>AI Readiness</span>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 600, color: '#fff', lineHeight: 1.35, margin: '0 0 10px' }}>Of the people AI can help — how many have the skills to use it today?</h3>
+            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: '0 0 16px' }}>We look at each employee's skill profile against a forward-looking taxonomy: AI tool proficiency, data interpretation, workflow oversight, and exception handling.</p>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#fff' }}>AI-Native</strong> — already working with AI/ML tools like ChatGPT, Python, or computer vision in their daily work.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#fff' }}>AI-Ready</strong> — strong technical foundation (SQL, data analysis, cloud tools) that transfers directly to AI workflows.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', marginTop: 6, flexShrink: 0 }} />
+                <span>A low score means the workforce has the potential — but not yet the capability to capture it. That's the gap to close.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transformation gap */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>The transformation gap</h3>
+            <span style={{ fontSize: 12, color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: 6, padding: '3px 10px' }}>Your upskilling opportunity</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 13, color: '#818cf8', width: 90, flexShrink: 0 }}>AI Potential</span>
+              <div style={{ flex: 1, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ width: `${ORG.aiPotential}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
+              </div>
+              <span style={{ fontSize: 13, color: '#818cf8', width: 36, textAlign: 'right' }}>{ORG.aiPotential}%</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 13, color: '#22c55e', width: 90, flexShrink: 0 }}>AI Readiness</span>
+              <div style={{ flex: 1, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ width: `${ORG.aiReadiness}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #15803d, #22c55e)' }} />
+              </div>
+              <span style={{ fontSize: 13, color: '#22c55e', width: 36, textAlign: 'right' }}>{ORG.aiReadiness}%</span>
+            </div>
+          </div>
+          <div style={{ marginTop: 14, borderLeft: '3px solid #f59e0b', paddingLeft: 14 }}>
+            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+              A {ORG.aiPotential - ORG.aiReadiness}-point gap means {ORG.aiPotential}% of work <em>could</em> be AI-assisted today — but only {ORG.aiReadiness}% of your workforce has the skills to do so. Closing that gap is where the product focuses.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+function MetricHeaderLabel({ label, metric, onInfoClick }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void }) {
   return (
     <span className="inline-flex items-center gap-1">
       {label}
       <span
         className="material-symbols-outlined wfr-dash__header-info"
         title={METRIC_INFO[metric]}
-        style={{ fontSize: 14, color: '#94a3b8', cursor: 'help', verticalAlign: -1 }}
+        style={{ fontSize: 14, color: '#94a3b8', cursor: 'pointer', verticalAlign: -1 }}
+        onClick={(e) => { e.stopPropagation(); onInfoClick?.() }}
       >
         info
       </span>
@@ -275,35 +444,29 @@ function DeptTableSoloBar({
 
 function DeptView({
   dept,
-  orgCollectionActive,
-  orgCollectionComplete,
-  collectionJustCompleted: deptCollectionJustCompleted,
+  wfrState,
   onCollectionActiveChange,
-  onCollectionComplete,
-  onViewResults: deptOnViewResults,
-  collectionLaunchSummary,
+  onCompleteCollection,
+  onViewCollectionResults,
+  onStartUpskilling,
+  onCompleteUpskilling,
   focusLaunchOpen,
   setFocusLaunchOpen,
-  upskillingActive,
-  upskillingLaunchSummary,
-  setUpskillingActive,
-  setUpskillingLaunchSummary,
 }: {
   dept: Dept
-  orgCollectionActive: boolean
-  orgCollectionComplete?: boolean
-  collectionJustCompleted?: boolean
+  wfrState: WfrPersistedState
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
-  onCollectionComplete?: () => void
-  onViewResults?: () => void
-  collectionLaunchSummary: FocusCollectionLaunchSummary | null
+  onCompleteCollection: () => void
+  onViewCollectionResults: () => void
+  onStartUpskilling: (summary: UpskillingLaunchSummary) => void
+  onCompleteUpskilling: () => void
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
-  upskillingActive: boolean
-  upskillingLaunchSummary: UpskillingLaunchSummary | null
-  setUpskillingActive: (active: boolean) => void
-  setUpskillingLaunchSummary: (summary: UpskillingLaunchSummary | null) => void
 }) {
+  // Derive convenience flags from universal state
+  const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive } = deriveWfrFlags(wfrState.state)
+  const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
+  const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
@@ -318,6 +481,7 @@ function DeptView({
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
   const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
+  const [metricInfoOpen, setMetricInfoOpen] = useState(false)
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
   const deptAug = deptPeopleInAugRoles(dept)
   const gapCount = deptGapHeadcount(dept)
@@ -347,7 +511,7 @@ function DeptView({
       label: 'Transformation gap',
       val: gapCount.toLocaleString(),
       icon: 'groups',
-      l1: `${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready—that’s your prioritized development pool.`,
+      l1: `${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`,
       hint: `${gapSharePct}% of augmentable-role headcount still in the gap.`,
     },
   ]
@@ -390,8 +554,8 @@ function DeptView({
           collectionComplete={orgCollectionComplete}
           collectionJustCompleted={deptCollectionJustCompleted}
           onCollectionActiveChange={onCollectionActiveChange}
-          onCollectionComplete={onCollectionComplete}
-          onViewResults={deptOnViewResults}
+          onCollectionComplete={onCompleteCollection}
+          onViewResults={onViewCollectionResults}
           launchOpen={focusLaunchOpen}
           onLaunchOpenChange={setFocusLaunchOpen}
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
@@ -425,7 +589,7 @@ function DeptView({
               value={c.val}
               description={c.l1}
               hint={c.hint}
-              onLearnMore={() => setOpenMetric(c.id)}
+              onLearnMore={() => setMetricInfoOpen(true)}
             />
           ))}
         </div>
@@ -495,8 +659,8 @@ function DeptView({
                     ) : null}
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
                       <>
@@ -1002,6 +1166,7 @@ function DeptView({
         dept={dept}
         channelsLabel={collectionLaunchSummary?.channelsLabel}
         managerContext={trendSheetManager}
+        collectionComplete={orgCollectionComplete}
       />
 
       {/* Assign plans dialog */}
@@ -1029,10 +1194,8 @@ function DeptView({
                 <Button variant="outline" onClick={() => setAssignPlansDialogOpen(false)}>Cancel</Button>
                 <Button variant="primary" onClick={() => {
                   setAssignPlansDialogOpen(false)
-                  setUpskillingLaunchSummary({
-                    ...upskillingLaunchSummary!,
-                    plansAssigned: [...(upskillingLaunchSummary?.plansAssigned ?? []), dept.name],
-                  })
+                  // Plans assigned for this dept — advance to upskilled
+                  onCompleteUpskilling()
                 }}>Assign plans&nbsp;→</Button>
               </div>
             </div>
@@ -1139,7 +1302,7 @@ function DeptView({
                   // Mark dept as upskilling
                   const prev = upskillingLaunchSummary?.departmentNames ?? []
                   const merged = [...new Set([...prev, dept.name])]
-                  setUpskillingLaunchSummary({
+                  onStartUpskilling({
                     assignOwner: 'hrbp',
                     departmentNames: merged,
                     scopeLabel: merged.length === 1 ? dept.name : `${merged.length} departments`,
@@ -1149,7 +1312,6 @@ function DeptView({
                       return sum + (d2?.employees ?? 0)
                     }, 0),
                   })
-                  setUpskillingActive(true)
                   setDeptUpskillingOpen(false)
                 }}
               >
@@ -1369,6 +1531,7 @@ function DeptView({
         </div>,
         document.body,
       )}
+      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} />
     </div>
   )
 }
@@ -1445,53 +1608,48 @@ function UpskillingCell({ deptName, gapCount, launchedDeptNames, onStart }: {
 
 function BoardView({
   onDeptClick,
-  focusCollectionActive,
-  focusCollectionComplete,
-  collectionJustCompleted,
+  wfrState,
   onCollectionActiveChange,
-  onCollectionComplete,
-  onViewResults,
-  collectionLaunchSummary,
+  onCompleteCollection,
+  onViewCollectionResults,
+  onStartUpskilling,
+  onCompleteUpskilling,
   focusLaunchOpen,
   setFocusLaunchOpen,
-  upskillingActive,
-  upskillingLaunchSummary,
   upskillingLaunchOpen,
   setUpskillingLaunchOpen,
-  setUpskillingActive,
-  setUpskillingLaunchSummary,
   scopedDepartments,
   isHrbp = false,
 }: {
   onDeptClick: (d: Dept) => void
-  focusCollectionActive: boolean
-  focusCollectionComplete?: boolean
-  collectionJustCompleted?: boolean
+  wfrState: WfrPersistedState
   onCollectionActiveChange: (active: boolean, launchSummary?: FocusCollectionLaunchSummary | null) => void
-  onCollectionComplete?: () => void
-  onViewResults?: () => void
-  collectionLaunchSummary: FocusCollectionLaunchSummary | null
+  onCompleteCollection: () => void
+  onViewCollectionResults: () => void
+  onStartUpskilling: (summary: UpskillingLaunchSummary) => void
+  onCompleteUpskilling: () => void
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
-  upskillingActive: boolean
-  upskillingLaunchSummary: UpskillingLaunchSummary | null
   upskillingLaunchOpen: boolean
   setUpskillingLaunchOpen: (open: boolean) => void
-  setUpskillingActive: (active: boolean) => void
-  setUpskillingLaunchSummary: (summary: UpskillingLaunchSummary | null) => void
   scopedDepartments?: string[]
   isHrbp?: boolean
 }) {
+  // Derive convenience flags from universal state
+  const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
+  const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
+  const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
-  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
   const [boardTab, setBoardTab] = useState<'roles' | 'departments'>('roles')
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [metricInfoOpen, setMetricInfoOpen] = useState(false)
+  const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   const [hrbpDevPlanDialogOpen, setHrbpDevPlanDialogOpen] = useState(false)
   const [hrbpDevPlanScope, setHrbpDevPlanScope] = useState<'all' | 'select'>('all')
   const [hrbpSelectedRoles, setHrbpSelectedRoles] = useState<Record<string, boolean>>({})
-  const [hrbpPlansCreated, setHrbpPlansCreated] = useState(false)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
 
   const scopedRollup = useMemo(() => {
@@ -1512,12 +1670,15 @@ function BoardView({
     for (const d of allDeptsSorted) {
       const trend = deptReadinessTrend(d.name)
       for (const r of getRolesForDept(d.name)) {
-        const measured = Math.max(0, Math.min(100, r.aiReadiness + trend.delta + ((r.title.length % 3) - 1)))
+        const collectionDelta = trend.delta + ((r.title.length % 3) - 1)
+        // Upskilling boost: roles with lower readiness improve more (5-15pt depending on gap)
+        const upskillingBoost = hrbpPlansCreated ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
+        const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
         roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, gap: Math.round(r.employees * (1 - measured / 100)) })
       }
     }
     return roles.sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-  }, [allDeptsSorted])
+  }, [allDeptsSorted, hrbpPlansCreated])
 
 
   // Top 3 departments by gap for opportunity tags in complete state
@@ -1537,21 +1698,57 @@ function BoardView({
     return allDeptsSorted.filter((d) => scopeSet.has(d.name))
   }, [focusCollectionActive, collectionLaunchSummary, allDeptsSorted])
 
+  // HRBP scoped rollup — always active when scopedDepartments is set
+  const hrbpRollup = useMemo(() => {
+    if (!scopedDepartments?.length) return null
+    return wfrRollupDepartmentsByName(scopedDepartments)
+  }, [scopedDepartments])
+
+  const effectiveRollup = hrbpRollup ?? scopedRollup
+
   const orgReady = Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
-  const orgGapPeople = ORG.peopleInAugRoles - orgReady
-  const ready = scopedRollup ? scopedRollup.ready : orgReady
-  const gapPeople = scopedRollup ? scopedRollup.gapPeople : orgGapPeople
-  const peopleInAugForCards = scopedRollup ? scopedRollup.peopleInAugRoles : ORG.peopleInAugRoles
-  const aiReadinessPct = scopedRollup ? scopedRollup.aiReadiness : ORG.aiReadiness
-  const aiPotentialPct = scopedRollup ? scopedRollup.aiPotential : ORG.aiPotential
-  const totalEmployeesHero = scopedRollup ? scopedRollup.totalEmployees : ORG.totalEmployees
-  const hrsUnlocked = scopedRollup ? scopedRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
+
+  // Collection calibration: when data collection is complete, AI readiness changes based on calibrated scores
+  // This is a weighted average of per-dept deltas
+  // Calibration applies when collection is complete OR plans have been assigned (which implies collection was done)
+  const collectionCalibrationDelta = useMemo(() => {
+    if (!focusCollectionComplete && !hrbpPlansCreated) return 0
+    const depts = scopedDepartments?.length
+      ? departments.filter(d => scopedDepartments.includes(d.name))
+      : departments
+    let totalWeight = 0
+    let weightedDelta = 0
+    for (const d of depts) {
+      const trend = deptReadinessTrend(d.name)
+      totalWeight += d.employees
+      weightedDelta += trend.delta * d.employees
+    }
+    return totalWeight > 0 ? Math.round(weightedDelta / totalWeight) : 0
+  }, [focusCollectionComplete, hrbpPlansCreated, scopedDepartments])
+
+  // Upskilling boost for hero metrics — HRBP sees 10pt for their dept, CHRO sees org-wide boost (all HRBPs assigned plans)
+  const upskillingHeroBoost = hrbpPlansCreated
+    ? (isHrbp ? 10 : 8)
+    : 0
+  const basePeopleInAug = effectiveRollup ? effectiveRollup.peopleInAugRoles : ORG.peopleInAugRoles
+  const rawReadinessPct = effectiveRollup ? effectiveRollup.aiReadiness : ORG.aiReadiness
+  // Calibrated readiness = raw + collection delta (applied when collection complete)
+  const calibratedReadinessPct = Math.min(100, rawReadinessPct + collectionCalibrationDelta)
+  // Final readiness includes upskilling boost on top of calibrated
+  const boostedReadinessPct = Math.min(100, calibratedReadinessPct + upskillingHeroBoost)
+  const aiReadinessPct = hrbpPlansCreated ? boostedReadinessPct : calibratedReadinessPct
+  const ready = Math.round((basePeopleInAug * aiReadinessPct) / 100)
+  const gapPeople = basePeopleInAug - ready
+  const peopleInAugForCards = basePeopleInAug
+  const aiPotentialPct = effectiveRollup ? effectiveRollup.aiPotential : ORG.aiPotential
+  const totalEmployeesHero = effectiveRollup ? effectiveRollup.totalEmployees : ORG.totalEmployees
+  const hrsUnlocked = effectiveRollup ? effectiveRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
   const gapSharePct =
     peopleInAugForCards > 0 ? Math.min(100, Math.round((gapPeople / peopleInAugForCards) * 100)) : 0
-  const tasksInAug = scopedRollup ? scopedRollup.tasksInAugZone : ORG.tasksInAugZone
-  const totalRoleTasks = scopedRollup ? scopedRollup.totalRoleTasks : ORG.totalRoleTasks
-  const tasksAbove = scopedRollup ? scopedRollup.tasksAboveThreshold : ORG.tasksAboveThreshold
-  const tasksBelow = scopedRollup ? scopedRollup.tasksBelowThreshold : ORG.tasksBelowThreshold
+  const tasksInAug = effectiveRollup ? effectiveRollup.tasksInAugZone : ORG.tasksInAugZone
+  const totalRoleTasks = effectiveRollup ? effectiveRollup.totalRoleTasks : ORG.totalRoleTasks
+  const tasksAbove = effectiveRollup ? effectiveRollup.tasksAboveThreshold : ORG.tasksAboveThreshold
+  const tasksBelow = effectiveRollup ? effectiveRollup.tasksBelowThreshold : ORG.tasksBelowThreshold
 
   const learnMoreDataCollection =
     focusCollectionActive && collectionLaunchSummary
@@ -1562,6 +1759,13 @@ function BoardView({
         }
       : null
 
+  const preCollectionReadiness = rawReadinessPct
+  const preCollectionReady = Math.round((basePeopleInAug * preCollectionReadiness) / 100)
+  const preCollectionGap = basePeopleInAug - preCollectionReady
+  // Delta shown on cards: calibration delta when collection complete, plus upskilling boost when upskilled
+  const readinessDelta = (focusCollectionComplete ? collectionCalibrationDelta : 0) + (hrbpPlansCreated ? upskillingHeroBoost : 0)
+  const gapDelta = focusCollectionComplete || hrbpPlansCreated ? gapPeople - preCollectionGap : 0
+
   const cards = [
     {
       id: 'readiness' as const,
@@ -1569,9 +1773,13 @@ function BoardView({
       val: `${aiReadinessPct}%`,
       icon: 'school',
       l1: `${ready.toLocaleString()} AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles`,
-      hint: scopedRollup
-        ? `Scoped to your launch (${collectionLaunchSummary?.scopeLabel}).`
-        : 'How much of addressable work the org is already equipped to capture.',
+      hint: hrbpPlansCreated
+        ? (isHrbp ? `Scoped to ${scopedDepartments?.[0] ?? 'your department'} after upskilling.` : 'Org-wide readiness after all departments completed upskilling.')
+        : focusCollectionComplete
+          ? `Calibrated from data collection${collectionLaunchSummary?.scopeLabel ? ` (${collectionLaunchSummary.scopeLabel})` : ''}.`
+          : 'How much of addressable work the org is already equipped to capture.',
+      delta: readinessDelta !== 0 ? `${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt` : null,
+      deltaUp: readinessDelta > 0,
     },
     {
       id: 'potential' as const,
@@ -1580,14 +1788,18 @@ function BoardView({
       icon: 'auto_awesome',
       l1: `${tasksInAug} of ${totalRoleTasks} tasks in the augmentation zone`,
       hint: `${tasksAbove} automatable, ${tasksBelow} human-only`,
+      delta: null,
+      deltaUp: true,
     },
     {
       id: 'gap' as const,
       label: 'Transformation gap',
       val: gapPeople.toLocaleString(),
       icon: 'groups',
-      l1: `${gapPeople.toLocaleString()} people in augmentable roles are not yet AI-ready—that’s your prioritized development pool.`,
+      l1: `${gapPeople.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`,
       hint: `${gapSharePct}% of augmentable-role headcount still in the gap.`,
+      delta: gapDelta !== 0 ? `${gapDelta > 0 ? '+' : ''}${gapDelta}` : null,
+      deltaUp: gapDelta < 0, // gap going down is good
     },
   ]
 
@@ -1602,18 +1814,33 @@ function BoardView({
             {totalEmployeesHero.toLocaleString()} employees {EM} Q1 2026
           </p>
           <h2 className="wfr-dash__headline">
-            <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
-            <span className="wfr-dash__headline-text">
-              {' '}
-              of people in augmentable roles have the skills to start using AI today
-              {scopedRollup ? ' (for departments in your launch).' : '.'}
-            </span>
+            {hrbpPlansCreated ? (
+              <>
+                <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
+                <span className="wfr-dash__headline-text">
+                  {` AI readiness — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="wfr-dash__headline-text">
+                  Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> of your workforce is ready for AI.
+                </span>
+              </>
+            )}
           </h2>
+          {!hrbpPlansCreated && (
+            <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>
+              Your org has <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Potential. You're capturing less than a third of it.
+            </p>
+          )}
           <div className="wfr-dash__capture-tag-wrap">
             <Pill variant="neutral" size="small" className="wfr-dash__capture-tag !h-auto !max-w-none !py-2 !px-3.5">
               <span className="wfr-type-body2 text-[#1a212e]">
-                ~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable
-                roles are not yet AI-ready.
+                {hrbpPlansCreated
+                  ? <><span className="font-bold text-[#15803d]">{(preCollectionGap - gapPeople).toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> remaining.</>
+                  : <>~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable roles are not yet AI-ready.</>
+                }
               </span>
             </Pill>
           </div>
@@ -1626,8 +1853,8 @@ function BoardView({
           collectionComplete={focusCollectionComplete}
           collectionJustCompleted={collectionJustCompleted}
           onCollectionActiveChange={onCollectionActiveChange}
-          onCollectionComplete={onCollectionComplete}
-          onViewResults={onViewResults}
+          onCollectionComplete={onCompleteCollection}
+          onViewResults={onViewCollectionResults}
           launchOpen={focusLaunchOpen}
           onLaunchOpenChange={setFocusLaunchOpen}
           onRequestCloseMetricSheet={() => setOpenMetric(null)}
@@ -1655,10 +1882,12 @@ function BoardView({
               variant={c.id}
               icon={c.icon}
               label={c.label}
-              value={c.val}
+              value={c.delta ? (
+                <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
+              ) : c.val}
               description={c.l1}
               hint={c.hint}
-              onLearnMore={() => setOpenMetric(c.id)}
+              onLearnMore={() => setMetricInfoOpen(true)}
             />
           ))}
         </div>
@@ -1681,7 +1910,7 @@ function BoardView({
       {focusCollectionComplete ? (
         <div>
           <div className="wfr-dash__panel-head">
-            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
+            {!isHrbp && <TabsList><TabsTrigger value="roles">Roles</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by priority {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1690,11 +1919,10 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
-                <DataTableHead className={upskillingActive ? "" : ""}>Upskilling</DataTableHead>
-              </DataTableRow>
+                              </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {[...allDeptsSorted].sort((a, b) => {
@@ -1739,28 +1967,6 @@ function BoardView({
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
                       </DataTableCell>
-                      <DataTableCell>
-                        <UpskillingCell
-                          deptName={d.name}
-                          gapCount={gapCount}
-                          launchedDeptNames={upskillingLaunchSummary?.departmentNames ?? []}
-                          onStart={() => {
-                            const prev = upskillingLaunchSummary?.departmentNames ?? []
-                            const merged = [...new Set([...prev, d.name])]
-                            setUpskillingLaunchSummary({
-                              assignOwner: 'hrbp',
-                              departmentNames: merged,
-                              scopeLabel: merged.length === 1 ? d.name : `${merged.length} departments`,
-                              delegated: true,
-                              totalEmployees: merged.reduce((sum, name) => {
-                                const dept2 = departments.find((x) => x.name === name)
-                                return sum + (dept2?.employees ?? 0)
-                              }, 0),
-                            })
-                            setUpskillingActive(true)
-                          }}
-                        />
-                      </DataTableCell>
                     </DataTableRow>
                 )
               })}
@@ -1770,7 +1976,7 @@ function BoardView({
       ) : focusCollectionActive ? (
         <div id="board-collection-table">
           <div className="wfr-dash__panel-head">
-            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
+            {!isHrbp && <TabsList><TabsTrigger value="roles">Roles</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1779,8 +1985,8 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
                 <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
@@ -1840,7 +2046,7 @@ function BoardView({
       ) : (
         <div>
           <div className="wfr-dash__panel-head">
-            {!isHrbp && <TabsList className="wfr-dash__board-tabs" style={{ background: "#e8ecf1", borderRadius: 10, padding: 3 }}><TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger><TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger></TabsList>}
+            {!isHrbp && <TabsList><TabsTrigger value="roles">Roles</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger></TabsList>}
             <span className="wfr-dash__panel-hint">Sorted by gap (largest first) {EM} click to drill down</span>
           </div>
           <DataTable bordered>
@@ -1849,8 +2055,8 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1888,10 +2094,7 @@ function BoardView({
         <TabsContent value="roles">
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {!isHrbp ? (
-              <TabsList className="wfr-dash__board-tabs" style={{ background: '#e8ecf1', borderRadius: 10, padding: 3 }}>
-                <TabsTrigger value="roles" className="data-[state=active]:!bg-white">Roles</TabsTrigger>
-                <TabsTrigger value="departments" className="data-[state=active]:!bg-white">Departments</TabsTrigger>
-              </TabsList>
+              <TabsList><TabsTrigger value="roles">Roles</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger></TabsList>
             ) : null}
             <span className="wfr-dash__panel-hint">{allRoles.length} roles{!isHrbp ? ` across ${allDeptsSorted.length} departments` : ''}</span>
           </div>
@@ -1903,14 +2106,9 @@ function BoardView({
                 {!isHrbp && <DataTableHead>Department</DataTableHead>}
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
-                {(upskillingActive || hrbpPlansCreated) && (
-                  <>
-                    <DataTableHead className="sticky right-0 bg-[#f8fafc] z-10 border-l border-[#e5e7eb]">Upskilling</DataTableHead>
-                  </>
-                )}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1940,7 +2138,7 @@ function BoardView({
                           <button
                             type="button"
                             className={`wfr-dash__trend-badge ${r.measuredReadiness >= r.aiReadiness ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}
-                            onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: r.title, dept: r.dept }); setTrendSheetDept(allDeptsSorted.find(d => d.name === r.dept) ?? null) }}
+                            onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: r.title, dept: r.dept, measuredReadiness: r.measuredReadiness }); setTrendSheetDept(allDeptsSorted.find(d => d.name === r.dept) ?? null) }}
                             title="View readiness trend details"
                           >
                             <span className="wfr-dash__trend-badge-text">{r.measuredReadiness >= r.aiReadiness ? '↑' : '↓'}{Math.abs(r.measuredReadiness - r.aiReadiness)}pt</span>
@@ -1955,64 +2153,6 @@ function BoardView({
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{r.gap.toLocaleString()}</span>
                     </DataTableCell>
-                    {(upskillingActive || hrbpPlansCreated) && (
-                      <>
-                      <DataTableCell className="sticky right-0 bg-white z-10 border-l border-[#e5e7eb]">
-                        {assignedPlans.has(r.title) ? (
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
-                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                              onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
-                            >
-                              <span className="inline-flex items-center gap-1">
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
-                                View plan
-                              </span>
-                            </button>
-                            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[#d97706]">
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>sync</span>
-                              In progress
-                            </span>
-                          </div>
-                        ) : (upskillingActive || hrbpPlansCreated) ? (
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
-                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                              onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
-                            >
-                              <span className="inline-flex items-center gap-1">
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
-                                View plan
-                              </span>
-                            </button>
-                            <button type="button" className="wfr-dash__assign-btn" onClick={(e) => {
-                              e.stopPropagation()
-                              setAssignedPlans(prev => new Set([...prev, r.title]))
-                            }}>
-                              Assign
-                            </button>
-                          </div>
-                        ) : (
-                          <Button type="button" variant="secondary" size="sm" onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation()
-                            if (isHrbp) {
-                              setHrbpDevPlanScope('all')
-                              setHrbpSelectedRoles({})
-                              setHrbpDevPlanDialogOpen(true)
-                            } else {
-                              setUpskillingLaunchOpen(true)
-                            }
-                          }}>
-                            Create plans
-                          </Button>
-                        )}
-                      </DataTableCell>
-                      </>
-                    )}
                   </DataTableRow>
                 )
               })}
@@ -2029,12 +2169,14 @@ function BoardView({
         dept={trendSheetDept}
         channelsLabel={collectionLaunchSummary?.channelsLabel}
         roleContext={trendSheetRole}
+        upskillingActive={hrbpPlansCreated}
+        collectionComplete={focusCollectionComplete}
       />
 
       {/* Task list sheet */}
       {taskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => setTaskSheetRole(null)} />
+          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
               <div>
@@ -2043,7 +2185,7 @@ function BoardView({
                 </div>
                 <p className="wfr-trend-sheet__sub">{taskSheetRole.dept} — Task breakdown</p>
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => setTaskSheetRole(null)} aria-label="Close">
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -2053,46 +2195,45 @@ function BoardView({
                 const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
                 const aboveCount = tasks.filter(t => t.score > 75).length
                 const belowCount = tasks.filter(t => t.score < 15).length
+                const showTrends = focusCollectionComplete
                 return (
                   <>
                     {/* Visual stats */}
                     {(() => {
-                      // Simulate task movement from last collection
-                      // Some tasks moved from Human → Augment, some from Augment → Automate
+                      // Only show task movement deltas when collection is complete (state >= 3)
                       const roleHash = taskSheetRole.title.split('').reduce((h: number, c: string) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-                      const movedToAugment = Math.abs(roleHash) % 3 // 0-2 tasks moved from Human → Augment
-                      const movedToAutomate = Math.abs(roleHash * 7) % 2 // 0-1 tasks moved from Augment → Automate
-                      const movedFromHuman = movedToAugment
-                      const augDelta = movedToAugment - movedToAutomate
-                      const autoDelta = movedToAutomate
-                      const humanDelta = -movedFromHuman
+                      const movedToAugment = showTrends ? Math.abs(roleHash) % 3 : 0
+                      const movedToAutomate = showTrends ? Math.abs(roleHash * 7) % 2 : 0
+                      // Only show positive additions (tasks gained), not losses
+                      const augDelta = movedToAugment // tasks gained from Human
+                      const autoDelta = movedToAutomate // tasks gained from Augment
+                      const humanDelta = 0 // don't show loss
 
+                      const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; delta: number; label: string; desc: string; color: string; bg: string; border: string; activeBorder: string }[] = [
+                        { zone: 'above', count: aboveCount, delta: autoDelta, label: 'Automate', desc: 'AI runs autonomously', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
+                        { zone: 'augment', count: augCount, delta: augDelta, label: 'Augment', desc: 'Human leads, AI assists', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
+                        { zone: 'below', count: belowCount, delta: humanDelta, label: 'Human', desc: 'Requires judgment or trust', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
+                      ]
                       return (
                         <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #bbf7d0', background: '#f0fdf4' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 20, fontWeight: 700, color: '#15803d' }}>{augCount}</span>
-                              {augDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: augDelta > 0 ? '#15803d' : '#dc2626' }}>{augDelta > 0 ? '↑' : '↓'}{Math.abs(augDelta)}</span>}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#166534', fontWeight: 500 }}>Augment</div>
-                            <div style={{ fontSize: 10, color: '#94a3b8' }}>Human leads, AI assists</div>
-                          </div>
-                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#eef2ff' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 20, fontWeight: 700, color: '#6366f1' }}>{aboveCount}</span>
-                              {autoDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#6366f1' }}>↑{autoDelta}</span>}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#4338ca', fontWeight: 500 }}>Automate</div>
-                            <div style={{ fontSize: 10, color: '#94a3b8' }}>AI runs autonomously</div>
-                          </div>
-                          <div style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 20, fontWeight: 700, color: '#94a3b8' }}>{belowCount}</span>
-                              {humanDelta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#dc2626' }}>↓{Math.abs(humanDelta)}</span>}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>Human</div>
-                            <div style={{ fontSize: 10, color: '#94a3b8' }}>Requires judgment or trust</div>
-                          </div>
+                          {zoneCards.map((zc) => {
+                            const isActive = taskSheetZoneFilter === zc.zone
+                            const isDimmed = taskSheetZoneFilter != null && !isActive
+                            return (
+                              <div
+                                key={zc.zone}
+                                onClick={() => setTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)}
+                                style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
+                                  {showTrends && zc.delta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: zc.delta > 0 ? '#15803d' : '#dc2626' }}>{zc.delta > 0 ? '↑' : '↓'}{Math.abs(zc.delta)}</span>}
+                                </div>
+                                <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
+                                <div style={{ fontSize: 10, color: '#94a3b8' }}>{zc.desc}</div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )
                     })()}
@@ -2141,12 +2282,16 @@ function BoardView({
                       }
 
                       const groups = [
-                        { label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
-                        { label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
-                        { label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
+                        { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
+                        { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
+                        { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
                       ]
 
-                      return groups.filter(g => g.tasks.length > 0).map((group) => (
+                      const visibleGroups = taskSheetZoneFilter
+                        ? groups.filter(g => g.zone === taskSheetZoneFilter && g.tasks.length > 0)
+                        : groups.filter(g => g.tasks.length > 0)
+
+                      return visibleGroups.map((group) => (
                         <div key={group.label} style={{ marginBottom: 16 }}>
                           <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2160,10 +2305,10 @@ function BoardView({
                             {group.tasks.sort((a, b) => b.score - a.score).map((t, i) => {
                               const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
                               const skills = getSkillsForTask(t.task, zone)
-                              // Only show trend on tasks that moved zones (simulate: tasks near zone boundaries)
+                              // Only show trend on tasks that moved zones when collection is complete (state >= 3)
                               const taskHash = t.task.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-                              const movedUp = zone === 'augment' && t.score >= 15 && t.score <= 20 && Math.abs(taskHash) % 3 === 0 // near lower boundary = recently moved from Human
-                              const movedFromAug = zone === 'above' && t.score > 75 && t.score <= 82 && Math.abs(taskHash) % 2 === 0 // near upper boundary = recently moved from Augment
+                              const movedUp = showTrends && zone === 'augment' && t.score >= 15 && t.score <= 20 && Math.abs(taskHash) % 3 === 0
+                              const movedFromAug = showTrends && zone === 'above' && t.score > 75 && t.score <= 82 && Math.abs(taskHash) % 2 === 0
                               const moved = movedUp || movedFromAug
                               return (
                                 <div key={i} style={{ padding: '10px 12px', borderRadius: 6, border: moved ? '1px solid #bbf7d0' : '1px solid #e5e7eb', background: moved ? '#fafff9' : undefined }}>
@@ -2281,15 +2426,9 @@ function BoardView({
                   disabled={hrbpDevPlanScope === 'select' && selectedCount === 0}
                   onClick={() => {
                     setHrbpDevPlanDialogOpen(false)
-                    setHrbpPlansCreated(true)
-                    // Mark all scoped departments as having upskilling launched
                     const deptNames = [...new Set(allRoles.map(r => r.dept))]
                     const merged = [...new Set([...(upskillingLaunchSummary?.departmentNames ?? []), ...deptNames])]
-                    setUpskillingLaunchSummary({
-                      ...upskillingLaunchSummary!,
-                      departmentNames: merged,
-                    })
-                    setUpskillingActive(true)
+                    onCompleteUpskilling()
                   }}
                 >
                   Create plans&nbsp;→
@@ -2305,17 +2444,21 @@ function BoardView({
         open={upskillingLaunchOpen}
         onOpenChange={setUpskillingLaunchOpen}
         onLaunch={(summary) => {
-          setUpskillingActive(true)
           // Merge new departments with any existing launch
           const existingNames = upskillingLaunchSummary?.departmentNames ?? []
           const mergedNames = [...new Set([...existingNames, ...summary.departmentNames])]
-          setUpskillingLaunchSummary({
+          const mergedSummary = {
             ...summary,
             departmentNames: mergedNames,
             totalEmployees: departments
               .filter((d) => mergedNames.includes(d.name))
               .reduce((sum, d) => sum + d.employees, 0),
-          })
+          }
+          onStartUpskilling(mergedSummary)
+          // CHRO: after launching upskilling, auto-advance to upskilled (simulates all HRBPs completing)
+          if (!isHrbp) {
+            setTimeout(() => onCompleteUpskilling(), 2000)
+          }
         }}
         priorityDeptNames={
           [...departments]
@@ -2326,6 +2469,8 @@ function BoardView({
         }
         excludeDeptNames={upskillingLaunchSummary?.departmentNames ?? []}
       />
+
+      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} />
     </div>
   )
 }
@@ -2345,35 +2490,75 @@ export function WorkforceReadinessDashboard({
 } = {}) {
   const [view, setView] = useState<'board' | 'dept'>('board')
   const [dept, setDept] = useState<Dept | null>(null)
-  const [focusCollectionActive, setFocusCollectionActive] = useState(false)
-  const [focusCollectionLaunchSummary, setFocusCollectionLaunchSummary] =
-    useState<FocusCollectionLaunchSummary | null>(null)
+
+  // ─── Universal WFR program state ───
+  // Always start on State 1 on page load — user walks through the flow each session
+  const [wfrState, setWfrStateRaw] = useState<WfrPersistedState>({ state: 1 })
+
+  const setWfrState = useCallback((next: WfrPersistedState | ((prev: WfrPersistedState) => WfrPersistedState)) => {
+    setWfrStateRaw(prev => {
+      const val = typeof next === 'function' ? next(prev) : next
+      writeWfrState(val)
+      return val
+    })
+  }, [])
+
+  // UI-local dialog toggles (not program state)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(autoLaunchCollection)
-  const [focusCollectionComplete, setFocusCollectionComplete] = useState(false)
-  const [collectionJustCompleted, setCollectionJustCompleted] = useState(false)
-  const [upskillingActive, setUpskillingActive] = useState(false)
-  const [upskillingLaunchSummary, setUpskillingLaunchSummary] = useState<UpskillingLaunchSummary | null>(null)
   const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
 
-  const handleFocusCollectionActiveChange = (
+  // State transition functions
+  const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
+    setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary }))
+  }, [setWfrState])
+
+  const cancelCollection = useCallback(() => {
+    setWfrState({ state: 1 })
+  }, [setWfrState])
+
+  const completeCollection = useCallback(() => {
+    setWfrState(prev => ({ ...prev, state: '2b' as const }))
+  }, [setWfrState])
+
+  const viewCollectionResults = useCallback(() => {
+    setWfrState(prev => ({ ...prev, state: 3 }))
+  }, [setWfrState])
+
+  const startUpskilling = useCallback((summary: UpskillingLaunchSummary) => {
+    setWfrState(prev => ({ ...prev, state: 4, upskillingLaunchSummary: summary }))
+  }, [setWfrState])
+
+  const completeUpskilling = useCallback(() => {
+    setWfrState(prev => ({ ...prev, state: 5 }))
+  }, [setWfrState])
+
+  // Handle collection launch dialog callback (compatible with old FocusFirstModule API)
+  const handleFocusCollectionActiveChange = useCallback((
     active: boolean,
     launchSummary?: FocusCollectionLaunchSummary | null,
   ) => {
-    setFocusCollectionActive(active)
     if (!active) {
-      setFocusCollectionLaunchSummary(null)
-    } else if (launchSummary != null) {
-      setFocusCollectionLaunchSummary(launchSummary)
+      cancelCollection()
+    } else if (launchSummary) {
+      advanceToCollection(launchSummary)
     }
-  }
+  }, [advanceToCollection, cancelCollection])
 
+  // Auto-advance from '2b' (just completed) to 3 (collection complete) after 1s
+  useEffect(() => {
+    if (wfrState.state !== '2b') return
+    const timer = setTimeout(() => {
+      setWfrState(prev => ({ ...prev, state: 3 }))
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [wfrState.state, setWfrState])
+
+  // Cleanup old localStorage keys on mount
   useEffect(() => {
     try {
       sessionStorage.removeItem('tm:wfr-focus-collection-session')
       localStorage.removeItem('tm:wfr-focus-collection-active')
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -2409,21 +2594,16 @@ export function WorkforceReadinessDashboard({
               setDept(d)
               setView('dept')
             }}
-            focusCollectionActive={focusCollectionActive}
-            focusCollectionComplete={focusCollectionComplete}
-            collectionJustCompleted={collectionJustCompleted}
+            wfrState={wfrState}
             onCollectionActiveChange={handleFocusCollectionActiveChange}
-            onCollectionComplete={() => setFocusCollectionComplete(true)}
-            onViewResults={() => { setCollectionJustCompleted(false); setFocusCollectionComplete(true) }}
-            collectionLaunchSummary={focusCollectionLaunchSummary}
+            onCompleteCollection={completeCollection}
+            onViewCollectionResults={viewCollectionResults}
+            onStartUpskilling={startUpskilling}
+            onCompleteUpskilling={completeUpskilling}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
-            upskillingActive={upskillingActive}
-            upskillingLaunchSummary={upskillingLaunchSummary}
             upskillingLaunchOpen={upskillingLaunchOpen}
             setUpskillingLaunchOpen={setUpskillingLaunchOpen}
-            setUpskillingActive={setUpskillingActive}
-            setUpskillingLaunchSummary={setUpskillingLaunchSummary}
             scopedDepartments={scopedDepartments}
             isHrbp={isHrbp}
           />
@@ -2431,19 +2611,14 @@ export function WorkforceReadinessDashboard({
         {view === 'dept' && dept && (
           <DeptView
             dept={dept}
-            orgCollectionActive={focusCollectionActive}
-            orgCollectionComplete={focusCollectionComplete}
-            collectionJustCompleted={collectionJustCompleted}
+            wfrState={wfrState}
             onCollectionActiveChange={handleFocusCollectionActiveChange}
-            onCollectionComplete={() => setFocusCollectionComplete(true)}
-            onViewResults={() => { setCollectionJustCompleted(false); setFocusCollectionComplete(true) }}
-            collectionLaunchSummary={focusCollectionLaunchSummary}
+            onCompleteCollection={completeCollection}
+            onViewCollectionResults={viewCollectionResults}
+            onStartUpskilling={startUpskilling}
+            onCompleteUpskilling={completeUpskilling}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
-            upskillingActive={upskillingActive}
-            upskillingLaunchSummary={upskillingLaunchSummary}
-            setUpskillingActive={setUpskillingActive}
-            setUpskillingLaunchSummary={setUpskillingLaunchSummary}
           />
         )}
       </div>

@@ -67,7 +67,7 @@ export function FocusFirstLaunchDialog({
     onLaunch?.({
       assignOwner,
       scopeLabel,
-      channelsLabel: 'AI Interviews',
+      channelsLabel: 'AI Agent Interviews',
       delegated,
       scopedDepartmentNames: scopedDeptNames,
     })
@@ -91,7 +91,7 @@ export function FocusFirstLaunchDialog({
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
               </Dialog.Close>
             </div>
-            <Stepper value={step - 1} className="mt-3 mb-4">
+            <Stepper value={step - 1} size="sm" className="mt-3 mb-4">
               <StepperList>
                 <StepperItem step={0} className="flex-row gap-1.5">
                   <StepperIndicator />
@@ -209,12 +209,14 @@ export function FocusFirstLaunchDialog({
               <>
                 <h2 className="wfr-focus-launch__title">Collection method</h2>
                 <p className="wfr-focus-launch__sub">Data will be collected using AI-powered interviews to measure task-level readiness.</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, border: '2px solid #6366f1', borderRadius: 10, background: '#fafbff' }}>
-                  <img src="/ai-agent-icon.svg" alt="" style={{ width: 24, height: 24 }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>AI Interviews</div>
-                    <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>AI-powered conversations that map real workflows, measure task-level readiness, and surface upskilling opportunities.</p>
-                  </div>
+                <div className="wfr-focus-launch__options">
+                  <button type="button" className="wfr-focus-launch__option wfr-focus-launch__option--selected">
+                    <img src="/ai-agent-icon.svg" alt="" style={{ width: 28, height: 28, flexShrink: 0 }} />
+                    <span className="wfr-focus-launch__option-text">
+                      <span className="wfr-focus-launch__option-label">AI Agent Interviews</span>
+                      <span className="wfr-focus-launch__option-desc">AI-powered conversations that map real workflows, measure task-level readiness, and surface upskilling opportunities.</span>
+                    </span>
+                  </button>
                 </div>
               </>
             )}
@@ -242,10 +244,7 @@ export function FocusFirstLaunchDialog({
                   <div className="wfr-focus-launch__review-row">
                     <div>
                       <p className="wfr-focus-launch__review-k">Collection method</p>
-                      <p className="wfr-focus-launch__review-v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
-                        AI Interviews
-                      </p>
+                      <p className="wfr-focus-launch__review-v">AI Agent Interviews</p>
                     </div>
                   </div>
                 </div>

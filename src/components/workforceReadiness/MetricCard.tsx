@@ -9,7 +9,7 @@ export interface MetricCardProps {
   /** Short label above the value (e.g. "AI readiness"). */
   label: string
   /** Large metric value (e.g. "24%", "6,384"). */
-  value: string
+  value: ReactNode
   /** Primary description below the value. */
   description: string
   /** Secondary hint text in the footer. */

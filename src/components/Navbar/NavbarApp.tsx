@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
-import { MATEO, LAURA, CHRO } from '../../contexts/demoUsers'
+import { MATEO, LAURA, CHRO, CSM } from '../../contexts/demoUsers'
 import { Navbar, getNavbarProductConfig } from '@tonyh-2-eightfold/ef-design-system'
 
 type NavbarTabItem = NonNullable<ComponentProps<typeof Navbar>['tabs']>[number]
@@ -41,9 +41,13 @@ const CAREER_HUB_HRBP_TABS: NavbarTabItem[] = [
     path: '/my-activity',
     chevron: true,
     subItems: [
-      { label: 'Goals', path: '/my-activity/goals' },
-      { label: 'Learning', path: '/my-activity/learning' },
-      { label: 'Contributions', path: '/my-activity/contributions' },
+      { label: 'My Jobs', path: '/my-activity/jobs' },
+      { label: 'My Courses', path: '/my-activity/courses' },
+      { label: 'My Experts', path: '/my-activity/experts' },
+      { label: 'My Projects', path: '/my-activity/projects' },
+      { label: 'My Referrals', path: '/my-activity/referrals' },
+      { label: 'My skill assessment requests', path: '/my-activity/skill-assessments' },
+      { label: 'Development Plan Templates', path: '/my-activity/dev-plan-templates' },
     ],
   },
   { id: 'people', label: 'People', path: '/people' },
@@ -89,15 +93,17 @@ const AVATAR_MENU_ITEMS = [
 ]
 
 const SWITCH_OPTIONS = [
+  { label: 'csm@acme.com', userId: 'csm' },
   { label: 'manager@acme.com', userId: 'mateo' },
   { label: 'hrbp@acme.com', userId: 'laura-shah' },
   { label: 'chro@acme.com', userId: 'chro' },
 ]
 
-const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO> = {
+const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO | typeof CSM> = {
   mateo: MATEO,
   'laura-shah': LAURA,
   chro: CHRO,
+  csm: CSM,
 }
 
 /** DS Career Hub navbar variant: product name and icon for all of TM. */

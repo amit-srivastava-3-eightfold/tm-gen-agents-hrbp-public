@@ -78,11 +78,28 @@ const CHRO_TASKS: HomeTask[] = [
   },
 ]
 
+const CSM_TASKS: HomeTask[] = [
+  {
+    label: 'Complete quarterly business reviews',
+    href: '#',
+    meta: '4 of 12 accounts done',
+    tag: 'Account management',
+    tagIcon: 'handshake',
+  },
+  {
+    label: 'Review at-risk account alerts',
+    href: '#',
+    meta: '3 accounts flagged',
+    tag: 'Retention',
+    tagIcon: 'warning',
+  },
+]
+
 const LAURA_TASKS: HomeTask[] = [
   {
-    label: 'Review workforce readiness for your departments',
+    label: 'Review workforce readiness for Customer Success',
     href: '/workforce',
-    meta: '3 departments',
+    meta: '820 employees',
     tag: 'Workforce readiness',
     tagIcon: 'trending_up',
   },
@@ -114,6 +131,12 @@ const CHRO_ACTIVITY: HomeActivity = {
   referrals: 5,
 }
 
+const CSM_ACTIVITY: HomeActivity = {
+  projectApplications: 0,
+  jobApplications: 1,
+  referrals: 2,
+}
+
 const LAURA_ACTIVITY: HomeActivity = {
   projectApplications: 1,
   jobApplications: 0,
@@ -133,6 +156,14 @@ const CHRO_MENTOR: HomeMentor = {
   role: 'CEO',
   avatarSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=56&h=56&fit=crop&crop=face',
   matchText: 'Executive sponsor',
+  matchCount: 0,
+}
+
+const CSM_MENTOR: HomeMentor = {
+  name: 'Laura Shah',
+  role: 'HR Business Partner, Customer Success',
+  avatarSrc: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=56&h=56&fit=crop&crop=face',
+  matchText: 'Your HRBP, strong in team development',
   matchCount: 0,
 }
 
@@ -162,6 +193,15 @@ const CHRO_JOB: HomeRecommendedJob = {
   ],
 }
 
+const CSM_JOB: HomeRecommendedJob = {
+  title: 'Senior Customer Success Manager',
+  tags: [
+    { label: 'Account Strategy' },
+    { label: 'Retention', checked: true },
+    { label: 'Expansion Revenue' },
+  ],
+}
+
 const LAURA_JOB: HomeRecommendedJob = {
   title: 'Director, Human Resources',
   tags: [
@@ -179,6 +219,11 @@ const MATEO_PROJECT: HomeRecommendedProject = {
 const CHRO_PROJECT: HomeRecommendedProject = {
   title: 'AI Workforce Transformation',
   tags: ['Strategy', 'HR'],
+}
+
+const CSM_PROJECT: HomeRecommendedProject = {
+  title: 'Customer Health Score Automation',
+  tags: ['AI', 'Customer Success'],
 }
 
 const LAURA_PROJECT: HomeRecommendedProject = {
@@ -217,16 +262,17 @@ function getCareerPathForHome(user: CurrentUser): HomeCareerPath {
 export function getHomePageData(user: CurrentUser): HomePageData {
   const isChro = user.id === 'chro'
   const isLaura = user.id === 'laura-shah'
-  const tasks = isChro ? CHRO_TASKS : isLaura ? LAURA_TASKS : MATEO_TASKS
+  const isCsm = user.id === 'csm'
+  const tasks = isChro ? CHRO_TASKS : isLaura ? LAURA_TASKS : isCsm ? CSM_TASKS : MATEO_TASKS
   const taskCount = tasks.length
 
   return {
     tasks,
     taskCount,
-    activity: isChro ? CHRO_ACTIVITY : isLaura ? LAURA_ACTIVITY : MATEO_ACTIVITY,
+    activity: isChro ? CHRO_ACTIVITY : isLaura ? LAURA_ACTIVITY : isCsm ? CSM_ACTIVITY : MATEO_ACTIVITY,
     careerPath: getCareerPathForHome(user),
-    mentor: isChro ? CHRO_MENTOR : isLaura ? LAURA_MENTOR : MATEO_MENTOR,
-    recommendedJob: isChro ? CHRO_JOB : isLaura ? LAURA_JOB : MATEO_JOB,
-    recommendedProject: isChro ? CHRO_PROJECT : isLaura ? LAURA_PROJECT : MATEO_PROJECT,
+    mentor: isChro ? CHRO_MENTOR : isLaura ? LAURA_MENTOR : isCsm ? CSM_MENTOR : MATEO_MENTOR,
+    recommendedJob: isChro ? CHRO_JOB : isLaura ? LAURA_JOB : isCsm ? CSM_JOB : MATEO_JOB,
+    recommendedProject: isChro ? CHRO_PROJECT : isLaura ? LAURA_PROJECT : isCsm ? CSM_PROJECT : MATEO_PROJECT,
   }
 }

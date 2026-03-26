@@ -94,7 +94,7 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      <div className="home-page__cover" aria-hidden />
+      <div className="home-page__cover" aria-hidden style={currentUser.id === 'laura-shah' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
       <div className="home-page__cover-fade" aria-hidden />
       <header className="home-page__header">
         <NavbarApp />

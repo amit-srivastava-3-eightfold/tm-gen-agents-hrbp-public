@@ -1,5 +1,5 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
-import { useEffect, useLayoutEffect, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
 import {
@@ -19,10 +19,21 @@ export interface ReadinessTrendSheetProps {
   /** When set, show employee-level readiness for this manager instead of dept collection data */
   managerContext?: { manager: string; mgrIndex: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
-  roleContext?: { title: string; dept: string } | null
+  roleContext?: { title: string; dept: string; measuredReadiness?: number } | null
+  /** When true, add upskilling boost to readiness deltas */
+  upskillingActive?: boolean
+  /** Whether data collection is complete — controls whether trends/deltas are shown */
+  collectionComplete?: boolean
 }
 
-export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext }: ReadinessTrendSheetProps) {
+export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, upskillingActive = false, collectionComplete = true }: ReadinessTrendSheetProps) {
+  const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
+
+  // Reset filter when sheet closes or role changes
+  useEffect(() => {
+    setZoneFilter(null)
+  }, [open, roleContext?.title])
+
   useLayoutEffect(() => {
     if (open) document.body.setAttribute(BODY_ATTR, 'true')
     return () => document.body.removeAttribute(BODY_ATTR)
@@ -43,11 +54,14 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
     const responseRate = wfrDemoDeptResponseRate(dept.name)
     const respondedCount = Math.round((dept.employees * responseRate) / 100)
     const estimated = dept.aiReadiness
-    const measured = estimated + trend.delta
+    const deptUpskillingBoost = upskillingActive ? 10 : 0
+    // In state 1 (no collection), zero out the trend delta
+    const effectiveDelta = collectionComplete ? trend.delta + deptUpskillingBoost : 0
+    const measured = collectionComplete ? Math.min(100, estimated + trend.delta + deptUpskillingBoost) : estimated
     const meta = deptCollectionRowDemo(dept.name)
     const teams = deptManagerTeams(dept.name, dept.employees, responseRate)
-    return { trend, responseRate, respondedCount, estimated, measured, meta, teams }
-  }, [dept])
+    return { trend: { ...trend, delta: effectiveDelta, direction: effectiveDelta >= 0 ? 'up' as const : 'down' as const }, responseRate, respondedCount, estimated, measured, meta, teams, showTrends: collectionComplete }
+  }, [dept, upskillingActive, collectionComplete])
 
 
   /** Get employees from the same source as the dept table, split by manager index. */
@@ -86,7 +100,11 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
   const isUp = trend.direction === 'up'
 
   const sheetTitle = roleContext ? roleContext.title : managerContext ? managerContext.manager : dept.name
-  const sheetSub = roleContext ? `${roleContext.dept} — Task-level readiness` : managerContext ? `${dept.name} — Employee readiness trend` : 'AI readiness change from data collection'
+  const sheetSub = roleContext
+    ? `${roleContext.dept} — Task-level readiness`
+    : managerContext
+      ? `${dept.name} — Employee readiness trend`
+      : data.showTrends ? 'AI readiness change from data collection' : 'AI readiness — baseline estimate'
 
   return createPortal(
     <div className="wfr-trend-sheet__root">
@@ -97,9 +115,6 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
           <div>
             <div className="wfr-trend-sheet__title-row">
               <h2 className="wfr-trend-sheet__title">{sheetTitle}</h2>
-              <span className={`wfr-trend-sheet__badge ${isUp ? 'wfr-trend-sheet__badge--up' : 'wfr-trend-sheet__badge--down'}`}>
-                {deltaLabel}
-              </span>
             </div>
             <p className="wfr-trend-sheet__sub">{sheetSub}</p>
           </div>
@@ -113,27 +128,40 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
           {managerContext && mgrEmployeeData ? (
             <>
               {/* Manager-level: employee readiness table */}
-              <div className="wfr-trend-sheet__comparison">
-                <div className="wfr-trend-sheet__metric">
-                  <span className="wfr-trend-sheet__metric-label">Team previous</span>
-                  <span className="wfr-trend-sheet__metric-value wfr-trend-sheet__metric-value--muted">{estimated}%</span>
-                </div>
-                <span className="wfr-trend-sheet__arrow">→</span>
-                <div className="wfr-trend-sheet__metric">
-                  <span className="wfr-trend-sheet__metric-label">Team measured</span>
-                  <span className={`wfr-trend-sheet__metric-value ${isUp ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
-                    {measured}%
-                  </span>
-                </div>
-                <div className="wfr-trend-sheet__metric wfr-trend-sheet__metric--delta">
-                  <span className="wfr-trend-sheet__metric-label">Change</span>
-                  <span className={`wfr-trend-sheet__metric-value ${isUp ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
-                    {isUp ? '+' : ''}{trend.delta}pt
-                  </span>
-                </div>
+              {data.showTrends ? (
+                <div className="wfr-trend-sheet__comparison">
+                  <div className="wfr-trend-sheet__metric">
+                    <span className="wfr-trend-sheet__metric-label">Team previous</span>
+                    <span className="wfr-trend-sheet__metric-value wfr-trend-sheet__metric-value--muted">{estimated}%</span>
+                  </div>
+                  <span className="wfr-trend-sheet__arrow">→</span>
+                  <div className="wfr-trend-sheet__metric">
+                    <span className="wfr-trend-sheet__metric-label">Team measured</span>
+                    <span className={`wfr-trend-sheet__metric-value ${isUp ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
+                      {measured}%
+                    </span>
+                  </div>
+                  <div className="wfr-trend-sheet__metric wfr-trend-sheet__metric--delta">
+                    <span className="wfr-trend-sheet__metric-label">Change</span>
+                    <span className={`wfr-trend-sheet__metric-value ${isUp ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
+                      {isUp ? '+' : ''}{trend.delta}pt
+                    </span>
+                  </div>
               </div>
+              ) : (
+                <div className="wfr-trend-sheet__comparison">
+                  <div className="wfr-trend-sheet__metric">
+                    <span className="wfr-trend-sheet__metric-label">Estimated readiness</span>
+                    <span className="wfr-trend-sheet__metric-value wfr-trend-sheet__metric-value--muted">{estimated}%</span>
+                    <span className="wfr-trend-sheet__metric-caption">Profile-based estimate</span>
+                  </div>
+                </div>
+              )}
               <p className="wfr-trend-sheet__summary">
-                Individual readiness scores for <strong>{managerContext.manager}</strong>&apos;s team of <strong>{mgrEmployeeData.length}</strong> employees.
+                {data.showTrends
+                  ? <>Individual readiness scores for <strong>{managerContext.manager}</strong>&apos;s team of <strong>{mgrEmployeeData.length}</strong> employees.</>
+                  : <>Baseline estimate for <strong>{managerContext.manager}</strong>&apos;s team of <strong>{mgrEmployeeData.length}</strong> employees. Launch data collection to get measured scores.</>
+                }
               </p>
               <div className="wfr-trend-sheet__emp-table">
                 <div className="wfr-trend-sheet__emp-header">
@@ -159,92 +187,216 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
               {/* Role-level: Task survey response breakdown */}
               {(() => {
                 const tasks = getTasksForRole(roleContext.title)
-                const augTasks = tasks.filter(t => taskZone(t.score) === 'augment')
                 const role = getRolesForDept(roleContext.dept).find(r => r.title === roleContext.title)
-                const roleDelta = trend.delta + ((roleContext.title.length % 3) - 1)
-                const roleMeasured = role ? Math.max(0, Math.min(100, role.aiReadiness + roleDelta)) : measured
+                const baseReadiness = role?.aiReadiness ?? estimated
+                const roleMeasured = data.showTrends
+                  ? (roleContext.measuredReadiness ?? (role ? Math.max(0, Math.min(100, role.aiReadiness + trend.delta + ((roleContext.title.length % 3) - 1))) : measured))
+                  : baseReadiness
+                const roleDelta = roleMeasured - baseReadiness
                 return (
                   <>
-                    <h3 style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }}>AI Readiness</h3>
-                    <div className="wfr-trend-sheet__comparison">
-                      <div className="wfr-trend-sheet__metric">
-                        <span className="wfr-trend-sheet__metric-label">Estimated</span>
-                        <span className="wfr-trend-sheet__metric-value wfr-trend-sheet__metric-value--muted">{role?.aiReadiness ?? estimated}%</span>
-                        <span className="wfr-trend-sheet__metric-caption">Profile-based</span>
+                    {/* AI Readiness card — improved layout */}
+                    <div style={{ padding: '16px 20px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#1999ac' }}>school</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Readiness</span>
                       </div>
-                      <span className="wfr-trend-sheet__arrow">→</span>
-                      <div className="wfr-trend-sheet__metric">
-                        <span className="wfr-trend-sheet__metric-label">Measured</span>
-                        <span className={`wfr-trend-sheet__metric-value ${roleDelta >= 0 ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
-                          {roleMeasured}%
-                        </span>
-                        <span className="wfr-trend-sheet__metric-caption">From AI interviews</span>
-                      </div>
-                      <div className="wfr-trend-sheet__metric wfr-trend-sheet__metric--delta">
-                        <span className="wfr-trend-sheet__metric-label">Change</span>
-                        <span className={`wfr-trend-sheet__metric-value ${roleDelta >= 0 ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
-                          {roleDelta >= 0 ? '+' : ''}{roleDelta}pt
-                        </span>
-                      </div>
-                    </div>
-                    <p className="wfr-trend-sheet__summary">
-                      Employees reported how they perform each augmentable task — <strong>Manual</strong>, <strong>AI-assisted</strong>, or <strong>Mostly AI</strong>. Responses are time-weighted by weekly hours per task.
-                    </p>
-                    <div className="wfr-trend-sheet__stats">
-                      <div className="wfr-trend-sheet__stat">
-                        <span className="wfr-trend-sheet__stat-label">Channel</span>
-                        <span className="wfr-trend-sheet__stat-value">
-                          <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />
-                          AI Interviews
-                        </span>
-                      </div>
-                      <div className="wfr-trend-sheet__stat">
-                        <span className="wfr-trend-sheet__stat-label">Collection period</span>
-                        <span className="wfr-trend-sheet__stat-value">Feb 10 – Mar 14, 2026</span>
-                      </div>
-                      <div className="wfr-trend-sheet__stat">
-                        <span className="wfr-trend-sheet__stat-label">Employees surveyed</span>
-                        <span className="wfr-trend-sheet__stat-value">{role?.employees ?? 0}</span>
-                      </div>
-                    </div>
-                    <div className="wfr-trend-sheet__teams">
-                      <h3 className="wfr-trend-sheet__teams-title">Task responses</h3>
-                      <p className="wfr-trend-sheet__teams-sub">{augTasks.length} augmentable tasks — how employees reported doing them</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                        {augTasks.sort((a, b) => b.score - a.score).map((t, i) => {
-                          // Simulate survey response distribution based on task score + trend
-                          const hash = t.task.split('').reduce((h: number, c: string) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-                          const aiAssistedPct = Math.min(80, Math.max(10, t.score - 10 + (Math.abs(hash) % 15)))
-                          const mostlyAiPct = Math.min(40, Math.max(0, t.score - 40 + (Math.abs(hash * 3) % 10)))
-                          const manualPct = 100 - aiAssistedPct - mostlyAiPct
-                          const weeklyHrs = 2 + (Math.abs(hash) % 8)
-                          return (
-                            <div key={i} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a212e' }}>{t.task}</span>
-                                <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', marginLeft: 8 }}>{weeklyHrs} hrs/wk</span>
-                              </div>
-                              {/* Response bar */}
-                              <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-                                <div style={{ width: `${manualPct}%`, background: '#fca5a5' }} title={`Manual: ${manualPct}%`} />
-                                <div style={{ width: `${aiAssistedPct}%`, background: '#86efac' }} title={`AI-assisted: ${aiAssistedPct}%`} />
-                                <div style={{ width: `${mostlyAiPct}%`, background: '#22c55e' }} title={`Mostly AI: ${mostlyAiPct}%`} />
-                              </div>
-                              <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
-                                <span style={{ color: '#dc2626' }}>Manual {manualPct}%</span>
-                                <span style={{ color: '#15803d' }}>AI-assisted {aiAssistedPct}%</span>
-                                <span style={{ color: '#166534', fontWeight: 600 }}>Mostly AI {mostlyAiPct}%</span>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      {tasks.filter(t => taskZone(t.score) !== 'augment').length > 0 && (
-                        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
-                          {tasks.filter(t => taskZone(t.score) !== 'augment').length} non-augmentable tasks not shown (below threshold or fully automatable)
-                        </p>
+                      {data.showTrends ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 28, fontWeight: 700, color: '#94a3b8', lineHeight: 1 }}>{baseReadiness}%</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{upskillingActive ? 'Before' : 'Estimated'}</div>
+                          </div>
+                          <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#cbd5e1' }}>arrow_forward</span>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 28, fontWeight: 700, color: roleDelta >= 0 ? '#15803d' : '#dc2626', lineHeight: 1 }}>{roleMeasured}%</div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{upskillingActive ? 'After' : 'Measured'}</div>
+                          </div>
+                          <div style={{ marginLeft: 'auto', textAlign: 'center', padding: '8px 14px', borderRadius: 8, background: roleDelta >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${roleDelta >= 0 ? '#bbf7d0' : '#fecaca'}` }}>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: roleDelta >= 0 ? '#15803d' : '#dc2626', lineHeight: 1 }}>{roleDelta >= 0 ? '+' : ''}{roleDelta}pt</div>
+                            <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Change</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                          <span style={{ fontSize: 32, fontWeight: 700, color: '#1a212e', lineHeight: 1 }}>{baseReadiness}%</span>
+                          <span style={{ fontSize: 13, color: '#94a3b8' }}>Profile-based estimate</span>
+                        </div>
                       )}
                     </div>
+                    <p className="wfr-trend-sheet__summary">
+                      {upskillingActive
+                        ? <>Readiness improved through <strong>development plans</strong> — employees completed AI courses and applied new skills to augmentable tasks.</>
+                        : data.showTrends
+                          ? <>Employees reported how they perform each augmentable task — <strong>Manual</strong>, <strong>AI-assisted</strong>, or <strong>Mostly AI</strong>. Responses are time-weighted by weekly hours per task.</>
+                          : <>Baseline readiness estimate based on employee skill profiles. Launch data collection to get measured task-level scores.</>
+                      }
+                    </p>
+                    {data.showTrends && (
+                      <div className="wfr-trend-sheet__stats">
+                        <div className="wfr-trend-sheet__stat">
+                          <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Development plans' : 'Channel'}</span>
+                          <span className="wfr-trend-sheet__stat-value">
+                            {upskillingActive ? (
+                              <>{role?.employees ?? dept?.employees ?? 0} plans completed</>
+                            ) : (
+                              <><img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />AI Interviews</>
+                            )}
+                          </span>
+                        </div>
+                        <div className="wfr-trend-sheet__stat">
+                          <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Upskilling period' : 'Collection period'}</span>
+                          <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
+                        </div>
+                        <div className="wfr-trend-sheet__stat">
+                          <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Employees enrolled' : 'Employees interviewed'}</span>
+                          <span className="wfr-trend-sheet__stat-value">{role?.employees ?? 0}</span>
+                        </div>
+                      </div>
+                    )}
+                    {/* Task & skill breakdown */}
+                    {(() => {
+                      const roleHash = roleContext.title.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
+                      // Ensure meaningful movement in State 3: at least 1 task moves from Human → Augment
+                      const movedToAugment = data.showTrends ? 1 + (Math.abs(roleHash) % 2) : 0 // 1-2 tasks
+                      const movedToAutomate = data.showTrends ? (Math.abs(roleHash * 7) % 2) : 0 // 0-1 tasks
+                      // Only show positive additions (tasks gained), not losses
+                      const augDelta = movedToAugment // tasks gained from Human
+                      const autoDelta = movedToAutomate // tasks gained from Augment
+                      const humanDelta = 0 // don't show loss — only additions
+
+                      // Skills lookup
+                      const augmentSkills: Record<string, string[]> = {
+                        'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'],
+                        'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'],
+                        'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'],
+                        'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'],
+                        'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'],
+                        'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'],
+                      }
+                      function getSkills(task: string, zone: string): string[] {
+                        const lower = task.toLowerCase()
+                        if (zone === 'augment') {
+                          for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills }
+                          return ['AI collaboration', 'Tool fluency']
+                        }
+                        if (zone === 'above') return ['Process automation', 'AI pipeline']
+                        return ['Critical thinking', 'Human judgment']
+                      }
+
+                      const augTasks = tasks.filter(t => taskZone(t.score) === 'augment')
+                      const uniqueSkills = new Set<string>()
+                      augTasks.forEach(t => getSkills(t.task, 'augment').forEach(s => uniqueSkills.add(s)))
+                      const skillCount = uniqueSkills.size
+                      const upskilledCount = upskillingActive ? Math.ceil(augTasks.length * 0.6) : 0
+                      const skillsLearnedCount = upskillingActive ? Math.ceil(skillCount * 0.5) : 0
+
+                      type ZoneKey = 'augment' | 'above' | 'below'
+                      const groups = upskillingActive
+                        ? [
+                            { zone: 'augment' as ZoneKey, label: 'Tasks augmented', color: '#475569', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#475569', count: upskilledCount, delta: 0 },
+                            { zone: 'above' as ZoneKey, label: 'Skills learned', color: '#475569', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#475569', count: skillsLearnedCount, delta: 0 },
+                          ]
+                        : [
+                            { zone: 'above' as ZoneKey, label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1', count: tasks.filter(t => taskZone(t.score) === 'above').length, delta: autoDelta },
+                            { zone: 'augment' as ZoneKey, label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d', count: tasks.filter(t => taskZone(t.score) === 'augment').length, delta: augDelta },
+                            { zone: 'below' as ZoneKey, label: 'Human', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b', count: tasks.filter(t => taskZone(t.score) === 'below').length, delta: humanDelta },
+                          ]
+
+                      return (
+                        <>
+                          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1a212e', margin: '16px 0 8px' }}>{upskillingActive ? 'Upskilling progress' : 'Tasks'}</h3>
+                          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                            {groups.map((g) => {
+                              const isActive = zoneFilter === g.zone
+                              const isDimmed = zoneFilter != null && !isActive
+                              return (
+                                <div
+                                  key={g.label}
+                                  onClick={() => setZoneFilter(prev => prev === g.zone ? null : g.zone)}
+                                  style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${g.activeBorder}` : `1px solid ${g.border}`, background: g.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: 22, fontWeight: 700, color: g.color }}>{g.count}</span>
+                                    {g.delta !== 0 && (
+                                      <span style={{
+                                        fontSize: 13, fontWeight: 700,
+                                        color: g.delta > 0 ? '#15803d' : '#dc2626',
+                                        padding: '3px 8px', borderRadius: 99,
+                                        background: g.delta > 0 ? '#f0fdf4' : '#fef2f2',
+                                        border: `1px solid ${g.delta > 0 ? '#bbf7d0' : '#fecaca'}`,
+                                        lineHeight: 1.2,
+                                      }}>
+                                        {g.delta > 0 ? '↑' : '↓'}{Math.abs(g.delta)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: g.color }}>{g.label}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          {(() => {
+                            // Build moved-task sets so individual badges match stat card deltas exactly
+                            const augTasksSorted = tasks.filter(t => taskZone(t.score) === 'augment').sort((a, b) => a.score - b.score)
+                            const autoTasksSorted = tasks.filter(t => taskZone(t.score) === 'above').sort((a, b) => a.score - b.score)
+                            const movedAugTasks = new Set(augTasksSorted.slice(0, movedToAugment).map(t => t.task))
+                            const movedAutoTasks = new Set(autoTasksSorted.slice(0, movedToAutomate).map(t => t.task))
+
+                            const zoneGroups = [
+                              { zone: 'above' as ZoneKey, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', tasks: tasks.filter(t => taskZone(t.score) === 'above') },
+                              { zone: 'augment' as ZoneKey, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', tasks: tasks.filter(t => taskZone(t.score) === 'augment') },
+                              { zone: 'below' as ZoneKey, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', tasks: tasks.filter(t => taskZone(t.score) === 'below') },
+                            ]
+                            const visibleZoneGroups = zoneFilter
+                              ? zoneGroups.filter(g => g.zone === zoneFilter && g.tasks.length > 0)
+                              : zoneGroups.filter(g => g.tasks.length > 0)
+                            return visibleZoneGroups.map((group) => (
+                              <div key={group.label} style={{ marginBottom: 16 }}>
+                                <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
+                                    <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
+                                    const zone = taskZone(t.score)
+                                    const skills = getSkills(t.task, zone)
+                                    // Deterministic: mark exactly N tasks as moved based on stat card deltas
+                                    const moved = data.showTrends && (
+                                      (zone === 'augment' && movedAugTasks.has(t.task)) ||
+                                      (zone === 'above' && movedAutoTasks.has(t.task))
+                                    )
+                                    const movedLabel = zone === 'augment' ? '↑ from Human' : '↑ from Augment'
+                                    return (
+                                      <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: moved ? '1px solid #bbf7d0' : '1px solid #e5e7eb', background: moved ? '#fafff9' : undefined }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                          <span style={{ fontSize: 13, fontWeight: 500, color: '#1a212e' }}>{t.task}</span>
+                                          {moved && (
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', marginLeft: 8, padding: '2px 8px', borderRadius: 99, background: '#f0fdf4', border: '1px solid #bbf7d0', whiteSpace: 'nowrap' }}>
+                                              {movedLabel}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                          {skills.map((skill) => (
+                                            <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>
+                                              {skill}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            ))
+                          })()}
+                        </>
+                      )
+                    })()}
                   </>
                 )
               })()}
@@ -265,7 +417,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
               <span className={`wfr-trend-sheet__metric-value ${isUp ? 'wfr-trend-sheet__metric-value--up' : 'wfr-trend-sheet__metric-value--down'}`}>
                 {measured}%
               </span>
-              <span className="wfr-trend-sheet__metric-caption">From collection data</span>
+              <span className="wfr-trend-sheet__metric-caption">{upskillingActive ? 'After upskilling' : 'From collection data'}</span>
             </div>
             <div className="wfr-trend-sheet__metric wfr-trend-sheet__metric--delta">
               <span className="wfr-trend-sheet__metric-label">Change</span>
@@ -277,22 +429,27 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
 
           {/* Summary */}
           <p className="wfr-trend-sheet__summary">
-            AI Interviews measured readiness across <strong>{dept.employees.toLocaleString()}</strong> employees.
-            Readiness is <strong>{Math.abs(trend.delta)}pt {isUp ? 'higher' : 'lower'}</strong> than the initial profile-based estimate.
+            {upskillingActive
+              ? <>Development plans improved readiness across <strong>{dept.employees.toLocaleString()}</strong> employees. Readiness is <strong>{Math.abs(trend.delta)}pt {isUp ? 'higher' : 'lower'}</strong> than the initial estimate.</>
+              : <>AI Interviews measured readiness across <strong>{dept.employees.toLocaleString()}</strong> employees. Readiness is <strong>{Math.abs(trend.delta)}pt {isUp ? 'higher' : 'lower'}</strong> than the initial profile-based estimate.</>
+            }
           </p>
 
-          {/* Collection stats */}
+          {/* Stats */}
           <div className="wfr-trend-sheet__stats">
             <div className="wfr-trend-sheet__stat">
-              <span className="wfr-trend-sheet__stat-label">Channel</span>
+              <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Development plans' : 'Channel'}</span>
               <span className="wfr-trend-sheet__stat-value">
-                <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />
-                AI Interviews
+                {upskillingActive ? (
+                  <><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -2, marginRight: 4 }}>school</span>Development plans</>
+                ) : (
+                  <><img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />AI Interviews</>
+                )}
               </span>
             </div>
             <div className="wfr-trend-sheet__stat">
-              <span className="wfr-trend-sheet__stat-label">Collection period</span>
-              <span className="wfr-trend-sheet__stat-value">Feb 10 – Mar 14, 2026</span>
+              <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Upskilling period' : 'Collection period'}</span>
+              <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
             </div>
             <div className="wfr-trend-sheet__stat">
               <span className="wfr-trend-sheet__stat-label">Employees in gap</span>
@@ -313,7 +470,8 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__teams-th wfr-trend-sheet__teams-th--rate">Readiness</span>
               </div>
               {getRolesForDept(dept.name).sort((a, b) => a.aiReadiness - b.aiReadiness).map((role) => {
-                const roleDelta = trend.delta + ((role.title.length % 3) - 1)
+                const roleUpskillingBoost = upskillingActive ? Math.round(5 + ((role.aiPotential - role.aiReadiness) / 100) * 15 + (role.title.length % 4)) : 0
+                const roleDelta = trend.delta + ((role.title.length % 3) - 1) + roleUpskillingBoost
                 const roleMeasured = Math.max(0, Math.min(100, role.aiReadiness + roleDelta))
                 const roleIsUp = roleDelta >= 0
                 const gapCount = Math.round(role.employees * (1 - roleMeasured / 100))

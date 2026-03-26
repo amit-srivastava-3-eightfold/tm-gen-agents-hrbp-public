@@ -76,3 +76,23 @@ export const CHRO: CurrentUser = {
   mobilityPreference: 'Open to relocation',
   flexibilityToTravel: 'Up to 30%',
 }
+
+export const CSM: CurrentUser = {
+  id: 'csm',
+  name: 'Riley Chen',
+  title: 'Customer Success Manager',
+  location: 'San Francisco, CA',
+  pronouns: 'She/Her/Hers',
+  avatarType: 'photo',
+  avatarPhotoSrc: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
+  avatarInitials: 'RC',
+  avatarColor: '#0D47A1',
+  about: 'As a Customer Success Manager, I partner with key accounts to drive adoption, retention, and expansion. I focus on understanding customer goals, identifying risks, and ensuring our product delivers measurable value. My team manages 75 accounts across enterprise and mid-market segments.',
+  employeeId: '53201',
+  businessUnit: 'Customer Success',
+  hireDate: '2021-08-15',
+  phone: '(415) 555-0187',
+  email: 'csm@acme.com',
+  mobilityPreference: 'Remote preferred',
+  flexibilityToTravel: 'Up to 20%',
+}

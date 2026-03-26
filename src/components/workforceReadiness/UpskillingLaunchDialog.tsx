@@ -1,6 +1,9 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import {
+  Button,
+  Stepper, StepperList, StepperItem, StepperSeparator, StepperIndicator, StepperTitle,
+} from '@tonyh-2-eightfold/ef-design-system'
 import { departments, deptGapHeadcount, tGap } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css' // reuse same dialog styles
 
@@ -280,28 +283,19 @@ export function UpskillingLaunchDialog({
 
   function renderStepper(): ReactNode {
     return (
-      <div className="wfr-focus-launch__stepper" aria-label="Wizard progress">
-        {stepLabels.map((label, i) => {
-          const stepNum = i + 1
-          const done = step > stepNum
-          const active = step === stepNum
-          return (
+      <Stepper value={step - 1} size="sm" className="mt-3 mb-4">
+        <StepperList>
+          {stepLabels.map((label, i) => (
             <Fragment key={label}>
-              {i > 0 && (
-                <span className={`wfr-focus-launch__stepper-line ${done ? 'wfr-focus-launch__stepper-line--done' : ''}`} />
-              )}
-              <span className="wfr-focus-launch__stepper-step">
-                <span
-                  className={`wfr-focus-launch__stepper-node ${done ? 'wfr-focus-launch__stepper-node--done' : ''} ${active ? 'wfr-focus-launch__stepper-node--active' : ''}`}
-                >
-                  {done ? '✓' : stepNum}
-                </span>
-                <span className="wfr-focus-launch__stepper-label">{label}</span>
-              </span>
+              {i > 0 && <StepperSeparator />}
+              <StepperItem>
+                <StepperIndicator />
+                <StepperTitle>{label}</StepperTitle>
+              </StepperItem>
             </Fragment>
-          )
-        })}
-      </div>
+          ))}
+        </StepperList>
+      </Stepper>
     )
   }
 

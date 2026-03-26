@@ -1,14 +1,15 @@
 /* eslint-disable react-refresh/only-export-components -- useUser is a hook, not a component; demo users live in demoUsers.ts */
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { MATEO, CHRO, LAURA, type CurrentUser } from './demoUsers'
+import { MATEO, CHRO, LAURA, CSM, type CurrentUser } from './demoUsers'
 
-/** Allow ?user=chro (or mateo, laura-shah) in the URL to auto-switch persona. */
+/** Allow ?user=chro (or mateo, laura-shah, csm) in the URL to auto-switch persona. */
 function resolveInitialUser(): CurrentUser {
   if (typeof window === 'undefined') return MATEO
   const params = new URLSearchParams(window.location.search)
   const u = params.get('user')
   if (u === 'chro') return CHRO
   if (u === 'laura-shah') return LAURA
+  if (u === 'csm') return CSM
   return MATEO
 }
 

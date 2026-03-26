@@ -97,19 +97,34 @@ export function FocusFirstCollectionCard({
 }: FocusFirstCollectionCardProps) {
   // Animation phases: idle → filling → bell → hold → done
   const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
+  const [animPct, setAnimPct] = useState(0)
   const handleProgressClick = useCallback(() => {
     if (animPhase !== 'idle' || collectionJustCompleted || collectionComplete) return
     setAnimPhase('filling')
-    // Phase 1: bar fills (3s)
+    const startPct = snapshot.orgResponseRate
+    const startTime = Date.now()
+    const duration = 2500 // 2.5s fill
+    const tick = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const current = Math.round(startPct + (100 - startPct) * progress)
+      setAnimPct(current)
+      if (progress < 1) {
+        requestAnimationFrame(tick)
+      }
+    }
+    requestAnimationFrame(tick)
+    // Phase 1: bar fills (2.5s)
     setTimeout(() => {
       setAnimPhase('bell')
-      // Phase 2+3: bell rings + hold (3s)
+      // Phase 2: bell rings briefly (1.5s), then complete
       setTimeout(() => {
         setAnimPhase('idle')
+        setAnimPct(0)
         onCollectionComplete?.()
-      }, 3000)
-    }, 3000)
-  }, [animPhase, collectionJustCompleted, collectionComplete, onCollectionComplete])
+      }, 1500)
+    }, duration)
+  }, [animPhase, collectionJustCompleted, collectionComplete, onCollectionComplete, snapshot.orgResponseRate])
 
   const showAttentionBadge = snapshot.needAttentionDeptCount > 0
   const deptName = departmentContextName
@@ -122,8 +137,15 @@ export function FocusFirstCollectionCard({
         ? focusCollectionUnderwaySubtext(launchSummary)
         : 'Survey responses are rolling in. Check back as participation grows.'
 
-  // HRBP view: after CHRO delegated upskilling
-  if (isHrbp && upskillingActive && (collectionJustCompleted || collectionComplete)) {
+  // HRBP view: hide RA card when collection complete
+  if (isHrbp && (collectionJustCompleted || collectionComplete)) {
+    return null
+  }
+  // CHRO view: hide RA card when upskilling is done (plans assigned org-wide)
+  if (!isHrbp && hrbpPlansCreated) {
+    return null
+  }
+  if (false && isHrbp && upskillingActive && (collectionJustCompleted || collectionComplete)) {
     const scopedDeptNames = upskillingLaunchSummary?.departmentNames ?? []
     const scopedDepts = scopedDeptNames.length ? departments.filter(d => scopedDeptNames.includes(d.name)) : departments
     const totalGap = scopedDepts.reduce((s, d) => s + deptGapHeadcount(d), 0)
@@ -295,31 +317,41 @@ export function FocusFirstCollectionCard({
       return sum + Math.round(augPeople * (1 - d.aiReadiness / 100))
     }, 0)
 
-    // After upskilling is launched — show plans created card
+    // After upskilling is launched — keep state 3 card with confirmation
     if (upskillingActive) {
       const launchedDepts = scopedDepts.filter((d) => upskillingDeptSet.has(d.name))
-      const totalEmployeesInPlans = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
-      const totalRoles = launchedDepts.reduce((sum, d) => sum + getRolesForDept(d.name).length, 0)
+      const totalLaunchedGap = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
+      const hrsPerYear = totalLaunchedGap * ORG.hrsPerPersonWeek * 50
 
       return (
         <div className="wfr-ra-card wfr-ra-card--success">
           <div className="wfr-ra-card__header">
             <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>description</span> Development plans created
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Upskilling started
             </span>
+            <div className="wfr-ra-card__mini-progress">
+              <span className="wfr-ra-card__mini-pct">100%</span>
+              <div className="wfr-ra-card__mini-track">
+                <div className="wfr-ra-card__mini-fill" />
+              </div>
+              <span className="wfr-ra-card__mini-label">
+                {launchedDepts.length} department{launchedDepts.length === 1 ? '' : 's'} · {totalLaunchedGap.toLocaleString()} employees to upskill
+              </span>
+            </div>
           </div>
           <div className="wfr-ra-card__cta-row">
             <div>
               <p className="wfr-ra-card__cta-text">
-                <strong>{totalEmployeesInPlans.toLocaleString()}</strong> development plans created across <strong>{totalRoles}</strong> roles in <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}. Review and assign plans to employees.
+                Based on the AI agent interviews, improve your organization's productivity by <strong>{hrsPerYear.toLocaleString()} hours/year</strong> by upskilling <strong>{totalLaunchedGap.toLocaleString()}</strong> employees.
               </p>
               <p className="wfr-ra-card__hint">
-                Use the table below to view plans, edit courses, and assign to individual employees.
+                Upskilling initiated — HRBPs are creating development plans across {launchedDepts.length} departments.
               </p>
             </div>
-            <Button type="button" variant="primary" className="shrink-0" onClick={onScrollToTable}>
-              Assign plans&nbsp;→
-            </Button>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, fontWeight: 600, color: '#15803d', whiteSpace: 'nowrap' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+              Upskilling started
+            </span>
           </div>
         </div>
       )
@@ -395,12 +427,14 @@ export function FocusFirstCollectionCard({
       >
         <div className="wfr-ra-card__progress-info">
           <span className="wfr-ra-card__progress-pct tabular-nums" style={showBell ? { color: '#15803d' } : undefined}>
-            {isAnimating ? '100' : snapshot.orgResponseRate}%
+            {showBell ? '100' : isFilling ? animPct : snapshot.orgResponseRate}%
           </span>
           <span className="wfr-ra-card__progress-label">
-            {isAnimating
+            {showBell
               ? 'Sample threshold reached!'
-              : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+              : isFilling
+                ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+                : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
             }
           </span>
         </div>
@@ -418,7 +452,7 @@ export function FocusFirstCollectionCard({
       </div>
 
       {showBell ? (
-        <p className="wfr-ra-card__sub" style={{ color: '#15803d' }}>
+        <p className="wfr-ra-card__sub" style={{ color: '#15803d', animation: 'fadeIn 0.4s ease-out' }}>
           Enough responses are in for statistically accurate results. Preparing upskilling priorities…
         </p>
       ) : (
@@ -528,6 +562,11 @@ function FocusFirstModuleBoard({
     return orgCollectionSnap
   }, [deptContext, orgCollectionSnap])
   const attentionScope: FocusFirstCollectionAttentionScope = deptContext ? 'dept' : 'org'
+
+  // CHRO: hide entire RA module when upskilling is done (plans assigned org-wide)
+  if (!isHrbp && hrbpPlansCreated) {
+    return null
+  }
 
   return (
     <>

@@ -12,6 +12,8 @@ import { PositionPage } from './pages/PositionPage'
 import { PeopleProfilePage } from './pages/PeopleProfilePage'
 import { SkillTagPage } from './pages/SkillTagPage'
 import { WorkforceReadinessPage } from './pages/WorkforceReadinessPage'
+import { DevPlanTemplatesPage } from './pages/DevPlanTemplatesPage'
+import { DevPlanTemplateDetailPage } from './pages/DevPlanTemplateDetailPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +27,8 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/people/:id" element={<PeopleProfilePage />} />
             <Route path="/my-team" element={<MyTeamPage />} />
             <Route path="/workforce" element={<WorkforceReadinessPage />} />
+            <Route path="/my-activity/dev-plan-templates" element={<DevPlanTemplatesPage />} />
+            <Route path="/my-activity/dev-plan-templates/:templateId" element={<DevPlanTemplateDetailPage />} />
             <Route path="/positions/:id" element={<PositionPage />} />
             <Route path="/components/skill-tag" element={<SkillTagPage />} />
           </Routes>
