@@ -2434,7 +2434,15 @@ export function WorkforceReadinessDashboard({
       window.history.replaceState({}, '', url.pathname + url.search + url.hash)
       return { state: 1 }
     }
-    // Always start fresh at state 1 — demo flow is walked through each session.
+    // Only restore state 5 (upskilled) — set when HRBP publishes & assigns dev plans.
+    // All other states start fresh at 1 so the demo flow is always clean.
+    try {
+      const stored = localStorage.getItem(WFR_STATE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as WfrPersistedState
+        if (parsed.state === 5) return parsed
+      }
+    } catch { /* ignore */ }
     return { state: 1 }
   })
 
