@@ -2425,10 +2425,19 @@ export function WorkforceReadinessDashboard({
   // ─── Universal WFR program state ───
   // Always start on State 1 on page load — user walks through the flow each session
   const [wfrState, setWfrStateRaw] = useState<WfrPersistedState>(() => {
+    // ?reset URL param clears persisted state back to 1
+    if (new URLSearchParams(window.location.search).has('reset')) {
+      try { localStorage.removeItem(WFR_STATE_KEY) } catch { /* ignore */ }
+      // Clean the URL so refresh doesn't keep resetting
+      const url = new URL(window.location.href)
+      url.searchParams.delete('reset')
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash)
+      return { state: 1 }
+    }
     // Only restore state 5 (upskilled) from localStorage — set by assign action in dev plan templates.
     // All other states start fresh at 1 so the demo flow is always clean.
     try {
-      const stored = localStorage.getItem('tm:wfr-state')
+      const stored = localStorage.getItem(WFR_STATE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as WfrPersistedState
         if (parsed.state === 5) return parsed
