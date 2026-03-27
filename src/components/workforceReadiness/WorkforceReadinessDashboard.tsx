@@ -2434,15 +2434,7 @@ export function WorkforceReadinessDashboard({
       window.history.replaceState({}, '', url.pathname + url.search + url.hash)
       return { state: 1 }
     }
-    // Only restore state 5 (upskilled) from localStorage — set by assign action in dev plan templates.
-    // All other states start fresh at 1 so the demo flow is always clean.
-    try {
-      const stored = localStorage.getItem(WFR_STATE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as WfrPersistedState
-        if (parsed.state === 5) return parsed
-      }
-    } catch { /* ignore */ }
+    // Always start fresh at state 1 — demo flow is walked through each session.
     return { state: 1 }
   })
 
