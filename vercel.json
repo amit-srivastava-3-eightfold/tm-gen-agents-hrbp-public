@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "node scripts/setup-git-auth.cjs && rm -rf node_modules/@tonyh-2-eightfold && npm cache clean --force 2>/dev/null; npm install --prefer-online && echo '--- DS contents ---' && ls -la node_modules/@tonyh-2-eightfold/ef-design-system/ && echo '--- DS dist ---' && ls -la node_modules/@tonyh-2-eightfold/ef-design-system/dist/ 2>&1 || echo 'NO DIST DIR'",
+  "installCommand": "node scripts/setup-git-auth.cjs && rm -rf node_modules/@tonyh-2-eightfold && npm install --prefer-online",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
