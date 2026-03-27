@@ -2,11 +2,11 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { MATEO, CHRO, LAURA, CSM, type CurrentUser } from './demoUsers'
 
-/** Allow ?user=chro (or mateo, laura-shah, csm) in the URL to auto-switch persona. */
+/** Allow ?user=chro (or mateo, laura-shah, csm) in the URL to auto-switch persona. Falls back to localStorage. */
 function resolveInitialUser(): CurrentUser {
   if (typeof window === 'undefined') return MATEO
   const params = new URLSearchParams(window.location.search)
-  const u = params.get('user')
+  const u = params.get('user') || localStorage.getItem('tm:current-user')
   if (u === 'chro') return CHRO
   if (u === 'laura-shah') return LAURA
   if (u === 'csm') return CSM

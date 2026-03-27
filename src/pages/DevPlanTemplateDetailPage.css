@@ -7,3 +7,8 @@
 .dev-plan-template-courses .course-object-card__completed-text {
   display: none !important;
 }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

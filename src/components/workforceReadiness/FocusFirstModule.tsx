@@ -342,10 +342,10 @@ export function FocusFirstCollectionCard({
           <div className="wfr-ra-card__cta-row">
             <div>
               <p className="wfr-ra-card__cta-text">
-                Based on the AI agent interviews, improve your organization's productivity by <strong>{hrsPerYear.toLocaleString()} hours/year</strong> by upskilling <strong>{totalLaunchedGap.toLocaleString()}</strong> employees.
+                HRBPs are creating development plans for <strong>{totalLaunchedGap.toLocaleString()}</strong> employees across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}.
               </p>
               <p className="wfr-ra-card__hint">
-                Upskilling initiated — HRBPs are creating development plans across {launchedDepts.length} departments.
+                Once plans are assigned, readiness scores will update to reflect upskilling progress.
               </p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, fontWeight: 600, color: '#15803d', whiteSpace: 'nowrap' }}>

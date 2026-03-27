@@ -91,6 +91,7 @@ export function DevPlanTemplateDetailPage() {
   const [published, setPublished] = useState(isAlreadyPublished)
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
   const [assignedCount, setAssignedCount] = useState(isAlreadyPublished ? 75 : 0)
+  const [toast, setToast] = useState<string | null>(null)
 
   return (
     <div>
@@ -448,7 +449,18 @@ export function DevPlanTemplateDetailPage() {
 
                 {/* Table header */}
                 <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 140px 140px 1fr 80px 60px', padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#fafbfc' }}>
-                  <div><input type="checkbox" style={{ cursor: 'pointer' }} /></div>
+                  <div><input
+                    type="checkbox"
+                    checked={selectedEmployees.size === EMPLOYEES.length && EMPLOYEES.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedEmployees(new Set(EMPLOYEES.map(emp => emp.name)))
+                      } else {
+                        setSelectedEmployees(new Set())
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  /></div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: '#64748b' }}>Employees ↕</div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: '#64748b' }}>Location ↕</div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: '#64748b' }}>Business Unit ↕</div>
@@ -498,7 +510,21 @@ export function DevPlanTemplateDetailPage() {
       {/* Sticky bottom bar — hidden for employees */}
       {!published && !isEmployee && (
         <div style={{ position: 'sticky', bottom: 0, zIndex: 50, background: '#fff', borderTop: '1px solid #e5e7eb', padding: '12px 32px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <Button variant="primary" onClick={() => { setPublished(true); setActiveTab('assign') }}>Publish</Button>
+          <Button variant="primary" onClick={() => { setPublished(true); setToast('Template published successfully'); setTimeout(() => setToast(null), 3000) }}>Publish</Button>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          padding: '12px 24px', borderRadius: 10, background: '#0f172a', color: '#fff',
+          fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', gap: 8, zIndex: 10000,
+          animation: 'fadeInUp 0.3s ease-out',
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#4ade80' }}>check_circle</span>
+          {toast}
         </div>
       )}
     </div>

@@ -220,13 +220,13 @@ export type ReadinessTrend = {
 /** Deterministic demo readiness trend after collection completes. Most go up, a few go down. */
 export function deptReadinessTrend(deptName: string): ReadinessTrend {
   const h = deptNameHash(deptName)
-  // ~75% of departments go up, ~25% go down
-  const goesDown = h % 4 === 0
+  // ~80% of departments go up, ~20% go down — more dramatic calibration shifts
+  const goesDown = h % 5 === 0
   if (goesDown) {
-    const delta = -(1 + (h % 2)) // -1 or -2
+    const delta = -(2 + (h % 3)) // -2 to -4
     return { delta, direction: 'down' }
   }
-  const delta = 1 + (h % 5) // +1 to +5
+  const delta = 4 + (h % 8) // +4 to +11
   return { delta, direction: 'up' }
 }
 

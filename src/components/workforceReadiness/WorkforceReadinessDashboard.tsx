@@ -1541,9 +1541,10 @@ function BoardView({
   const [hrbpSelectedRoles, setHrbpSelectedRoles] = useState<Record<string, boolean>>({})
 
   const scopedRollup = useMemo(() => {
-    if (!focusCollectionActive || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
+    // Only apply scoped rollup when collection is complete (state >= 3), not during collection in progress
+    if (!focusCollectionComplete || !collectionLaunchSummary?.scopedDepartmentNames?.length) return null
     return wfrRollupDepartmentsByName(collectionLaunchSummary.scopedDepartmentNames)
-  }, [focusCollectionActive, collectionLaunchSummary])
+  }, [focusCollectionComplete, collectionLaunchSummary])
 
   const allDeptsSorted = useMemo(() => {
     const base = scopedDepartments?.length
@@ -1558,15 +1559,15 @@ function BoardView({
     for (const d of allDeptsSorted) {
       const trend = deptReadinessTrend(d.name)
       for (const r of getRolesForDept(d.name)) {
-        const collectionDelta = trend.delta + ((r.title.length % 3) - 1)
-        // Upskilling boost: roles with lower readiness improve more (5-15pt depending on gap)
+        // Only apply collection delta and upskilling boost when collection is complete (state >= 3)
+        const collectionDelta = focusCollectionComplete ? trend.delta + ((r.title.length % 3) - 1) : 0
         const upskillingBoost = hrbpPlansCreated ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
         const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
         roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, gap: Math.round(r.employees * (1 - measured / 100)) })
       }
     }
     return roles.sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-  }, [allDeptsSorted, hrbpPlansCreated])
+  }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete])
 
 
   // Top 3 departments by gap for opportunity tags in complete state
@@ -1818,10 +1819,10 @@ function BoardView({
                 return a.aiReadiness - b.aiReadiness
               }).map((d) => {
                 const trend = deptReadinessTrend(d.name)
-                const measuredReadiness = d.aiReadiness + trend.delta
+                const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
                 const gapPp = tGap(d.aiPotential, measuredReadiness)
                 const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
-                const gapCount = deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept)
+                const gapCount = focusCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
                 const managers = deptManagerTeams(d.name, d.employees)
@@ -1995,6 +1996,7 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -2039,6 +2041,55 @@ function BoardView({
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{r.gap.toLocaleString()}</span>
                     </DataTableCell>
+                    {upskillingActive && (
+                      <DataTableCell>
+                        {hrbpPlansCreated ? (() => {
+                          // Deterministic progress per role based on title hash
+                          const h = r.title.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+                          const total = r.gap
+                          // ~15% of roles are fully complete, ~10% are nearly done
+                          const isFullyComplete = Math.abs(h) % 7 === 0
+                          const isNearlyDone = Math.abs(h) % 5 === 0 && !isFullyComplete
+                          let completed: number, inProgress: number, notStarted: number
+                          if (isFullyComplete) {
+                            completed = total; inProgress = 0; notStarted = 0
+                          } else if (isNearlyDone) {
+                            completed = Math.round(total * (70 + (Math.abs(h) % 20)) / 100)
+                            inProgress = Math.round(total * (10 + (Math.abs(h * 3) % 15)) / 100)
+                            notStarted = Math.max(0, total - completed - inProgress)
+                          } else {
+                            const completedPct = 10 + (Math.abs(h) % 30)
+                            const inProgressPct = 20 + (Math.abs(h * 3) % 25)
+                            completed = Math.round(total * completedPct / 100)
+                            inProgress = Math.round(total * inProgressPct / 100)
+                            notStarted = Math.max(0, total - completed - inProgress)
+                          }
+                          const barW = 100
+                          const cW = total > 0 ? (completed / total) * barW : 0
+                          const iW = total > 0 ? (inProgress / total) * barW : 0
+                          const nW = total > 0 ? (notStarted / total) * barW : barW
+                          return (
+                            <div style={{ minWidth: 140 }}>
+                              <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: '#e5e7eb', marginBottom: 4 }}>
+                                <div style={{ width: `${cW}%`, background: '#22c55e', transition: 'width 0.3s' }} />
+                                <div style={{ width: `${iW}%`, background: '#f59e0b', transition: 'width 0.3s' }} />
+                                <div style={{ width: `${nW}%`, background: '#e5e7eb' }} />
+                              </div>
+                              <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#64748b' }}>
+                                <span><span style={{ color: '#15803d', fontWeight: 600 }}>{completed}</span> done</span>
+                                <span><span style={{ color: '#d97706', fontWeight: 600 }}>{inProgress}</span> active</span>
+                                <span><span style={{ color: '#94a3b8', fontWeight: 600 }}>{notStarted}</span> pending</span>
+                              </div>
+                            </div>
+                          )
+                        })() : (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, background: '#fffbeb', border: '1px solid #fcd34d', fontSize: 12, fontWeight: 600, color: '#92400e', whiteSpace: 'nowrap' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit_note</span>
+                            Creating plans
+                          </span>
+                        )}
+                      </DataTableCell>
+                    )}
                   </DataTableRow>
                 )
               })}
@@ -2339,10 +2390,6 @@ function BoardView({
               .reduce((sum, d) => sum + d.employees, 0),
           }
           onStartUpskilling(mergedSummary)
-          // CHRO: after launching upskilling, auto-advance to upskilled (simulates all HRBPs completing)
-          if (!isHrbp) {
-            setTimeout(() => onCompleteUpskilling(), 2000)
-          }
         }}
         priorityDeptNames={
           [...departments]
@@ -2377,7 +2424,13 @@ export function WorkforceReadinessDashboard({
 
   // ─── Universal WFR program state ───
   // Always start on State 1 on page load — user walks through the flow each session
-  const [wfrState, setWfrStateRaw] = useState<WfrPersistedState>({ state: 1 })
+  const [wfrState, setWfrStateRaw] = useState<WfrPersistedState>(() => {
+    try {
+      const stored = localStorage.getItem('tm:wfr-state')
+      if (stored) return JSON.parse(stored) as WfrPersistedState
+    } catch { /* ignore */ }
+    return { state: 1 }
+  })
 
   const setWfrState = useCallback((next: WfrPersistedState | ((prev: WfrPersistedState) => WfrPersistedState)) => {
     setWfrStateRaw(prev => {
