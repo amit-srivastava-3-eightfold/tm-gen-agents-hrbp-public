@@ -29,7 +29,7 @@ function focusCollectionUnderwaySubtextDept(
   summary: FocusCollectionLaunchSummary,
   snapshot: WfrDemoCollectionSnapshot,
 ): ReactNode {
-  const here = <>{snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} people in <strong>{deptName}</strong> have responded so far</>
+  const here = <>{snapshot.respondedCount.toLocaleString()} of {snapshot.sampleTarget.toLocaleString()} sampled in <strong>{deptName}</strong> have responded so far</>
   if (summary.delegated) {
     return <>In <strong>{deptName}</strong>, {here}. This department is part of the <strong>{summary.scopeLabel}</strong> rollout—HRBPs own how collection runs in each unit.</>
   }
@@ -40,7 +40,7 @@ function focusCollectionUnderwaySubtextDeptNoWizard(
   deptName: string,
   snapshot: WfrDemoCollectionSnapshot,
 ): ReactNode {
-  return <>In <strong>{deptName}</strong>, {snapshot.respondedCount.toLocaleString()} of {snapshot.totalEmployees.toLocaleString()} employees have responded so far. Open details to see employee-level status across departments.</>
+  return <>In <strong>{deptName}</strong>, {snapshot.respondedCount.toLocaleString()} of {snapshot.sampleTarget.toLocaleString()} sampled have responded so far. Open details to see employee-level status across departments.</>
 }
 
 export type FocusFirstCollectionAttentionScope = 'org' | 'dept'
@@ -102,20 +102,40 @@ export function FocusFirstCollectionCard({
     if (animPhase !== 'idle' || collectionJustCompleted || collectionComplete) return
     setAnimPhase('filling')
     const startPct = snapshot.orgResponseRate
-    const startTime = Date.now()
-    const duration = 2500 // 2.5s fill
-    const tick = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const current = Math.round(startPct + (100 - startPct) * progress)
-      setAnimPct(current)
-      if (progress < 1) {
+    const startTime = performance.now()
+    const duration = 3000 // 3s — matches CSS animation on .wfr-ra-card__fill--animating
+
+    // Exact cubic-bezier(0.25, 0.1, 0.25, 1) solver to match the CSS animation
+    const cubicBezier = (x1: number, y1: number, x2: number, y2: number) => {
+      // Newton-Raphson to find t for a given x, then evaluate y
+      return (x: number) => {
+        let t = x // initial guess
+        for (let i = 0; i < 8; i++) {
+          const ct = 1 - t
+          const bx = 3 * ct * ct * t * x1 + 3 * ct * t * t * x2 + t * t * t - x
+          const dx = 3 * ct * ct * x1 + 6 * ct * t * (x2 - x1) + 3 * t * t * (1 - x2)
+          if (Math.abs(dx) < 1e-6) break
+          t -= bx / dx
+          t = Math.max(0, Math.min(1, t))
+        }
+        const ct = 1 - t
+        return 3 * ct * ct * t * y1 + 3 * ct * t * t * y2 + t * t * t
+      }
+    }
+    const ease = cubicBezier(0.25, 0.1, 0.25, 1)
+
+    const tick = (now: number) => {
+      const linear = Math.min((now - startTime) / duration, 1)
+      const eased = linear >= 1 ? 1 : ease(linear)
+      setAnimPct(Math.round(startPct + (100 - startPct) * eased))
+      if (linear < 1) {
         requestAnimationFrame(tick)
       }
     }
     requestAnimationFrame(tick)
-    // Phase 1: bar fills (2.5s)
+    // Phase 1: bar fills (3s)
     setTimeout(() => {
+      setAnimPct(100)
       setAnimPhase('bell')
       // Phase 2: bell rings briefly (1.5s), then complete
       setTimeout(() => {
@@ -432,15 +452,15 @@ export function FocusFirstCollectionCard({
             {showBell
               ? 'Sample threshold reached!'
               : isFilling
-                ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
-                : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.totalEmployees.toLocaleString()} responded${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+                ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+                : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
             }
           </span>
         </div>
         <div className="wfr-ra-card__track" style={showBell ? { position: 'relative', overflow: 'visible' } : undefined}>
           <div
-            className={`wfr-ra-card__fill${isFilling ? ' wfr-ra-card__fill--animating' : ''}`}
-            style={{ width: isAnimating ? '100%' : `${snapshot.orgResponseRate}%` }}
+            className="wfr-ra-card__fill"
+            style={{ width: `${isAnimating ? animPct : snapshot.orgResponseRate}%`, transition: isAnimating ? 'none' : undefined }}
           />
           {showBell ? (
             <div className="wfr-ra-card__bell-wrap">

@@ -2134,7 +2134,22 @@ export interface WfrDemoCollectionSnapshot {
   orgResponseRate: number
   respondedCount: number
   totalEmployees: number
+  /** Statistical sample size needed (stratified random sampling per role group). */
+  sampleTarget: number
   needAttentionDeptCount: number
+}
+
+/**
+ * Required sample size for a population using standard proportion CI
+ * (z=1.96, p=0.5, finite population correction).
+ * Matches Octave methodology: N<15 → all; 15–50 → 15–23; 50–200 → 23–66; 200–500 → 66–81; >500 → ~97.
+ */
+function sampleSizeForPopulation(N: number, marginOfError = 0.10): number {
+  if (N < 15) return N
+  const z = 1.96
+  const p = 0.5
+  const n0 = (z * z * p * (1 - p)) / (marginOfError * marginOfError)
+  return Math.min(N, Math.ceil(n0 / (1 + (n0 - 1) / N)))
 }
 
 /** Demo collection window (dept table, etc.). */
@@ -2145,17 +2160,21 @@ export const WFR_DEMO_COLLECTION_WINDOW = {
 
 /** Weighted org response rate and counts for the collecting-state Focus card. */
 export function wfrDemoCollectionSnapshot(): WfrDemoCollectionSnapshot {
+  let sampleTarget = 0
   let responded = 0
   let needAttention = 0
   for (const d of ORG.departments) {
+    const deptSample = sampleSizeForPopulation(d.employees)
+    sampleTarget += deptSample
     const r = wfrDemoDeptResponseRate(d.name)
-    responded += Math.round((d.employees * r) / 100)
+    responded += Math.round((deptSample * r) / 100)
     if (r < 20) needAttention++
   }
-  const orgResponseRate = Math.min(100, Math.round((responded / ORG.totalEmployees) * 100))
+  const orgResponseRate = sampleTarget > 0 ? Math.min(100, Math.round((responded / sampleTarget) * 100)) : 0
   return {
     orgResponseRate,
     respondedCount: responded,
+    sampleTarget,
     totalEmployees: ORG.totalEmployees,
     needAttentionDeptCount: needAttention,
   }
@@ -2167,18 +2186,22 @@ export function wfrDemoCollectionSnapshotForDeptNames(deptNames: string[]): WfrD
   let responded = 0
   let needAttention = 0
   let totalEmployees = 0
+  let sampleTarget = 0
   for (const d of ORG.departments) {
     if (!nameSet.has(d.name)) continue
+    const deptSample = sampleSizeForPopulation(d.employees)
+    sampleTarget += deptSample
     const r = wfrDemoDeptResponseRate(d.name)
-    responded += Math.round((d.employees * r) / 100)
+    responded += Math.round((deptSample * r) / 100)
     totalEmployees += d.employees
     if (r < 20) needAttention++
   }
   const orgResponseRate =
-    totalEmployees > 0 ? Math.min(100, Math.round((responded / totalEmployees) * 100)) : 0
+    sampleTarget > 0 ? Math.min(100, Math.round((responded / sampleTarget) * 100)) : 0
   return {
     orgResponseRate,
     respondedCount: responded,
+    sampleTarget,
     totalEmployees,
     needAttentionDeptCount: needAttention,
   }
@@ -2186,11 +2209,13 @@ export function wfrDemoCollectionSnapshotForDeptNames(deptNames: string[]): WfrD
 
 /** Dept-level demo counts while org-wide Focus first collection is active. */
 export function wfrDemoDeptCollectionSnapshot(d: Dept): WfrDemoCollectionSnapshot {
+  const deptSample = sampleSizeForPopulation(d.employees)
   const orgResponseRate = wfrDemoDeptResponseRate(d.name)
-  const respondedCount = Math.round((d.employees * orgResponseRate) / 100)
+  const respondedCount = Math.round((deptSample * orgResponseRate) / 100)
   return {
     orgResponseRate,
     respondedCount,
+    sampleTarget: deptSample,
     totalEmployees: d.employees,
     needAttentionDeptCount: orgResponseRate < 20 ? 1 : 0,
   }

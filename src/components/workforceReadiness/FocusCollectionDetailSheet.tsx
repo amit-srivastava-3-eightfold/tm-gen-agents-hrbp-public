@@ -206,12 +206,11 @@ export function FocusCollectionDetailSheet({
               {isDeptScope ? (
                 <>
                   {deptScoped.snap.respondedCount.toLocaleString()} of{' '}
-                  {deptScoped.snap.totalEmployees.toLocaleString()} employees in {deptScoped.dept.name} responded
+                  {deptScoped.snap.sampleTarget.toLocaleString()} sampled in {deptScoped.dept.name}
                 </>
               ) : (
                 <>
-                  {orgSnap.respondedCount.toLocaleString()} of {orgSnap.totalEmployees.toLocaleString()} employees
-                  responded
+                  {orgSnap.respondedCount.toLocaleString()} of {orgSnap.sampleTarget.toLocaleString()} sampled
                 </>
               )}
             </span>
