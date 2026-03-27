@@ -2,7 +2,7 @@
 @source "../node_modules/@tonyh-2-eightfold/ef-design-system/dist";
 @import './fonts/gilroy.css';
 @import './styles/typography-tokens.css';
-@import '@tonyh-2-eightfold/ef-design-system/styles';
+@import './styles/ds.css';
 
 :root {
   font-family: var(--font-family);
