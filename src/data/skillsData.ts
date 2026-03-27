@@ -79,10 +79,10 @@ const PROFESSIONAL_SERVICES_SKILLS: ProfileSkill[] = [
   { name: 'Problem Solving', endorsementCount: undefined },
 ]
 
-/** Skills by profile person ID. Uses mateo/laura-shah for current user; 1,2,3,l1-l12 for team profiles. */
+/** Skills by profile person ID. Uses mateo/jaydon-torff for current user; 1,2,3,l1-l12 for team profiles. */
 export const PROFILE_SKILLS: Record<string, { skills: ProfileSkill[]; endorserInitials: string; endorserName: string; endorserColor: string }> = {
   mateo: { skills: SALES_ENGINEERING_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },
-  'laura-shah': { skills: HR_SKILLS, endorserInitials: 'S', endorserName: 'Sarah Chen at Acme', endorserColor: '#5C6BC0' },
+  'jaydon-torff': { skills: HR_SKILLS, endorserInitials: 'S', endorserName: 'Sarah Chen at Acme', endorserColor: '#5C6BC0' },
   '1': { skills: SALES_ENGINEERING_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },
   '2': { skills: SALES_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },
   '3': { skills: SALES_ENGINEERING_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },

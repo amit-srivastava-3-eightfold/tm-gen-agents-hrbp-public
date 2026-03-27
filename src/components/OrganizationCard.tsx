@@ -20,7 +20,7 @@ const peerColors = ['#A1A6B1', '#7E3A77', '#9D6309', '#6B7B3C'] // grey, purple,
 export function OrganizationCard() {
   const { currentUser } = useUser()
   const isChro = currentUser.id === 'chro'
-  const isLaura = currentUser.id === 'laura-shah'
+  const isLaura = currentUser.id === 'jaydon-torff'
   const isCsm = currentUser.id === 'csm'
 
   if (isCsm) {

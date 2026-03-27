@@ -4,7 +4,13 @@
   min-height: 100vh;
   background: #FFFFFF;
   font-family: var(--font-family);
-  padding-top: 80px; /* navbar height */
+}
+
+/* ProductBackground — flows with content, below fixed navbar */
+.my-team-page__bg {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--navbar-height, 60px);
 }
 
 .my-team-page__main {

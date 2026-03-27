@@ -2,11 +2,16 @@ import { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useUser } from '../contexts/UserContext'
 import { NavbarApp } from '../components/Navbar'
-import { PageHeader } from '../components/PageHeader'
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import {
+  Button,
+  ProductBackground,
+  Header,
+  HeaderToolbar,
+  HeaderTextGroup,
+  HeaderTitle,
+} from '@tonyh-2-eightfold/ef-design-system'
 import { PersonBanner } from '../components/PersonBanner'
 import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
-import '../components/PageHeader.css'
 import '../components/PersonBanner.css'
 import '../components/SkillAnalysisSection.css'
 import './MyTeamPage.css'
@@ -15,18 +20,32 @@ export function MyTeamPage() {
   const { currentUser } = useUser()
   const [reportScope, setReportScope] = useState<'direct' | 'all'>('direct')
   const [sustainedHighPerformersFilter, setSustainedHighPerformersFilter] = useState(false)
-  const isLaura = currentUser.id === 'laura-shah'
+  const isHrbp = currentUser.id === 'jaydon-torff'
 
   return (
     <div className="my-team-page">
       <NavbarApp />
-      <PageHeader title="My Team" />
+
+      <ProductBackground
+        className="my-team-page__bg"
+        variant="career-hub"
+        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+      >
+        <Header variant="career-hub" chSize="parent" overlayBackground>
+          <HeaderToolbar>
+            <HeaderTextGroup>
+              <HeaderTitle>My Team</HeaderTitle>
+            </HeaderTextGroup>
+          </HeaderToolbar>
+        </Header>
+      </ProductBackground>
+
       <main className="my-team-page__main">
         <div className="my-team-page__content">
           <Tabs.Root defaultValue="reports" className="my-team-page__tabs">
             <Tabs.List className="my-team-page__tabs-list">
               <Tabs.Trigger value="reports" className="my-team-page__tab">
-                {isLaura ? 'My client groups' : 'My reports'}
+                {isHrbp ? 'My client groups' : 'My reports'}
               </Tabs.Trigger>
               <Tabs.Trigger value="succession" className="my-team-page__tab">
                 Succession planning

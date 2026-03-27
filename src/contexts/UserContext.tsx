@@ -7,7 +7,7 @@ function resolveInitialUser(): CurrentUser {
   if (typeof window === 'undefined') return CHRO
   const params = new URLSearchParams(window.location.search)
   const u = params.get('user') || localStorage.getItem('tm:current-user')
-  if (u === 'laura-shah') return LAURA
+  if (u === 'laura-shah' || u === 'jaydon-torff' || u === 'hrbp') return LAURA
   if (u === 'csm') return CSM
   if (u === 'mateo') return MATEO
   return CHRO

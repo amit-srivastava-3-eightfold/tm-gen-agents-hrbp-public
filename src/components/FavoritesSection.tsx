@@ -100,7 +100,7 @@ const LAURA_FAVORITES_COURSE: FavoriteCourse = {
 
 export function FavoritesSection() {
   const { currentUser } = useUser()
-  const isLaura = currentUser.id === 'laura-shah'
+  const isLaura = currentUser.id === 'jaydon-torff'
   const favoritesPeople = isLaura ? LAURA_FAVORITES_PEOPLE : MATEO_FAVORITES_PEOPLE
   const favoritesCourse = isLaura ? LAURA_FAVORITES_COURSE : MATEO_FAVORITES_COURSE
   const scrollRef = useRef<HTMLDivElement>(null)

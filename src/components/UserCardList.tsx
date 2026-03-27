@@ -66,7 +66,7 @@ export function UserCardList({
   onRiskTagsChange,
 }: UserCardListProps) {
   const { currentUser } = useUser()
-  const isLaura = currentUser.id === 'laura-shah'
+  const isLaura = currentUser.id === 'jaydon-torff'
   const directCards = isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS
   const allCards = isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS
   let cards: UserCardData[] = reportScope === 'all' ? allCards : directCards

@@ -275,7 +275,7 @@ export function SkillAnalysisSection({
   onSustainedHighPerformersClick,
 }: SkillAnalysisSectionProps) {
   const { currentUser } = useUser()
-  const isLaura = currentUser.id === 'laura-shah'
+  const isLaura = currentUser.id === 'jaydon-torff'
 
   const cardsForScope = scope === 'all'
     ? (isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS)

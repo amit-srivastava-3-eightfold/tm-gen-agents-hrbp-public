@@ -17,7 +17,7 @@ const DEMO_MANAGERS = [
   'Alex Rivera',
   'Jordan Kim',
   'Sam Okonkwo',
-  'Riley Chen',
+  'Sarah Culhane',
   'Morgan Patel',
   'Casey Nguyen',
   'Taylor Brooks',

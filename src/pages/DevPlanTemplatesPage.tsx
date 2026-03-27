@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CareerHubShell } from '@tonyh-2-eightfold/ef-design-system'
-import { useNavbarProps } from '../components/Navbar'
+import {
+  ProductBackground,
+  Header,
+  HeaderToolbar,
+  HeaderTextGroup,
+  HeaderTitle,
+} from '@tonyh-2-eightfold/ef-design-system'
+import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
+import './DevPlanTemplatesPage.css'
 
 const TEMPLATES = [
   { name: 'AI-Powered Customer Success', status: 'Published' as const, role: 'Owner', courses: 4, skills: ['AI Collaboration', 'Prompt Engineering'] },
@@ -28,10 +35,10 @@ const TEMPLATES = [
 ]
 
 export function DevPlanTemplatesPage() {
-  const { currentUser: _currentUser } = useUser()
-  const navbarProps = useNavbarProps()
+  const { currentUser } = useUser()
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
   const [search, setSearch] = useState('')
+  const isHrbp = currentUser.id === 'jaydon-torff'
 
   const publishedCount = TEMPLATES.filter(t => t.status === 'Published').length
   const draftCount = TEMPLATES.filter(t => t.status === 'Draft').length
@@ -41,11 +48,23 @@ export function DevPlanTemplatesPage() {
     .filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <CareerHubShell
-      chSize="parent"
-      title="Development Plan Templates"
-      navbarProps={navbarProps}
-    >
+    <div className="dev-plan-templates-page">
+      <NavbarApp />
+
+      <ProductBackground
+        className="dev-plan-templates-page__bg"
+        variant="career-hub"
+        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+      >
+        <Header variant="career-hub" chSize="parent" overlayBackground>
+          <HeaderToolbar>
+            <HeaderTextGroup>
+              <HeaderTitle>Development Plan Templates</HeaderTitle>
+            </HeaderTextGroup>
+          </HeaderToolbar>
+        </Header>
+      </ProductBackground>
+
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 32px' }}>
         {/* Stat pills */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20, maxWidth: 520 }}>
@@ -159,6 +178,6 @@ export function DevPlanTemplatesPage() {
           ))}
         </div>
       </main>
-    </CareerHubShell>
+    </div>
   )
 }

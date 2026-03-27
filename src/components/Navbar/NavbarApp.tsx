@@ -79,7 +79,7 @@ const CAREER_HUB_CHRO_TABS: NavbarTabItem[] = [
 /** Navbar variant is driven solely by the account selected in the user menu. */
 const NAVBAR_TABS_BY_USER_ID: Record<string, NavbarTabItem[]> = {
   mateo: CAREER_HUB_TABS,
-  'laura-shah': CAREER_HUB_HRBP_TABS,
+  'jaydon-torff': CAREER_HUB_HRBP_TABS,
   chro: CAREER_HUB_CHRO_TABS,
 }
 
@@ -95,13 +95,13 @@ const AVATAR_MENU_ITEMS = [
 const SWITCH_OPTIONS = [
   { label: 'csm@acme.com', userId: 'csm' },
   { label: 'manager@acme.com', userId: 'mateo' },
-  { label: 'hrbp@acme.com', userId: 'laura-shah' },
+  { label: 'hrbp@acme.com', userId: 'jaydon-torff' },
   { label: 'chro@acme.com', userId: 'chro' },
 ]
 
 const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO | typeof CSM> = {
   mateo: MATEO,
-  'laura-shah': LAURA,
+  'jaydon-torff': LAURA,
   chro: CHRO,
   csm: CSM,
 }

@@ -38,21 +38,21 @@ export const MATEO: CurrentUser = {
 }
 
 export const LAURA: CurrentUser = {
-  id: 'laura-shah',
-  name: 'Laura Shah',
+  id: 'jaydon-torff',
+  name: 'Jaydon Torff',
   title: 'HR Business Partner',
   location: 'San Francisco, CA',
-  pronouns: 'She/Her/Hers',
+  pronouns: 'He/Him/His',
   avatarType: 'photo',
-  avatarPhotoSrc: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=face',
-  avatarInitials: 'LS',
+  avatarPhotoSrc: '/jaydon-torff.png',
+  avatarInitials: 'JT',
   avatarColor: '#5C6BC0',
   about: 'As an HR Business Partner, I partner with Sales Engineering, Customer Success, and Professional Services to drive talent strategy, employee engagement, and organizational effectiveness. I bring a data-driven approach to workforce planning, performance management, and talent development. My focus is on building inclusive teams, supporting career growth, and ensuring our people have the resources they need to succeed.',
   employeeId: '52980',
   businessUnit: 'HR',
   hireDate: '2019-03-15',
   phone: '(415) 555-0123',
-  email: 'laura.shah@eightfolddemo-meme.com',
+  email: 'jaydon.torff@eightfolddemo-meme.com',
   mobilityPreference: 'Open to relocation',
   flexibilityToTravel: 'Up to 50%',
 }
@@ -79,13 +79,13 @@ export const CHRO: CurrentUser = {
 
 export const CSM: CurrentUser = {
   id: 'csm',
-  name: 'Riley Chen',
+  name: 'Sarah Culhane',
   title: 'Customer Success Manager',
   location: 'San Francisco, CA',
   pronouns: 'She/Her/Hers',
   avatarType: 'photo',
   avatarPhotoSrc: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
-  avatarInitials: 'RC',
+  avatarInitials: 'SC',
   avatarColor: '#0D47A1',
   about: 'As a Customer Success Manager, I partner with key accounts to drive adoption, retention, and expansion. I focus on understanding customer goals, identifying risks, and ensuring our product delivers measurable value. My team manages 75 accounts across enterprise and mid-market segments.',
   employeeId: '53201',

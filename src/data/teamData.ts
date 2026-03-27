@@ -439,7 +439,7 @@ const MATEO_INDIRECT_REPORTS: UserCardData[] = [
 
 export const MATEO_ALL_REPORTS_CARDS: UserCardData[] = [...MATEO_USER_CARDS, ...MATEO_INDIRECT_REPORTS]
 
-// Laura Shah (HRBP) supports Sales Engineering, Customer Success, Professional Services
+// Jaydon Torff (HRBP) supports Sales Engineering, Customer Success, Professional Services
 export const LAURA_USER_CARDS: UserCardData[] = [
   {
     id: 'l1',

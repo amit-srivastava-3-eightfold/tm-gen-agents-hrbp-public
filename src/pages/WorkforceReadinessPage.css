@@ -1,16 +1,23 @@
-/* Matches my-team-page shell + home-page grid */
-.workforce-readiness-page {
+/* WFR Page — Navbar (fixed) + ProductBackground (sticky) + Header + content */
+
+.wfr-page {
   position: relative;
   min-height: 100vh;
   background: #ffffff;
   font-family: var(--font-family);
-  padding-top: 80px;
 }
 
-.workforce-readiness-page__main {
+/* ProductBackground — flows with content, below fixed navbar */
+.wfr-page__bg {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--navbar-height, 60px);
+}
+
+/* Main content */
+.wfr-page__main {
   position: relative;
   z-index: 2;
-  margin-top: 0;
   padding-bottom: 24px;
   min-height: 100vh;
   display: flex;
@@ -18,7 +25,7 @@
   background: transparent;
 }
 
-.workforce-readiness-page__content {
+.wfr-page__content {
   flex: 1;
   max-width: 1440px;
   margin: 0 auto;

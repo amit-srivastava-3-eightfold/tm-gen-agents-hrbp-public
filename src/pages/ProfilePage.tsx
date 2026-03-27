@@ -47,10 +47,10 @@ export function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <div className="profile-page__cover" aria-hidden style={currentUser.id === 'laura-shah' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
+      <div className="profile-page__cover" aria-hidden style={currentUser.id === 'jaydon-torff' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
       <div className="profile-page__cover-fade" aria-hidden />
+      <NavbarApp />
       <header className="profile-page__header">
-        <NavbarApp />
       </header>
       <main className="profile-page__main">
         <div className="profile-page__content-zone">
@@ -229,10 +229,10 @@ export function ProfilePage() {
                   </thead>
                   <tbody>
                     {(currentUser.id === 'csm' ? [
-                      { name: 'AI Upskilling — Customer Success Manager', status: 'Not started', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Laura Shah', role: 'Customer Success Manager', assignDate: '3/24/2026', updatedOn: '3/24/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-customer-success-manager' },
-                      { name: 'AI-Powered Customer Success', status: 'Completed', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Laura Shah', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/20/2026', duration: 6 },
-                      { name: 'Advanced Account Strategy', status: 'Completed', skills: ['Forecasting', 'Retention'], moreSkills: 3, createdBy: 'Laura Shah', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/18/2026', duration: 8 },
-                      { name: 'Data-Driven Customer Insights', status: 'Completed', skills: ['Analytics', 'AI Tools'], moreSkills: 2, createdBy: 'Laura Shah', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/15/2026', duration: 4 },
+                      { name: 'AI Upskilling — Customer Success Manager', status: 'Not started', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/24/2026', updatedOn: '3/24/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-customer-success-manager' },
+                      { name: 'AI-Powered Customer Success', status: 'Completed', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/20/2026', duration: 6 },
+                      { name: 'Advanced Account Strategy', status: 'Completed', skills: ['Forecasting', 'Retention'], moreSkills: 3, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/18/2026', duration: 8 },
+                      { name: 'Data-Driven Customer Insights', status: 'Completed', skills: ['Analytics', 'AI Tools'], moreSkills: 2, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/15/2026', duration: 4 },
                       { name: 'AI for QBR Preparation', status: 'Completed', skills: ['AI Writing', 'Presentation'], moreSkills: 1, createdBy: 'Tom Nguyen', role: 'Customer Success Manager', assignDate: '2/1/2026', updatedOn: '3/10/2026', duration: 4 },
                     ] : [
                       { name: 'Technical Marketing Skills', status: 'In progress', skills: ['CRM', 'Writing'], moreSkills: 6, createdBy: 'Mateo Myer', role: 'Director of Product Marketing', assignDate: '2/25/2026', updatedOn: '2/25/2026', duration: 10 },

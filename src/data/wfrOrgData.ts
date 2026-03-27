@@ -8,7 +8,7 @@ export const EM = '\u2014'
 export const EN = '\u2013'
 
 export const ORG = {
-  totalEmployees: 9940,
+  totalEmployees: 9900,
   aiPotential: 48,
   aiReadiness: 24,
   totalRoleTasks: 220,
@@ -29,7 +29,7 @@ export const ORG = {
     { name: 'Sales', employees: 1240, aiPotential: 37, aiReadiness: 26 },
     { name: 'Engineering', employees: 2100, aiPotential: 35, aiReadiness: 35 },
     { name: 'Legal', employees: 290, aiPotential: 31, aiReadiness: 17 },
-    { name: 'Customer Success', employees: 820, aiPotential: 40, aiReadiness: 22 },
+    { name: 'Customer Success', employees: 780, aiPotential: 40, aiReadiness: 21 },
     { name: 'Product', employees: 415, aiPotential: 36, aiReadiness: 33 },
     { name: 'IT & Security', employees: 465, aiPotential: 32, aiReadiness: 42 },
     { name: 'Data & Analytics', employees: 395, aiPotential: 44, aiReadiness: 38 },
@@ -70,7 +70,7 @@ export const ORG = {
       { title: 'Implementation Consultant', employees: 130, aiPotential: 48, aiReadiness: 20 },
       { title: 'Renewals Specialist', employees: 110, aiPotential: 50, aiReadiness: 19 },
       { title: 'Customer Insights Analyst', employees: 95, aiPotential: 55, aiReadiness: 28 },
-      { title: 'Customer Success Manager', employees: 75, aiPotential: 45, aiReadiness: 23 },
+      { title: 'Customer Success Manager', employees: 35, aiPotential: 85, aiReadiness: 5 },
       { title: 'Technical Account Manager', employees: 65, aiPotential: 40, aiReadiness: 25 },
       { title: 'Customer Education Specialist', employees: 55, aiPotential: 52, aiReadiness: 30 },
       { title: 'Onboarding Coordinator', employees: 50, aiPotential: 46, aiReadiness: 22 },

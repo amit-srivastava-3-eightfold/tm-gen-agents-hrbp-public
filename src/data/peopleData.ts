@@ -334,12 +334,12 @@ export const OPEN_ROLES_PEOPLE_CARDS: PeopleProfileCardData[] = [
 ]
 
 export const LAURA_SHAH: PeopleProfileCardData = {
-  id: 'laura-shah',
-  name: 'Laura Shah',
+  id: 'jaydon-torff',
+  name: 'Jaydon Torff',
   title: 'HR Business Partner • Human Resources',
   avatarType: 'photo',
-  avatarPhotoSrc: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face',
-  avatarInitials: 'LS',
+  avatarPhotoSrc: '/jaydon-torff.png',
+  avatarInitials: 'JT',
   avatarColor: '#5C6BC0',
   businessUnit: 'Human Resources',
   manager: 'Sarah Chen',

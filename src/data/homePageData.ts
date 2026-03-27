@@ -160,9 +160,9 @@ const CHRO_MENTOR: HomeMentor = {
 }
 
 const CSM_MENTOR: HomeMentor = {
-  name: 'Laura Shah',
+  name: 'Jaydon Torff',
   role: 'HR Business Partner, Customer Success',
-  avatarSrc: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=56&h=56&fit=crop&crop=face',
+  avatarSrc: '/jaydon-torff.png',
   matchText: 'Your HRBP, strong in team development',
   matchCount: 0,
 }
@@ -261,7 +261,7 @@ function getCareerPathForHome(user: CurrentUser): HomeCareerPath {
 
 export function getHomePageData(user: CurrentUser): HomePageData {
   const isChro = user.id === 'chro'
-  const isLaura = user.id === 'laura-shah'
+  const isLaura = user.id === 'jaydon-torff'
   const isCsm = user.id === 'csm'
   const tasks = isChro ? CHRO_TASKS : isLaura ? LAURA_TASKS : isCsm ? CSM_TASKS : MATEO_TASKS
   const taskCount = tasks.length

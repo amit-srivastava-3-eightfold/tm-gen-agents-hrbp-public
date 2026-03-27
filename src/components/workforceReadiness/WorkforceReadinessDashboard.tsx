@@ -592,7 +592,7 @@ function DeptView({
             <div>
               <div className="wfr-dash__panel-head">
                 <h3 className="wfr-dash__panel-title">{dept.name} — Team readiness</h3>
-                <span className="wfr-dash__panel-hint">Sorted by team size {EM} click to expand</span>
+                <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to expand</span>
               </div>
               <DataTable bordered>
                 <DataTableHeader>
@@ -639,16 +639,27 @@ function DeptView({
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
-                  {managers.sort((a, b) => b.employees - a.employees).map((mgr, mi) => {
+                  {(() => {
+                    /* Pre-compute gap per manager so we can sort by it */
+                    const deptTrendDelta = orgCollectionComplete ? deptReadinessTrend(dept.name).delta : 0
+                    let runningIdx = 0
+                    const enriched = managers.map((mgr) => {
+                      const emps = allDeptEmps.slice(runningIdx, Math.min(runningIdx + mgr.employees, allDeptEmps.length))
+                      runningIdx += mgr.employees
+                      const baseR = emps.length > 0
+                        ? Math.round(emps.reduce((s, e) => s + e.readinessPct, 0) / emps.length)
+                        : dept.aiReadiness
+                      const readiness = Math.max(0, Math.min(100, baseR + deptTrendDelta))
+                      return { mgr, gap: dept.aiPotential - readiness, readiness }
+                    })
+                    enriched.sort((a, b) => b.gap - a.gap)
+                    return enriched
+                  })().map(({ mgr, readiness: mgrReadiness }, mi) => {
                     const mgrKey = `dept-${dept.name}-${mgr.manager}`
                     const isMgrExpanded = expandedManagers[mgrKey] ?? false
-                    const startIdx = managers.slice(0, mi).reduce((s, m) => s + m.employees, 0)
-                    const mgrEmployees = allDeptEmps.slice(startIdx, Math.min(startIdx + mgr.employees, allDeptEmps.length))
-                    const baseMgrReadiness = mgrEmployees.length > 0
-                      ? Math.round(mgrEmployees.reduce((s, e) => s + e.readinessPct, 0) / mgrEmployees.length)
-                      : dept.aiReadiness
-                    const deptTrendDelta = orgCollectionComplete ? deptReadinessTrend(dept.name).delta : 0
-                    const mgrReadiness = Math.max(0, Math.min(100, baseMgrReadiness + deptTrendDelta))
+                    const startIdx = managers.indexOf(mgr)
+                    const cumStart = managers.slice(0, startIdx).reduce((s, m) => s + m.employees, 0)
+                    const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
                     const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(dept.name)
                     const mgrResponseRate = inScope ? Math.min(100, wfrDemoDeptResponseRate(dept.name) + ((mgr.manager.length * 3) % 20) - 10) : 0
                     const showCollection = orgCollectionActive && !orgCollectionComplete
@@ -1563,10 +1574,10 @@ function BoardView({
         const collectionDelta = focusCollectionComplete ? trend.delta + ((r.title.length % 3) - 1) : 0
         const upskillingBoost = hrbpPlansCreated ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
         const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
-        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, gap: Math.round(r.employees * (1 - measured / 100)) })
+        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, gap: r.aiPotential - measured })
       }
     }
-    return roles.sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
+    return roles.sort((a, b) => b.gap - a.gap)
   }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete])
 
 
@@ -1813,10 +1824,9 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {[...allDeptsSorted].sort((a, b) => {
-                const aRank = topGapDeptRanks.get(a.name) ?? 999
-                const bRank = topGapDeptRanks.get(b.name) ?? 999
-                if (aRank !== bRank) return aRank - bRank
-                return a.aiReadiness - b.aiReadiness
+                const aGap = deptGapHeadcount(a)
+                const bGap = deptGapHeadcount(b)
+                return bGap - aGap
               }).map((d) => {
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness

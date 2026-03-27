@@ -1,0 +1,15 @@
+/* Dev Plan Templates Page */
+
+.dev-plan-templates-page {
+  position: relative;
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: var(--font-family);
+}
+
+/* ProductBackground — flows with content, below fixed navbar */
+.dev-plan-templates-page__bg {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--navbar-height, 60px);
+}

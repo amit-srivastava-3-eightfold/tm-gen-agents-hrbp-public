@@ -8,7 +8,7 @@ const sarahAvatar = 'https://i.pravatar.cc/150?u=sarah-chen'
 
 export function MentorshipCard() {
   const { currentUser } = useUser()
-  const isLaura = currentUser.id === 'laura-shah'
+  const isLaura = currentUser.id === 'jaydon-torff'
   const userAvatar = isLaura ? lauraAvatar : mateoAvatar
 
   if (isLaura) {

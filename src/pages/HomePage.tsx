@@ -94,10 +94,10 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      <div className="home-page__cover" aria-hidden style={currentUser.id === 'laura-shah' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
+      <div className="home-page__cover" aria-hidden style={currentUser.id === 'jaydon-torff' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
       <div className="home-page__cover-fade" aria-hidden />
+      <NavbarApp />
       <header className="home-page__header">
-        <NavbarApp />
         <div className="home-page__hero">
           <div className="home-page__avatar-wrap">
             {avatarSrc ? (
@@ -131,7 +131,7 @@ export function HomePage() {
             <HomeSidebar />
           </div>
           <div className="home-page__content col-span-8" aria-label="Main content">
-            {(currentUser.id === 'chro' || currentUser.id === 'laura-shah') ? <ChroWorkforceReadinessTeaser /> : null}
+            {(currentUser.id === 'chro' || currentUser.id === 'jaydon-torff') ? <ChroWorkforceReadinessTeaser /> : null}
             <CareerHubExploreCards />
             <ErrorBoundary>
               <FavoritesSection />

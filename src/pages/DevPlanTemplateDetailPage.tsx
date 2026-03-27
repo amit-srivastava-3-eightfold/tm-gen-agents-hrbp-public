@@ -24,7 +24,7 @@ const TEMPLATE_DATA: Record<string, TemplateData> = {
     name: 'AI-Powered Customer Success',
     description: 'Equip Customer Success Managers with AI tools to automate health score monitoring, generate QBR insights, and use predictive analytics for churn prevention.',
     status: 'Published',
-    createdBy: 'Laura Shah',
+    createdBy: 'Jaydon Torff',
     role: 'Customer Success Manager',
     duration: 6,
     businessUnit: 'Customer Success',
@@ -80,7 +80,7 @@ const DEFAULT_TEMPLATE: TemplateData = {
 export function DevPlanTemplateDetailPage() {
   const { templateId } = useParams<{ templateId: string }>()
   const { currentUser } = useUser()
-  const isEmployee = currentUser.id !== 'laura-shah' && currentUser.id !== 'chro'
+  const isEmployee = currentUser.id !== 'jaydon-torff' && currentUser.id !== 'chro'
   const explicitTemplate = TEMPLATE_DATA[templateId ?? '']
   const derivedName = templateId
     ? templateId.split('-').map(w => w === 'ai' ? 'AI' : w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -389,16 +389,16 @@ export function DevPlanTemplateDetailPage() {
           const EMPLOYEES = [
             { name: 'Sarah Mitchell', title: 'Support Specialist', location: 'San Francisco, CA', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#5C6BC0', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face' },
             { name: 'James Park', title: 'Implementation Consultant', location: 'New York, NY', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#7E3A77', photo: '' },
-            { name: 'Priya Sharma', title: 'Renewals Specialist', location: 'Noida, IN', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#2E7D32', photo: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face' },
-            { name: 'Alex Rivera', title: 'Customer Insights Analyst', location: 'Austin, TX', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#BF360C', photo: '' },
+            { name: 'Priya Sharma', title: 'Renewals Specialist', location: 'Noida, IN', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#2E7D32', photo: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face' },
+            { name: 'Alex Rivera', title: 'Customer Insights Analyst', location: 'Austin, TX', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#BF360C', photo: '' },
             { name: 'Maya Johnson', title: 'Customer Success Manager', location: 'San Francisco, CA', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#00695C', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=face' },
             { name: 'David Kim', title: 'Technical Account Manager', location: 'Seattle, WA', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#1565C0', photo: '' },
-            { name: 'Anika Patel', title: 'Customer Education Specialist', location: 'Bangaluru, IN', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#9D6309', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face' },
-            { name: 'Jordan Lee', title: 'Onboarding Coordinator', location: 'San Francisco, CA', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#6B7B3C', photo: '' },
+            { name: 'Anika Patel', title: 'Customer Education Specialist', location: 'Bangaluru, IN', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#9D6309', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face' },
+            { name: 'Jordan Lee', title: 'Onboarding Coordinator', location: 'San Francisco, CA', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#6B7B3C', photo: '' },
             { name: 'Sam Okonkwo', title: 'Customer Operations Analyst', location: 'Austin, TX', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#A1A6B1', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
-            { name: 'Lin Chen', title: 'Support Specialist', location: 'Noida, IN', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#5C6BC0', photo: '' },
+            { name: 'Lin Chen', title: 'Support Specialist', location: 'Noida, IN', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#5C6BC0', photo: '' },
             { name: 'Emma Wilson', title: 'Implementation Consultant', location: 'New York, NY', bu: 'Customer Success', manager: 'Tom Nguyen', managerTitle: 'VP, Customer Success', color: '#BF360C', photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=80&h=80&fit=crop&crop=face' },
-            { name: 'Carlos Mendez', title: 'Renewals Specialist', location: 'Santa Clara, CA', bu: 'Customer Success', manager: 'Riley Chen', managerTitle: 'Customer Success Manager', color: '#7E3A77', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face' },
+            { name: 'Carlos Mendez', title: 'Renewals Specialist', location: 'Santa Clara, CA', bu: 'Customer Success', manager: 'Sarah Culhane', managerTitle: 'Customer Success Manager', color: '#7E3A77', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face' },
           ]
           return (
             <div>

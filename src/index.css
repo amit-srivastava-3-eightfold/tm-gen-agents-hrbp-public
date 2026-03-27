@@ -44,6 +44,20 @@ body[data-wfr-metric-sheet-open] #root {
   position: relative;
 }
 
+/* Fixed navbar at top of viewport on all pages */
+.navbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.navbar .navbar__inner {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
 /* Radix DropdownMenu item hover */
 [data-highlighted] {
   background: #f1f5f9;
