@@ -321,7 +321,6 @@ export function FocusFirstCollectionCard({
     if (upskillingActive) {
       const launchedDepts = scopedDepts.filter((d) => upskillingDeptSet.has(d.name))
       const totalLaunchedGap = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
-      const hrsPerYear = totalLaunchedGap * ORG.hrsPerPersonWeek * 50
 
       return (
         <div className="wfr-ra-card wfr-ra-card--success">
