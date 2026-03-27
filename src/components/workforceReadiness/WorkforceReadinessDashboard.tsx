@@ -2454,6 +2454,20 @@ export function WorkforceReadinessDashboard({
     })
   }, [])
 
+  // Clicking the Eightfold logo resets WFR state back to 1
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const logo = (e.target as HTMLElement).closest('.navbar__logo')
+      if (!logo) return
+      e.preventDefault()
+      e.stopPropagation()
+      try { localStorage.removeItem(WFR_STATE_KEY) } catch { /* ignore */ }
+      setWfrStateRaw({ state: 1 })
+    }
+    document.addEventListener('click', handler, true)
+    return () => document.removeEventListener('click', handler, true)
+  }, [])
+
   // UI-local dialog toggles (not program state)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(autoLaunchCollection)
   const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
