@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
 import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
@@ -94,9 +94,8 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      <div className="home-page__cover" aria-hidden style={currentUser.id === 'jaydon-torff' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
-      <div className="home-page__cover-fade" aria-hidden />
       <NavbarApp />
+      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
       <header className="home-page__header">
         <div className="home-page__hero">
           <div className="home-page__avatar-wrap">
@@ -125,6 +124,7 @@ export function HomePage() {
           </div>
         </div>
       </header>
+      </ProductBackground>
       <main className="home-page__main">
         <div className="home-page__layout grid grid-cols-12 gap-6">
           <div className="home-page__sidebar col-span-4">

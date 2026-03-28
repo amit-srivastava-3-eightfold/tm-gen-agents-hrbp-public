@@ -6,7 +6,7 @@ import { TabsWithLines } from '../components/ui/TabsWithLines'
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
-import { Button as DsButton } from '@tonyh-2-eightfold/ef-design-system'
+import { Button as DsButton, ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
 import { OpenTo } from '../components/OpenTo'
 import { AboutCard } from '../components/AboutCard'
 import { MentorshipCard } from '../components/MentorshipCard'
@@ -47,11 +47,10 @@ export function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <div className="profile-page__cover" aria-hidden style={currentUser.id === 'jaydon-torff' ? { backgroundImage: "url('/usage-profile-hexagon.svg')" } : undefined} />
-      <div className="profile-page__cover-fade" aria-hidden />
       <NavbarApp />
-      <header className="profile-page__header">
-      </header>
+      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
+        <header className="profile-page__header" />
+      </ProductBackground>
       <main className="profile-page__main">
         <div className="profile-page__content-zone">
           <div className="profile-page__content grid grid-cols-12 gap-6">
