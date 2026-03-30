@@ -50,7 +50,7 @@ body[data-wfr-metric-sheet-open] #root {
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  z-index: 9999 !important;
+  z-index: 1000 !important;
   background: rgba(255, 255, 255, 0.92) !important;
 }
 

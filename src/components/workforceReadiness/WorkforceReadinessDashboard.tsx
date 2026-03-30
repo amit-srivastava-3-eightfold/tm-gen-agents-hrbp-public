@@ -2481,6 +2481,7 @@ export function WorkforceReadinessDashboard({
   // UI-local dialog toggles (not program state)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(autoLaunchCollection)
   const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
+  const [snackbar, setSnackbar] = useState<string | null>(null)
 
   // State transition functions
   const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
@@ -2501,6 +2502,10 @@ export function WorkforceReadinessDashboard({
 
   const startUpskilling = useCallback((summary: UpskillingLaunchSummary) => {
     setWfrState(prev => ({ ...prev, state: 4, upskillingLaunchSummary: summary }))
+    const deptCount = summary.departmentNames.length
+    const empCount = summary.totalEmployees.toLocaleString()
+    setSnackbar(`Upskilling launched for ${deptCount} department${deptCount === 1 ? '' : 's'} · ${empCount} employees`)
+    setTimeout(() => setSnackbar(null), 4000)
   }, [setWfrState])
 
   const completeUpskilling = useCallback(() => {
@@ -2598,6 +2603,19 @@ export function WorkforceReadinessDashboard({
         )}
       </div>
 
+      {/* Snackbar */}
+      {snackbar && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          padding: '12px 24px', borderRadius: 10, background: '#0f172a', color: '#fff',
+          fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', gap: 8, zIndex: 10000,
+          animation: 'fadeInUp 0.3s ease-out',
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#4ade80' }}>check_circle</span>
+          {snackbar}
+        </div>
+      )}
     </>
   )
 }
