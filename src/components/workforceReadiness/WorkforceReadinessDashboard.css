@@ -517,6 +517,37 @@
   margin: 0;
 }
 
+/* Segmented toggle (By Manager / By Role) */
+.wfr-dash__tabs {
+  display: inline-flex;
+  gap: 2px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.wfr-dash__tab {
+  all: unset;
+  padding: 4px 14px;
+  font: var(--typography-caption);
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.wfr-dash__tab:hover {
+  color: #1a212e;
+}
+
+.wfr-dash__tab--active {
+  background: #fff;
+  color: #1a212e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 .wfr-dash__table {
   width: 100%;
   border-collapse: collapse;
