@@ -619,7 +619,7 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  Your readiness score gets sharper when employees weigh in. Let&apos;s collect that data.
+                  AI Readiness is estimated today. Collect adoption data to see what&apos;s really happening.
                 </p>
                 <p className="wfr-ra-card__hint">
                   Choose departments and a collection method — results refine your readiness scores and surface upskilling priorities.
