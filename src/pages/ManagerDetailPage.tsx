@@ -474,38 +474,18 @@ export function ManagerDetailPage() {
 
                     {/* Plan / Action column */}
                     <DataTableCell>
-                      {collectionComplete && deptInUpskilling ? (
-                        <button
-                          type="button"
-                          className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                      {(collectionComplete && deptInUpskilling) || isAssigned ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => {
                             setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
                             setEditingCourses(false)
                             setRemovedCourses(new Set())
                           }}
                         >
-                          <span className="inline-flex items-center gap-1">
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
-                            View plan
-                          </span>
-                        </button>
-                      ) : isAssigned ? (
-                        <button
-                          type="button"
-                          className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                          onClick={() => {
-                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
-                            setEditingCourses(false)
-                            setRemovedCourses(new Set())
-                          }}
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
-                            View plan
-                          </span>
-                        </button>
+                          View plan
+                        </Button>
                       ) : (
                         <Button
                           variant="secondary"
