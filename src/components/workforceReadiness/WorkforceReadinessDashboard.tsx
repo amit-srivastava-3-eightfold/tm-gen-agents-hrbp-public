@@ -633,8 +633,8 @@ function DeptView({
             <Tabs defaultValue="roles">
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <TabsList>
-                  <TabsTrigger value="team">Team</TabsTrigger>
                   <TabsTrigger value="roles">Roles</TabsTrigger>
+                  <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
                 <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
