@@ -367,7 +367,7 @@ function MetricHeaderLabel({ label, metric, onInfoClick }: { label: string; metr
   )
 }
 
-function DeptTableSoloBar({
+export function DeptTableSoloBar({
   variant,
   pct,
   width = 120,

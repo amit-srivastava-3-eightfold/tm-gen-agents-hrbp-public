@@ -27,7 +27,7 @@ import {
 import { departments, getRolesForDept, getEmployeesForRole, type RoleRowType } from '../data/wfrOrgData'
 import { MetricCard } from '../components/workforceReadiness/MetricCard'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { deriveWfrFlags, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { deriveWfrFlags, DeptTableSoloBar, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
 
@@ -399,10 +399,7 @@ export function ManagerDetailPage() {
                     </DataTableCell>
                     <DataTableCell metric>
                       <div className="flex items-center gap-2">
-                        <div className="mgr-detail-page__bar-track">
-                          <div className="mgr-detail-page__bar-fill" style={{ width: `${emp.displayReadiness}%`, background: emp.displayReadiness >= 50 ? '#22c55e' : emp.displayReadiness >= 35 ? '#f59e0b' : '#94a3b8' }} />
-                        </div>
-                        <span className="text-[12px] font-semibold" style={{ color: emp.displayReadiness >= 50 ? '#15803d' : emp.displayReadiness >= 35 ? '#d97706' : '#64748b' }}>{emp.displayReadiness}%</span>
+                        <DeptTableSoloBar variant="readiness" pct={emp.displayReadiness} />
                         {collectionComplete && empDelta !== 0 && (
                           <span className="text-[10px] font-semibold" style={{ color: empDelta > 0 ? '#15803d' : '#dc2626' }}>
                             {empDelta > 0 ? '↑' : '↓'}{Math.abs(empDelta)}pt
@@ -411,12 +408,7 @@ export function ManagerDetailPage() {
                       </div>
                     </DataTableCell>
                     <DataTableCell metric>
-                      <div className="flex items-center gap-2">
-                        <div className="mgr-detail-page__bar-track">
-                          <div className="mgr-detail-page__bar-fill" style={{ width: `${dept.aiPotential}%`, background: '#6366f1' }} />
-                        </div>
-                        <span className="text-[12px] font-semibold text-[#6366f1]">{dept.aiPotential}%</span>
-                      </div>
+                      <DeptTableSoloBar variant="potential" pct={dept.aiPotential} />
                     </DataTableCell>
                     <DataTableCell>
                       <span className="text-[12px] font-medium" style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
