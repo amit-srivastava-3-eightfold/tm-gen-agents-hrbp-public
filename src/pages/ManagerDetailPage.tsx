@@ -340,7 +340,7 @@ export function ManagerDetailPage() {
                 {upskillingActive ? (
                   <DataTableHead>Upskilling</DataTableHead>
                 ) : null}
-                <DataTableHead>Status</DataTableHead>
+                <DataTableHead>Upskilling status</DataTableHead>
                 <DataTableHead>{collectionComplete ? 'Plan' : 'Action'}</DataTableHead>
                 {collectionComplete ? <DataTableHead>Plan progress</DataTableHead> : null}
               </DataTableRow>
