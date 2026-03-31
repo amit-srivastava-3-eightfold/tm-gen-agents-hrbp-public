@@ -58,6 +58,22 @@ body[data-wfr-metric-sheet-open] #root {
   background: rgba(255, 255, 255, 0.92) !important;
 }
 
+/* DS breadcrumb: cursor + hover style until DS is published to npm */
+[data-slot="breadcrumb-link"] {
+  cursor: pointer !important;
+  color: #4f5666;
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  text-decoration: none;
+}
+[data-slot="breadcrumb-link"]:hover {
+  color: #1a212e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Radix DropdownMenu item hover */
 [data-highlighted] {
   background: #f1f5f9;
