@@ -322,7 +322,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
                     <strong>Currently estimated</strong> — this score is derived from employee skill profiles, not actual AI adoption behavior. Start data collection to ground-truth readiness with real adoption signals from your workforce.
                   </p>
                   <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#92400e', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}>
-                    Start data collection <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+                    Get the real number <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
                   </button>
                 </div>
               </div>
