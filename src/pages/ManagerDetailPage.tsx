@@ -129,7 +129,7 @@ export function ManagerDetailPage() {
   // Dev plan sheet state
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
-  const [editingCourses, setEditingCourses] = useState(false)
+  const [, setEditingCourses] = useState(false)
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
 
   if (!dept || !managerData) {
@@ -147,7 +147,7 @@ export function ManagerDetailPage() {
   const { mgr, employees, readyCount, avgReadiness, parentManager } = managerData
   const notReady = employees.length - readyCount
   const gapPct = employees.length > 0 ? notReady / employees.length : 0
-  const gapColor = gapPct > 0.75 ? '#dc2626' : gapPct > 0.25 ? '#d97706' : '#15803d'
+  // gapColor available for future use: gapPct > 0.75 → red, > 0.25 → amber, else green
 
   // Courses for the dev plan sheet
   const devPlanCourses = devPlanEmployee ? [

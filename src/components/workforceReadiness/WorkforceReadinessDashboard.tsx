@@ -422,7 +422,7 @@ function DeptView({
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
-  const [expandedManagers, setExpandedManagers] = useState<Record<string, boolean>>({})
+  // expandedManagers removed — manager rows now navigate to detail page
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
   const [trendSheetManager, setTrendSheetManager] = useState<{ manager: string; mgrIndex: number } | null>(null)
   const [deptUpskillingOpen, setDeptUpskillingOpen] = useState(false)
@@ -743,7 +743,7 @@ function DeptView({
                     return enriched
                   })().map(({ mgr, readiness: mgrReadiness }, mi) => {
                     const mgrKey = `dept-${dept.name}-${mgr.manager}`
-                    const isMgrExpanded = expandedManagers[mgrKey] ?? false
+
                     const startIdx = managers.indexOf(mgr)
                     const cumStart = managers.slice(0, startIdx).reduce((s, m) => s + m.employees, 0)
                     const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
