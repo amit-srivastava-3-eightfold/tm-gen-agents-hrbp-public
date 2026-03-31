@@ -248,10 +248,10 @@ export function ManagerDetailPage() {
         </Header>
       </ProductBackground>
 
-      <main className="mgr-detail-page__main">
-        <div className="mgr-detail-page__content">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-6 border-b border-[#e5e7eb] pb-3">
+      {/* Sticky breadcrumb bar */}
+      <div className="mgr-detail-page__breadcrumb-bar">
+        <div className="mgr-detail-page__breadcrumb-inner">
+          <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink onClick={() => navigate('/workforce')}>Workforce Readiness</BreadcrumbLink>
@@ -274,7 +274,11 @@ export function ManagerDetailPage() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+        </div>
+      </div>
 
+      <main className="mgr-detail-page__main">
+        <div className="mgr-detail-page__content">
           {/* Manager summary */}
           <div className="mgr-detail-page__summary">
             <h2 className="mgr-detail-page__name">{mgr.manager}</h2>

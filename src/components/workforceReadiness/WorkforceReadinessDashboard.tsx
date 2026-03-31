@@ -2318,24 +2318,28 @@ export function WorkforceReadinessDashboard({
   return (
     <>
       {dept && (
-        <Breadcrumb className="mb-6 border-b border-[#e5e7eb] pb-3">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={() => {
-                  setView('board')
-                  setDept(null)
-                }}
-              >
-                Overview
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{dept.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="wfr-dash__breadcrumb-bar">
+          <div className="wfr-dash__breadcrumb-inner">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink
+                    onClick={() => {
+                      setView('board')
+                      setDept(null)
+                    }}
+                  >
+                    Overview
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{dept.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </div>
       )}
       <div className="min-w-0">
         {view === 'board' && (

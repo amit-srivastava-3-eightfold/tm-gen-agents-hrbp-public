@@ -1,3 +1,21 @@
+/* Sticky breadcrumb bar for dept drill-down */
+.wfr-dash__breadcrumb-bar {
+  position: sticky;
+  top: var(--navbar-height, 60px);
+  z-index: 99;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.wfr-dash__breadcrumb-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Align with hero MetricArc: potential #818cf8 / #6366f1, readiness #22c55e / #15803d */
 .wfr-dash {
   --wfr-potential: #818cf8;
