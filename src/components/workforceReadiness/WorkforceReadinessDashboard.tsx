@@ -224,7 +224,7 @@ function MetricArc({
         {showInteriorLabels && (
           <>
             <text x={cx} y={cy + ty.lab} textAnchor="middle" className="wfr-metric-arc__label">
-              AI ADOPTION
+              AI POTENTIAL
             </text>
             <text x={cx} y={cy + ty.ready} textAnchor="middle" className="wfr-metric-arc__ready">
               {readiness}% ready
@@ -272,7 +272,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           <div style={{ border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '24px 20px', background: '#eef2ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#6366f1', background: 'rgba(99,102,241,0.12)', borderRadius: 8, padding: 6 }}>layers</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>AI Adoption</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>AI Potential</span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 10px' }}>How much of your workforce's work can AI meaningfully improve?</h3>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>We map every role into its tasks and score each one for how much AI can help — either by taking it over entirely or by making the person doing it faster and better.</p>
@@ -338,7 +338,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, color: '#6366f1', width: 90, flexShrink: 0 }}>AI Adoption</span>
+              <span style={{ fontSize: 13, color: '#6366f1', width: 90, flexShrink: 0 }}>AI Potential</span>
               <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#f1f5f9', overflow: 'hidden' }}>
                 <div style={{ width: `${ORG.aiPotential}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
               </div>
@@ -490,7 +490,7 @@ function DeptView({
     },
     {
       id: 'potential' as const,
-      label: 'AI adoption',
+      label: 'AI potential',
       val: `${dept.aiPotential}%`,
       icon: 'auto_awesome',
       l1: `${ORG.tasksInAugZone} of ${ORG.totalRoleTasks} tasks in the augmentation zone`,
@@ -659,7 +659,7 @@ function DeptView({
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
                     <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
                       <>
@@ -1437,7 +1437,7 @@ function BoardView({
     },
     {
       id: 'potential' as const,
-      label: 'AI adoption',
+      label: 'AI potential',
       val: `${aiPotentialPct}%`,
       icon: 'auto_awesome',
       l1: `${tasksInAug} of ${totalRoleTasks} tasks in the augmentation zone`,
@@ -1485,7 +1485,7 @@ function BoardView({
           </h2>
           {!hrbpPlansCreated && (
             <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>
-              <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Adoption opportunity — but only <span className="font-bold wfr-text-readiness">{aiReadinessPct}%</span> of your people are ready to capture it.
+              Your org has <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Potential. You're capturing less than a third of it.
             </p>
           )}
           <div className="wfr-dash__capture-tag-wrap">
@@ -1585,7 +1585,7 @@ function BoardView({
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
@@ -1646,7 +1646,7 @@ function BoardView({
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
                 <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
@@ -1712,7 +1712,7 @@ function BoardView({
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1756,7 +1756,7 @@ function BoardView({
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>

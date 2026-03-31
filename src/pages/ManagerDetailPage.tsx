@@ -310,7 +310,7 @@ export function ManagerDetailPage() {
             <MetricCard
               variant="potential"
               icon="auto_awesome"
-              label="AI adoption"
+              label="AI potential"
               value={`${dept.aiPotential}%`}
               description={`Tasks in the augmentation zone`}
               hint={`Role-level potential for ${dept.name}`}
@@ -339,7 +339,7 @@ export function ManagerDetailPage() {
                 <DataTableHead>Employee</DataTableHead>
                 <DataTableHead>Manager</DataTableHead>
                 <DataTableHead metric>AI readiness</DataTableHead>
-                <DataTableHead metric>AI adoption</DataTableHead>
+                <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
                 {showCollection ? (
                   <>
