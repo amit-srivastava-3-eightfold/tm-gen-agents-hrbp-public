@@ -287,15 +287,21 @@ export function ManagerDetailPage() {
               variant="readiness"
               icon="school"
               label="AI readiness"
+              badge={collectionComplete
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+                : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+              }
               value={readinessDelta !== 0 ? (
                 <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
               ) : `${avgReadiness}%`}
-              description={`${readyCount} AI-ready of ${displayEmployees.length} in this team`}
+              description={collectionComplete
+                ? `${readyCount} AI-ready of ${displayEmployees.length} in this team`
+                : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`}
               hint={hrbpPlansCreated
                 ? 'After upskilling plans completed.'
                 : collectionComplete
                   ? 'Calibrated from data collection.'
-                  : `Org average: ${dept.aiReadiness}%`}
+                  : 'Estimated from skill profiles.'}
             />
             <MetricCard
               variant="potential"

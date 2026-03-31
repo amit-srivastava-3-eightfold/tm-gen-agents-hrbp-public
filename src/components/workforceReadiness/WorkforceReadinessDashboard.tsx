@@ -454,20 +454,24 @@ function DeptView({
   const deptGapDelta = (orgCollectionComplete || deptHrbpPlansCreated) ? calibratedGap - gapCount : 0
   const calibGapSharePct = deptAug > 0 ? Math.min(100, Math.round((calibratedGap / deptAug) * 100)) : 0
 
+  const deptEstimatedBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+  const deptMeasuredBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+
   const deptCards = [
     {
       id: 'readiness' as const,
       label: 'AI readiness',
+      badge: orgCollectionComplete ? deptMeasuredBadge : deptEstimatedBadge,
       val: orgCollectionComplete ? `${calibratedReadiness}%` : `${dept.aiReadiness}%`,
       icon: 'school',
       l1: orgCollectionComplete
         ? `${calibratedReady.toLocaleString()} of ${deptAug.toLocaleString()} people in those roles are AI-ready.`
-        : `${deptReady.toLocaleString()} of ${deptAug.toLocaleString()} people in those roles show profile signals of AI readiness.`,
+        : `Estimated: ${deptReady.toLocaleString()} of ${deptAug.toLocaleString()} may be AI-ready based on skill profiles.`,
       hint: deptHrbpPlansCreated
         ? 'After upskilling plans completed.'
         : orgCollectionComplete
           ? 'Calibrated from data collection.'
-          : `Org average ${ORG.aiReadiness}%.`,
+          : `Estimated from skill profiles. Org average ${ORG.aiReadiness}%.`,
       delta: deptTotalReadinessDelta !== 0 ? `${deptTotalReadinessDelta > 0 ? '+' : ''}${deptTotalReadinessDelta}pt` : null,
       deltaUp: deptTotalReadinessDelta > 0,
     },
@@ -565,6 +569,7 @@ function DeptView({
               variant={c.id}
               icon={c.icon}
               label={c.label}
+              badge={c.badge}
               value={c.delta ? (
                 <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
               ) : c.val}
@@ -1398,10 +1403,14 @@ function BoardView({
   const readinessDelta = (focusCollectionComplete ? collectionCalibrationDelta : 0) + (hrbpPlansCreated ? upskillingHeroBoost : 0)
   const gapDelta = focusCollectionComplete || hrbpPlansCreated ? gapPeople - preCollectionGap : 0
 
+  const estimatedBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+  const measuredBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+
   const cards = [
     {
       id: 'readiness' as const,
       label: 'AI readiness',
+      badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
       val: `${aiReadinessPct}%`,
       icon: 'school',
       l1: `${ready.toLocaleString()} AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles`,
@@ -1409,7 +1418,7 @@ function BoardView({
         ? (isHrbp ? `Scoped to ${scopedDepartments?.[0] ?? 'your department'} after upskilling.` : 'Org-wide readiness after all departments completed upskilling.')
         : focusCollectionComplete
           ? `Calibrated from data collection${collectionLaunchSummary?.scopeLabel ? ` (${collectionLaunchSummary.scopeLabel})` : ''}.`
-          : 'How much of addressable work the org is already equipped to capture.',
+          : 'Estimated from employee skill profiles. Collect data to refine.',
       delta: readinessDelta !== 0 ? `${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt` : null,
       deltaUp: readinessDelta > 0,
     },
@@ -1514,6 +1523,7 @@ function BoardView({
               variant={c.id}
               icon={c.icon}
               label={c.label}
+              badge={c.badge}
               value={c.delta ? (
                 <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
               ) : c.val}

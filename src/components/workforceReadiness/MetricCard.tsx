@@ -8,6 +8,8 @@ export interface MetricCardProps {
   icon: string
   /** Short label above the value (e.g. "AI readiness"). */
   label: string
+  /** Optional badge rendered inline after the label (e.g. "Estimated", "Measured"). */
+  badge?: ReactNode
   /** Large metric value (e.g. "24%", "6,384"). */
   value: ReactNode
   /** Primary description below the value. */
@@ -26,6 +28,7 @@ export function MetricCard({
   variant,
   icon,
   label,
+  badge,
   value,
   description,
   hint,
@@ -40,7 +43,7 @@ export function MetricCard({
           <span className="material-symbols-outlined wfr-metric-card__icon">{icon}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="wfr-metric-card__label">{label}</p>
+          <p className="wfr-metric-card__label">{label}{badge ? <> {badge}</> : null}</p>
         </div>
       </div>
       <p className="wfr-metric-card__value">{value}</p>
