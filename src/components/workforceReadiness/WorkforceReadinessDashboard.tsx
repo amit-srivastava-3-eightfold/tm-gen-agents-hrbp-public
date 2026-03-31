@@ -1485,7 +1485,7 @@ function BoardView({
           </h2>
           {!hrbpPlansCreated && (
             <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>
-              Your org has <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Adoption potential. You're capturing less than a third of it.
+              <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Adoption opportunity — but only <span className="font-bold wfr-text-readiness">{aiReadinessPct}%</span> of your people are ready to capture it.
             </p>
           )}
           <div className="wfr-dash__capture-tag-wrap">
