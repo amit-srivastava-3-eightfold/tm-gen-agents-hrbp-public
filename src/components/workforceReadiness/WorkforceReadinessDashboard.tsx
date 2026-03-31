@@ -150,7 +150,7 @@ function MetricArcReadinessSemicircle({
             dominantBaseline="text-after-edge"
             className="wfr-metric-arc__label"
           >
-            AI READINESS
+            AI ADOPTION
           </text>
         </g>
       </svg>
@@ -296,7 +296,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '24px 20px', background: '#f0fdf4' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#15803d', background: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: 6 }}>verified</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>AI Readiness</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>AI Adoption</span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 10px' }}>Of the people AI can help — how many have the skills to use it today?</h3>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>We look at each employee's skill profile against a forward-looking taxonomy: AI tool proficiency, data interpretation, workflow oversight, and exception handling.</p>
@@ -345,7 +345,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
               <span style={{ fontSize: 13, color: '#6366f1', width: 36, textAlign: 'right' }}>{ORG.aiPotential}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>AI Readiness</span>
+              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>AI Adoption</span>
               <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#f1f5f9', overflow: 'hidden' }}>
                 <div style={{ width: `${ORG.aiReadiness}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #15803d, #22c55e)' }} />
               </div>
@@ -475,7 +475,7 @@ function DeptView({
   const deptCards = [
     {
       id: 'readiness' as const,
-      label: 'AI readiness',
+      label: 'AI adoption',
       badge: orgCollectionComplete ? deptMeasuredBadge : deptEstimatedBadge,
       val: orgCollectionComplete ? `${calibratedReadiness}%` : `${dept.aiReadiness}%`,
       icon: 'school',
@@ -575,7 +575,7 @@ function DeptView({
           }}
           upskillingActive={upskillingActive}
           upskillingLaunchSummary={upskillingLaunchSummary}
-          isHrbp={isHrbp}
+          hrbpPlansCreated={deptHrbpPlansCreated}
         />
 
         <div className="wfr-dash__cards-row">
@@ -632,11 +632,15 @@ function DeptView({
           }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
           return (
-            <div>
-              <div className="wfr-dash__panel-head">
-                <h3 className="wfr-dash__panel-title">{dept.name} — Team readiness</h3>
+            <Tabs defaultValue="roles">
+              <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <TabsList>
+                  <TabsTrigger value="roles">Roles</TabsTrigger>
+                  <TabsTrigger value="team">Team</TabsTrigger>
+                </TabsList>
                 <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
+              <TabsContent value="team">
               <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
@@ -661,7 +665,7 @@ function DeptView({
                     ) : null}
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
@@ -879,7 +883,103 @@ function DeptView({
                   })}
                 </DataTableBody>
               </DataTable>
-            </div>
+              </TabsContent>
+              <TabsContent value="roles">
+                <DataTable bordered>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead>Role</DataTableHead>
+                      <DataTableHead numeric>Headcount</DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                      {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {[...deptRoles].sort((a, b) => {
+                      const gapA = a.employees - Math.round(a.employees * a.aiReadiness / 100)
+                      const gapB = b.employees - Math.round(b.employees * b.aiReadiness / 100)
+                      return gapB - gapA
+                    }).map((role) => {
+                      const roleEmps = getEmployeesForRole(role)
+                      const readyCount = roleEmps.filter(e => e.readinessPct >= 50).length
+                      const notReadyCount = roleEmps.length - readyCount
+                      const gapPct2 = roleEmps.length > 0 ? notReadyCount / roleEmps.length : 0
+                      const gapColor = gapPct2 > 0.75 ? '#dc2626' : gapPct2 > 0.25 ? '#d97706' : '#15803d'
+                      // Calibrated readiness for state 3+
+                      const roleTrend = deptReadinessTrend(dept.name)
+                      const measuredReadiness = orgCollectionComplete ? Math.min(100, role.aiReadiness + roleTrend.delta) : role.aiReadiness
+                      const trendDelta = measuredReadiness - role.aiReadiness
+                      return (
+                        <DataTableRow key={`role-${dept.name}-${role.title}`}>
+                          <DataTableCell className="font-semibold">{role.title}</DataTableCell>
+                          <DataTableCell align="right" numeric>{role.employees.toLocaleString()}</DataTableCell>
+                          <DataTableCell metric>
+                            {orgCollectionComplete ? (
+                              <div className="wfr-dash__readiness-with-trend">
+                                <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
+                                <span className={`wfr-dash__trend-badge ${trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                  <span className="wfr-dash__trend-badge-text">{trendDelta >= 0 ? '↑' : '↓'}{Math.abs(trendDelta)}pt</span>
+                                </span>
+                              </div>
+                            ) : (
+                              <div>
+                                <DeptTableSoloBar variant="readiness" pct={role.aiReadiness} />
+                                <div className="text-[10px] text-[#94a3b8] mt-0.5">{readyCount} of {roleEmps.length} AI-ready</div>
+                              </div>
+                            )}
+                          </DataTableCell>
+                          <DataTableCell metric>
+                            <DeptTableSoloBar variant="potential" pct={role.aiPotential} />
+                          </DataTableCell>
+                          <DataTableCell align="right">
+                            <div>
+                              <span className="text-[16px] font-bold" style={{ color: gapColor }}>{notReadyCount}</span>
+                              <div className="text-[10px] text-[#94a3b8] mt-0.5">of {roleEmps.length} not ready</div>
+                            </div>
+                          </DataTableCell>
+                          {upskillingActive && (
+                            <DataTableCell>
+                              {deptHrbpPlansCreated ? (() => {
+                                const h = role.title.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+                                const total = notReadyCount
+                                const isFullyComplete = Math.abs(h) % 7 === 0
+                                const isNearlyDone = Math.abs(h) % 5 === 0 && !isFullyComplete
+                                let completed: number, inProgress: number, notStarted: number
+                                if (isFullyComplete) { completed = total; inProgress = 0; notStarted = 0 }
+                                else if (isNearlyDone) { completed = Math.round(total * (70 + (Math.abs(h) % 20)) / 100); inProgress = Math.round(total * (10 + (Math.abs(h * 3) % 15)) / 100); notStarted = Math.max(0, total - completed - inProgress) }
+                                else { completed = Math.round(total * (10 + (Math.abs(h) % 30)) / 100); inProgress = Math.round(total * (20 + (Math.abs(h * 3) % 25)) / 100); notStarted = Math.max(0, total - completed - inProgress) }
+                                const cW = total > 0 ? (completed / total) * 100 : 0
+                                const iW = total > 0 ? (inProgress / total) * 100 : 0
+                                return (
+                                  <div style={{ minWidth: 140 }}>
+                                    <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: '#e5e7eb', marginBottom: 4 }}>
+                                      <div style={{ width: `${cW}%`, background: '#22c55e' }} />
+                                      <div style={{ width: `${iW}%`, background: '#f59e0b' }} />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#64748b' }}>
+                                      <span><span style={{ color: '#15803d', fontWeight: 600 }}>{completed}</span> done</span>
+                                      <span><span style={{ color: '#d97706', fontWeight: 600 }}>{inProgress}</span> active</span>
+                                      <span><span style={{ color: '#94a3b8', fontWeight: 600 }}>{notStarted}</span> pending</span>
+                                    </div>
+                                  </div>
+                                )
+                              })() : (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, background: '#fffbeb', border: '1px solid #fcd34d', fontSize: 12, fontWeight: 600, color: '#92400e', whiteSpace: 'nowrap' }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit_note</span>
+                                  Creating plans
+                                </span>
+                              )}
+                            </DataTableCell>
+                          )}
+                        </DataTableRow>
+                      )
+                    })}
+                  </DataTableBody>
+                </DataTable>
+              </TabsContent>
+            </Tabs>
           )
         })()}
       </div>
@@ -947,7 +1047,7 @@ function DeptView({
             </div>
             <div className="wfr-focus-launch__body">
               <h3 className="wfr-focus-launch__title">Which teams need development plans?</h3>
-              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to close readiness gaps.</p>
+              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to close adoption gaps.</p>
 
               <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Scope">
                 <button
@@ -1084,7 +1184,7 @@ function DeptView({
                         </span>
                       </div>
                       <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">AI readiness</div>
+                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">AI adoption</div>
                         <span className="text-[13px] font-semibold" style={{ color: devPlanEmployee!.readinessPct >= 50 ? '#15803d' : '#dc2626' }}>
                           {devPlanEmployee!.readinessPct}%
                         </span>
@@ -1425,7 +1525,7 @@ function BoardView({
   const cards = [
     {
       id: 'readiness' as const,
-      label: 'AI readiness',
+      label: 'AI adoption',
       badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
       val: `${aiReadinessPct}%`,
       icon: 'school',
@@ -1475,7 +1575,7 @@ function BoardView({
               <>
                 <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
                 <span className="wfr-dash__headline-text">
-                  {` AI readiness — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+                  {` AI adoption — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
                 </span>
               </>
             ) : (
@@ -1587,7 +1687,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                               </DataTableRow>
@@ -1648,7 +1748,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
@@ -1714,7 +1814,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
               </DataTableRow>
@@ -1758,7 +1858,7 @@ function BoardView({
                 {!isHrbp && <DataTableHead>Department</DataTableHead>}
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
