@@ -1,6 +1,8 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useDemo } from '../../contexts/DemoContext'
+import { demoLabel } from '../../contexts/demoLabels'
 import {
   Badge, Button, Pill,
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -96,6 +98,7 @@ function MetricArcReadinessSemicircle({
   readiness: number
   compact?: boolean
 }) {
+  const { isDemo } = useDemo()
   const cfg = compact ? READINESS_SEMICIRCLE.compact : READINESS_SEMICIRCLE.hero
   const { dim, r, sw, cy, vbY, vbH, labelGroupY, pctDy, svgClass } = cfg
   const cx = dim / 2
@@ -150,7 +153,7 @@ function MetricArcReadinessSemicircle({
             dominantBaseline="text-after-edge"
             className="wfr-metric-arc__label"
           >
-            AI ADOPTION
+            {demoLabel('AI READINESS', isDemo)}
           </text>
         </g>
       </svg>
@@ -255,6 +258,7 @@ const METRIC_INFO = {
 } as const
 
 function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open: boolean; onClose: () => void; collectionComplete?: boolean }) {
+  const { isDemo } = useDemo()
   if (!open) return null
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -296,7 +300,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '24px 20px', background: '#f0fdf4' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#15803d', background: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: 6 }}>verified</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>AI Adoption</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>{demoLabel('AI Readiness', isDemo)}</span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 10px' }}>Of the people AI can help — how many have the skills to use it today?</h3>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>We look at each employee's skill profile against a forward-looking taxonomy: AI tool proficiency, data interpretation, workflow oversight, and exception handling.</p>
@@ -345,7 +349,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
               <span style={{ fontSize: 13, color: '#6366f1', width: 36, textAlign: 'right' }}>{ORG.aiPotential}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>AI Adoption</span>
+              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>{demoLabel('AI Readiness', isDemo)}</span>
               <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#f1f5f9', overflow: 'hidden' }}>
                 <div style={{ width: `${ORG.aiReadiness}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #15803d, #22c55e)' }} />
               </div>
@@ -431,6 +435,7 @@ function DeptView({
   setFocusLaunchOpen: (open: boolean) => void
   isHrbp?: boolean
 }) {
+  const { isDemo } = useDemo()
   // Derive convenience flags from universal state
   const navigate = useNavigate()
   const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(wfrState.state)
@@ -475,7 +480,7 @@ function DeptView({
   const deptCards = [
     {
       id: 'readiness' as const,
-      label: 'AI adoption',
+      label: demoLabel('AI readiness', isDemo),
       badge: orgCollectionComplete ? deptMeasuredBadge : deptEstimatedBadge,
       val: orgCollectionComplete ? `${calibratedReadiness}%` : `${dept.aiReadiness}%`,
       icon: 'school',
@@ -665,7 +670,7 @@ function DeptView({
                     ) : null}
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
@@ -890,7 +895,7 @@ function DeptView({
                     <DataTableRow>
                       <DataTableHead>Role</DataTableHead>
                       <DataTableHead numeric>Headcount</DataTableHead>
-                      <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                       {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
@@ -1047,7 +1052,7 @@ function DeptView({
             </div>
             <div className="wfr-focus-launch__body">
               <h3 className="wfr-focus-launch__title">Which teams need development plans?</h3>
-              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to close adoption gaps.</p>
+              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to {demoLabel('close readiness gaps', isDemo)}.</p>
 
               <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Scope">
                 <button
@@ -1184,7 +1189,7 @@ function DeptView({
                         </span>
                       </div>
                       <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">AI adoption</div>
+                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">{demoLabel('AI readiness', isDemo)}</div>
                         <span className="text-[13px] font-semibold" style={{ color: devPlanEmployee!.readinessPct >= 50 ? '#15803d' : '#dc2626' }}>
                           {devPlanEmployee!.readinessPct}%
                         </span>
@@ -1390,6 +1395,7 @@ function BoardView({
   scopedDepartments?: string[]
   isHrbp?: boolean
 }) {
+  const { isDemo } = useDemo()
   // Derive convenience flags from universal state
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
@@ -1525,7 +1531,7 @@ function BoardView({
   const cards = [
     {
       id: 'readiness' as const,
-      label: 'AI adoption',
+      label: demoLabel('AI readiness', isDemo),
       badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
       val: `${aiReadinessPct}%`,
       icon: 'school',
@@ -1575,7 +1581,7 @@ function BoardView({
               <>
                 <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
                 <span className="wfr-dash__headline-text">
-                  {` AI adoption — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+                  {` ${demoLabel('AI readiness', isDemo)} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
                 </span>
               </>
             ) : (
@@ -1687,7 +1693,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                               </DataTableRow>
@@ -1748,7 +1754,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
@@ -1814,7 +1820,7 @@ function BoardView({
                 <DataTableHead>Department</DataTableHead>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
               </DataTableRow>
@@ -1858,7 +1864,7 @@ function BoardView({
                 {!isHrbp && <DataTableHead>Department</DataTableHead>}
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}

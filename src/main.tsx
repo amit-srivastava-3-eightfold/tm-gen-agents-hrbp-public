@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { DemoProvider } from './contexts/DemoContext'
 import { UserProvider } from './contexts/UserContext'
 import { ErrorBoundary } from './ErrorBoundary'
 import './index.css'
@@ -19,6 +20,7 @@ import { ManagerDetailPage } from './pages/ManagerDetailPage'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
+      <DemoProvider>
       <UserProvider>
         <BrowserRouter>
           <Routes>
@@ -36,6 +38,7 @@ createRoot(document.getElementById('root')!).render(
           </Routes>
         </BrowserRouter>
       </UserProvider>
+      </DemoProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

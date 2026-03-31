@@ -1,6 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useMemo, useState } from 'react'
 import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator } from '@tonyh-2-eightfold/ef-design-system'
+import { useDemo } from '../../contexts/DemoContext'
+import { demoLabel } from '../../contexts/demoLabels'
 import { departments, ORG } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
@@ -29,6 +31,7 @@ export function FocusFirstLaunchDialog({
   onLaunch,
   defaultScopeDepartmentName: _defaultScope,
 }: FocusFirstLaunchDialogProps) {
+  const { isDemo } = useDemo()
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<FocusAssignOwner>('hrbp')
   const [scopeMode, setScopeMode] = useState<'all' | 'select'>('all')
@@ -208,13 +211,13 @@ export function FocusFirstLaunchDialog({
             {step === 3 && (
               <>
                 <h2 className="wfr-focus-launch__title">Collection method</h2>
-                <p className="wfr-focus-launch__sub">Data will be collected using AI-powered interviews to measure task-level adoption.</p>
+                <p className="wfr-focus-launch__sub">Data will be collected using AI-powered interviews to measure {demoLabel('task-level readiness', isDemo)}.</p>
                 <div className="wfr-focus-launch__options">
                   <button type="button" className="wfr-focus-launch__option wfr-focus-launch__option--selected">
                     <img src="/ai-agent-icon.svg" alt="" style={{ width: 28, height: 28, flexShrink: 0 }} />
                     <span className="wfr-focus-launch__option-text">
                       <span className="wfr-focus-launch__option-label">AI Agent Interviews</span>
-                      <span className="wfr-focus-launch__option-desc">AI-powered conversations that map real workflows, measure task-level adoption, and surface upskilling opportunities.</span>
+                      <span className="wfr-focus-launch__option-desc">AI-powered conversations that map real workflows, measure {demoLabel('task-level readiness', isDemo)}, and surface upskilling opportunities.</span>
                     </span>
                   </button>
                 </div>

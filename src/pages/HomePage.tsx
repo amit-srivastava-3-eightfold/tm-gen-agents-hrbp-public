@@ -6,6 +6,8 @@ import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
+import { useDemo } from '../contexts/DemoContext'
+import { demoLabel } from '../contexts/demoLabels'
 import { EM, ORG } from '../data/wfrOrgData'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
@@ -31,7 +33,7 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
         <path d={arcPath(100)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
         <path d={arcPath(readiness)} fill="none" stroke="var(--wfr-readiness, #22c55e)" strokeWidth={sw} strokeLinecap="round" />
         <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">AI ADOPTION</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">{demoLabel('AI READINESS', isDemo)}</text>
       </svg>
     </div>
   )
@@ -72,7 +74,7 @@ function ChroWorkforceReadinessTeaser() {
         </div>
         <div className="home-page__wfr-compact__rec-row">
           <p className="home-page__wfr-compact__rec-body">
-            Collect employee data to sharpen your adoption scores and surface upskilling priorities.
+            Collect employee data to sharpen your {demoLabel('readiness scores', isDemo)} and surface upskilling priorities.
           </p>
           <Link to="/workforce?action=launch">
             <Button variant="primary" size="sm">
@@ -87,6 +89,7 @@ function ChroWorkforceReadinessTeaser() {
 
 export function HomePage() {
   const { currentUser } = useUser()
+  const { isDemo } = useDemo()
   const firstName = currentUser.name.split(' ')[0] ?? currentUser.name
   const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
     ? currentUser.avatarPhotoSrc.replace(/w=\d+&h=\d+/, 'w=120&h=120')

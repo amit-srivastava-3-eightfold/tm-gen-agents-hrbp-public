@@ -1,5 +1,7 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useDemo } from '../../contexts/DemoContext'
+import { demoLabel } from '../../contexts/demoLabels'
 import {
   departments,
   ORG,
@@ -95,6 +97,7 @@ export function FocusFirstCollectionCard({
   isHrbp = false,
   hrbpPlansCreated = false,
 }: FocusFirstCollectionCardProps) {
+  const { isDemo } = useDemo()
   // Animation phases: idle → filling → bell → hold → done
   const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
   const [animPct, setAnimPct] = useState(0)
@@ -211,7 +214,7 @@ export function FocusFirstCollectionCard({
               Create development plans for <strong>{totalGap.toLocaleString()}</strong> employees across <strong>{totalRoles}</strong> roles in your departments.
             </p>
             <p className="wfr-ra-card__hint">
-              Review roles in the table below and create plans to close adoption gaps.
+              Review roles in the table below and create plans to {demoLabel('close readiness gaps', isDemo)}.
             </p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
@@ -314,7 +317,7 @@ export function FocusFirstCollectionCard({
                 ))}.
               </p>
               <p className="wfr-ra-card__hint">
-                Choose teams and assign development plans to close adoption gaps.
+                Choose teams and assign development plans to {demoLabel('close readiness gaps', isDemo)}.
               </p>
             </div>
             <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
@@ -364,7 +367,7 @@ export function FocusFirstCollectionCard({
                 HRBPs are creating development plans for <strong>{totalLaunchedGap.toLocaleString()}</strong> employees across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}.
               </p>
               <p className="wfr-ra-card__hint">
-                Once plans are assigned, adoption scores will update to reflect upskilling progress.
+                Once plans are assigned, {demoLabel('readiness scores', isDemo)} will update to reflect upskilling progress.
               </p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, fontWeight: 600, color: '#15803d', whiteSpace: 'nowrap' }}>
@@ -397,7 +400,7 @@ export function FocusFirstCollectionCard({
             <p className="wfr-ra-card__cta-text">
               Based on the AI agent interviews, improve your organization's productivity by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
             </p>
-            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps across these departments.</p>
+            <p className="wfr-ra-card__hint">Create development plans to {demoLabel('close readiness gaps', isDemo)} across these departments.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             Start upskilling&nbsp;→
@@ -571,6 +574,7 @@ function FocusFirstModuleBoard({
   isHrbp = false,
   hrbpPlansCreated = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'>) {
+  const { isDemo } = useDemo()
   const orgCollectionSnap = useMemo(() => {
     const scoped = collectionLaunchSummary?.scopedDepartmentNames
     if (scoped?.length) return wfrDemoCollectionSnapshotForDeptNames(scoped)
@@ -619,10 +623,10 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  AI Adoption is estimated today. Collect real data to see what&apos;s actually happening.
+                  {demoLabel('AI Readiness', isDemo)} is estimated today. Collect real data to see what&apos;s actually happening.
                 </p>
                 <p className="wfr-ra-card__hint">
-                  Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.
+                  Choose departments and a collection method — results refine your {demoLabel('readiness scores', isDemo)} and surface upskilling priorities.
                 </p>
               </div>
               <Button

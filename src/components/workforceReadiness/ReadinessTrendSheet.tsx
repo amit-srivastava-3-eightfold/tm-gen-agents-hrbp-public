@@ -1,6 +1,8 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useDemo } from '../../contexts/DemoContext'
+import { demoLabel } from '../../contexts/demoLabels'
 import { getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
 import {
   deptManagerTeams,
@@ -27,6 +29,7 @@ export interface ReadinessTrendSheetProps {
 }
 
 export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, upskillingActive = false, collectionComplete = true }: ReadinessTrendSheetProps) {
+  const { isDemo } = useDemo()
   const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   // Reset filter when sheet closes or role changes
@@ -103,7 +106,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
     ? `${roleContext.dept} — Task-level readiness`
     : managerContext
       ? `${dept.name} — Employee readiness trend`
-      : data.showTrends ? 'AI adoption change from data collection' : 'AI adoption — baseline estimate'
+      : data.showTrends ? demoLabel('AI readiness change from data collection', isDemo) : demoLabel('AI readiness — baseline estimate', isDemo)
 
   return createPortal(
     <div className="wfr-trend-sheet__root">
@@ -202,7 +205,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                           <div style={{ marginBottom: 16 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                               <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#1999ac' }}>school</span>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Adoption</span>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{demoLabel('AI Readiness', isDemo)}</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                               {/* Mini gauge as icon */}
@@ -272,7 +275,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                               <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#1999ac' }}>school</span>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Adoption</span>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{demoLabel('AI Readiness', isDemo)}</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                               <span style={{ fontSize: 32, fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>{baseReadiness}%</span>

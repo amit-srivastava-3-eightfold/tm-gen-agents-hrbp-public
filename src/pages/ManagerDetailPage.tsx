@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useUser } from '../contexts/UserContext'
+import { useDemo } from '../contexts/DemoContext'
+import { demoLabel } from '../contexts/demoLabels'
 import { NavbarApp } from '../components/Navbar'
 import {
   Button,
@@ -51,6 +53,7 @@ function DeltaBadge({ delta, up }: { delta: string; up: boolean }) {
 
 export function ManagerDetailPage() {
   const { currentUser } = useUser()
+  const { isDemo } = useDemo()
   const { managerId } = useParams<{ managerId: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -290,7 +293,7 @@ export function ManagerDetailPage() {
             <MetricCard
               variant="readiness"
               icon="school"
-              label="AI adoption"
+              label={demoLabel('AI readiness', isDemo)}
               badge={collectionComplete
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
@@ -338,7 +341,7 @@ export function ManagerDetailPage() {
               <DataTableRow>
                 <DataTableHead>Employee</DataTableHead>
                 <DataTableHead>Manager</DataTableHead>
-                <DataTableHead metric>AI adoption</DataTableHead>
+                <DataTableHead metric>{demoLabel('AI readiness', isDemo)}</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
                 {showCollection ? (

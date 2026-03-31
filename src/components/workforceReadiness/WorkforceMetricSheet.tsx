@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import { useDemo } from '../../contexts/DemoContext'
+import { demoLabel } from '../../contexts/demoLabels'
 import { EM, EN, ORG } from '../../data/wfrOrgData'
 import './WorkforceMetricSheet.css'
 
@@ -44,6 +46,7 @@ export function WorkforceMetricSheet({
   departmentGap = null,
   dataCollection = null,
 }: WorkforceMetricSheetProps) {
+  const { isDemo } = useDemo()
   useLayoutEffect(() => {
     if (metric) document.body.setAttribute(BODY_ATTR, 'true')
     return () => document.body.removeAttribute(BODY_ATTR)
@@ -66,7 +69,7 @@ export function WorkforceMetricSheet({
     metric === 'potential'
       ? 'What does AI Potential measure?'
       : metric === 'readiness'
-        ? 'What does AI Adoption measure?'
+        ? demoLabel('What does AI Readiness measure?', isDemo)
         : 'What does the Transformation Gap measure?'
 
   const sheetContent = (
@@ -139,7 +142,7 @@ export function WorkforceMetricSheet({
                   ) : (
                     <>
                       You&apos;re collecting with <strong>{dataCollection.channelsLabel}</strong> for{' '}
-                      <strong>{dataCollection.scopeLabel}</strong>. The overview adoption figure reflects that group;
+                      <strong>{dataCollection.scopeLabel}</strong>. The overview {demoLabel('readiness figure', isDemo)} reflects that group;
                       incoming responses will replace these profile-based estimates.
                     </>
                   )}
