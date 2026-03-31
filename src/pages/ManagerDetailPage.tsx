@@ -285,7 +285,7 @@ export function ManagerDetailPage() {
           <div className="wfr-dash__cards-row">
             <MetricCard
               variant="readiness"
-              icon="speed"
+              icon="school"
               label="AI readiness"
               value={readinessDelta !== 0 ? (
                 <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
@@ -307,7 +307,7 @@ export function ManagerDetailPage() {
             />
             <MetricCard
               variant="gap"
-              icon="trending_down"
+              icon="groups"
               label="Transformation gap"
               value={gapDelta !== 0 ? (
                 <>{notReady.toLocaleString()} <DeltaBadge delta={`${gapDelta > 0 ? '+' : ''}${gapDelta}`} up={gapDelta < 0} /></>
@@ -328,8 +328,8 @@ export function ManagerDetailPage() {
               <DataTableRow>
                 <DataTableHead>Employee</DataTableHead>
                 <DataTableHead>Manager</DataTableHead>
-                <DataTableHead metric>Readiness</DataTableHead>
-                <DataTableHead metric>Potential</DataTableHead>
+                <DataTableHead metric>AI readiness</DataTableHead>
+                <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
                 {showCollection ? (
                   <>
