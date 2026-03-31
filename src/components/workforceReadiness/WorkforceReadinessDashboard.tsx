@@ -630,11 +630,15 @@ function DeptView({
           }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
           return (
-            <div>
-              <div className="wfr-dash__panel-head">
-                <h3 className="wfr-dash__panel-title">{dept.name} — Team readiness</h3>
+            <Tabs defaultValue="team">
+              <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <TabsList>
+                  <TabsTrigger value="team">Team</TabsTrigger>
+                  <TabsTrigger value="roles">Roles</TabsTrigger>
+                </TabsList>
                 <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
+              <TabsContent value="team">
               <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
@@ -877,7 +881,55 @@ function DeptView({
                   })}
                 </DataTableBody>
               </DataTable>
-            </div>
+              </TabsContent>
+              <TabsContent value="roles">
+                <DataTable bordered>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead>Role</DataTableHead>
+                      <DataTableHead numeric>Headcount</DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {[...deptRoles].sort((a, b) => {
+                      const gapA = a.employees - Math.round(a.employees * a.aiReadiness / 100)
+                      const gapB = b.employees - Math.round(b.employees * b.aiReadiness / 100)
+                      return gapB - gapA
+                    }).map((role) => {
+                      const roleEmps = getEmployeesForRole(role)
+                      const readyCount = roleEmps.filter(e => e.readinessPct >= 50).length
+                      const notReadyCount = roleEmps.length - readyCount
+                      const gapPct2 = roleEmps.length > 0 ? notReadyCount / roleEmps.length : 0
+                      const gapColor = gapPct2 > 0.75 ? '#dc2626' : gapPct2 > 0.25 ? '#d97706' : '#15803d'
+                      return (
+                        <DataTableRow key={`role-${dept.name}-${role.title}`}>
+                          <DataTableCell className="font-semibold">{role.title}</DataTableCell>
+                          <DataTableCell align="right" numeric>{role.employees.toLocaleString()}</DataTableCell>
+                          <DataTableCell metric>
+                            <div>
+                              <DeptTableSoloBar variant="readiness" pct={role.aiReadiness} />
+                              <div className="text-[10px] text-[#94a3b8] mt-0.5">{readyCount} of {roleEmps.length} AI-ready</div>
+                            </div>
+                          </DataTableCell>
+                          <DataTableCell metric>
+                            <DeptTableSoloBar variant="potential" pct={role.aiPotential} />
+                          </DataTableCell>
+                          <DataTableCell align="right">
+                            <div>
+                              <span className="text-[16px] font-bold" style={{ color: gapColor }}>{notReadyCount}</span>
+                              <div className="text-[10px] text-[#94a3b8] mt-0.5">of {roleEmps.length} not ready</div>
+                            </div>
+                          </DataTableCell>
+                        </DataTableRow>
+                      )
+                    })}
+                  </DataTableBody>
+                </DataTable>
+              </TabsContent>
+            </Tabs>
           )
         })()}
       </div>
