@@ -14,6 +14,7 @@ import './HomePage.css'
 
 /* Inline compact semicircle — readiness only, matches WFR overview hero */
 function WfrReadinessArc({ readiness }: { readiness: number }) {
+  const { isDemo } = useDemo()
   const dim = 120, r = 46, sw = 8
   const cx = dim / 2, cy = dim / 2
   const rad = (d: number) => (d * Math.PI) / 180
@@ -40,6 +41,7 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
 }
 
 function ChroWorkforceReadinessTeaser() {
+  const { isDemo } = useDemo()
   const gapPeople =
     ORG.peopleInAugRoles - Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
 
