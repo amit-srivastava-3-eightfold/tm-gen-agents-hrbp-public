@@ -619,7 +619,7 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  AI Adoption is estimated today. Collect adoption data to see what&apos;s really happening.
+                  AI Adoption is estimated today. Collect real data to see what&apos;s actually happening.
                 </p>
                 <p className="wfr-ra-card__hint">
                   Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.
