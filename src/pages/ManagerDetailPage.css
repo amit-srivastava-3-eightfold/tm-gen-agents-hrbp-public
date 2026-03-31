@@ -1,4 +1,12 @@
 .mgr-detail-page {
+  /* Inherit WFR dashboard color tokens so MetricCard variants render correctly */
+  --wfr-potential: #818cf8;
+  --wfr-potential-text: #6366f1;
+  --wfr-readiness: #22c55e;
+  --wfr-readiness-text: #15803d;
+  --wfr-gap: #f87171;
+  --wfr-gap-text: #dc2626;
+
   position: relative;
   min-height: 100vh;
   background: #ffffff;
