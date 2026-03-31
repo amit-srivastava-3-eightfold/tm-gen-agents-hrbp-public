@@ -211,7 +211,7 @@ export function FocusFirstCollectionCard({
               Create development plans for <strong>{totalGap.toLocaleString()}</strong> employees across <strong>{totalRoles}</strong> roles in your departments.
             </p>
             <p className="wfr-ra-card__hint">
-              Review roles in the table below and create plans to close adoption gaps.
+              Review roles in the table below and create plans to close readiness gaps.
             </p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
@@ -314,7 +314,7 @@ export function FocusFirstCollectionCard({
                 ))}.
               </p>
               <p className="wfr-ra-card__hint">
-                Choose teams and assign development plans to close adoption gaps.
+                Choose teams and assign development plans to close readiness gaps.
               </p>
             </div>
             <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
@@ -364,7 +364,7 @@ export function FocusFirstCollectionCard({
                 HRBPs are creating development plans for <strong>{totalLaunchedGap.toLocaleString()}</strong> employees across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}.
               </p>
               <p className="wfr-ra-card__hint">
-                Once plans are assigned, adoption scores will update to reflect upskilling progress.
+                Once plans are assigned, readiness scores will update to reflect upskilling progress.
               </p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, fontWeight: 600, color: '#15803d', whiteSpace: 'nowrap' }}>
@@ -397,7 +397,7 @@ export function FocusFirstCollectionCard({
             <p className="wfr-ra-card__cta-text">
               Based on the AI agent interviews, improve your organization's productivity by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
             </p>
-            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps across these departments.</p>
+            <p className="wfr-ra-card__hint">Create development plans to close readiness gaps across these departments.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             Start upskilling&nbsp;→
@@ -619,10 +619,10 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  AI Adoption is estimated today. Collect real data to see what&apos;s actually happening.
+                  AI Readiness is estimated today. Collect adoption data to see what&apos;s really happening.
                 </p>
                 <p className="wfr-ra-card__hint">
-                  Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.
+                  Choose departments and a collection method — results refine your readiness scores and surface upskilling priorities.
                 </p>
               </div>
               <Button

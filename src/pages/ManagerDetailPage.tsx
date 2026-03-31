@@ -290,7 +290,7 @@ export function ManagerDetailPage() {
             <MetricCard
               variant="readiness"
               icon="school"
-              label="AI adoption"
+              label="AI readiness"
               badge={collectionComplete
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
@@ -338,7 +338,7 @@ export function ManagerDetailPage() {
               <DataTableRow>
                 <DataTableHead>Employee</DataTableHead>
                 <DataTableHead>Manager</DataTableHead>
-                <DataTableHead metric>AI adoption</DataTableHead>
+                <DataTableHead metric>AI readiness</DataTableHead>
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
                 {showCollection ? (

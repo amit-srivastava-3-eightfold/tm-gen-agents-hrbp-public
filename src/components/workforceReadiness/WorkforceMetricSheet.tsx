@@ -66,7 +66,7 @@ export function WorkforceMetricSheet({
     metric === 'potential'
       ? 'What does AI Potential measure?'
       : metric === 'readiness'
-        ? 'What does AI Adoption measure?'
+        ? 'What does AI Readiness measure?'
         : 'What does the Transformation Gap measure?'
 
   const sheetContent = (
@@ -139,7 +139,7 @@ export function WorkforceMetricSheet({
                   ) : (
                     <>
                       You&apos;re collecting with <strong>{dataCollection.channelsLabel}</strong> for{' '}
-                      <strong>{dataCollection.scopeLabel}</strong>. The overview adoption figure reflects that group;
+                      <strong>{dataCollection.scopeLabel}</strong>. The overview readiness figure reflects that group;
                       incoming responses will replace these profile-based estimates.
                     </>
                   )}

@@ -151,7 +151,7 @@ export function UpskillingLaunchDialog({
     return (
       <>
         <h2 className="wfr-focus-launch__title">Which departments need development plans?</h2>
-        <p className="wfr-focus-launch__sub">Development plans will be created and assigned to close adoption gaps across selected departments.</p>
+        <p className="wfr-focus-launch__sub">Development plans will be created and assigned to close readiness gaps across selected departments.</p>
         <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Upskilling scope">
           <button
             type="button"
