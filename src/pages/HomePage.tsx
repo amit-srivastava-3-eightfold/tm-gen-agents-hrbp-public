@@ -31,7 +31,7 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
         <path d={arcPath(100)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
         <path d={arcPath(readiness)} fill="none" stroke="var(--wfr-readiness, #22c55e)" strokeWidth={sw} strokeLinecap="round" />
         <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">AI READINESS</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">AI ADOPTION</text>
       </svg>
     </div>
   )
