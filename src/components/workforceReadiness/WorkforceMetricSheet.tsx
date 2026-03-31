@@ -64,7 +64,7 @@ export function WorkforceMetricSheet({
 
   const title =
     metric === 'potential'
-      ? 'What does AI Potential measure?'
+      ? 'What does AI Adoption measure?'
       : metric === 'readiness'
         ? 'What does AI Readiness measure?'
         : 'What does the Transformation Gap measure?'
