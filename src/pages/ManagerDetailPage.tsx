@@ -464,12 +464,9 @@ export function ManagerDetailPage() {
 
                     {/* Status */}
                     <DataTableCell>
-                      <Pill
-                        variant={emp.programStatus === 'Completed' ? 'success' : emp.programStatus === 'Enrolled' ? 'info' : 'neutral'}
-                        size="small"
-                      >
+                      <span className="text-[12px] font-medium" style={{ color: emp.programStatus === 'Completed' ? '#15803d' : emp.programStatus === 'Enrolled' ? '#3b5bdb' : '#94a3b8' }}>
                         {emp.programStatus}
-                      </Pill>
+                      </span>
                     </DataTableCell>
 
                     {/* Plan / Action column */}
