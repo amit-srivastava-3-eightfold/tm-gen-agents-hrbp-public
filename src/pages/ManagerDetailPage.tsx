@@ -242,7 +242,7 @@ export function ManagerDetailPage() {
         <Header variant="career-hub" chSize="child" overlayBackground>
           <HeaderToolbar>
             <HeaderTextGroup>
-              <HeaderTitle>{mgr.manager}</HeaderTitle>
+              <HeaderTitle>Workforce Readiness</HeaderTitle>
             </HeaderTextGroup>
           </HeaderToolbar>
         </Header>
