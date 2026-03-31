@@ -254,7 +254,7 @@ const METRIC_INFO = {
   gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
 } as const
 
-function MetricInfoDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open: boolean; onClose: () => void; collectionComplete?: boolean }) {
   if (!open) return null
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -314,6 +314,19 @@ function MetricInfoDialog({ open, onClose }: { open: boolean; onClose: () => voi
                 <span>A low score means the workforce has the potential — but not yet the capability to capture it. That's the gap to close.</span>
               </div>
             </div>
+            {!collectionComplete && (
+              <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 8, background: '#fefce8', border: '1px solid #fde68a', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#92400e', marginTop: 1, flexShrink: 0 }}>info</span>
+                <div style={{ margin: 0 }}>
+                  <p style={{ fontSize: 12, color: '#78350f', lineHeight: 1.55, margin: '0 0 8px' }}>
+                    <strong>Currently estimated</strong> — this score is derived from employee skill profiles, not actual AI adoption behavior. Start data collection to ground-truth readiness with real adoption signals from your workforce.
+                  </p>
+                  <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#92400e', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+                    Start data collection <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1240,7 +1253,7 @@ function DeptView({
         </div>,
         document.body,
       )}
-      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} />
+      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} collectionComplete={orgCollectionComplete} />
     </div>
   )
 }
@@ -2150,7 +2163,7 @@ function BoardView({
         excludeDeptNames={upskillingLaunchSummary?.departmentNames ?? []}
       />
 
-      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} />
+      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} collectionComplete={focusCollectionComplete} />
     </div>
   )
 }
