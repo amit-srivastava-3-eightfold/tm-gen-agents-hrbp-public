@@ -337,10 +337,7 @@ export function ManagerDetailPage() {
                     <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
                   </>
                 ) : null}
-                {upskillingActive ? (
-                  <DataTableHead>Upskilling</DataTableHead>
-                ) : null}
-                <DataTableHead>{upskillingActive ? 'Upskilling status' : 'Status'}</DataTableHead>
+                <DataTableHead>Upskilling status</DataTableHead>
                 <DataTableHead>{collectionComplete ? 'Plan' : 'Action'}</DataTableHead>
                 {collectionComplete ? <DataTableHead>Plan progress</DataTableHead> : null}
               </DataTableRow>
@@ -447,9 +444,9 @@ export function ManagerDetailPage() {
                       </>
                     ) : null}
 
-                    {/* Upskilling column — state 4+ */}
-                    {upskillingActive ? (
-                      <DataTableCell>
+                    {/* Upskilling status */}
+                    <DataTableCell>
+                      {upskillingActive ? (
                         <div>
                           <div className="wfr-dash__plan-progress">
                             <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
@@ -459,14 +456,9 @@ export function ManagerDetailPage() {
                           </div>
                           <div className="text-[10px] mt-0.5" style={{ color: upskillingTextColor }}>{upskillingStatus}</div>
                         </div>
-                      </DataTableCell>
-                    ) : null}
-
-                    {/* Status */}
-                    <DataTableCell>
-                      <span className="text-[12px] font-medium" style={{ color: emp.programStatus === 'Completed' ? '#15803d' : emp.programStatus === 'Enrolled' ? '#3b5bdb' : '#94a3b8' }}>
-                        {emp.programStatus}
-                      </span>
+                      ) : (
+                        <span className="text-[12px] font-medium text-[#94a3b8]">Not started</span>
+                      )}
                     </DataTableCell>
 
                     {/* Plan / Action column */}
