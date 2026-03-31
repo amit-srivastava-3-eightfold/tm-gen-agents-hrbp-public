@@ -436,8 +436,6 @@ function DeptView({
   const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
-  const [deptViewMode, setDeptViewMode] = useState<'role' | 'manager'>('manager')
-  const [expandedRoles, setExpandedRoles] = useState<Record<string, boolean>>({})
   const deptRolesPanelRef = useRef<HTMLDivElement>(null)
   const deptAug = deptPeopleInAugRoles(dept)
   const gapCount = deptGapHeadcount(dept)
@@ -588,100 +586,10 @@ function DeptView({
           return (
             <div>
               <div className="wfr-dash__panel-head">
-                <div className="flex items-center gap-3">
-                  <h3 className="wfr-dash__panel-title" style={{ margin: 0 }}>{dept.name} — Team readiness</h3>
-                  <div className="wfr-dash__tabs" style={{ marginLeft: 16 }}>
-                    <button type="button" className={`wfr-dash__tab ${deptViewMode === 'manager' ? 'wfr-dash__tab--active' : ''}`} onClick={() => setDeptViewMode('manager')}>By Manager</button>
-                    <button type="button" className={`wfr-dash__tab ${deptViewMode === 'role' ? 'wfr-dash__tab--active' : ''}`} onClick={() => setDeptViewMode('role')}>By Role</button>
-                  </div>
-                </div>
-                <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to {deptViewMode === 'role' ? 'expand' : 'view team'}</span>
+                <h3 className="wfr-dash__panel-title">{dept.name} — Team readiness</h3>
+                <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
-              {/* ── By Role view ── */}
-              {deptViewMode === 'role' && (() => {
-                const deptRolesSorted = [...deptRoles].sort((a, b) => {
-                  const gapA = a.employees - Math.round(a.employees * a.aiReadiness / 100)
-                  const gapB = b.employees - Math.round(b.employees * b.aiReadiness / 100)
-                  return gapB - gapA
-                })
-                return (
-                  <DataTable bordered>
-                    <DataTableHeader>
-                      <DataTableRow>
-                        <DataTableHead>Role</DataTableHead>
-                        <DataTableHead numeric>Headcount</DataTableHead>
-                        <DataTableHead metric><MetricHeaderLabel label="AI readiness" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                        <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                        <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
-                      </DataTableRow>
-                    </DataTableHeader>
-                    <DataTableBody>
-                      {deptRolesSorted.map((role) => {
-                        const roleKey = `role-${dept.name}-${role.title}`
-                        const isRoleExpanded = expandedRoles[roleKey] ?? false
-                        const roleEmps = getEmployeesForRole(role)
-                        const readyCount = roleEmps.filter(e => e.readinessPct >= 50).length
-                        const notReadyCount = roleEmps.length - readyCount
-                        const gapPct = roleEmps.length > 0 ? notReadyCount / roleEmps.length : 0
-                        const gapColor = gapPct > 0.75 ? '#dc2626' : gapPct > 0.25 ? '#d97706' : '#15803d'
-                        return (
-                          <Fragment key={roleKey}>
-                            <DataTableRow onClick={() => setExpandedRoles(prev => ({ ...prev, [roleKey]: !isRoleExpanded }))}>
-                              <DataTableCell className="font-semibold">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="material-symbols-outlined text-[16px] transition-transform" style={{ color: isRoleExpanded ? '#3b5bdb' : '#94a3b8', transform: isRoleExpanded ? 'rotate(90deg)' : undefined }}>chevron_right</span>
-                                  {role.title}
-                                </div>
-                              </DataTableCell>
-                              <DataTableCell align="right" numeric>{role.employees.toLocaleString()}</DataTableCell>
-                              <DataTableCell metric>
-                                <div>
-                                  <DeptTableSoloBar variant="readiness" pct={role.aiReadiness} />
-                                  <div className="text-[10px] text-[#94a3b8] mt-0.5">{readyCount} of {roleEmps.length} AI-ready</div>
-                                </div>
-                              </DataTableCell>
-                              <DataTableCell metric>
-                                <DeptTableSoloBar variant="potential" pct={role.aiPotential} />
-                              </DataTableCell>
-                              <DataTableCell align="right">
-                                <div>
-                                  <span className="text-[16px] font-bold" style={{ color: gapColor }}>{notReadyCount}</span>
-                                  <div className="text-[10px] text-[#94a3b8] mt-0.5">of {roleEmps.length} not ready</div>
-                                </div>
-                              </DataTableCell>
-                            </DataTableRow>
-                            {isRoleExpanded && roleEmps.map((emp, ei) => (
-                              <DataTableRow key={`${roleKey}-emp-${ei}`} className="bg-[#f8fafc]">
-                                <DataTableCell className="!pl-[52px]">
-                                  <div>
-                                    <div className="text-[13px] font-medium text-[#1a212e]">{emp.name}</div>
-                                    <div className="text-[11px] text-[#94a3b8]">{emp.programStatus}</div>
-                                  </div>
-                                </DataTableCell>
-                                <DataTableCell />
-                                <DataTableCell metric>
-                                  <DeptTableSoloBar variant="readiness" pct={emp.readinessPct} />
-                                </DataTableCell>
-                                <DataTableCell metric>
-                                  <DeptTableSoloBar variant="potential" pct={role.aiPotential} />
-                                </DataTableCell>
-                                <DataTableCell align="right">
-                                  <span className="text-[12px] font-medium" style={{ color: emp.readinessPct >= 50 ? '#15803d' : '#dc2626' }}>
-                                    {emp.readinessPct >= 50 ? 'AI-ready' : 'Not AI-ready'}
-                                  </span>
-                                </DataTableCell>
-                              </DataTableRow>
-                            ))}
-                          </Fragment>
-                        )
-                      })}
-                    </DataTableBody>
-                  </DataTable>
-                )
-              })()}
-
-              {/* ── By Manager view ── */}
-              {deptViewMode === 'manager' && <DataTable bordered>
+              <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
                     {orgCollectionComplete ? (
@@ -922,7 +830,7 @@ function DeptView({
                     )
                   })}
                 </DataTableBody>
-              </DataTable>}
+              </DataTable>
             </div>
           )
         })()}
