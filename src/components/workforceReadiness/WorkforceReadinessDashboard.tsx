@@ -321,8 +321,8 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
                   <p style={{ fontSize: 12, color: '#78350f', lineHeight: 1.55, margin: '0 0 8px' }}>
                     <strong>Currently estimated</strong> — this score is derived from employee skill profiles, not actual AI adoption behavior. Start data collection to ground-truth readiness with real adoption signals from your workforce.
                   </p>
-                  <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#92400e', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}>
-                    Get the real number <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+                  <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#92400e', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                    <span style={{ textDecoration: 'underline', textUnderlineOffset: 2 }}>Get the real number</span> <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
                   </button>
                 </div>
               </div>
