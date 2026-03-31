@@ -573,6 +573,7 @@ function DeptView({
           }}
           upskillingActive={upskillingActive}
           upskillingLaunchSummary={upskillingLaunchSummary}
+          hrbpPlansCreated={deptHrbpPlansCreated}
         />
 
         <div className="wfr-dash__cards-row">
