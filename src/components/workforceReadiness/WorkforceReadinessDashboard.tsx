@@ -418,7 +418,7 @@ function DeptView({
 }) {
   // Derive convenience flags from universal state
   const navigate = useNavigate()
-  const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive } = deriveWfrFlags(wfrState.state)
+  const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
@@ -443,14 +443,33 @@ function DeptView({
   const gapSharePct = deptAug > 0 ? Math.min(100, Math.round((gapCount / deptAug) * 100)) : 0
   const deptHrsUnlocked = Math.round(gapCount * ORG.hrsPerPersonWeek)
 
+  // Calibration deltas for metric cards
+  const deptTrendData = deptReadinessTrend(dept.name)
+  const deptCalibDelta = orgCollectionComplete ? deptTrendData.delta : 0
+  const deptUpskillingBoost = deptHrbpPlansCreated ? 10 : 0
+  const deptTotalReadinessDelta = deptCalibDelta + deptUpskillingBoost
+  const calibratedReadiness = Math.min(100, dept.aiReadiness + deptTotalReadinessDelta)
+  const calibratedReady = Math.round(deptAug * calibratedReadiness / 100)
+  const calibratedGap = Math.max(0, deptAug - calibratedReady)
+  const deptGapDelta = (orgCollectionComplete || deptHrbpPlansCreated) ? calibratedGap - gapCount : 0
+  const calibGapSharePct = deptAug > 0 ? Math.min(100, Math.round((calibratedGap / deptAug) * 100)) : 0
+
   const deptCards = [
     {
       id: 'readiness' as const,
       label: 'AI readiness',
-      val: `${dept.aiReadiness}%`,
+      val: orgCollectionComplete ? `${calibratedReadiness}%` : `${dept.aiReadiness}%`,
       icon: 'school',
-      l1: `${deptReady.toLocaleString()} of ${deptAug.toLocaleString()} people in those roles show profile signals of AI readiness.`,
-      hint: `Org average ${ORG.aiReadiness}%.`,
+      l1: orgCollectionComplete
+        ? `${calibratedReady.toLocaleString()} of ${deptAug.toLocaleString()} people in those roles are AI-ready.`
+        : `${deptReady.toLocaleString()} of ${deptAug.toLocaleString()} people in those roles show profile signals of AI readiness.`,
+      hint: deptHrbpPlansCreated
+        ? 'After upskilling plans completed.'
+        : orgCollectionComplete
+          ? 'Calibrated from data collection.'
+          : `Org average ${ORG.aiReadiness}%.`,
+      delta: deptTotalReadinessDelta !== 0 ? `${deptTotalReadinessDelta > 0 ? '+' : ''}${deptTotalReadinessDelta}pt` : null,
+      deltaUp: deptTotalReadinessDelta > 0,
     },
     {
       id: 'potential' as const,
@@ -459,14 +478,20 @@ function DeptView({
       icon: 'auto_awesome',
       l1: `${ORG.tasksInAugZone} of ${ORG.totalRoleTasks} tasks in the augmentation zone`,
       hint: `${ORG.tasksAboveThreshold} automatable, ${ORG.tasksBelowThreshold} human-only`,
+      delta: null as string | null,
+      deltaUp: true,
     },
     {
       id: 'gap' as const,
       label: 'Transformation gap',
-      val: gapCount.toLocaleString(),
+      val: orgCollectionComplete ? calibratedGap.toLocaleString() : gapCount.toLocaleString(),
       icon: 'groups',
-      l1: `${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`,
-      hint: `${gapSharePct}% of augmentable-role headcount still in the gap.`,
+      l1: orgCollectionComplete
+        ? `${calibratedGap.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`
+        : `${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`,
+      hint: `${orgCollectionComplete ? calibGapSharePct : gapSharePct}% of augmentable-role headcount still in the gap.`,
+      delta: deptGapDelta !== 0 ? `${deptGapDelta > 0 ? '+' : ''}${deptGapDelta}` : null,
+      deltaUp: deptGapDelta < 0, // gap going down is good
     },
   ]
 
@@ -540,7 +565,9 @@ function DeptView({
               variant={c.id}
               icon={c.icon}
               label={c.label}
-              value={c.val}
+              value={c.delta ? (
+                <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
+              ) : c.val}
               description={c.l1}
               hint={c.hint}
               onLearnMore={() => setMetricInfoOpen(true)}

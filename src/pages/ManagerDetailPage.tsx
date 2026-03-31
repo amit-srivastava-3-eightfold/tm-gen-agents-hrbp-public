@@ -26,9 +26,28 @@ import {
 } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, getRolesForDept, getEmployeesForRole, type RoleRowType } from '../data/wfrOrgData'
 import { MetricCard } from '../components/workforceReadiness/MetricCard'
-import { deptManagerTeams } from '../components/workforceReadiness/collectionHelpers'
+import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
+import { deriveWfrFlags, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
+
+const WFR_STATE_KEY = 'tm:wfr-state'
+
+/** Simple deterministic hash from a string */
+function nameHash(s: string) {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
+
+/** Delta badge inline — matches BoardView pattern */
+function DeltaBadge({ delta, up }: { delta: string; up: boolean }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: up ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: up ? '#f0fdf4' : '#fef2f2', border: `1px solid ${up ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>
+      {up ? '↑' : '↓'} {delta}
+    </span>
+  )
+}
 
 export function ManagerDetailPage() {
   const { currentUser } = useUser()
@@ -42,8 +61,26 @@ export function ManagerDetailPage() {
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
+  // ─── Read WFR state from localStorage ───
+  const wfrState: WfrPersistedState = useMemo(() => {
+    try {
+      const stored = localStorage.getItem(WFR_STATE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as WfrPersistedState
+        if (parsed.state === 5) return parsed
+      }
+    } catch { /* ignore */ }
+    return { state: 1 }
+  }, [])
+  const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
+
   // Find the department
   const dept = departments.find(d => d.name === deptName)
+
+  // Calibration delta for this department
+  const deptTrend = deptName ? deptReadinessTrend(deptName) : { delta: 0, direction: 'up' as const }
+  const calibrationDelta = collectionComplete ? deptTrend.delta : 0
+  const upskillingBoostBase = hrbpPlansCreated ? (isHrbp ? 10 : 8) : 0
 
   // Find this manager's data — could be a top-level manager or a line manager
   const managerData = useMemo(() => {
@@ -92,11 +129,7 @@ export function ManagerDetailPage() {
     const topMgr = managers.find(m => m.manager === managerName)
     if (topMgr) {
       const employeesWithManager = buildManagerEmps(topMgr)
-      const readyCount = employeesWithManager.filter(e => e.readinessPct >= 50).length
-      const avgReadiness = employeesWithManager.length > 0
-        ? Math.round(employeesWithManager.reduce((s, e) => s + e.readinessPct, 0) / employeesWithManager.length)
-        : 0
-      return { mgr: topMgr, employees: employeesWithManager, readyCount, avgReadiness, parentManager: null as string | null }
+      return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null }
     }
 
     // Try line manager — find the parent manager and filter employees assigned to this line manager
@@ -109,15 +142,9 @@ export function ManagerDetailPage() {
         const allParentEmps = buildManagerEmps(parentMgr)
         const lmEmployees = allParentEmps.filter(e => e.manager === managerName)
         const employeesWithManager = lmEmployees.map(e => ({ ...e, manager: managerName }))
-        const readyCount = employeesWithManager.filter(e => e.readinessPct >= 50).length
-        const avgReadiness = employeesWithManager.length > 0
-          ? Math.round(employeesWithManager.reduce((s, e) => s + e.readinessPct, 0) / employeesWithManager.length)
-          : 0
         return {
           mgr: { manager: lm.name, title: lm.title, employees: lmEmployees.length, responseRate: 0 },
           employees: employeesWithManager,
-          readyCount,
-          avgReadiness,
           parentManager: parentMgr.manager,
         }
       }
@@ -127,7 +154,7 @@ export function ManagerDetailPage() {
   }, [dept, managerName, parentParam])
 
   // Dev plan sheet state
-  const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number } | null>(null)
+  const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
   const [, setEditingCourses] = useState(false)
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
@@ -144,10 +171,48 @@ export function ManagerDetailPage() {
     )
   }
 
-  const { mgr, employees, readyCount, avgReadiness, parentManager } = managerData
-  const notReady = employees.length - readyCount
-  const gapPct = employees.length > 0 ? notReady / employees.length : 0
-  // gapColor available for future use: gapPct > 0.75 → red, > 0.25 → amber, else green
+  const { mgr, employees, parentManager } = managerData
+
+  // Apply calibration: add deptTrend delta + per-employee upskilling boost
+  const displayEmployees = employees.map(e => {
+    const empBoost = hrbpPlansCreated ? Math.round(upskillingBoostBase * (0.5 + (nameHash(e.name) % 10) / 10)) : 0
+    const displayReadiness = Math.max(0, Math.min(100, e.readinessPct + calibrationDelta + empBoost))
+    return { ...e, displayReadiness }
+  })
+
+  const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
+  const avgReadiness = displayEmployees.length > 0
+    ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length)
+    : 0
+  const rawAvgReadiness = employees.length > 0
+    ? Math.round(employees.reduce((s, e) => s + e.readinessPct, 0) / employees.length)
+    : 0
+  const notReady = displayEmployees.length - readyCount
+  const gapPct = displayEmployees.length > 0 ? notReady / displayEmployees.length : 0
+
+  // Deltas for metric cards
+  const readinessDelta = avgReadiness - rawAvgReadiness
+  const rawReadyCount = employees.filter(e => e.readinessPct >= 50).length
+  const rawNotReady = employees.length - rawReadyCount
+  const gapDelta = (collectionComplete || hrbpPlansCreated) ? notReady - rawNotReady : 0
+
+  // Collection-related state
+  const showCollection = collectionActive && !collectionComplete
+  const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
+  const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
+  const deptInScope = !collectionLaunchSummary?.scopedDepartmentNames || collectionLaunchSummary.scopedDepartmentNames.includes(deptName)
+  const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(deptName)
+
+  // Table hint
+  const tableHint = hrbpPlansCreated
+    ? `${displayEmployees.length} employees · upskilling complete`
+    : upskillingActive
+      ? `${displayEmployees.length} employees · upskilling in progress`
+      : collectionComplete
+        ? `${displayEmployees.length} employees · calibrated readiness`
+        : showCollection
+          ? `${displayEmployees.length} employees · data collection in progress`
+          : `${displayEmployees.length} employees · sorted by readiness`
 
   // Courses for the dev plan sheet
   const devPlanCourses = devPlanEmployee ? [
@@ -222,9 +287,15 @@ export function ManagerDetailPage() {
               variant="readiness"
               icon="speed"
               label="AI readiness"
-              value={`${avgReadiness}%`}
-              description={`${readyCount} AI-ready of ${employees.length} in this team`}
-              hint={`Org average: ${dept.aiReadiness}%`}
+              value={readinessDelta !== 0 ? (
+                <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
+              ) : `${avgReadiness}%`}
+              description={`${readyCount} AI-ready of ${displayEmployees.length} in this team`}
+              hint={hrbpPlansCreated
+                ? 'After upskilling plans completed.'
+                : collectionComplete
+                  ? 'Calibrated from data collection.'
+                  : `Org average: ${dept.aiReadiness}%`}
             />
             <MetricCard
               variant="potential"
@@ -238,7 +309,9 @@ export function ManagerDetailPage() {
               variant="gap"
               icon="trending_down"
               label="Transformation gap"
-              value={notReady.toLocaleString()}
+              value={gapDelta !== 0 ? (
+                <>{notReady.toLocaleString()} <DeltaBadge delta={`${gapDelta > 0 ? '+' : ''}${gapDelta}`} up={gapDelta < 0} /></>
+              ) : notReady.toLocaleString()}
               description={`${notReady} people in augmentable roles are not yet AI-ready — that's your prioritized development pool.`}
               hint={`${Math.round(gapPct * 100)}% of team still in the gap.`}
             />
@@ -247,7 +320,7 @@ export function ManagerDetailPage() {
           {/* Employee table */}
           <div className="mgr-detail-page__table-head">
             <h3 className="mgr-detail-page__table-title">Team members</h3>
-            <span className="mgr-detail-page__table-hint">{employees.length} employees · sorted by readiness</span>
+            <span className="mgr-detail-page__table-hint">{tableHint}</span>
           </div>
 
           <DataTable bordered>
@@ -258,13 +331,49 @@ export function ManagerDetailPage() {
                 <DataTableHead metric>Readiness</DataTableHead>
                 <DataTableHead metric>Potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
+                {showCollection ? (
+                  <>
+                    <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
+                    <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
+                  </>
+                ) : null}
+                {upskillingActive ? (
+                  <DataTableHead>Upskilling</DataTableHead>
+                ) : null}
                 <DataTableHead>Status</DataTableHead>
-                <DataTableHead>Action</DataTableHead>
+                <DataTableHead>{collectionComplete ? 'Plan' : 'Action'}</DataTableHead>
+                {collectionComplete ? <DataTableHead>Plan progress</DataTableHead> : null}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {[...employees].sort((a, b) => b.readinessPct - a.readinessPct).map((emp, i) => {
+              {[...displayEmployees].sort((a, b) => b.displayReadiness - a.displayReadiness).map((emp, i) => {
                 const isAssigned = assignedPlans.has(emp.name)
+                const h = nameHash(emp.name)
+
+                // Collection: deterministic response status
+                const empResponded = deptInScope && (h % 3 !== 0)
+
+                // Upskilling: deterministic progress
+                const upskillingPct = hrbpPlansCreated
+                  ? Math.min(95, 35 + (h % 45) + 15)
+                  : Math.min(80, 10 + (h % 40))
+                const upskillingStatus = upskillingPct > 85 ? 'Completed' : upskillingPct > 30 ? 'In progress' : 'Not started'
+                const upskillingBarColor = upskillingStatus === 'Completed' ? '#22c55e' : upskillingStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                const upskillingTextColor = upskillingStatus === 'Completed' ? '#15803d' : upskillingStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+
+                // Plan progress: deterministic
+                const planPct = hrbpPlansCreated
+                  ? Math.min(100, 25 + (h % 55) + 20)
+                  : deptInUpskilling
+                    ? Math.min(80, 10 + (h % 50))
+                    : 0
+                const planStatus = planPct > 85 ? 'Completed' : planPct > 20 ? 'In progress' : 'Not started'
+                const planBarColor = planStatus === 'Completed' ? '#22c55e' : planStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                const planTextColor = planStatus === 'Completed' ? '#15803d' : planStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+
+                // Readiness trend badge
+                const empDelta = emp.displayReadiness - emp.readinessPct
+
                 return (
                   <DataTableRow key={`emp-${i}`}>
                     <DataTableCell className="font-semibold">
@@ -291,9 +400,14 @@ export function ManagerDetailPage() {
                     <DataTableCell metric>
                       <div className="flex items-center gap-2">
                         <div className="mgr-detail-page__bar-track">
-                          <div className="mgr-detail-page__bar-fill" style={{ width: `${emp.readinessPct}%`, background: emp.readinessPct >= 50 ? '#22c55e' : emp.readinessPct >= 35 ? '#f59e0b' : '#94a3b8' }} />
+                          <div className="mgr-detail-page__bar-fill" style={{ width: `${emp.displayReadiness}%`, background: emp.displayReadiness >= 50 ? '#22c55e' : emp.displayReadiness >= 35 ? '#f59e0b' : '#94a3b8' }} />
                         </div>
-                        <span className="text-[12px] font-semibold" style={{ color: emp.readinessPct >= 50 ? '#15803d' : emp.readinessPct >= 35 ? '#d97706' : '#64748b' }}>{emp.readinessPct}%</span>
+                        <span className="text-[12px] font-semibold" style={{ color: emp.displayReadiness >= 50 ? '#15803d' : emp.displayReadiness >= 35 ? '#d97706' : '#64748b' }}>{emp.displayReadiness}%</span>
+                        {collectionComplete && empDelta !== 0 && (
+                          <span className="text-[10px] font-semibold" style={{ color: empDelta > 0 ? '#15803d' : '#dc2626' }}>
+                            {empDelta > 0 ? '↑' : '↓'}{Math.abs(empDelta)}pt
+                          </span>
+                        )}
                       </div>
                     </DataTableCell>
                     <DataTableCell metric>
@@ -305,13 +419,58 @@ export function ManagerDetailPage() {
                       </div>
                     </DataTableCell>
                     <DataTableCell>
-                      <span className="text-[12px] font-medium" style={{ color: emp.readinessPct >= 50 ? '#15803d' : '#dc2626' }}>
-                        {emp.readinessPct >= 50 ? 'AI-ready' : 'Not AI-ready'}
+                      <span className="text-[12px] font-medium" style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
+                        {emp.displayReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}
                       </span>
-                      {emp.readinessPct >= 35 && emp.readinessPct < 50 && (
+                      {emp.displayReadiness >= 35 && emp.displayReadiness < 50 && (
                         <div className="text-[10px] text-[#d97706] mt-0.5">Near threshold</div>
                       )}
                     </DataTableCell>
+
+                    {/* Collection columns — state 2 */}
+                    {showCollection ? (
+                      <>
+                        <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                          {deptInScope ? (
+                            <span className={`inline-flex items-center gap-1 text-[12px] ${empResponded ? 'text-[#15803d]' : 'text-[#94a3b8]'}`}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                {empResponded ? 'check_circle' : 'pending'}
+                              </span>
+                              {empResponded ? 'Responded' : 'Pending'}
+                            </span>
+                          ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
+                        </DataTableCell>
+                        <DataTableCell className="bg-[#fafbfc]">
+                          {deptInScope ? (
+                            <span className="inline-flex items-center gap-1 text-[12px] text-[#1a212e]">
+                              {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI') ? (
+                                <img src="/ai-agent-icon.svg" alt="" style={{ width: 14, height: 14 }} />
+                              ) : (
+                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>assignment</span>
+                              )}
+                              {collectionLaunchSummary?.channelsLabel ?? 'Survey'}
+                            </span>
+                          ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
+                        </DataTableCell>
+                      </>
+                    ) : null}
+
+                    {/* Upskilling column — state 4+ */}
+                    {upskillingActive ? (
+                      <DataTableCell>
+                        <div>
+                          <div className="wfr-dash__plan-progress">
+                            <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${upskillingPct}%`, background: upskillingBarColor }} />
+                            </div>
+                            <span className="wfr-dash__plan-progress-label" style={{ color: upskillingTextColor }}>{upskillingPct}%</span>
+                          </div>
+                          <div className="text-[10px] mt-0.5" style={{ color: upskillingTextColor }}>{upskillingStatus}</div>
+                        </div>
+                      </DataTableCell>
+                    ) : null}
+
+                    {/* Status */}
                     <DataTableCell>
                       <Pill
                         variant={emp.programStatus === 'Completed' ? 'success' : emp.programStatus === 'Enrolled' ? 'info' : 'neutral'}
@@ -320,14 +479,32 @@ export function ManagerDetailPage() {
                         {emp.programStatus}
                       </Pill>
                     </DataTableCell>
+
+                    {/* Plan / Action column */}
                     <DataTableCell>
-                      {isAssigned ? (
+                      {collectionComplete && deptInUpskilling ? (
                         <button
                           type="button"
                           className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                           onClick={() => {
-                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct })
+                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
+                            setEditingCourses(false)
+                            setRemovedCourses(new Set())
+                          }}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>description</span>
+                            View plan
+                          </span>
+                        </button>
+                      ) : isAssigned ? (
+                        <button
+                          type="button"
+                          className="text-[12px] font-medium text-[#3b5bdb] hover:underline"
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                          onClick={() => {
+                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
                             setEditingCourses(false)
                             setRemovedCourses(new Set())
                           }}
@@ -342,7 +519,7 @@ export function ManagerDetailPage() {
                           variant="secondary"
                           size="sm"
                           onClick={() => {
-                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct })
+                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
                             setEditingCourses(false)
                             setRemovedCourses(new Set())
                           }}
@@ -351,6 +528,25 @@ export function ManagerDetailPage() {
                         </Button>
                       )}
                     </DataTableCell>
+
+                    {/* Plan progress column — state 3+ */}
+                    {collectionComplete ? (
+                      <DataTableCell>
+                        {(deptInUpskilling || isAssigned) ? (
+                          <div>
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${planPct}%`, background: planBarColor }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: planTextColor }}>{planPct}%</span>
+                            </div>
+                            <div className="text-[10px] mt-0.5" style={{ color: planTextColor }}>{planStatus}</div>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-[#94a3b8]">—</span>
+                        )}
+                      </DataTableCell>
+                    ) : null}
                   </DataTableRow>
                 )
               })}
@@ -358,17 +554,19 @@ export function ManagerDetailPage() {
           </DataTable>
 
           {/* Bulk actions */}
-          <div className="mgr-detail-page__bulk-actions">
-            <Button
-              variant="primary"
-              onClick={() => {
-                const allNames = employees.map(e => e.name)
-                setAssignedPlans(new Set(allNames))
-              }}
-            >
-              Assign plans to all ({employees.length})
-            </Button>
-          </div>
+          {!collectionComplete && (
+            <div className="mgr-detail-page__bulk-actions">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const allNames = employees.map(e => e.name)
+                  setAssignedPlans(new Set(allNames))
+                }}
+              >
+                Assign plans to all ({employees.length})
+              </Button>
+            </div>
+          )}
         </div>
       </main>
 
@@ -379,7 +577,7 @@ export function ManagerDetailPage() {
             <div className="mgr-detail-page__plan-header">
               <div>
                 <h3 className="mgr-detail-page__plan-name">{devPlanEmployee.name}</h3>
-                <p className="mgr-detail-page__plan-meta">{devPlanEmployee.title} · {dept.name} · Readiness: {devPlanEmployee.readinessPct}%</p>
+                <p className="mgr-detail-page__plan-meta">{devPlanEmployee.title} · {dept.name} · Readiness: {devPlanEmployee.displayReadiness}%</p>
               </div>
               <button type="button" className="mgr-detail-page__plan-close" onClick={() => setDevPlanEmployee(null)}>
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
