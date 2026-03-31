@@ -418,6 +418,7 @@ function DeptView({
   onCompleteUpskilling,
   focusLaunchOpen,
   setFocusLaunchOpen,
+  isHrbp = false,
 }: {
   dept: Dept
   wfrState: WfrPersistedState
@@ -428,6 +429,7 @@ function DeptView({
   onCompleteUpskilling: () => void
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
+  isHrbp?: boolean
 }) {
   // Derive convenience flags from universal state
   const navigate = useNavigate()
@@ -573,6 +575,7 @@ function DeptView({
           }}
           upskillingActive={upskillingActive}
           upskillingLaunchSummary={upskillingLaunchSummary}
+          isHrbp={isHrbp}
         />
 
         <div className="wfr-dash__cards-row">
@@ -1560,7 +1563,7 @@ function BoardView({
 
       <Tabs value={boardTab} onValueChange={(v: string) => setBoardTab(v as 'roles' | 'departments')}>
 
-        {!isHrbp && (
+        {(!isHrbp || (scopedDepartments && scopedDepartments.length > 1)) && (
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <TabsList>
               <TabsTrigger value="roles">Roles</TabsTrigger>
@@ -1568,7 +1571,7 @@ function BoardView({
             </TabsList>
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'
-                ? `${allRoles.length} roles${!isHrbp ? ` across ${allDeptsSorted.length} departments` : ''}`
+                ? `${allRoles.length} roles across ${allDeptsSorted.length} departments`
                 : `Sorted by gap ${EM} click to drill down`}
             </span>
           </div>
@@ -1765,7 +1768,7 @@ function BoardView({
               {allRoles.map((r) => {
                 const gapColor = r.gap > r.employees * 0.5 ? '#dc2626' : r.gap > r.employees * 0.3 ? '#d97706' : '#15803d'
                 return (
-                  <DataTableRow key={`${r.dept}-${r.title}`} onClick={isHrbp ? undefined : () => {
+                  <DataTableRow key={`${r.dept}-${r.title}`} onClick={() => {
                     const d = allDeptsSorted.find(x => x.name === r.dept)
                     if (d) onDeptClick(d)
                   }}>
@@ -2181,12 +2184,19 @@ export function WorkforceReadinessDashboard({
   /** HRBP persona — different RA card, no departments tab, scoped roles */
   isHrbp?: boolean
 } = {}) {
+  // Single-dept HRBP goes straight to DeptView (no overview needed)
+  const singleDeptHrbp = isHrbp && scopedDepartments?.length === 1
+
   // Auto-select department from ?dept= query param (e.g. navigating back from Manager Detail)
   const [view, setView] = useState<'board' | 'dept'>(() => {
+    if (singleDeptHrbp) return 'dept'
     const p = new URLSearchParams(window.location.search)
     return p.get('dept') ? 'dept' : 'board'
   })
   const [dept, setDept] = useState<Dept | null>(() => {
+    if (singleDeptHrbp) {
+      return departments.find(d => d.name === scopedDepartments![0]) ?? null
+    }
     const p = new URLSearchParams(window.location.search)
     const deptParam = p.get('dept')
     if (deptParam) {
@@ -2317,7 +2327,7 @@ export function WorkforceReadinessDashboard({
 
   return (
     <>
-      {dept && (
+      {dept && !singleDeptHrbp && (
         <div className="wfr-dash__breadcrumb-bar">
           <div className="wfr-dash__breadcrumb-inner">
             <Breadcrumb>
@@ -2373,6 +2383,7 @@ export function WorkforceReadinessDashboard({
             onCompleteUpskilling={completeUpskilling}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
+            isHrbp={isHrbp}
           />
         )}
       </div>
