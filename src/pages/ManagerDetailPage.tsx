@@ -56,6 +56,7 @@ export function ManagerDetailPage() {
   const navigate = useNavigate()
   const deptName = searchParams.get('dept') ?? ''
   const parentParam = searchParams.get('parent') ?? ''
+  const mgrIdxParam = searchParams.get('mgrIdx')
   const managerName = decodeURIComponent(managerId ?? '')
   const isHrbp = currentUser.id === 'jaydon-torff'
 
@@ -125,8 +126,11 @@ export function ManagerDetailPage() {
       return mgrEmployees.map((e, i) => ({ ...e, manager: empManagerMap.get(i) ?? mgr.manager }))
     }
 
-    // Try top-level manager first
-    const topMgr = managers.find(m => m.manager === managerName)
+    // Try top-level manager first — prefer index-based lookup to handle duplicate names
+    const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
+    const topMgr = (mgrIdx >= 0 && mgrIdx < managers.length && managers[mgrIdx].manager === managerName)
+      ? managers[mgrIdx]
+      : managers.find(m => m.manager === managerName)
     if (topMgr) {
       const employeesWithManager = buildManagerEmps(topMgr)
       return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null }
@@ -151,7 +155,7 @@ export function ManagerDetailPage() {
     }
 
     return null
-  }, [dept, managerName, parentParam])
+  }, [dept, managerName, parentParam, mgrIdxParam])
 
   // Dev plan sheet state
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)

@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useUser } from '../../contexts/UserContext'
 import {
   Badge, Button, Pill,
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -435,6 +436,8 @@ function DeptView({
 }) {
   // Derive convenience flags from universal state
   const navigate = useNavigate()
+  const { currentUser } = useUser()
+  const isHrbp = currentUser.id === 'jaydon-torff'
   const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
@@ -689,32 +692,34 @@ function DeptView({
                 </DataTableHeader>
                 <DataTableBody>
                   {(() => {
-                    /* Pre-compute gap per manager so we can sort by it */
+                    /* Pre-compute calibrated employees and gap per manager so we can sort by it */
                     const deptTrendDelta = orgCollectionComplete ? deptReadinessTrend(dept.name).delta : 0
+                    const upskillingBoostBase = deptHrbpPlansCreated ? (isHrbp ? 10 : 8) : 0
+                    const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
                     let runningIdx = 0
-                    const enriched = managers.map((mgr) => {
+                    const enriched = managers.map((mgr, mgrIdx) => {
                       const emps = allDeptEmps.slice(runningIdx, Math.min(runningIdx + mgr.employees, allDeptEmps.length))
                       runningIdx += mgr.employees
-                      const baseR = emps.length > 0
-                        ? Math.round(emps.reduce((s, e) => s + e.readinessPct, 0) / emps.length)
+                      const calibratedEmps = emps.map(e => {
+                        const empBoost = deptHrbpPlansCreated ? Math.round(upskillingBoostBase * (0.5 + (nameHash(e.name) % 10) / 10)) : 0
+                        return { ...e, displayReadiness: Math.max(0, Math.min(100, e.readinessPct + deptTrendDelta + empBoost)) }
+                      })
+                      const readiness = calibratedEmps.length > 0
+                        ? Math.round(calibratedEmps.reduce((s, e) => s + e.displayReadiness, 0) / calibratedEmps.length)
                         : dept.aiReadiness
-                      const readiness = Math.max(0, Math.min(100, baseR + deptTrendDelta))
-                      return { mgr, gap: dept.aiPotential - readiness, readiness }
+                      return { mgr, mgrIdx, gap: dept.aiPotential - readiness, readiness, calibratedEmps }
                     })
                     enriched.sort((a, b) => b.gap - a.gap)
                     return enriched
-                  })().map(({ mgr, readiness: mgrReadiness }, mi) => {
+                  })().map(({ mgr, mgrIdx, readiness: mgrReadiness, calibratedEmps }, mi) => {
                     const mgrKey = `dept-${dept.name}-${mgr.manager}`
 
-                    const startIdx = managers.indexOf(mgr)
-                    const cumStart = managers.slice(0, startIdx).reduce((s, m) => s + m.employees, 0)
-                    const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
                     const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(dept.name)
                     const mgrResponseRate = inScope ? Math.min(100, wfrDemoDeptResponseRate(dept.name) + ((mgr.manager.length * 3) % 20) - 10) : 0
                     const showCollection = orgCollectionActive && !orgCollectionComplete
                     return (
                       <Fragment key={mgrKey}>
-                        <DataTableRow onClick={() => navigate(`/workforce/manager/${encodeURIComponent(mgr.manager)}?dept=${encodeURIComponent(dept.name)}`)} style={{ cursor: 'pointer' }}>
+                        <DataTableRow onClick={() => navigate(`/workforce/manager/${encodeURIComponent(mgr.manager)}?dept=${encodeURIComponent(dept.name)}&mgrIdx=${mgrIdx}`)} style={{ cursor: 'pointer' }}>
                           {orgCollectionComplete ? (
                             <DataTableCell className="!w-[1%] !pl-3 !pr-0">
                               <input
@@ -740,8 +745,8 @@ function DeptView({
                           <DataTableCell align="right" numeric>{mgr.employees.toLocaleString()}</DataTableCell>
                           <DataTableCell metric>
                             {(() => {
-                              const readyCount = mgrEmployees.filter(e => e.readinessPct >= 50).length
-                              const totalCount = mgrEmployees.length || mgr.employees
+                              const readyCount = calibratedEmps.filter(e => e.displayReadiness >= 50).length
+                              const totalCount = calibratedEmps.length || mgr.employees
                               const readySub = <div className="text-[10px] text-[#94a3b8] mt-0.5">{readyCount} of {totalCount} AI-ready</div>
                               if (orgCollectionComplete) {
                                 const deptTrend = deptReadinessTrend(dept.name)
@@ -771,8 +776,8 @@ function DeptView({
                           </DataTableCell>
                           <DataTableCell align="right">
                             {(() => {
-                              const notReady = mgrEmployees.filter(e => e.readinessPct < 50).length
-                              const total = mgrEmployees.length || mgr.employees
+                              const notReady = calibratedEmps.filter(e => e.displayReadiness < 50).length
+                              const total = calibratedEmps.length || mgr.employees
                               const pct = total > 0 ? notReady / total : 0
                               const color = pct > 0.75 ? '#dc2626' : pct > 0.25 ? '#d97706' : '#15803d'
                               return (
@@ -845,7 +850,7 @@ function DeptView({
                               </DataTableCell>
                               <DataTableCell>
                                 {(assignedPlans.has(mgr.manager) || upskillingLaunchSummary?.plansAssigned?.includes(dept.name)) ? (() => {
-                                  const total = mgrEmployees.length || mgr.employees
+                                  const total = calibratedEmps.length || mgr.employees
                                   const mgrPlanHash = mgr.manager.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
                                   const completedCount = Math.round(total * (0.05 + (Math.abs(mgrPlanHash) % 25) / 100))
                                   const enrolledCount = Math.min(total, completedCount + Math.round(total * (0.3 + (Math.abs(mgrPlanHash * 3) % 40) / 100)))
