@@ -1753,7 +1753,7 @@ function BoardView({
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1793,7 +1793,7 @@ function BoardView({
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
                       </DataTableCell>
                       <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
                         {inScope ? (
@@ -1859,7 +1859,7 @@ function BoardView({
                         <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
                       </DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{gapCount.toLocaleString()}</span>
+                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1925,7 +1925,7 @@ function BoardView({
                     </DataTableCell>
                     <DataTableCell metric><DeptTableSoloBar variant="potential" pct={r.aiPotential} /></DataTableCell>
                     <DataTableCell align="right">
-                      <span className="wfr-type-h6 tabular-nums" style={{ color: gapColor }}>{r.gap.toLocaleString()}</span>
+                      <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
                     </DataTableCell>
                     {upskillingActive && (
                       <DataTableCell>
