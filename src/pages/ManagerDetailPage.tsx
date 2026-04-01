@@ -350,9 +350,13 @@ export function ManagerDetailPage() {
                     <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
                   </>
                 ) : null}
-                <DataTableHead>Upskilling status</DataTableHead>
-                <DataTableHead>{collectionComplete ? 'Plan' : 'Action'}</DataTableHead>
-                {collectionComplete ? <DataTableHead>Plan progress</DataTableHead> : null}
+                {collectionComplete ? (
+                  <>
+                    <DataTableHead>Upskilling status</DataTableHead>
+                    <DataTableHead>Plan</DataTableHead>
+                    <DataTableHead>Plan progress</DataTableHead>
+                  </>
+                ) : null}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -457,7 +461,9 @@ export function ManagerDetailPage() {
                       </>
                     ) : null}
 
-                    {/* Upskilling status */}
+                    {/* Upskilling status + Plan columns — hidden until collection complete */}
+                    {collectionComplete ? (
+                      <>
                     <DataTableCell>
                       {upskillingActive ? (
                         <div>
@@ -474,9 +480,9 @@ export function ManagerDetailPage() {
                       )}
                     </DataTableCell>
 
-                    {/* Plan / Action column */}
+                    {/* Plan column */}
                     <DataTableCell>
-                      {(collectionComplete && deptInUpskilling) || isAssigned ? (
+                      {(deptInUpskilling) || isAssigned ? (
                         <Button
                           variant="secondary"
                           size="sm"
@@ -503,8 +509,7 @@ export function ManagerDetailPage() {
                       )}
                     </DataTableCell>
 
-                    {/* Plan progress column — state 3+ */}
-                    {collectionComplete ? (
+                    {/* Plan progress column */}
                       <DataTableCell>
                         {(deptInUpskilling || isAssigned) ? (
                           <div>
@@ -520,6 +525,7 @@ export function ManagerDetailPage() {
                           <span className="text-[11px] text-[#94a3b8]">—</span>
                         )}
                       </DataTableCell>
+                      </>
                     ) : null}
                   </DataTableRow>
                 )
