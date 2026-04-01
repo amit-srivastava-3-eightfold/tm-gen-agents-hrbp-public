@@ -133,7 +133,7 @@ export function ManagerDetailPage() {
       : managers.find(m => m.manager === managerName)
     if (topMgr) {
       const employeesWithManager = buildManagerEmps(topMgr)
-      return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null }
+      return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null, parentMgrIdx: null as number | null }
     }
 
     // Try line manager — find the parent manager and filter employees assigned to this line manager
@@ -150,6 +150,7 @@ export function ManagerDetailPage() {
           mgr: { manager: lm.name, title: lm.title, employees: lmEmployees.length, responseRate: 0 },
           employees: employeesWithManager,
           parentManager: parentMgr.manager,
+          parentMgrIdx: managers.indexOf(parentMgr),
         }
       }
     }
@@ -175,7 +176,7 @@ export function ManagerDetailPage() {
     )
   }
 
-  const { mgr, employees, parentManager } = managerData
+  const { mgr, employees, parentManager, parentMgrIdx } = managerData
 
   // Apply calibration: add deptTrend delta + per-employee upskilling boost
   const displayEmployees = employees.map(e => {
@@ -268,7 +269,7 @@ export function ManagerDetailPage() {
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}`)}>{parentManager}</BreadcrumbLink>
+                    <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
                   </BreadcrumbItem>
                 </>
               )}
