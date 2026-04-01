@@ -127,6 +127,26 @@ export function ManagerDetailPage() {
     }
 
     // Try top-level manager first — prefer index-based lookup to handle duplicate names
+    // If parent is specified, treat this as a line-manager navigation (try that path first)
+    if (parentParam) {
+      const candidateParents = managers.filter(m => m.manager === parentParam)
+      for (const parentMgr of candidateParents) {
+        const lm = parentMgr.lineManagers?.find(l => l.name === managerName)
+        if (lm) {
+          const allParentEmps = buildManagerEmps(parentMgr)
+          const lmEmployees = allParentEmps.filter(e => e.manager === managerName)
+          const employeesWithManager = lmEmployees.map(e => ({ ...e, manager: managerName }))
+          return {
+            mgr: { manager: lm.name, title: lm.title, employees: lmEmployees.length, responseRate: 0 },
+            employees: employeesWithManager,
+            parentManager: parentMgr.manager,
+            parentMgrIdx: managers.indexOf(parentMgr),
+          }
+        }
+      }
+    }
+
+    // Try top-level manager — prefer index-based lookup to handle duplicate names
     const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
     const topMgr = (mgrIdx >= 0 && mgrIdx < managers.length && managers[mgrIdx].manager === managerName)
       ? managers[mgrIdx]
@@ -134,25 +154,6 @@ export function ManagerDetailPage() {
     if (topMgr) {
       const employeesWithManager = buildManagerEmps(topMgr)
       return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null, parentMgrIdx: null as number | null }
-    }
-
-    // Try line manager — find the parent manager and filter employees assigned to this line manager
-    const candidateParents = parentParam
-      ? managers.filter(m => m.manager === parentParam)
-      : managers
-    for (const parentMgr of candidateParents) {
-      const lm = parentMgr.lineManagers?.find(l => l.name === managerName)
-      if (lm) {
-        const allParentEmps = buildManagerEmps(parentMgr)
-        const lmEmployees = allParentEmps.filter(e => e.manager === managerName)
-        const employeesWithManager = lmEmployees.map(e => ({ ...e, manager: managerName }))
-        return {
-          mgr: { manager: lm.name, title: lm.title, employees: lmEmployees.length, responseRate: 0 },
-          employees: employeesWithManager,
-          parentManager: parentMgr.manager,
-          parentMgrIdx: managers.indexOf(parentMgr),
-        }
-      }
     }
 
     return null
