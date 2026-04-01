@@ -2461,6 +2461,7 @@ export function WorkforceReadinessDashboard({
             onDeptClick={(d) => {
               setDept(d)
               setView('dept')
+              window.scrollTo(0, 0)
             }}
             wfrState={wfrState}
             onCollectionActiveChange={handleFocusCollectionActiveChange}
