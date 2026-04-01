@@ -2044,7 +2044,6 @@ export function getEmployeesForRole(role: RoleRowType): RoleEmployee[] {
       name = `${fn} ${ln}`
       tries++
       if (tries > 20) {
-        name = `${fn} ${ln} (${i + 1})`
         break
       }
     } while (used.has(name))
