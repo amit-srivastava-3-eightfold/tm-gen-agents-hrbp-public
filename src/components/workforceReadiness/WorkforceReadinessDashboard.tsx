@@ -2487,7 +2487,6 @@ export function WorkforceReadinessDashboard({
             onCompleteUpskilling={completeUpskilling}
             focusLaunchOpen={focusLaunchOpen}
             setFocusLaunchOpen={setFocusLaunchOpen}
-            isHrbp={isHrbp}
           />
         )}
       </div>
