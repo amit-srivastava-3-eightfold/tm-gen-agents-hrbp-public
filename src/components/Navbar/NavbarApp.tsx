@@ -128,7 +128,7 @@ export function useNavbarProps() {
     },
     switchOptions: SWITCH_OPTIONS,
     onSwitchUser: (userId: string) => setCurrentUser(USER_MAP[userId] ?? MATEO),
-    activePath: location.pathname,
+    activePath: location.pathname.startsWith('/workforce') ? '/workforce' : location.pathname,
     LinkComponent: Link,
     NavLinkComponent: NavLink,
     productName: NAVBAR_PRODUCT.productName,
