@@ -368,10 +368,13 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
   )
 }
 
-function MetricHeaderLabel({ label, metric, onInfoClick }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void }) {
+function MetricHeaderLabel({ label, metric, onInfoClick, sorted }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void; sorted?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1">
       {label}
+      {sorted && (
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>arrow_downward</span>
+      )}
       <span
         className="material-symbols-outlined wfr-dash__header-info"
         title={METRIC_INFO[metric]}
@@ -1693,7 +1696,7 @@ function BoardView({
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sorted /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1754,7 +1757,7 @@ function BoardView({
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" sorted /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
                 <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
               </DataTableRow>
@@ -1820,7 +1823,7 @@ function BoardView({
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sorted /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
