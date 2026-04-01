@@ -1401,7 +1401,7 @@ function BoardView({
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
-  const [boardTab, setBoardTab] = useState<'roles' | 'departments'>('roles')
+  const [boardTab, setBoardTab] = useState<'roles' | 'departments'>('departments')
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
   const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
@@ -1670,8 +1670,8 @@ function BoardView({
         {(!isHrbp || (scopedDepartments && scopedDepartments.length > 1)) && (
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <TabsList>
-              <TabsTrigger value="roles">Roles</TabsTrigger>
               <TabsTrigger value="departments">Departments</TabsTrigger>
+              <TabsTrigger value="roles">Roles</TabsTrigger>
             </TabsList>
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'
