@@ -1,5 +1,10 @@
 @import "tailwindcss";
 @source "../node_modules/@tonyh-2-eightfold/ef-design-system/dist";
+
+/* DS Tabs component emits bg-muted but Tailwind v4 doesn't generate it */
+@utility bg-muted {
+  background-color: var(--muted, #f6f7f8);
+}
 @import './fonts/gilroy.css';
 @import './styles/typography-tokens.css';
 @import './styles/ds.css';
