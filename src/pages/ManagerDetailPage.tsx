@@ -257,7 +257,7 @@ export function ManagerDetailPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => navigate('/workforce')}>Workforce Readiness</BreadcrumbLink>
+                <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
