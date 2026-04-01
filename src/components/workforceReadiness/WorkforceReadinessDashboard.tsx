@@ -634,11 +634,11 @@ function DeptView({
           }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
           return (
-            <Tabs defaultValue="roles">
+            <Tabs defaultValue="team">
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <TabsList>
-                  <TabsTrigger value="roles">Roles</TabsTrigger>
                   <TabsTrigger value="team">Team</TabsTrigger>
+                  <TabsTrigger value="roles">Roles</TabsTrigger>
                 </TabsList>
                 <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
