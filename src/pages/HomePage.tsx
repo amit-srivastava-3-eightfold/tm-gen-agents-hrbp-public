@@ -10,6 +10,19 @@ import { EM, ORG } from '../data/wfrOrgData'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
 
+type WfrState = 1 | 2 | '2b' | 3 | 4 | 5
+
+function readWfrState(): WfrState {
+  try {
+    const raw = localStorage.getItem('tm:wfr-state')
+    if (!raw) return 1
+    const parsed = JSON.parse(raw)
+    return (parsed?.state as WfrState) ?? 1
+  } catch {
+    return 1
+  }
+}
+
 /* Inline compact semicircle — readiness only, matches WFR overview hero */
 function WfrReadinessArc({ readiness }: { readiness: number }) {
   const dim = 120, r = 46, sw = 8
@@ -38,8 +51,55 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
 }
 
 function ChroWorkforceReadinessTeaser() {
+  const wfrState = readWfrState()
   const gapPeople =
     ORG.peopleInAugRoles - Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
+
+  type RecConfig = {
+    icon: string
+    iconColor: string
+    eyebrow: string
+    body: string
+    cta: string
+    href: string
+  }
+
+  const rec: RecConfig | null = (() => {
+    if (wfrState === 1) return {
+      icon: 'flag',
+      iconColor: '#dc2626',
+      eyebrow: 'FIRST PRIORITY',
+      body: "Collect employee data to sharpen your adoption scores and surface upskilling priorities.",
+      cta: 'Get started →',
+      href: '/workforce?action=launch',
+    }
+    if (wfrState === 2 || wfrState === '2b') return {
+      icon: 'sync',
+      iconColor: '#d97706',
+      eyebrow: 'COLLECTION IN PROGRESS',
+      body: 'Data collection is underway. Check the dashboard for live response rates.',
+      cta: 'View details →',
+      href: '/workforce',
+    }
+    if (wfrState === 3) return {
+      icon: 'check_circle',
+      iconColor: '#15803d',
+      eyebrow: 'COLLECTION COMPLETE',
+      body: 'Results are in. Review updated adoption scores and start upskilling planning.',
+      cta: 'Start upskilling →',
+      href: '/workforce',
+    }
+    if (wfrState === 4) return {
+      icon: 'school',
+      iconColor: '#15803d',
+      eyebrow: 'UPSKILLING ACTIVE',
+      body: 'Development plans are assigned and in progress.',
+      cta: 'View progress →',
+      href: '/workforce',
+    }
+    // state 5 — program complete, no rec
+    return null
+  })()
 
   return (
     <article className="home-page__wfr-compact" aria-label="Workforce Readiness">
@@ -64,23 +124,23 @@ function ChroWorkforceReadinessTeaser() {
           </span>
         </div>
       </header>
-      <div className="home-page__wfr-compact__rec">
-        <div className="home-page__wfr-compact__rec-head">
-          <span className="home-page__wfr-compact__rec-eyebrow">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>flag</span> First priority
-          </span>
+      {rec && (
+        <div className="home-page__wfr-compact__rec">
+          <div className="home-page__wfr-compact__rec-head">
+            <span className="home-page__wfr-compact__rec-eyebrow">
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, color: rec.iconColor }}>{rec.icon}</span>{' '}{rec.eyebrow}
+            </span>
+          </div>
+          <div className="home-page__wfr-compact__rec-row">
+            <p className="home-page__wfr-compact__rec-body">{rec.body}</p>
+            <Link to={rec.href}>
+              <Button variant="primary" size="sm">
+                {rec.cta}
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="home-page__wfr-compact__rec-row">
-          <p className="home-page__wfr-compact__rec-body">
-            Collect employee data to sharpen your {'adoption scores'} and surface upskilling priorities.
-          </p>
-          <Link to="/workforce?action=launch">
-            <Button variant="primary" size="sm">
-              Get started&nbsp;→
-            </Button>
-          </Link>
-        </div>
-      </div>
+      )}
     </article>
   )
 }
