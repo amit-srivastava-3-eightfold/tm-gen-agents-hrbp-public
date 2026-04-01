@@ -368,9 +368,9 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
   )
 }
 
-function MetricHeaderLabel({ label, metric, onInfoClick, sorted }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void; sorted?: boolean }) {
+function MetricHeaderLabel({ label, metric, onInfoClick, sortDir, onSortClick }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void; sortDir?: 'asc' | 'desc' | null; onSortClick?: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1" onClick={onSortClick} style={onSortClick ? { cursor: 'pointer' } : undefined}>
       {label}
       <span
         className="material-symbols-outlined wfr-dash__header-info"
@@ -380,9 +380,11 @@ function MetricHeaderLabel({ label, metric, onInfoClick, sorted }: { label: stri
       >
         info
       </span>
-      {sorted && (
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>arrow_downward</span>
-      )}
+      {sortDir ? (
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
+      ) : onSortClick ? (
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
+      ) : null}
     </span>
   )
 }
@@ -1405,6 +1407,10 @@ function BoardView({
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
   const [boardTab, setBoardTab] = useState<'roles' | 'departments'>('departments')
+  const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
+  const toggleDeptSort = (col: typeof deptSort['col']) => {
+    setDeptSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'hrbp' ? 'asc' : 'desc' })
+  }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
   const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
@@ -1423,8 +1429,20 @@ function BoardView({
     const base = scopedDepartments?.length
       ? departments.filter((d) => scopedDepartments.includes(d.name))
       : departments
-    return [...base].sort((a, b) => (b.aiPotential - b.aiReadiness) - (a.aiPotential - a.aiReadiness))
-  }, [scopedDepartments])
+    const hrbpOf = (d: Dept) => deptManagerTeams(d.name, d.employees)[0]?.manager ?? ''
+    const mul = deptSort.dir === 'asc' ? 1 : -1
+    return [...base].sort((a, b) => {
+      switch (deptSort.col) {
+        case 'name': return mul * a.name.localeCompare(b.name)
+        case 'hrbp': return mul * hrbpOf(a).localeCompare(hrbpOf(b))
+        case 'headcount': return mul * (a.employees - b.employees)
+        case 'readiness': return mul * (a.aiReadiness - b.aiReadiness)
+        case 'potential': return mul * (a.aiPotential - b.aiPotential)
+        case 'gap': return mul * (deptGapHeadcount(a) - deptGapHeadcount(b))
+        default: return 0
+      }
+    })
+  }, [scopedDepartments, deptSort])
 
   // All roles across org for the Roles tab
   const allRoles = useMemo(() => {
@@ -1679,7 +1697,7 @@ function BoardView({
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'
                 ? `${allRoles.length} roles across ${allDeptsSorted.length} departments`
-                : `Sorted by gap ${EM} click to drill down`}
+                : `Click to drill down`}
             </span>
           </div>
         )}
@@ -1691,20 +1709,16 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>Department</DataTableHead>
-                <DataTableHead>HRBP</DataTableHead>
-                <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sorted /></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {[...allDeptsSorted].sort((a, b) => {
-                const aGap = deptGapHeadcount(a)
-                const bGap = deptGapHeadcount(b)
-                return bGap - aGap
-              }).map((d) => {
+              {allDeptsSorted.map((d) => {
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
                 const gapPp = tGap(d.aiPotential, measuredReadiness)
@@ -1752,12 +1766,12 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>Department</DataTableHead>
-                <DataTableHead>HRBP</DataTableHead>
-                <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" sorted /></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
                 <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
               </DataTableRow>
@@ -1818,12 +1832,12 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>Department</DataTableHead>
-                <DataTableHead>HRBP</DataTableHead>
-                <DataTableHead numeric>Headcount</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sorted /></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
