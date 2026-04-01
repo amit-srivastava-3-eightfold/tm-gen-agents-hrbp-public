@@ -189,7 +189,7 @@ const CHRO_JOB: HomeRecommendedJob = {
   tags: [
     { label: 'People Strategy' },
     { label: 'Org Development', checked: true },
-    { label: 'AI Readiness' },
+    { label: 'AI Adoption' },
   ],
 }
 

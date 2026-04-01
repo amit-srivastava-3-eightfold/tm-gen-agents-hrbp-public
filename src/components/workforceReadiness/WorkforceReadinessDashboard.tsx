@@ -1,8 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { useDemo } from '../../contexts/DemoContext'
-import { demoLabel } from '../../contexts/demoLabels'
 import {
   Badge, Button, Pill,
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -18,7 +16,6 @@ import {
   getEmployeesForRole,
   getRolesForDept,
   getTasksForRole,
-  tGap,
   wfrDemoDeptResponseRate,
   wfrRollupDepartmentsByName,
   type Dept,
@@ -98,7 +95,6 @@ function MetricArcReadinessSemicircle({
   readiness: number
   compact?: boolean
 }) {
-  const { isDemo } = useDemo()
   const cfg = compact ? READINESS_SEMICIRCLE.compact : READINESS_SEMICIRCLE.hero
   const { dim, r, sw, cy, vbY, vbH, labelGroupY, pctDy, svgClass } = cfg
   const cx = dim / 2
@@ -153,7 +149,7 @@ function MetricArcReadinessSemicircle({
             dominantBaseline="text-after-edge"
             className="wfr-metric-arc__label"
           >
-            {demoLabel('AI READINESS', isDemo)}
+            {'AI ADOPTION'}
           </text>
         </g>
       </svg>
@@ -258,7 +254,6 @@ const METRIC_INFO = {
 } as const
 
 function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open: boolean; onClose: () => void; collectionComplete?: boolean }) {
-  const { isDemo } = useDemo()
   if (!open) return null
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -300,7 +295,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '24px 20px', background: '#f0fdf4' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#15803d', background: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: 6 }}>verified</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>{demoLabel('AI Readiness', isDemo)}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>{'AI Adoption'}</span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 10px' }}>Of the people AI can help — how many have the skills to use it today?</h3>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>We look at each employee's skill profile against a forward-looking taxonomy: AI tool proficiency, data interpretation, workflow oversight, and exception handling.</p>
@@ -349,7 +344,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
               <span style={{ fontSize: 13, color: '#6366f1', width: 36, textAlign: 'right' }}>{ORG.aiPotential}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>{demoLabel('AI Readiness', isDemo)}</span>
+              <span style={{ fontSize: 13, color: '#15803d', width: 90, flexShrink: 0 }}>{'AI Adoption'}</span>
               <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#f1f5f9', overflow: 'hidden' }}>
                 <div style={{ width: `${ORG.aiReadiness}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #15803d, #22c55e)' }} />
               </div>
@@ -438,7 +433,6 @@ function DeptView({
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
 }) {
-  const { isDemo } = useDemo()
   // Derive convenience flags from universal state
   const navigate = useNavigate()
   const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(wfrState.state)
@@ -483,7 +477,7 @@ function DeptView({
   const deptCards = [
     {
       id: 'readiness' as const,
-      label: demoLabel('AI readiness', isDemo),
+      label: 'AI adoption',
       badge: orgCollectionComplete ? deptMeasuredBadge : deptEstimatedBadge,
       val: orgCollectionComplete ? `${calibratedReadiness}%` : `${dept.aiReadiness}%`,
       icon: 'school',
@@ -673,7 +667,7 @@ function DeptView({
                     ) : null}
                     <DataTableHead>Manager</DataTableHead>
                     <DataTableHead numeric>Employees</DataTableHead>
-                    <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                    <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
@@ -898,7 +892,7 @@ function DeptView({
                     <DataTableRow>
                       <DataTableHead>Role</DataTableHead>
                       <DataTableHead numeric>Headcount</DataTableHead>
-                      <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                       {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
@@ -1055,7 +1049,7 @@ function DeptView({
             </div>
             <div className="wfr-focus-launch__body">
               <h3 className="wfr-focus-launch__title">Which teams need development plans?</h3>
-              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to {demoLabel('close readiness gaps', isDemo)}.</p>
+              <p className="wfr-focus-launch__sub">Development plans will be created and assigned to selected employees to {'close adoption gaps'}.</p>
 
               <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Scope">
                 <button
@@ -1192,7 +1186,7 @@ function DeptView({
                         </span>
                       </div>
                       <div>
-                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">{demoLabel('AI readiness', isDemo)}</div>
+                        <div className="text-[11px] text-[#64748b] uppercase tracking-wider font-semibold mb-1">{'AI adoption'}</div>
                         <span className="text-[13px] font-semibold" style={{ color: devPlanEmployee!.readinessPct >= 50 ? '#15803d' : '#dc2626' }}>
                           {devPlanEmployee!.readinessPct}%
                         </span>
@@ -1398,7 +1392,6 @@ function BoardView({
   scopedDepartments?: string[]
   isHrbp?: boolean
 }) {
-  const { isDemo } = useDemo()
   // Derive convenience flags from universal state
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
@@ -1550,7 +1543,7 @@ function BoardView({
   const cards = [
     {
       id: 'readiness' as const,
-      label: demoLabel('AI readiness', isDemo),
+      label: 'AI adoption',
       badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
       val: `${aiReadinessPct}%`,
       icon: 'school',
@@ -1600,7 +1593,7 @@ function BoardView({
               <>
                 <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
                 <span className="wfr-dash__headline-text">
-                  {` ${demoLabel('AI readiness', isDemo)} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+                  {` ${'AI adoption'} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
                 </span>
               </>
             ) : (
@@ -1712,7 +1705,7 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                               </DataTableRow>
@@ -1721,8 +1714,6 @@ function BoardView({
               {allDeptsSorted.map((d) => {
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
-                const gapPp = tGap(d.aiPotential, measuredReadiness)
-                const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = focusCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
@@ -1769,7 +1760,7 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                 <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
@@ -1778,8 +1769,6 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {allDeptsSorted.map((d) => {
-                const gapPp = tGap(d.aiPotential, d.aiReadiness)
-                const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = deptGapHeadcount(d)
                 const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(d.name)
                 const managers = deptManagerTeams(d.name, d.employees)
@@ -1835,15 +1824,13 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {sorted.map((d) => {
-                const gapPp = tGap(d.aiPotential, d.aiReadiness)
-                const gapColor = gapPp >= 50 ? '#dc2626' : gapPp >= 30 ? '#d97706' : '#15803d'
                 const gapCount = deptGapHeadcount(d)
                 const managers = deptManagerTeams(d.name, d.employees)
                 const hrbp = managers[0]
@@ -1879,7 +1866,7 @@ function BoardView({
                 {!isHrbp && <DataTableHead>Department</DataTableHead>}
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={demoLabel('AI readiness', isDemo)} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
@@ -1887,7 +1874,6 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {allRoles.map((r) => {
-                const gapColor = r.gap > r.employees * 0.5 ? '#dc2626' : r.gap > r.employees * 0.3 ? '#d97706' : '#15803d'
                 return (
                   <DataTableRow key={`${r.dept}-${r.title}`} onClick={() => {
                     const d = allDeptsSorted.find(x => x.name === r.dept)

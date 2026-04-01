@@ -6,15 +6,12 @@ import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
-import { useDemo } from '../contexts/DemoContext'
-import { demoLabel } from '../contexts/demoLabels'
 import { EM, ORG } from '../data/wfrOrgData'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
 
 /* Inline compact semicircle — readiness only, matches WFR overview hero */
 function WfrReadinessArc({ readiness }: { readiness: number }) {
-  const { isDemo } = useDemo()
   const dim = 120, r = 46, sw = 8
   const cx = dim / 2, cy = dim / 2
   const rad = (d: number) => (d * Math.PI) / 180
@@ -34,14 +31,13 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
         <path d={arcPath(100)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
         <path d={arcPath(readiness)} fill="none" stroke="var(--wfr-readiness, #22c55e)" strokeWidth={sw} strokeLinecap="round" />
         <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">{demoLabel('AI READINESS', isDemo)}</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">{'AI ADOPTION'}</text>
       </svg>
     </div>
   )
 }
 
 function ChroWorkforceReadinessTeaser() {
-  const { isDemo } = useDemo()
   const gapPeople =
     ORG.peopleInAugRoles - Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
 
@@ -76,7 +72,7 @@ function ChroWorkforceReadinessTeaser() {
         </div>
         <div className="home-page__wfr-compact__rec-row">
           <p className="home-page__wfr-compact__rec-body">
-            Collect employee data to sharpen your {demoLabel('readiness scores', isDemo)} and surface upskilling priorities.
+            Collect employee data to sharpen your {'adoption scores'} and surface upskilling priorities.
           </p>
           <Link to="/workforce?action=launch">
             <Button variant="primary" size="sm">

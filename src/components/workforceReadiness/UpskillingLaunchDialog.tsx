@@ -4,8 +4,6 @@ import {
   Button,
   Stepper, StepperList, StepperItem, StepperSeparator, StepperIndicator, StepperTitle,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { useDemo } from '../../contexts/DemoContext'
-import { demoLabel } from '../../contexts/demoLabels'
 import { departments, deptGapHeadcount, tGap } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css' // reuse same dialog styles
 
@@ -43,7 +41,6 @@ export function UpskillingLaunchDialog({
   priorityDeptNames = [],
   excludeDeptNames = [],
 }: UpskillingLaunchDialogProps) {
-  const { isDemo } = useDemo()
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<UpskillingAssignOwner>('hrbp')
   const [scopeMode, setScopeMode] = useState<'all' | 'select'>('all')
@@ -154,7 +151,7 @@ export function UpskillingLaunchDialog({
     return (
       <>
         <h2 className="wfr-focus-launch__title">Which departments need development plans?</h2>
-        <p className="wfr-focus-launch__sub">Development plans will be created and assigned to {demoLabel('close readiness gaps', isDemo)} across selected departments.</p>
+        <p className="wfr-focus-launch__sub">Development plans will be created and assigned to {'close adoption gaps'} across selected departments.</p>
         <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Upskilling scope">
           <button
             type="button"
