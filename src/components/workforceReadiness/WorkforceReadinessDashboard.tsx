@@ -372,9 +372,6 @@ function MetricHeaderLabel({ label, metric, onInfoClick, sorted }: { label: stri
   return (
     <span className="inline-flex items-center gap-1">
       {label}
-      {sorted && (
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>arrow_downward</span>
-      )}
       <span
         className="material-symbols-outlined wfr-dash__header-info"
         title={METRIC_INFO[metric]}
@@ -383,6 +380,9 @@ function MetricHeaderLabel({ label, metric, onInfoClick, sorted }: { label: stri
       >
         info
       </span>
+      {sorted && (
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>arrow_downward</span>
+      )}
     </span>
   )
 }
