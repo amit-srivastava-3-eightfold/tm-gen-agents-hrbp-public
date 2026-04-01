@@ -28,6 +28,7 @@ import { departments, getRolesForDept, getEmployeesForRole, type RoleRowType } f
 import { MetricCard } from '../components/workforceReadiness/MetricCard'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
 import { deriveWfrFlags, DeptTableSoloBar, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
 
@@ -160,6 +161,7 @@ export function ManagerDetailPage() {
   }, [dept, managerName, parentParam, mgrIdxParam])
 
   // Dev plan sheet state
+  const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
   const [, setEditingCourses] = useState(false)
@@ -297,6 +299,7 @@ export function ManagerDetailPage() {
               variant="readiness"
               icon="school"
               label={'AI adoption'}
+              onLearnMore={() => setOpenMetric('readiness')}
               badge={collectionComplete
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
@@ -317,6 +320,7 @@ export function ManagerDetailPage() {
               variant="potential"
               icon="auto_awesome"
               label="AI potential"
+              onLearnMore={() => setOpenMetric('potential')}
               value={`${dept.aiPotential}%`}
               description={`Tasks in the augmentation zone`}
               hint={`Role-level potential for ${dept.name}`}
@@ -325,6 +329,7 @@ export function ManagerDetailPage() {
               variant="gap"
               icon="groups"
               label="Transformation gap"
+              onLearnMore={() => setOpenMetric('gap')}
               value={gapDelta !== 0 ? (
                 <>{notReady.toLocaleString()} <DeltaBadge delta={`${gapDelta > 0 ? '+' : ''}${gapDelta}`} up={gapDelta < 0} /></>
               ) : notReady.toLocaleString()}
@@ -608,6 +613,14 @@ export function ManagerDetailPage() {
         </div>,
         document.body
       )}
+      <WorkforceMetricSheet
+        metric={openMetric}
+        onClose={() => setOpenMetric(null)}
+        ready={readyCount}
+        gapPeople={notReady}
+        hrsUnlocked={0}
+        departmentGap={{ departmentName: dept.name, peopleInAugRoles: displayEmployees.length, ready: readyCount, gapPeople: notReady, hrsUnlocked: 0 }}
+      />
     </div>
   )
 }
