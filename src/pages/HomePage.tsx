@@ -91,7 +91,6 @@ function ChroWorkforceReadinessTeaser() {
 
 export function HomePage() {
   const { currentUser } = useUser()
-  const { isDemo } = useDemo()
   const firstName = currentUser.name.split(' ')[0] ?? currentUser.name
   const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
     ? currentUser.avatarPhotoSrc.replace(/w=\d+&h=\d+/, 'w=120&h=120')

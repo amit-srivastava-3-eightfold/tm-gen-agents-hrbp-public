@@ -422,7 +422,6 @@ function DeptView({
   onCompleteUpskilling,
   focusLaunchOpen,
   setFocusLaunchOpen,
-  isHrbp = false,
 }: {
   dept: Dept
   wfrState: WfrPersistedState
@@ -433,7 +432,6 @@ function DeptView({
   onCompleteUpskilling: () => void
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
-  isHrbp?: boolean
 }) {
   const { isDemo } = useDemo()
   // Derive convenience flags from universal state
