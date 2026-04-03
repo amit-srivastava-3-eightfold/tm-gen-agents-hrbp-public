@@ -19,6 +19,27 @@
   margin-top: 24px;
 }
 
+/* Consistent card height across all PersonDetailLayout pages */
+.person-detail__cards article {
+  min-height: 220px;
+}
+
+/* Consistent 5-column table layout for manager summary + reports tables */
+.person-detail__table-aligned table {
+  table-layout: fixed;
+  width: 100%;
+}
+.person-detail__table-aligned th:nth-child(1),
+.person-detail__table-aligned td:nth-child(1) { width: 25%; }
+.person-detail__table-aligned th:nth-child(2),
+.person-detail__table-aligned td:nth-child(2) { width: 12%; }
+.person-detail__table-aligned th:nth-child(3),
+.person-detail__table-aligned td:nth-child(3) { width: 22%; }
+.person-detail__table-aligned th:nth-child(4),
+.person-detail__table-aligned td:nth-child(4) { width: 22%; }
+.person-detail__table-aligned th:nth-child(5),
+.person-detail__table-aligned td:nth-child(5) { width: 19%; }
+
 /* Sticky breadcrumb bar for dept drill-down — flush under header */
 .wfr-dash__breadcrumb-bar {
   position: sticky;

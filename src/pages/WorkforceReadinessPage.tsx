@@ -15,7 +15,7 @@ import './WorkforceReadinessPage.css'
 export function WorkforceReadinessPage() {
   const { currentUser } = useUser()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [wfrView, setWfrView] = useState<'board' | 'dept' | 'hrbp' | 'director'>('board')
+  const [wfrView, setWfrView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>('board')
   const autoLaunch = searchParams.get('action') === 'launch'
   const isHrbp = currentUser.id === 'jaydon-torff'
   const hrbpDepartments = isHrbp ? ['Customer Success'] : undefined

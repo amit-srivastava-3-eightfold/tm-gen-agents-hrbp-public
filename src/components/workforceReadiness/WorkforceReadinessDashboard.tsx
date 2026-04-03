@@ -26,7 +26,7 @@ import {
   type RoleRowType,
 } from '../../data/wfrOrgData'
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
-import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS } from './collectionHelpers'
+import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
@@ -2427,7 +2427,7 @@ export function WorkforceReadinessDashboard({
   scopedDepartments,
   isHrbp = false,
 }: {
-  onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director') => void
+  onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr') => void
   autoLaunchCollection?: boolean
   /** When set, only show these departments (HRBP scoped view) */
   scopedDepartments?: string[]
@@ -2435,11 +2435,12 @@ export function WorkforceReadinessDashboard({
   isHrbp?: boolean
 } = {}) {
   const navigate = useNavigate()
+  const [dashOpenMetric, setDashOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   // Single-dept HRBP goes straight to DeptView (no overview needed)
   const singleDeptHrbp = isHrbp && scopedDepartments?.length === 1
 
   // Auto-select view from query params (e.g. navigating back from Manager Detail breadcrumbs)
-  const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director'>(() => {
+  const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>(() => {
     if (singleDeptHrbp) return 'dept'
     const p = new URLSearchParams(window.location.search)
     if (p.get('director')) return 'director'
@@ -2450,6 +2451,7 @@ export function WorkforceReadinessDashboard({
     const p = new URLSearchParams(window.location.search)
     return p.get('hrbp') ?? null
   })
+  const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(null)
   const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } | null>(() => {
     const p = new URLSearchParams(window.location.search)
     const directorName = p.get('director')
@@ -2824,11 +2826,46 @@ export function WorkforceReadinessDashboard({
                 description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
                 hint: hrbpPlansComplete ? 'After upskilling plans completed.' : hrbpCollectionComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.',
                 badge: collBadge,
+                onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}` }}
-              gap={{ value: totalGap.toLocaleString(), description: `${totalGap.toLocaleString()} people in augmentable roles are not yet AI-ready — that's your prioritized development pool.`, hint: `${headcount > 0 ? Math.round((totalGap / headcount) * 100) : 0}% of employees still in the gap.` }}
-              tableTitle="Direct reports"
-              tableHint={`${directors.length} direct report${directors.length !== 1 ? 's' : ''} · click to view team`}
+              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
+              managerTable={{
+                title: 'Manager summary',
+                hint: d.name,
+                hideTitle: true,
+                children: (
+                  <DataTable bordered>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead>Manager</DataTableHead>
+                        <DataTableHead numeric>Employees</DataTableHead>
+                        <DataTableHead metric>AI adoption</DataTableHead>
+                        <DataTableHead metric>AI potential</DataTableHead>
+                        <DataTableHead numeric>Gap</DataTableHead>
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      <DataTableRow>
+                        <DataTableCell className="font-semibold">
+                          <div>
+                            <div>{hrbpName}</div>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">HRBP · {d.name}</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell align="right" numeric>{headcount.toLocaleString()}</DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right">
+                          <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                        </DataTableCell>
+                      </DataTableRow>
+                    </DataTableBody>
+                  </DataTable>
+                ),
+              }}
+              tableTitle="Client managers"
+              tableHint={`${directors.length} client manager${directors.length !== 1 ? 's' : ''} · click to view team`}
             >
               <DataTable bordered>
                 <DataTableHeader>
@@ -2871,7 +2908,7 @@ export function WorkforceReadinessDashboard({
                           </DataTableCell>
                           <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
                           <DataTableCell align="right">
-                            <span className="text-[12px] font-medium" style={{ color: dir.readiness >= 50 ? '#15803d' : '#dc2626' }}>
+                            <span style={{ color: dir.readiness >= 50 ? '#15803d' : '#dc2626' }}>
                               {notReady} not ready
                             </span>
                           </DataTableCell>
@@ -2939,12 +2976,123 @@ export function WorkforceReadinessDashboard({
                 description: dirCollComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${dirHeadcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${dirHeadcount.toLocaleString()} may be AI-ready`,
                 hint: dirPlansComplete ? 'After upskilling plans completed.' : dirCollComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.',
                 badge: dirBadge,
+                onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}` }}
-              gap={{ value: dirGap.toLocaleString(), description: `${dirGap.toLocaleString()} people not yet AI-ready.`, hint: `${dirHeadcount > 0 ? Math.round((dirGap / dirHeadcount) * 100) : 0}% of team still in the gap.` }}
-              tableTitle="Team managers"
-              tableHint={`${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`}
+              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              gap={{ value: `${dirGap.toLocaleString()} not ready`, description: `out of ${dirHeadcount.toLocaleString()} employees`, hint: dirMeasuredReadiness >= 50 ? `${dirMeasuredReadiness}% adoption meets the 50% threshold.` : `${dirMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
+              managerTable={{
+                title: 'Manager summary',
+                hint: d.name,
+                hideTitle: true,
+                children: (
+                  <DataTable bordered>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead>Manager</DataTableHead>
+                        <DataTableHead numeric>Employees</DataTableHead>
+                        <DataTableHead metric>AI adoption</DataTableHead>
+                        <DataTableHead metric>AI potential</DataTableHead>
+                        <DataTableHead numeric>Gap</DataTableHead>
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      <DataTableRow>
+                        <DataTableCell className="font-semibold">
+                          <div>
+                            <div>{directorData.name}</div>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">{directorData.title} · {d.name}</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell align="right" numeric>{dirHeadcount.toLocaleString()}</DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right">
+                          <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                        </DataTableCell>
+                      </DataTableRow>
+                    </DataTableBody>
+                  </DataTable>
+                ),
+              }}
+              tableTitle={teamMgrs.length > 4 ? 'Senior managers' : 'Team managers'}
+              tableHint={teamMgrs.length > 4
+                ? (() => {
+                    const targetSr = Math.max(2, Math.min(5, Math.round(teamMgrs.length / 3)))
+                    return `${targetSr} senior manager${targetSr !== 1 ? 's' : ''} · click to view team`
+                  })()
+                : `${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`
+              }
             >
+              {teamMgrs.length > 4 ? (() => {
+                // Group into senior managers
+                const targetSr = Math.max(2, Math.min(5, Math.round(teamMgrs.length / 3)))
+                const perSr = Math.ceil(teamMgrs.length / targetSr)
+                const SR_TITLES = ['Senior Manager', 'Principal Manager', 'Group Manager', 'Associate Director', 'Staff Manager']
+                const seniorMgrs = Array.from({ length: targetSr }, (_, si) => {
+                  const batch = teamMgrs.slice(si * perSr, (si + 1) * perSr)
+                  if (batch.length === 0) return null
+                  const empCount = batch.reduce((s, m) => s + m.employees, 0)
+                  const batchEnriched = batch.map((_, bi) => mgrEnriched[directorData.mgrIdxStart + si * perSr + bi]).filter(Boolean)
+                  const avgR = batchEnriched.length > 0 ? Math.round(batchEnriched.reduce((s, e) => s + e.readiness * e.mgr.employees, 0) / empCount) : d.aiReadiness
+                  const ready = batchEnriched.reduce((s, e) => s + e.readyCount, 0)
+                  const srNameIdx = nh(directorData.name) * 5 + si * 11 + directorData.mgrIdxStart
+                  return { name: demoManagerName(srNameIdx), title: SR_TITLES[si % SR_TITLES.length], employees: empCount, readiness: avgR, readyCount: ready, batchStart: si * perSr, batchCount: batch.length }
+                }).filter(Boolean) as { name: string; title: string; employees: number; readiness: number; readyCount: number; batchStart: number; batchCount: number }[]
+                return (
+                  <DataTable bordered>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead>Manager</DataTableHead>
+                        <DataTableHead numeric>Employees</DataTableHead>
+                        <DataTableHead metric>Team AI adoption</DataTableHead>
+                        <DataTableHead metric>Team AI potential</DataTableHead>
+                        <DataTableHead numeric>Gap</DataTableHead>
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {seniorMgrs.map(sr => {
+                        const notReady = sr.employees - sr.readyCount
+                        return (
+                          <DataTableRow
+                            key={sr.name}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                              setSeniorMgrData({
+                                name: sr.name,
+                                title: sr.title,
+                                deptName: d.name,
+                                mgrIdxStart: directorData.mgrIdxStart + sr.batchStart,
+                                mgrCount: sr.batchCount,
+                                parentDirector: directorData,
+                              })
+                              setView('seniorMgr')
+                              window.scrollTo(0, 0)
+                            }}
+                          >
+                            <DataTableCell className="font-semibold">
+                              <div>
+                                <div className="text-[#3b5bdb] hover:underline">{sr.name}</div>
+                                <div className="text-[#94a3b8] text-[11px] font-normal">{sr.title} · {sr.batchCount} teams</div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell align="right" numeric>{sr.employees.toLocaleString()}</DataTableCell>
+                            <DataTableCell metric>
+                              <div>
+                                <DeptTableSoloBar variant="readiness" pct={sr.readiness} />
+                                <div className="text-[10px] text-[#94a3b8] mt-0.5">{sr.readyCount} of {sr.employees} AI-ready</div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                            <DataTableCell align="right">
+                              <span style={{ color: sr.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
+                            </DataTableCell>
+                          </DataTableRow>
+                        )
+                      })}
+                    </DataTableBody>
+                  </DataTable>
+                )
+              })() : (
               <DataTable bordered>
                 <DataTableHeader>
                   <DataTableRow>
@@ -2982,7 +3130,153 @@ export function WorkforceReadinessDashboard({
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
                         <DataTableCell align="right">
-                          <span className="text-[12px] font-medium" style={{ color: en.readiness >= 50 ? '#15803d' : '#dc2626' }}>
+                          <span style={{ color: en.readiness >= 50 ? '#15803d' : '#dc2626' }}>
+                            {notReady} not ready
+                          </span>
+                        </DataTableCell>
+                      </DataTableRow>
+                    )
+                  })}
+                </DataTableBody>
+              </DataTable>)}
+            </PersonDetailLayout>
+          )
+        })()}
+        {view === 'seniorMgr' && seniorMgrData && (() => {
+          const d = departments.find(x => x.name === seniorMgrData.deptName)
+          if (!d) return null
+          const allMgrs = deptManagerTeams(d.name, d.employees)
+          const teamMgrs = allMgrs.slice(seniorMgrData.mgrIdxStart, seniorMgrData.mgrIdxStart + seniorMgrData.mgrCount)
+          const srHeadcount = teamMgrs.reduce((s, m) => s + m.employees, 0)
+          const { collectionComplete: srCollComplete, hrbpPlansCreated: srPlansComplete } = deriveWfrFlags(wfrState.state)
+          const srTrend = deptReadinessTrend(d.name)
+          const srMeasuredReadiness = srCollComplete ? d.aiReadiness + srTrend.delta : d.aiReadiness
+          const nh2 = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
+          const tDelta = srCollComplete ? srTrend.delta : 0
+          const bBase = srPlansComplete ? (isHrbp ? 10 : 8) : 0
+          const sRoles = getRolesForDept(d.name)
+          const sEmpsRaw = getEmployeesForRole({ title: d.name, employees: d.employees, aiReadiness: d.aiReadiness, aiPotential: d.aiPotential } as RoleRowType)
+          const sEmps = sEmpsRaw.map((e, i) => ({ ...e, title: sRoles.length > 0 ? sRoles[i % sRoles.length].title : undefined }))
+          let sIdx = 0
+          const srMgrEnriched = allMgrs.map((mgr) => {
+            const emps = sEmps.slice(sIdx, Math.min(sIdx + mgr.employees, sEmps.length))
+            sIdx += mgr.employees
+            const cal = emps.map(e => {
+              const eb = srPlansComplete ? Math.round(bBase * (0.5 + (nh2(e.name) % 10) / 10)) : 0
+              return { ...e, displayReadiness: Math.max(0, Math.min(100, e.readinessPct + tDelta + eb)) }
+            })
+            const readiness = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
+            const ready = cal.filter(e => e.displayReadiness >= 50).length
+            return { mgr, readiness, readyCount: ready }
+          })
+          const srReadyCount = teamMgrs.reduce((s, _, i) => s + (srMgrEnriched[seniorMgrData.mgrIdxStart + i]?.readyCount ?? 0), 0)
+          const srGap = srHeadcount - srReadyCount
+          const srBadge = srCollComplete
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+          return (
+            <PersonDetailLayout
+              breadcrumb={
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null); setDirectorData(null); setSeniorMgrData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(seniorMgrData.parentDirector.parentHrbp); setView('hrbp'); setDirectorData(null); setSeniorMgrData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{seniorMgrData.parentDirector.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setDirectorData(seniorMgrData.parentDirector); setView('director'); setSeniorMgrData(null) }}>{seniorMgrData.parentDirector.name}</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage>{seniorMgrData.name}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              }
+              name={seniorMgrData.name}
+              subtitle={`${seniorMgrData.title} · ${d.name} · ${srHeadcount.toLocaleString()} employees`}
+              readiness={{
+                value: `${srMeasuredReadiness}%`,
+                description: srCollComplete ? `${srReadyCount.toLocaleString()} AI-ready of ${srHeadcount.toLocaleString()}` : `Estimated: ${srReadyCount.toLocaleString()} of ${srHeadcount.toLocaleString()} may be AI-ready`,
+                hint: srPlansComplete ? 'After upskilling plans completed.' : srCollComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.',
+                badge: srBadge,
+                onLearnMore: () => setDashOpenMetric('readiness'),
+              }}
+              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              gap={{ value: `${srGap.toLocaleString()} not ready`, description: `out of ${srHeadcount.toLocaleString()} employees`, hint: srMeasuredReadiness >= 50 ? `${srMeasuredReadiness}% adoption meets the 50% threshold.` : `${srMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
+              managerTable={{
+                title: 'Manager summary',
+                hint: d.name,
+                hideTitle: true,
+                children: (
+                  <DataTable bordered>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead>Manager</DataTableHead>
+                        <DataTableHead numeric>Employees</DataTableHead>
+                        <DataTableHead metric>AI adoption</DataTableHead>
+                        <DataTableHead metric>AI potential</DataTableHead>
+                        <DataTableHead numeric>Gap</DataTableHead>
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      <DataTableRow>
+                        <DataTableCell className="font-semibold">
+                          <div>
+                            <div>{seniorMgrData.name}</div>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">{seniorMgrData.title} · {d.name}</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell align="right" numeric>{srHeadcount.toLocaleString()}</DataTableCell>
+                        <DataTableCell metric>
+                          <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
+                        </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right">
+                          <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                        </DataTableCell>
+                      </DataTableRow>
+                    </DataTableBody>
+                  </DataTable>
+                ),
+              }}
+              tableTitle="Team managers"
+              tableHint={`${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`}
+            >
+              <DataTable bordered>
+                <DataTableHeader>
+                  <DataTableRow>
+                    <DataTableHead>Manager</DataTableHead>
+                    <DataTableHead numeric>Employees</DataTableHead>
+                    <DataTableHead metric>Team AI adoption</DataTableHead>
+                    <DataTableHead metric>Team AI potential</DataTableHead>
+                    <DataTableHead numeric>Gap</DataTableHead>
+                  </DataTableRow>
+                </DataTableHeader>
+                <DataTableBody>
+                  {teamMgrs.map((mgr, i) => {
+                    const globalIdx = seniorMgrData.mgrIdxStart + i
+                    const en = srMgrEnriched[globalIdx]
+                    if (!en) return null
+                    const notReady = mgr.employees - en.readyCount
+                    return (
+                      <DataTableRow
+                        key={`${mgr.manager}-${globalIdx}`}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/workforce/manager/${encodeURIComponent(mgr.manager)}?dept=${encodeURIComponent(d.name)}&mgrIdx=${globalIdx}`)}
+                      >
+                        <DataTableCell className="font-semibold">
+                          <div>
+                            <div className="text-[#3b5bdb] hover:underline">{mgr.manager}</div>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell align="right" numeric>{mgr.employees.toLocaleString()}</DataTableCell>
+                        <DataTableCell metric>
+                          <div>
+                            <DeptTableSoloBar variant="readiness" pct={en.readiness} />
+                            <div className="text-[10px] text-[#94a3b8] mt-0.5">{en.readyCount} of {mgr.employees} AI-ready</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right">
+                          <span style={{ color: en.readiness >= 50 ? '#15803d' : '#dc2626' }}>
                             {notReady} not ready
                           </span>
                         </DataTableCell>
@@ -3013,6 +3307,15 @@ export function WorkforceReadinessDashboard({
           />
         )}
       </div>
+
+      {/* Metric sheet for HRBP/Director/SeniorMgr views */}
+      <WorkforceMetricSheet
+        metric={dashOpenMetric}
+        onClose={() => setDashOpenMetric(null)}
+        ready={0}
+        gapPeople={0}
+        hrsUnlocked={0}
+      />
 
       {/* Snackbar */}
       {snackbar && (

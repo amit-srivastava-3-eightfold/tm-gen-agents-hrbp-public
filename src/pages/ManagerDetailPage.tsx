@@ -327,12 +327,44 @@ export function ManagerDetailPage() {
             }}
             potential={{ value: `${dept.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${dept.name}`, onLearnMore: () => setOpenMetric('potential') }}
             gap={{
-              value: gapDelta !== 0 ? (
-                <>{notReady.toLocaleString()} <DeltaBadge delta={`${gapDelta > 0 ? '+' : ''}${gapDelta}`} up={gapDelta < 0} /></>
-              ) : notReady.toLocaleString(),
-              description: `${notReady} people in augmentable roles are not yet AI-ready — that's your prioritized development pool.`,
-              hint: `${Math.round(gapPct * 100)}% of team still in the gap.`,
+              value: `${notReady.toLocaleString()} not ready`,
+              description: `out of ${displayEmployees.length} employees`,
+              hint: avgReadiness >= 50 ? `${avgReadiness}% adoption meets the 50% threshold.` : `${avgReadiness}% adoption is below the 50% threshold.`,
               onLearnMore: () => setOpenMetric('gap'),
+            }}
+            managerTable={{
+              title: 'Manager summary',
+              hint: dept.name,
+              hideTitle: true,
+              children: (
+                <DataTable bordered>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead>Manager</DataTableHead>
+                      <DataTableHead numeric>Employees</DataTableHead>
+                      <DataTableHead metric>AI adoption</DataTableHead>
+                      <DataTableHead metric>AI potential</DataTableHead>
+                      <DataTableHead numeric>Gap</DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    <DataTableRow>
+                      <DataTableCell className="font-semibold">
+                        <div>
+                          <div>{mgr.manager}</div>
+                          <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell align="right" numeric>{displayEmployees.length.toLocaleString()}</DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={dept.aiPotential} /></DataTableCell>
+                      <DataTableCell align="right">
+                        <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626' }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                      </DataTableCell>
+                    </DataTableRow>
+                  </DataTableBody>
+                </DataTable>
+              ),
             }}
             tableTitle="Team members"
             tableHint={tableHint}
@@ -426,7 +458,7 @@ export function ManagerDetailPage() {
                       <DeptTableSoloBar variant="potential" pct={dept.aiPotential} />
                     </DataTableCell>
                     <DataTableCell>
-                      <span className="text-[12px] font-medium" style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
+                      <span style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
                         {emp.displayReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}
                       </span>
                       {emp.displayReadiness >= 35 && emp.displayReadiness < 50 && (

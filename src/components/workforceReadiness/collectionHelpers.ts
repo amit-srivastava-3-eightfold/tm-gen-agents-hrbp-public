@@ -1,37 +1,31 @@
 /** Shared helpers for data collection progress UI (used by inline tab + detail views). */
 
-export const DEMO_MANAGERS = [
-  'Priya Thompson',
-  'Alex Rivera',
-  'Jordan Kim',
-  'Sam Okonkwo',
-  'Sarah Culhane',
-  'Morgan Patel',
-  'Casey Nguyen',
-  'Taylor Brooks',
-  'Dana Washington',
-  'Jamie Reyes',
-  'Avery Nakamura',
-  'Quinn Sullivan',
-  'Blake Martinez',
-  'Skyler Johansson',
-  'Rowan Kapoor',
-  'Drew Andersson',
-  'Harper Obi',
-  'Cameron Duval',
-  'Sage Petrov',
-  'Emery Chang',
-  'Riley Tanaka',
-  'Kendall Osei',
-  'Finley Larsson',
-  'Reese Montoya',
-  'Hayden Choi',
-  'Parker Adeyemi',
-  'Devon Moreau',
-  'Ainsley Gupta',
-  'Logan Ferreira',
-  'Jules Kowalski',
+const FIRST_NAMES = [
+  'Priya', 'Alex', 'Jordan', 'Sam', 'Sarah', 'Morgan', 'Casey', 'Taylor',
+  'Dana', 'Jamie', 'Avery', 'Quinn', 'Blake', 'Skyler', 'Rowan', 'Drew',
+  'Harper', 'Cameron', 'Sage', 'Emery', 'Riley', 'Kendall', 'Finley', 'Reese',
+  'Hayden', 'Parker', 'Devon', 'Ainsley', 'Logan', 'Jules', 'Kai', 'Noa',
+  'Sasha', 'Robin', 'Ari', 'Elliot', 'Remi', 'Mika', 'Tatum', 'Phoenix',
 ]
+const LAST_NAMES = [
+  'Thompson', 'Rivera', 'Kim', 'Okonkwo', 'Culhane', 'Patel', 'Nguyen', 'Brooks',
+  'Washington', 'Reyes', 'Nakamura', 'Sullivan', 'Martinez', 'Johansson', 'Kapoor', 'Andersson',
+  'Obi', 'Duval', 'Petrov', 'Chang', 'Tanaka', 'Osei', 'Larsson', 'Montoya',
+  'Choi', 'Adeyemi', 'Moreau', 'Gupta', 'Ferreira', 'Kowalski', 'Santos', 'Cohen',
+  'Singh', 'O\'Brien', 'Lee', 'Brown', 'Wilson', 'Garcia', 'Chen', 'Bauer',
+]
+
+/** Generate a unique manager name from index using first + last name combos (1,600 unique names) */
+export function demoManagerName(index: number): string {
+  const fi = index % FIRST_NAMES.length
+  const li = Math.floor(index / FIRST_NAMES.length) % LAST_NAMES.length
+  // Offset last name index by first name index to avoid "Alex Rivera" always pairing
+  const adjustedLi = (li + fi * 7) % LAST_NAMES.length
+  return `${FIRST_NAMES[fi]} ${LAST_NAMES[adjustedLi]}`
+}
+
+// Keep the original list for backward compatibility (HRBP assignments, director names, etc.)
+export const DEMO_MANAGERS = FIRST_NAMES.map((_, i) => demoManagerName(i))
 
 export function deptNameHash(name: string) {
   let h = 0
@@ -132,14 +126,15 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
   const teams: DeptManagerTeam[] = []
   let remaining = totalEmployees
   for (let i = 0; i < count; i++) {
-    const mgrIndex = (h + i * 3) % DEMO_MANAGERS.length
+    // Use demoManagerName with a dept-specific offset to generate unique names
+    const nameIdx = h * 7 + i
     const isLast = i === count - 1
     const base = Math.round(totalEmployees / count)
     const jitter = ((h + i * 13) % 15) - 7 // -7 to +7
     const share = isLast ? remaining : Math.max(10, base + jitter)
     remaining -= share
     const titleIndex = (h + i * 3) % titles.length
-    teams.push({ manager: DEMO_MANAGERS[mgrIndex], title: titles[titleIndex], employees: share, responseRate: 0 })
+    teams.push({ manager: demoManagerName(nameIdx), title: titles[titleIndex], employees: share, responseRate: 0 })
   }
 
   // Distribute rates so their employee-weighted average equals deptRate exactly.
@@ -206,8 +201,8 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
       const lmNames: LineManager[] = []
       let lmRemaining = team.employees
       for (let j = 0; j < lmCount; j++) {
-        const lmIdx = (deptNameHash(team.manager) + j * 7) % DEMO_MANAGERS.length
-        const lmName = DEMO_MANAGERS[(lmIdx + teams.length + j) % DEMO_MANAGERS.length]
+        const lmNameIdx = deptNameHash(team.manager) * 11 + j * 13 + teams.indexOf(team) * 3
+        const lmName = demoManagerName(lmNameIdx)
         if (lmName === team.manager) continue
         const isLast = j === lmCount - 1
         const lmShare = isLast ? lmRemaining : Math.round(team.employees / lmCount) + ((j % 3) - 1)

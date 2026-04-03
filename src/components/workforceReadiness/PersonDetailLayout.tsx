@@ -14,6 +14,8 @@ export interface MetricCardData {
 export interface TableSectionProps {
   title: string
   hint: string
+  /** Hide the section heading (title + hint) */
+  hideTitle?: boolean
   children: ReactNode
 }
 
@@ -56,7 +58,7 @@ export function PersonDetailLayout({
           </div>
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div className="mgr-detail-page__summary">
           <h2 className="mgr-detail-page__name">{name}</h2>
           <p className="mgr-detail-page__subtitle" style={{ margin: 0 }}>{subtitle}</p>
@@ -64,7 +66,7 @@ export function PersonDetailLayout({
 
         {heroCard}
 
-        <div className="wfr-dash__cards-row" style={{ margin: 0 }}>
+        <div className="wfr-dash__cards-row person-detail__cards" style={{ margin: 0 }}>
           <MetricCard
             variant="readiness"
             icon="school"
@@ -96,16 +98,18 @@ export function PersonDetailLayout({
         </div>
 
         {managerTable && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{managerTable.title}</h3>
-              <span className="wfr-dash__panel-hint">{managerTable.hint}</span>
-            </div>
+          <div className="person-detail__table-aligned" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {!managerTable.hideTitle && (
+              <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{managerTable.title}</h3>
+                <span className="wfr-dash__panel-hint">{managerTable.hint}</span>
+              </div>
+            )}
             {managerTable.children}
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className={managerTable ? 'person-detail__table-aligned' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{tableTitle}</h3>
             <span className="wfr-dash__panel-hint">{tableHint}</span>
