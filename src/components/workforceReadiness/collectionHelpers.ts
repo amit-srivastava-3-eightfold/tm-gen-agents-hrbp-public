@@ -21,6 +21,16 @@ export const DEMO_MANAGERS = [
   'Cameron Duval',
   'Sage Petrov',
   'Emery Chang',
+  'Riley Tanaka',
+  'Kendall Osei',
+  'Finley Larsson',
+  'Reese Montoya',
+  'Hayden Choi',
+  'Parker Adeyemi',
+  'Devon Moreau',
+  'Ainsley Gupta',
+  'Logan Ferreira',
+  'Jules Kowalski',
 ]
 
 export function deptNameHash(name: string) {

@@ -24,8 +24,10 @@ import {
   DataTableCell,
   Pill,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
+import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { MetricCard } from '../components/workforceReadiness/MetricCard'
+import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
 import { deriveWfrFlags, DeptTableSoloBar, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
@@ -256,94 +258,132 @@ export function ManagerDetailPage() {
         </Header>
       </ProductBackground>
 
-      {/* Sticky breadcrumb bar */}
-      <div className="mgr-detail-page__breadcrumb-bar">
-        <div className="mgr-detail-page__breadcrumb-inner">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink>
-              </BreadcrumbItem>
-              {parentManager && (
-                <>
+      {/* Sticky breadcrumb bar — derive HRBP + director from dept & mgrIdx */}
+      {(() => {
+        const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
+        const deptHrbpList = getDeptHrbps(deptName)
+        // Find which HRBP covers this manager index
+        const allMgrs = deptManagerTeams(deptName, dept.employees)
+        let hrbpForMgr = deptHrbpList[0]?.hrbp ?? null
+        let mgrStart = 0
+        for (const h of deptHrbpList) {
+          let covered = 0
+          const startIdx = mgrStart
+          for (let m = mgrStart; m < allMgrs.length; m++) {
+            if (covered + allMgrs[m].employees > h.headcount && covered > 0) break
+            covered += allMgrs[m].employees
+            mgrStart = m + 1
+          }
+          if (mgrIdx >= startIdx && mgrIdx < mgrStart) {
+            hrbpForMgr = h.hrbp
+            // Find which director group this manager falls into
+            const sliceStart = startIdx
+            const sliceCount = mgrStart - startIdx
+            const targetDirs = Math.max(4, Math.min(12, Math.round(h.headcount / 300)))
+            const perDir = Math.ceil(sliceCount / targetDirs)
+            const dirIdx = Math.floor((mgrIdx - sliceStart) / perDir)
+            const nameHash = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
+            const dirNameIdx = (nameHash(deptName) + dirIdx * 7) % DEMO_MANAGERS.length
+            const dirName = DEMO_MANAGERS[dirNameIdx]
+            return (
+              <div className="mgr-detail-page__breadcrumb-bar">
+                <div className="mgr-detail-page__breadcrumb-inner">
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      <BreadcrumbItem>
+                        <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbLink onClick={() => navigate('/workforce')}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{hrbpForMgr}
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(deptName)}`)}>{dirName}</BreadcrumbLink>
+                      </BreadcrumbItem>
+                      {parentManager && (
+                        <>
+                          <BreadcrumbSeparator />
+                          <BreadcrumbItem>
+                            <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
+                          </BreadcrumbItem>
+                        </>
+                      )}
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{mgr.manager}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                </div>
+              </div>
+            )
+          }
+        }
+        // Fallback: dept-based breadcrumb
+        return (
+          <div className="mgr-detail-page__breadcrumb-bar">
+            <div className="mgr-detail-page__breadcrumb-inner">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
+                  </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
+                    <BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink>
                   </BreadcrumbItem>
-                </>
-              )}
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{mgr.manager}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </div>
+                  {parentManager && (
+                    <>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{mgr.manager}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </div>
+        )
+      })()}
 
       <main className="mgr-detail-page__main">
         <div className="mgr-detail-page__content">
-          {/* Manager summary */}
-          <div className="mgr-detail-page__summary">
-            <h2 className="mgr-detail-page__name">{mgr.manager}</h2>
-            <p className="mgr-detail-page__subtitle">{mgr.title} · {dept.name} · {employees.length} employees</p>
-          </div>
-
-          {/* Summary cards */}
-          <div className="wfr-dash__cards-row">
-            <MetricCard
-              variant="readiness"
-              icon="school"
-              label={'AI adoption'}
-              onLearnMore={() => setOpenMetric('readiness')}
-              badge={collectionComplete
-                ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-                : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
-              }
-              value={readinessDelta !== 0 ? (
+          <PersonDetailLayout
+            name={mgr.manager}
+            subtitle={`${mgr.title} · ${dept.name} · ${employees.length} employees`}
+            readiness={{
+              value: readinessDelta !== 0 ? (
                 <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
-              ) : `${avgReadiness}%`}
-              description={collectionComplete
+              ) : `${avgReadiness}%`,
+              description: collectionComplete
                 ? `${readyCount} AI-ready of ${displayEmployees.length} in this team`
-                : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`}
-              hint={hrbpPlansCreated
-                ? 'After upskilling plans completed.'
-                : collectionComplete
-                  ? 'Calibrated from data collection.'
-                  : 'Estimated from skill profiles.'}
-            />
-            <MetricCard
-              variant="potential"
-              icon="auto_awesome"
-              label="AI potential"
-              onLearnMore={() => setOpenMetric('potential')}
-              value={`${dept.aiPotential}%`}
-              description={`Tasks in the augmentation zone`}
-              hint={`Role-level potential for ${dept.name}`}
-            />
-            <MetricCard
-              variant="gap"
-              icon="groups"
-              label="Transformation gap"
-              onLearnMore={() => setOpenMetric('gap')}
-              value={gapDelta !== 0 ? (
+                : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`,
+              hint: hrbpPlansCreated ? 'After upskilling plans completed.' : collectionComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.',
+              badge: collectionComplete
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+                : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>,
+              onLearnMore: () => setOpenMetric('readiness'),
+            }}
+            potential={{ value: `${dept.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${dept.name}`, onLearnMore: () => setOpenMetric('potential') }}
+            gap={{
+              value: gapDelta !== 0 ? (
                 <>{notReady.toLocaleString()} <DeltaBadge delta={`${gapDelta > 0 ? '+' : ''}${gapDelta}`} up={gapDelta < 0} /></>
-              ) : notReady.toLocaleString()}
-              description={`${notReady} people in augmentable roles are not yet AI-ready — that's your prioritized development pool.`}
-              hint={`${Math.round(gapPct * 100)}% of team still in the gap.`}
-            />
-          </div>
-
-          {/* Employee table */}
-          <div className="mgr-detail-page__table-head">
-            <h3 className="mgr-detail-page__table-title">Team members</h3>
-            <span className="mgr-detail-page__table-hint">{tableHint}</span>
-          </div>
-
+              ) : notReady.toLocaleString(),
+              description: `${notReady} people in augmentable roles are not yet AI-ready — that's your prioritized development pool.`,
+              hint: `${Math.round(gapPct * 100)}% of team still in the gap.`,
+              onLearnMore: () => setOpenMetric('gap'),
+            }}
+            tableTitle="Team members"
+            tableHint={tableHint}
+          >
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
@@ -555,6 +595,7 @@ export function ManagerDetailPage() {
               </Button>
             </div>
           )}
+          </PersonDetailLayout>
         </div>
       </main>
 
