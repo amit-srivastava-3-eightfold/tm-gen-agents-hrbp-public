@@ -53,7 +53,7 @@ export function WorkforceReadinessPage() {
 
       {/* Main content */}
       <main className="wfr-page__main">
-        <div className="wfr-page__content">
+        <div className="wfr-page__content" style={wfrView !== 'board' ? { paddingTop: 0 } : undefined}>
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
               <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} />

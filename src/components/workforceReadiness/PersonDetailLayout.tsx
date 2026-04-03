@@ -11,6 +11,12 @@ export interface MetricCardData {
   onLearnMore?: () => void
 }
 
+export interface TableSectionProps {
+  title: string
+  hint: string
+  children: ReactNode
+}
+
 export interface PersonDetailLayoutProps {
   name: string
   subtitle: string
@@ -23,6 +29,8 @@ export interface PersonDetailLayoutProps {
   breadcrumb?: ReactNode
   /** Optional hero/RA card rendered between the title and metric cards */
   heroCard?: ReactNode
+  /** Optional team manager table rendered above the main table */
+  managerTable?: TableSectionProps
   children: ReactNode
 }
 
@@ -36,6 +44,7 @@ export function PersonDetailLayout({
   tableHint,
   breadcrumb,
   heroCard,
+  managerTable,
   children,
 }: PersonDetailLayoutProps) {
   return (
@@ -85,6 +94,16 @@ export function PersonDetailLayout({
             onLearnMore={gap.onLearnMore}
           />
         </div>
+
+        {managerTable && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{managerTable.title}</h3>
+              <span className="wfr-dash__panel-hint">{managerTable.hint}</span>
+            </div>
+            {managerTable.children}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
