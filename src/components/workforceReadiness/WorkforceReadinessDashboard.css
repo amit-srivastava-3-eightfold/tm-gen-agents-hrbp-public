@@ -1,3 +1,24 @@
+/* Unified breadcrumb bar for PersonDetailLayout */
+.person-detail__breadcrumb-bar {
+  position: sticky;
+  top: var(--navbar-height, 60px);
+  z-index: 99;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+}
+
+.person-detail__breadcrumb-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.person-detail__breadcrumb-bar + * {
+  margin-top: 24px;
+}
+
 /* Sticky breadcrumb bar for dept drill-down — flush under header */
 .wfr-dash__breadcrumb-bar {
   position: sticky;

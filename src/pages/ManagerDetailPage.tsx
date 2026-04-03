@@ -258,105 +258,58 @@ export function ManagerDetailPage() {
         </Header>
       </ProductBackground>
 
-      {/* Sticky breadcrumb bar — derive HRBP + director from dept & mgrIdx */}
-      {(() => {
-        const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
-        const deptHrbpList = getDeptHrbps(deptName)
-        // Find which HRBP covers this manager index
-        const allMgrs = deptManagerTeams(deptName, dept.employees)
-        let hrbpForMgr = deptHrbpList[0]?.hrbp ?? null
-        let mgrStart = 0
-        for (const h of deptHrbpList) {
-          let covered = 0
-          const startIdx = mgrStart
-          for (let m = mgrStart; m < allMgrs.length; m++) {
-            if (covered + allMgrs[m].employees > h.headcount && covered > 0) break
-            covered += allMgrs[m].employees
-            mgrStart = m + 1
-          }
-          if (mgrIdx >= startIdx && mgrIdx < mgrStart) {
-            hrbpForMgr = h.hrbp
-            // Find which director group this manager falls into
-            const sliceStart = startIdx
-            const sliceCount = mgrStart - startIdx
-            const targetDirs = Math.max(4, Math.min(12, Math.round(h.headcount / 300)))
-            const perDir = Math.ceil(sliceCount / targetDirs)
-            const dirIdx = Math.floor((mgrIdx - sliceStart) / perDir)
-            const nameHash = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
-            const dirNameIdx = (nameHash(deptName) + dirIdx * 7) % DEMO_MANAGERS.length
-            const dirName = DEMO_MANAGERS[dirNameIdx]
-            return (
-              <div className="mgr-detail-page__breadcrumb-bar">
-                <div className="mgr-detail-page__breadcrumb-inner">
-                  <Breadcrumb>
-                    <BreadcrumbList>
-                      <BreadcrumbItem>
-                        <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbLink onClick={() => navigate('/workforce')}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{hrbpForMgr}
-                        </BreadcrumbLink>
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(deptName)}`)}>{dirName}</BreadcrumbLink>
-                      </BreadcrumbItem>
-                      {parentManager && (
-                        <>
-                          <BreadcrumbSeparator />
-                          <BreadcrumbItem>
-                            <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
-                          </BreadcrumbItem>
-                        </>
-                      )}
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>{mgr.manager}</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </BreadcrumbList>
-                  </Breadcrumb>
-                </div>
-              </div>
-            )
-          }
-        }
-        // Fallback: dept-based breadcrumb
-        return (
-          <div className="mgr-detail-page__breadcrumb-bar">
-            <div className="mgr-detail-page__breadcrumb-inner">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {parentManager && (
-                    <>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink>
-                      </BreadcrumbItem>
-                    </>
-                  )}
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{mgr.manager}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </div>
-        )
-      })()}
-
       <main className="mgr-detail-page__main">
         <div className="mgr-detail-page__content">
           <PersonDetailLayout
+            breadcrumb={(() => {
+              const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
+              const deptHrbpList = getDeptHrbps(deptName)
+              const allMgrs = deptManagerTeams(deptName, dept.employees)
+              let mgrStart = 0
+              for (const h of deptHrbpList) {
+                let covered = 0
+                const startIdx = mgrStart
+                for (let m = mgrStart; m < allMgrs.length; m++) {
+                  if (covered + allMgrs[m].employees > h.headcount && covered > 0) break
+                  covered += allMgrs[m].employees
+                  mgrStart = m + 1
+                }
+                if (mgrIdx >= startIdx && mgrIdx < mgrStart) {
+                  const sliceCount = mgrStart - startIdx
+                  const targetDirs = Math.max(4, Math.min(12, Math.round(h.headcount / 300)))
+                  const perDir = Math.ceil(sliceCount / targetDirs)
+                  const dirIdx = Math.floor((mgrIdx - startIdx) / perDir)
+                  const nh = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
+                  const dirName = DEMO_MANAGERS[(nh(deptName) + dirIdx * 7) % DEMO_MANAGERS.length]
+                  return (
+                    <Breadcrumb>
+                      <BreadcrumbList>
+                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}`)}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{h.hrbp}</BreadcrumbLink></BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}&director=${encodeURIComponent(dirName)}&dept=${encodeURIComponent(deptName)}&dirIdx=${dirIdx}`)}>{dirName}</BreadcrumbLink></BreadcrumbItem>
+                        {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
+                      </BreadcrumbList>
+                    </Breadcrumb>
+                  )
+                }
+              }
+              return (
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink></BreadcrumbItem>
+                    {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              )
+            })()}
             name={mgr.manager}
             subtitle={`${mgr.title} · ${dept.name} · ${employees.length} employees`}
             readiness={{

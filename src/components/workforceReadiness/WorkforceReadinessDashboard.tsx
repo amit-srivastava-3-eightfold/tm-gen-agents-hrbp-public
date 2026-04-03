@@ -2438,19 +2438,83 @@ export function WorkforceReadinessDashboard({
   // Single-dept HRBP goes straight to DeptView (no overview needed)
   const singleDeptHrbp = isHrbp && scopedDepartments?.length === 1
 
-  // Auto-select department from ?dept= query param (e.g. navigating back from Manager Detail)
+  // Auto-select view from query params (e.g. navigating back from Manager Detail breadcrumbs)
   const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director'>(() => {
     if (singleDeptHrbp) return 'dept'
     const p = new URLSearchParams(window.location.search)
+    if (p.get('director')) return 'director'
+    if (p.get('hrbp')) return 'hrbp'
     return p.get('dept') ? 'dept' : 'board'
   })
-  const [hrbpName, setHrbpName] = useState<string | null>(null)
-  const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } | null>(null)
+  const [hrbpName, setHrbpName] = useState<string | null>(() => {
+    const p = new URLSearchParams(window.location.search)
+    return p.get('hrbp') ?? null
+  })
+  const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } | null>(() => {
+    const p = new URLSearchParams(window.location.search)
+    const directorName = p.get('director')
+    const hrbp = p.get('hrbp')
+    const deptParam = p.get('dept')
+    const dirIdxStr = p.get('dirIdx')
+    if (!directorName || !hrbp || !deptParam || dirIdxStr === null) return null
+    const d = departments.find(x => x.name === deptParam)
+    if (!d) return null
+    const dirIdx = parseInt(dirIdxStr, 10)
+    const deptHrbpList = getDeptHrbps(deptParam)
+    const allMgrs = deptManagerTeams(deptParam, d.employees)
+    // Find this HRBP's slice
+    let mgrStart = 0
+    for (const h of deptHrbpList) {
+      let covered = 0
+      const startIdx = mgrStart
+      for (let m = mgrStart; m < allMgrs.length; m++) {
+        if (covered + allMgrs[m].employees > h.headcount && covered > 0) break
+        covered += allMgrs[m].employees
+        mgrStart = m + 1
+      }
+      if (h.hrbp === hrbp) {
+        const sliceCount = mgrStart - startIdx
+        const targetDirs = Math.max(4, Math.min(12, Math.round(h.headcount / 300)))
+        const perDir = Math.ceil(sliceCount / targetDirs)
+        const DIRECTOR_TITLES: Record<string, string[]> = {
+          Engineering: ['VP Engineering', 'Sr. Director Engineering', 'Director Platform', 'Director Frontend', 'Director QA', 'Director DevOps', 'Director Mobile', 'Director Infrastructure', 'Director ML', 'Director SRE', 'Director Architecture', 'Director Security Eng'],
+          Sales: ['VP Sales', 'Sr. Director Enterprise', 'Director Mid-Market', 'Director Inside Sales', 'Director Sales Ops', 'Director Channel Sales', 'Director Sales Enablement', 'Director Strategic Accounts'],
+          Operations: ['VP Operations', 'Director Supply Chain', 'Director Logistics', 'Director Process Excellence', 'Director Fleet Ops', 'Director Planning'],
+          'Customer Success': ['VP Customer Success', 'Director Implementation', 'Director Support', 'Director Renewals', 'Director Customer Ops', 'Director Onboarding'],
+          Administrative: ['VP Administration', 'Director Admin Services', 'Director Records', 'Director Executive Support', 'Director Office Ops'],
+          Finance: ['VP Finance', 'Director FP&A', 'Director Accounting', 'Director Tax', 'Director Payroll', 'Director Treasury'],
+          Marketing: ['VP Marketing', 'Director Growth', 'Director Content', 'Director Brand', 'Director Demand Gen', 'Director Marketing Ops'],
+          'IT & Security': ['VP IT', 'Director Infrastructure', 'Director Security Ops', 'Director IT Support'],
+          Product: ['VP Product', 'Director Product Design', 'Director Product Analytics', 'Director UX Research'],
+          'Data & Analytics': ['VP Data', 'Director Analytics', 'Director Data Engineering', 'Director BI'],
+          'Quality & Compliance': ['VP Quality', 'Director Compliance', 'Director Internal Audit', 'Director Risk'],
+          HR: ['VP People', 'Director Talent Acquisition', 'Director People Ops', 'Director L&D'],
+          Legal: ['VP Legal', 'Director Contracts', 'Director Employment Law', 'Director IP'],
+          Partnerships: ['VP Partnerships', 'Director Channel Dev', 'Director Alliance', 'Director BD'],
+          Procurement: ['VP Procurement', 'Director Sourcing', 'Director Vendor Relations'],
+          Facilities: ['VP Facilities', 'Director Workplace Ops', 'Director Building Services'],
+          Communications: ['VP Communications', 'Director Internal Comms', 'Director PR'],
+        }
+        const dirTitles = DIRECTOR_TITLES[deptParam] ?? ['VP', 'Sr. Director', 'Director', 'Associate Director']
+        return {
+          name: directorName,
+          title: dirTitles[dirIdx % dirTitles.length],
+          deptName: deptParam,
+          mgrIdxStart: startIdx + dirIdx * perDir,
+          mgrCount: Math.min(perDir, sliceCount - dirIdx * perDir),
+          parentHrbp: hrbp,
+        }
+      }
+    }
+    return null
+  })
   const [dept, setDept] = useState<Dept | null>(() => {
     if (singleDeptHrbp) {
       return departments.find(d => d.name === scopedDepartments![0]) ?? null
     }
     const p = new URLSearchParams(window.location.search)
+    // Don't open dept view if hrbp or director param is present
+    if (p.get('hrbp') || p.get('director')) return null
     const deptParam = p.get('dept')
     if (deptParam) {
       const found = departments.find(d => d.name === deptParam)
@@ -2463,6 +2527,16 @@ export function WorkforceReadinessDashboard({
       }
     }
     return null
+  })
+
+  // Clean nav query params after restoring state
+  useState(() => {
+    const url = new URL(window.location.href)
+    let dirty = false
+    for (const key of ['hrbp', 'director', 'dirIdx']) {
+      if (url.searchParams.has(key)) { url.searchParams.delete(key); dirty = true }
+    }
+    if (dirty) window.history.replaceState({}, '', url.pathname + url.search + url.hash)
   })
 
   // ─── Universal WFR program state ───
@@ -2580,55 +2654,6 @@ export function WorkforceReadinessDashboard({
 
   return (
     <>
-      {view === 'hrbp' && hrbpName && (
-        <div className="wfr-dash__breadcrumb-bar">
-          <div className="wfr-dash__breadcrumb-inner">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink
-                    onClick={() => {
-                      setView('board')
-                      setHrbpName(null)
-                    }}
-                  >
-                    Overview
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{hrbpName}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </div>
-      )}
-      {view === 'director' && directorData && (
-        <div className="wfr-dash__breadcrumb-bar">
-          <div className="wfr-dash__breadcrumb-inner">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null); setDirectorData(null) }}>
-                    Overview
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink onClick={() => { setHrbpName(directorData.parentHrbp); setView('hrbp'); setDirectorData(null) }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{directorData.parentHrbp}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{directorData.name}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </div>
-      )}
       {view === 'dept' && dept && !singleDeptHrbp && (
         <div className="wfr-dash__breadcrumb-bar">
           <div className="wfr-dash__breadcrumb-inner">
@@ -2783,6 +2808,15 @@ export function WorkforceReadinessDashboard({
             : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
           return (
             <PersonDetailLayout
+              breadcrumb={
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{hrbpName}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              }
               name={hrbpName}
               subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
               readiness={{
@@ -2887,6 +2921,17 @@ export function WorkforceReadinessDashboard({
             : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
           return (
             <PersonDetailLayout
+              breadcrumb={
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null); setDirectorData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(directorData.parentHrbp); setView('hrbp'); setDirectorData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{directorData.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage>{directorData.name}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              }
               name={directorData.name}
               subtitle={`${directorData.title} · ${d.name} · ${dirHeadcount.toLocaleString()} employees`}
               readiness={{
