@@ -1501,7 +1501,7 @@ function BoardView({
 
   // HRBPs grouped with their departments for the HRBPs tab
   const hrbpRows = useMemo(() => {
-    const scopedNames = new Set(allDeptsSorted.map(d => d.name))
+    const scopedNames = new Set<string>(allDeptsSorted.map(d => d.name))
     const map = new Map<string, { hrbp: string; depts: { name: string; headcount: number; readiness: number; aiPotential: number; gap: number }[] }>()
     for (const a of hrbpAssignments) {
       if (!scopedNames.has(a.dept)) continue

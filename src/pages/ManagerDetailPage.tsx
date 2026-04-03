@@ -26,7 +26,6 @@ import {
 } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
-import { MetricCard } from '../components/workforceReadiness/MetricCard'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
 import { deriveWfrFlags, DeptTableSoloBar, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
@@ -198,13 +197,8 @@ export function ManagerDetailPage() {
     ? Math.round(employees.reduce((s, e) => s + e.readinessPct, 0) / employees.length)
     : 0
   const notReady = displayEmployees.length - readyCount
-  const gapPct = displayEmployees.length > 0 ? notReady / displayEmployees.length : 0
-
   // Deltas for metric cards
   const readinessDelta = avgReadiness - rawAvgReadiness
-  const rawReadyCount = employees.filter(e => e.readinessPct >= 50).length
-  const rawNotReady = employees.length - rawReadyCount
-  const gapDelta = (collectionComplete || hrbpPlansCreated) ? notReady - rawNotReady : 0
 
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
