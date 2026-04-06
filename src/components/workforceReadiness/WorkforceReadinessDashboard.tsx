@@ -3179,6 +3179,7 @@ export function WorkforceReadinessDashboard({
               }}
               tableTitle="Client managers"
               tableHint={`${directors.length} client manager${directors.length !== 1 ? 's' : ''} · click to view team`}
+              sixColTable={showHrbpCollection}
             >
               <DataTable bordered>
                 <DataTableHeader>

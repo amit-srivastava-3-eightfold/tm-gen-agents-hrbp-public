@@ -24,7 +24,8 @@
   min-height: 220px;
 }
 
-/* Consistent 5-column table layout for manager summary + reports tables */
+/* Consistent table layout for manager summary + reports tables.
+   Supports 5-column (default) and 6-column (with data collection) layouts. */
 .person-detail__table-aligned table {
   table-layout: fixed;
   width: 100%;
@@ -39,6 +40,20 @@
 .person-detail__table-aligned td:nth-child(4) { width: 22%; }
 .person-detail__table-aligned th:nth-child(5),
 .person-detail__table-aligned td:nth-child(5) { width: 19%; }
+
+/* 6-column variant: shrink columns to fit data collection column */
+.person-detail__table-aligned--6col th:nth-child(1),
+.person-detail__table-aligned--6col td:nth-child(1) { width: 22%; }
+.person-detail__table-aligned--6col th:nth-child(2),
+.person-detail__table-aligned--6col td:nth-child(2) { width: 10%; }
+.person-detail__table-aligned--6col th:nth-child(3),
+.person-detail__table-aligned--6col td:nth-child(3) { width: 18%; }
+.person-detail__table-aligned--6col th:nth-child(4),
+.person-detail__table-aligned--6col td:nth-child(4) { width: 18%; }
+.person-detail__table-aligned--6col th:nth-child(5),
+.person-detail__table-aligned--6col td:nth-child(5) { width: 16%; }
+.person-detail__table-aligned--6col th:nth-child(6),
+.person-detail__table-aligned--6col td:nth-child(6) { width: 16%; }
 
 /* Sticky breadcrumb bar for dept drill-down — flush under header */
 .wfr-dash__breadcrumb-bar {

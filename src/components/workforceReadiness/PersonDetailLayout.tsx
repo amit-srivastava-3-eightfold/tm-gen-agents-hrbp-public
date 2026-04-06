@@ -33,6 +33,8 @@ export interface PersonDetailLayoutProps {
   heroCard?: ReactNode
   /** Optional team manager table rendered above the main table */
   managerTable?: TableSectionProps
+  /** Enable 6-column table alignment (e.g. when data collection column is shown) */
+  sixColTable?: boolean
   children: ReactNode
 }
 
@@ -47,6 +49,7 @@ export function PersonDetailLayout({
   breadcrumb,
   heroCard,
   managerTable,
+  sixColTable,
   children,
 }: PersonDetailLayoutProps) {
   return (
@@ -98,7 +101,7 @@ export function PersonDetailLayout({
         </div>
 
         {managerTable && (
-          <div className="person-detail__table-aligned" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className={`person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {!managerTable.hideTitle && (
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{managerTable.title}</h3>
@@ -109,7 +112,7 @@ export function PersonDetailLayout({
           </div>
         )}
 
-        <div className={managerTable ? 'person-detail__table-aligned' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className={managerTable ? `person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}` : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{tableTitle}</h3>
             <span className="wfr-dash__panel-hint">{tableHint}</span>
