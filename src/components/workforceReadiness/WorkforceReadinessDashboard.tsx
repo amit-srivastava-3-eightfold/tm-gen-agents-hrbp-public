@@ -2035,11 +2035,15 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
-                {(anyDelegation || (focusCollectionActive && !focusCollectionComplete)) && <DataCollectionHead />}
+                {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
+                {focusCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]">Upskilling status</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {hrbpRows.map((row) => (
+              {hrbpRows.map((row) => {
+                const hrbpDeptNames = row.depts.map(d => d.name)
+                const hrbpInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.some(n => hrbpDeptNames.includes(n))
+                return (
                 <DataTableRow key={row.hrbp}>
                   <DataTableCell className="font-semibold">
                     <button
@@ -2075,15 +2079,30 @@ function BoardView({
                   <DataTableCell align="right">
                     <span className="wfr-type-h6 tabular-nums">{row.totalGap.toLocaleString()}</span>
                   </DataTableCell>
-                  {(anyDelegation || (focusCollectionActive && !focusCollectionComplete)) && (
+                  {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && (
                     stateNum(row.hrbpState) >= 2
                       ? <DataCollectionProgressCell rate={row.responseRate} inScope />
                       : row.hrbpDelegated
                         ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
                         : <DataCollectionProgressCell rate={0} inScope={false} />
                   )}
+                  {focusCollectionComplete && (
+                    <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                      {hrbpInUpskilling ? (
+                        <span className="inline-flex items-center gap-1 text-[12px] text-[#7c3aed]">
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>school</span>
+                          Upskilling
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[12px] text-[#15803d]">
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
+                          Ready for upskilling
+                        </span>
+                      )}
+                    </DataTableCell>
+                  )}
                 </DataTableRow>
-              ))}
+              )})}
             </DataTableBody>
           </DataTable>
         </TabsContent>
