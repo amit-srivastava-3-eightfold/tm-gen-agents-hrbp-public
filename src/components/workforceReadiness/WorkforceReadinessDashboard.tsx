@@ -2087,7 +2087,11 @@ function BoardView({
                         : <DataCollectionProgressCell rate={0} inScope={false} />
                   )}
                   {focusCollectionComplete && (() => {
-                    // Deterministic upskilling progress per HRBP
+                    // Only show upskilling progress if this HRBP participated in collection
+                    const hrbpWasInScope = stateNum(row.hrbpState) >= 3
+                    if (!hrbpWasInScope) {
+                      return <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
+                    }
                     const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
                     const plansPct = hrbpPlansCreated ? 100
                       : hrbpInUpskilling ? Math.max(15, Math.min(85, 30 + (nh(row.hrbp) % 50)))
