@@ -22,6 +22,7 @@ import {
   getDeptHrbps,
   getHrbpDepts,
   hrbpAssignments,
+  getPersonaHrbpNames,
   type Dept,
   type RoleRowType,
 } from '../../data/wfrOrgData'
@@ -42,10 +43,23 @@ import '../../pages/ManagerDetailPage.css'
 
 export type WfrProgramState = 1 | 2 | '2b' | 3 | 4 | 5
 
+/** Per-HRBP independent state — only created for HRBPs selected during delegation. */
+export type HrbpState = {
+  state: WfrProgramState
+  /** Departments this HRBP is responsible for (from hrbpAssignments) */
+  departments: string[]
+  /** true when CHRO has delegated but HRBP hasn't launched collection yet */
+  delegated?: boolean
+  /** Collection method chosen by HRBP when they launch (e.g. 'AI Agent Interviews') */
+  channelsLabel?: string
+}
+
 export type WfrPersistedState = {
   state: WfrProgramState
   collectionLaunchSummary?: FocusCollectionLaunchSummary | null
   upskillingLaunchSummary?: UpskillingLaunchSummary | null
+  /** Per-HRBP state map — keyed by HRBP name. Only populated when delegation flow is used. */
+  hrbpStates?: Record<string, HrbpState>
 }
 
 const WFR_STATE_KEY = 'tm:wfr-state'
@@ -64,6 +78,61 @@ export function deriveWfrFlags(state: WfrProgramState) {
     upskillingActive: n >= 4,
     hrbpPlansCreated: n >= 5,
   }
+}
+
+/** Numeric value for state comparison (2b → 2.5). */
+export function stateNum(s: WfrProgramState): number { return s === '2b' ? 2.5 : (s as number) }
+
+/** Get the effective state for a specific HRBP. Falls back to org state if no per-HRBP tracking. */
+export function getHrbpEffectiveState(wfrState: WfrPersistedState, hrbpName: string): WfrProgramState {
+  if (wfrState.hrbpStates?.[hrbpName]) return wfrState.hrbpStates[hrbpName].state
+  // HRBP not in the delegated set → stays at state 1
+  if (wfrState.hrbpStates) return 1
+  // No delegation active → use org-level state
+  return wfrState.state
+}
+
+/** Effective state for the demo HRBP persona — min of all their mapped HRBP states. */
+export function getPersonaEffectiveState(wfrState: WfrPersistedState, personaHrbpNames: string[]): WfrProgramState {
+  if (!wfrState.hrbpStates || personaHrbpNames.length === 0) return wfrState.state
+  const states = personaHrbpNames
+    .map(name => wfrState.hrbpStates?.[name]?.state)
+    .filter((s): s is WfrProgramState => s !== undefined)
+  if (states.length === 0) return 1 // persona's HRBPs weren't delegated to
+  return states.reduce((min, s) => stateNum(s) < stateNum(min) ? s : min)
+}
+
+/** Org-level aggregate state for CHRO view — min of all delegated HRBP states. */
+export function computeOrgAggregateState(wfrState: WfrPersistedState): WfrProgramState {
+  if (!wfrState.hrbpStates) return wfrState.state
+  const entries = Object.values(wfrState.hrbpStates)
+  if (entries.length === 0) return wfrState.state
+  return entries.reduce((min, e) => stateNum(e.state) < stateNum(min.state) ? e : min).state
+}
+
+/** Check if a specific HRBP has a pending delegation (CHRO delegated, HRBP hasn't launched yet). */
+export function hasHrbpPendingDelegation(wfrState: WfrPersistedState, hrbpName: string): boolean {
+  const hs = wfrState.hrbpStates?.[hrbpName]
+  return hs?.delegated === true && hs.state === 1
+}
+
+/** Check if any of the persona's mapped HRBPs have a pending delegation. */
+export function hasPersonaPendingDelegation(wfrState: WfrPersistedState, personaHrbpNames: string[]): boolean {
+  return personaHrbpNames.some(name => hasHrbpPendingDelegation(wfrState, name))
+}
+
+/** Advance every HRBP that is currently at `from` to `to`. Returns new state with recomputed org aggregate. */
+function advanceAllHrbps(prev: WfrPersistedState, from: WfrProgramState | null, to: WfrProgramState): WfrPersistedState {
+  if (!prev.hrbpStates) return { ...prev, state: to }
+  const next = { ...prev, hrbpStates: { ...prev.hrbpStates } }
+  for (const name of Object.keys(next.hrbpStates!)) {
+    const hs = next.hrbpStates![name]
+    if (from === null || hs.state === from) {
+      next.hrbpStates![name] = { ...hs, state: to }
+    }
+  }
+  next.state = computeOrgAggregateState(next)
+  return next
 }
 
 /* ─── End WFR state helpers ─── */
@@ -390,6 +459,71 @@ function MetricHeaderLabel({ label, metric, onInfoClick, sortDir, onSortClick }:
   )
 }
 
+const HRBP_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  '1': { label: 'Not started', color: '#64748b', bg: '#f1f5f9' },
+  '2': { label: 'Collecting', color: '#d97706', bg: '#fef3c7' },
+  '2b': { label: 'Completing', color: '#d97706', bg: '#fef3c7' },
+  '3': { label: 'Complete', color: '#15803d', bg: '#f0fdf4' },
+  '4': { label: 'Upskilling', color: '#7c3aed', bg: '#f5f3ff' },
+  '5': { label: 'Plans created', color: '#15803d', bg: '#f0fdf4' },
+}
+
+function HrbpStatusPill({ state, delegated }: { state: WfrProgramState; delegated?: boolean }) {
+  const cfg = (delegated && state === 1)
+    ? { label: 'Awaiting launch', color: '#d97706', bg: '#fef3c7' }
+    : HRBP_STATUS_CONFIG[String(state)] ?? HRBP_STATUS_CONFIG['1']
+  return (
+    <span style={{
+      display: 'inline-flex', padding: '2px 10px', borderRadius: 12,
+      fontSize: 12, fontWeight: 600, color: cfg.color, background: cfg.bg,
+      border: `1px solid ${cfg.color}20`, whiteSpace: 'nowrap',
+    }}>
+      {cfg.label}
+    </span>
+  )
+}
+
+/* ─── Data Collection column templates ─── */
+
+/** Standardized header for the data collection column. Shows method (e.g. "AI Agent Interviews") below the title. */
+export function DataCollectionHead() {
+  return (
+    <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">
+      Data collection
+    </DataTableHead>
+  )
+}
+
+/** Progress bar cell for aggregate collection rates (departments, HRBPs, managers). */
+export function DataCollectionProgressCell({ rate, inScope = true }: { rate: number; inScope?: boolean }) {
+  if (!inScope) return <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
+  return (
+    <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+      <div className="wfr-dash__plan-progress">
+        <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
+          <div className="wfr-dash__plan-progress-fill" style={{ width: `${Math.max(0, rate)}%`, background: '#d97706' }} />
+        </div>
+        <span className="wfr-dash__plan-progress-label">{Math.max(0, rate)}%</span>
+      </div>
+    </DataTableCell>
+  )
+}
+
+/** Individual employee status cell ("Responded" / "Pending"). */
+export function DataCollectionStatusCell({ responded, inScope = true }: { responded: boolean; inScope?: boolean }) {
+  if (!inScope) return <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
+  return (
+    <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+      <span className={`inline-flex items-center gap-1 text-[12px] ${responded ? 'text-[#15803d]' : 'text-[#94a3b8]'}`}>
+        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{responded ? 'check_circle' : 'pending'}</span>
+        {responded ? 'Responded' : 'Pending'}
+      </span>
+    </DataTableCell>
+  )
+}
+
+/* ─── End Data Collection column templates ─── */
+
 export function DeptTableSoloBar({
   variant,
   pct,
@@ -429,6 +563,7 @@ function DeptView({
   focusLaunchOpen,
   setFocusLaunchOpen,
   onHrbpClick,
+  onHrbpCollectionLaunch,
 }: {
   dept: Dept
   wfrState: WfrPersistedState
@@ -440,14 +575,20 @@ function DeptView({
   focusLaunchOpen: boolean
   setFocusLaunchOpen: (open: boolean) => void
   onHrbpClick: (hrbpName: string) => void
+  onHrbpCollectionLaunch?: (hrbpName: string, channelsLabel: string) => void
 }) {
-  // Derive convenience flags from universal state
+  // Derive convenience flags — for HRBP persona, use persona's effective state
   const navigate = useNavigate()
   const { currentUser } = useUser()
   const isHrbp = currentUser.id === 'jaydon-torff'
-  const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(wfrState.state)
+  const personaHrbpNames = isHrbp ? getPersonaHrbpNames(currentUser.id) : []
+  const effectiveState = isHrbp && wfrState.hrbpStates
+    ? getPersonaEffectiveState(wfrState, personaHrbpNames)
+    : wfrState.state
+  const { collectionActive: orgCollectionActive, collectionComplete: orgCollectionComplete, collectionJustCompleted: deptCollectionJustCompleted, upskillingActive, hrbpPlansCreated: deptHrbpPlansCreated } = deriveWfrFlags(effectiveState)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
+  const hrbpDelegationPending = isHrbp && hasPersonaPendingDelegation(wfrState, personaHrbpNames)
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   // expandedManagers removed — manager rows now navigate to detail page
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
@@ -528,10 +669,12 @@ function DeptView({
 
   return (
     <div className="wfr-dash flex flex-col gap-6">
-      <div className="mgr-detail-page__summary">
-        <h2 className="mgr-detail-page__name">{dept.name}</h2>
-        <p className="mgr-detail-page__subtitle">{dept.employees.toLocaleString()} employees · {getDeptHrbps(dept.name).length > 1 ? 'HRBPs' : 'HRBP'}: {getDeptHrbps(dept.name).map(h => h.hrbp).join(', ') || '—'}</p>
-      </div>
+      {!isHrbp && (
+        <div className="mgr-detail-page__summary">
+          <h2 className="mgr-detail-page__name">{dept.name}</h2>
+          <p className="mgr-detail-page__subtitle">{dept.employees.toLocaleString()} employees · {getDeptHrbps(dept.name).length > 1 ? 'HRBPs' : 'HRBP'}: {getDeptHrbps(dept.name).map(h => h.hrbp).join(', ') || '—'}</p>
+        </div>
+      )}
       <header className="wfr-dash__hero wfr-dash__dept-hero">
         <div className="shrink-0">
           <MetricArcReadinessSemicircle readiness={dept.aiReadiness} compact />
@@ -592,6 +735,15 @@ function DeptView({
           upskillingActive={upskillingActive}
           upskillingLaunchSummary={upskillingLaunchSummary}
           hrbpPlansCreated={deptHrbpPlansCreated}
+          isHrbp={isHrbp}
+          hrbpDelegationPending={hrbpDelegationPending}
+          onHrbpCollectionLaunch={(channelsLabel: string) => {
+            for (const name of personaHrbpNames) {
+              onHrbpCollectionLaunch?.(name, channelsLabel)
+            }
+          }}
+          delegatorName="Jordan Reese"
+          delegationDeptName={dept.name}
         />
 
         <div className="wfr-dash__cards-row">
@@ -647,16 +799,120 @@ function DeptView({
             title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined,
           }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
+
+          // HRBP: show client managers (directors) instead of tabs
+          if (isHrbp && personaHrbpNames?.length) {
+            const hrbpNameForDir = personaHrbpNames[0]
+            const deptHrbpList = getDeptHrbps(dept.name)
+            const allMgrsFull = deptManagerTeams(dept.name, dept.employees)
+            const hrbpIdx = deptHrbpList.findIndex(h => h.hrbp === hrbpNameForDir)
+            const hrbpAssign = deptHrbpList[hrbpIdx]
+            if (hrbpAssign) {
+              let mgrStart = 0
+              for (let i = 0; i < hrbpIdx; i++) {
+                let covered = 0
+                for (let m = mgrStart; m < allMgrsFull.length; m++) {
+                  if (covered + allMgrsFull[m].employees > deptHrbpList[i].headcount && covered > 0) break
+                  covered += allMgrsFull[m].employees
+                  mgrStart = m + 1
+                }
+              }
+              const slicedMgrs: typeof allMgrsFull = []
+              let covHc = 0
+              for (let m = mgrStart; m < allMgrsFull.length && covHc < hrbpAssign.headcount; m++) {
+                slicedMgrs.push(allMgrsFull[m])
+                covHc += allMgrsFull[m].employees
+              }
+              const targetDirs = Math.max(4, Math.min(12, Math.round(hrbpAssign.headcount / 300)))
+              const perDir = Math.ceil(slicedMgrs.length / targetDirs)
+              const DIRECTOR_TITLES: Record<string, string[]> = {
+                Engineering: ['VP Engineering', 'Sr. Director Engineering', 'Director Platform', 'Director Frontend', 'Director QA', 'Director DevOps', 'Director Mobile', 'Director Infrastructure', 'Director ML', 'Director SRE', 'Director Architecture', 'Director Security Eng'],
+                default: ['VP', 'Sr. Director', 'Director', 'Associate Director'],
+              }
+              const dirTitles = DIRECTOR_TITLES[dept.name] ?? DIRECTOR_TITLES.default
+              const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+              const directors: { name: string; title: string; employees: number; readiness: number; readyCount: number; teamManagers: number; firstMgrIdx: number }[] = []
+              for (let di = 0; di < targetDirs; di++) {
+                const batch = slicedMgrs.slice(di * perDir, (di + 1) * perDir)
+                if (batch.length === 0) continue
+                const batchStart = mgrStart + di * perDir
+                const empCount = batch.reduce((s, m) => s + m.employees, 0)
+                const avgReadiness = dept.aiReadiness
+                const ready = Math.round(empCount * avgReadiness / 100)
+                directors.push({
+                  name: DEMO_MANAGERS[(nh(dept.name) + di * 7) % DEMO_MANAGERS.length],
+                  title: dirTitles[di % dirTitles.length],
+                  employees: empCount,
+                  readiness: avgReadiness,
+                  readyCount: ready,
+                  teamManagers: batch.length,
+                  firstMgrIdx: batchStart,
+                })
+              }
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: 0 }}>Client managers</h3>
+                    <span className="wfr-dash__panel-hint">{directors.length} client managers · click to view team</span>
+                  </div>
+                  <DataTable bordered>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead>Manager</DataTableHead>
+                        <DataTableHead numeric>Employees</DataTableHead>
+                        <DataTableHead metric>Team AI adoption</DataTableHead>
+                        <DataTableHead metric>Team AI potential</DataTableHead>
+                        <DataTableHead numeric>Gap</DataTableHead>
+                        {orgCollectionActive && !orgCollectionComplete && <DataCollectionHead />}
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {directors.sort((a, b) => (dept.aiPotential - a.readiness) - (dept.aiPotential - b.readiness)).reverse().map(dir => {
+                        const notReady = dir.employees - dir.readyCount
+                        const dirResponseRate = orgCollectionActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(dept.name) + ((dir.name.length * 7) % 30) - 15)) : 0
+                        return (
+                          <DataTableRow key={dir.name} style={{ cursor: 'pointer' }} onClick={() => navigate(`/workforce/manager/${encodeURIComponent(dir.name)}?dept=${encodeURIComponent(dept.name)}&mgrIdx=${dir.firstMgrIdx}`)}>
+                            <DataTableCell className="font-semibold">
+                              <div>
+                                <div className="text-[#3b5bdb] hover:underline">{dir.name}</div>
+                                <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell align="right" numeric>{dir.employees.toLocaleString()}</DataTableCell>
+                            <DataTableCell metric>
+                              <div>
+                                <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                                <div className="text-[10px] text-[#94a3b8] mt-0.5">{dir.readyCount} of {dir.employees} AI-ready</div>
+                              </div>
+                            </DataTableCell>
+                            <DataTableCell metric><DeptTableSoloBar variant="potential" pct={dept.aiPotential} /></DataTableCell>
+                            <DataTableCell align="right">
+                              <span style={{ color: dir.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
+                            </DataTableCell>
+                            {orgCollectionActive && !orgCollectionComplete && (
+                              <DataCollectionProgressCell rate={dirResponseRate} inScope />
+                            )}
+                          </DataTableRow>
+                        )
+                      })}
+                    </DataTableBody>
+                  </DataTable>
+                </>
+              )
+            }
+          }
+
           return (
-            <Tabs defaultValue="hrbps">
+            <Tabs defaultValue={isHrbp ? 'team' : 'hrbps'}>
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <TabsList>
-                  <TabsTrigger value="hrbps">HRBPs</TabsTrigger>
+                  {!isHrbp && <TabsTrigger value="hrbps">HRBPs</TabsTrigger>}
                   <TabsTrigger value="team">Team</TabsTrigger>
                   <TabsTrigger value="roles">Roles</TabsTrigger>
                 </TabsList>
                 <span className="wfr-dash__panel-hint">Sorted by gap {EM} click to view team</span>
               </div>
+              {!isHrbp && (
               <TabsContent value="hrbps">
                 {(() => {
                   const deptHrbpList = getDeptHrbps(dept.name)
@@ -700,6 +956,7 @@ function DeptView({
                   )
                 })()}
               </TabsContent>
+              )}
               <TabsContent value="team">
               <DataTable bordered>
                 <DataTableHeader>
@@ -729,10 +986,7 @@ function DeptView({
                     <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                     <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" /></DataTableHead>
                     {orgCollectionActive && !orgCollectionComplete ? (
-                      <>
-                        <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
-                        <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
-                      </>
+                      <DataCollectionHead />
                     ) : null}
                     {deptInUpskilling && upskillingLaunchSummary?.plansAssigned?.includes(dept.name) ? (
                       <DataTableHead className="">Upskilling status</DataTableHead>
@@ -769,7 +1023,9 @@ function DeptView({
                   })().map(({ mgr, mgrIdx, readiness: mgrReadiness, calibratedEmps }, mi) => {
                     const mgrKey = `dept-${dept.name}-${mgr.manager}`
 
-                    const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(dept.name)
+                    const inScope = wfrState.hrbpStates
+                      ? getDeptHrbps(dept.name).some(h => stateNum(getHrbpEffectiveState(wfrState, h.hrbp)) >= 2)
+                      : collectionLaunchSummary?.scopedDepartmentNames?.includes(dept.name)
                     const mgrResponseRate = inScope ? Math.min(100, wfrDemoDeptResponseRate(dept.name) + ((mgr.manager.length * 3) % 20) - 10) : 0
                     const showCollection = orgCollectionActive && !orgCollectionComplete
                     return (
@@ -844,30 +1100,7 @@ function DeptView({
                             })()}
                           </DataTableCell>
                           {showCollection ? (
-                            <>
-                              <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
-                                {inScope ? (
-                                  <div className="wfr-dash__plan-progress">
-                                    <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
-                                      <div className="wfr-dash__plan-progress-fill" style={{ width: `${Math.max(0, mgrResponseRate)}%`, background: '#d97706' }} />
-                                    </div>
-                                    <span className="wfr-dash__plan-progress-label">{Math.max(0, mgrResponseRate)}%</span>
-                                  </div>
-                                ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
-                              </DataTableCell>
-                              <DataTableCell className="bg-[#fafbfc]">
-                                {inScope ? (
-                                  <span className="inline-flex items-center gap-1.5 text-[13px] text-[#1a212e]">
-                                    {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI') ? (
-                                      <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
-                                    ) : (
-                                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment</span>
-                                    )}
-                                    {collectionLaunchSummary?.channelsLabel ?? 'Survey'}
-                                  </span>
-                                ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
-                              </DataTableCell>
-                            </>
+                            <DataCollectionProgressCell rate={mgrResponseRate} inScope={!!inScope} />
                           ) : null}
                           {deptInUpskilling && upskillingLaunchSummary?.plansAssigned?.includes(dept.name) ? (
                             <DataTableCell className="">
@@ -1458,6 +1691,10 @@ function BoardView({
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
+  // CHRO has delegated but HRBPs haven't all started yet
+  const chroDelegationActive = !isHrbp && !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated)
+  // Any HRBP has been delegated (for showing Data Collection column)
+  const anyDelegation = !!wfrState.hrbpStates && Object.keys(wfrState.hrbpStates).length > 0
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
@@ -1521,9 +1758,15 @@ function BoardView({
       const avgReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.readiness * d.headcount, 0) / headcount) : 0
       const avgPotential = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.aiPotential * d.headcount, 0) / headcount) : 0
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
-      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalGap }
+      const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
+      // Headcount-weighted response rate across the HRBP's departments (for collection-active view)
+      const responseRate = stateNum(hrbpState) >= 2 && headcount > 0
+        ? Math.round(row.depts.reduce((s, d) => s + wfrDemoDeptResponseRate(d.name) * d.headcount, 0) / headcount)
+        : 0
+      const hrbpDelegated = wfrState.hrbpStates?.[row.hrbp]?.delegated
+      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalGap, hrbpState, responseRate, hrbpDelegated }
     }).sort((a, b) => b.totalGap - a.totalGap)
-  }, [allDeptsSorted, focusCollectionComplete])
+  }, [allDeptsSorted, focusCollectionComplete, wfrState])
 
   // All roles across org for the Roles tab
   const allRoles = useMemo(() => {
@@ -1550,14 +1793,8 @@ function BoardView({
     return map
   }, [])
 
-  const sorted = useMemo(() => {
-    const scopeSet =
-      focusCollectionActive && collectionLaunchSummary?.scopedDepartmentNames?.length
-        ? new Set(collectionLaunchSummary.scopedDepartmentNames)
-        : null
-    if (!scopeSet) return allDeptsSorted
-    return allDeptsSorted.filter((d) => scopeSet.has(d.name))
-  }, [focusCollectionActive, collectionLaunchSummary, allDeptsSorted])
+  // Show all departments — collection scope is reflected via the Data Collection cell (progress vs "—")
+  const sorted = useMemo(() => allDeptsSorted, [allDeptsSorted])
 
   // HRBP scoped rollup — always active when scopedDepartments is set
   const hrbpRollup = useMemo(() => {
@@ -1736,6 +1973,8 @@ function BoardView({
           upskillingLaunchSummary={upskillingLaunchSummary}
           isHrbp={isHrbp}
           hrbpPlansCreated={hrbpPlansCreated}
+          chroDelegationActive={chroDelegationActive}
+          chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
         />
 
         <div className="wfr-dash__cards-row">
@@ -1796,6 +2035,7 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                {(anyDelegation || (focusCollectionActive && !focusCollectionComplete)) && <DataCollectionHead />}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1835,6 +2075,13 @@ function BoardView({
                   <DataTableCell align="right">
                     <span className="wfr-type-h6 tabular-nums">{row.totalGap.toLocaleString()}</span>
                   </DataTableCell>
+                  {(anyDelegation || (focusCollectionActive && !focusCollectionComplete)) && (
+                    stateNum(row.hrbpState) >= 2
+                      ? <DataCollectionProgressCell rate={row.responseRate} inScope />
+                      : row.hrbpDelegated
+                        ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
+                        : <DataCollectionProgressCell rate={0} inScope={false} />
+                  )}
                 </DataTableRow>
               ))}
             </DataTableBody>
@@ -1908,14 +2155,15 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
-                <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
-                <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
+                <DataCollectionHead />
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {allDeptsSorted.map((d) => {
                 const gapCount = deptGapHeadcount(d)
-                const inScope = collectionLaunchSummary?.scopedDepartmentNames?.includes(d.name)
+                const inScope = wfrState.hrbpStates
+                  ? getDeptHrbps(d.name).some(h => stateNum(getHrbpEffectiveState(wfrState, h.hrbp)) >= 2)
+                  : collectionLaunchSummary?.scopedDepartmentNames?.includes(d.name)
                 const deptHrbps = getDeptHrbps(d.name)
                 const responseRate = inScope ? wfrDemoDeptResponseRate(d.name) : 0
                 return (
@@ -1928,32 +2176,7 @@ function BoardView({
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
                       </DataTableCell>
-                      <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
-                        {inScope ? (
-                          <div className="wfr-dash__plan-progress">
-                            <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)' }}>
-                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${responseRate}%`, background: '#d97706' }} />
-                            </div>
-                            <span className="wfr-dash__plan-progress-label">{responseRate}%</span>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-[#94a3b8]">—</span>
-                        )}
-                      </DataTableCell>
-                      <DataTableCell className="bg-[#fafbfc]">
-                        {inScope ? (
-                          <span className="inline-flex items-center gap-1.5 text-[13px] text-[#1a212e]">
-                            {(collectionLaunchSummary?.channelsLabel ?? 'Survey').includes('AI') ? (
-                              <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block' }} />
-                            ) : (
-                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment</span>
-                            )}
-                            {collectionLaunchSummary?.channelsLabel ?? 'Survey'}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-[#94a3b8]">—</span>
-                        )}
-                      </DataTableCell>
+                      <DataCollectionProgressCell rate={responseRate} inScope={!!inScope} />
                     </DataTableRow>
                 )
               })}
@@ -2426,6 +2649,7 @@ export function WorkforceReadinessDashboard({
   autoLaunchCollection = false,
   scopedDepartments,
   isHrbp = false,
+  personaHrbpNames,
 }: {
   onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr') => void
   autoLaunchCollection?: boolean
@@ -2433,6 +2657,8 @@ export function WorkforceReadinessDashboard({
   scopedDepartments?: string[]
   /** HRBP persona — different RA card, no departments tab, scoped roles */
   isHrbp?: boolean
+  /** HRBP names this persona maps to in hrbpAssignments (for per-HRBP state) */
+  personaHrbpNames?: string[]
 } = {}) {
   const navigate = useNavigate()
   const [dashOpenMetric, setDashOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
@@ -2448,9 +2674,20 @@ export function WorkforceReadinessDashboard({
     return p.get('dept') ? 'dept' : 'board'
   })
   const [hrbpName, setHrbpName] = useState<string | null>(() => {
+    if (singleDeptHrbp && personaHrbpNames?.length) return personaHrbpNames[0]
     const p = new URLSearchParams(window.location.search)
     return p.get('hrbp') ?? null
   })
+
+  // Reset view when persona changes (e.g. HRBP → CHRO via avatar dropdown)
+  // Force full reload when persona changes — useState initializers don't re-run on prop changes
+  const prevIsHrbpRef = useRef(isHrbp)
+  useEffect(() => {
+    if (prevIsHrbpRef.current !== isHrbp) {
+      prevIsHrbpRef.current = isHrbp
+      window.location.href = `/workforce?user=${isHrbp ? 'jaydon-torff' : 'chro'}`
+    }
+  }, [isHrbp])
   const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(null)
   const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } | null>(() => {
     const p = new URLSearchParams(window.location.search)
@@ -2553,13 +2790,15 @@ export function WorkforceReadinessDashboard({
       window.history.replaceState({}, '', url.pathname + url.search + url.hash)
       return { state: 1 }
     }
-    // Only restore state 5 (upskilled) — set when HRBP publishes & assigns dev plans.
+    // Restore state 5 (upskilled) and any state with per-HRBP delegation tracking.
     // All other states start fresh at 1 so the demo flow is always clean.
     try {
       const stored = localStorage.getItem(WFR_STATE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as WfrPersistedState
         if (parsed.state === 5) return parsed
+        // Preserve delegation state (hrbpStates) so HRBPs see the delegation CTA across navigation
+        if (parsed.hrbpStates && Object.keys(parsed.hrbpStates).length > 0) return parsed
       }
     } catch { /* ignore */ }
     return { state: 1 }
@@ -2592,9 +2831,34 @@ export function WorkforceReadinessDashboard({
   const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<string | null>(null)
 
-  // State transition functions
+  // State transition functions — per-HRBP aware
   const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
-    setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary }))
+    if (summary.delegated && summary.selectedHrbpNames?.length) {
+      // Delegation: set HRBPs to state 1 + delegated (they choose their own method and launch)
+      const hrbpStates: Record<string, HrbpState> = {}
+      for (const hrbpName of summary.selectedHrbpNames) {
+        hrbpStates[hrbpName] = { state: 1, departments: getHrbpDepts(hrbpName).map(d => d.dept), delegated: true }
+      }
+      setWfrState(prev => ({ ...prev, state: 1, collectionLaunchSummary: summary, hrbpStates }))
+    } else {
+      setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary, hrbpStates: undefined }))
+    }
+  }, [setWfrState])
+
+  /** Called when an individual HRBP launches collection from the delegation CTA */
+  const advanceHrbpToCollection = useCallback((hrbpName: string, channelsLabel: string) => {
+    setWfrState(prev => {
+      if (!prev.hrbpStates?.[hrbpName]) return prev
+      const next: WfrPersistedState = {
+        ...prev,
+        hrbpStates: {
+          ...prev.hrbpStates,
+          [hrbpName]: { ...prev.hrbpStates[hrbpName], state: 2, channelsLabel },
+        },
+      }
+      next.state = computeOrgAggregateState(next)
+      return next
+    })
   }, [setWfrState])
 
   const cancelCollection = useCallback(() => {
@@ -2602,15 +2866,18 @@ export function WorkforceReadinessDashboard({
   }, [setWfrState])
 
   const completeCollection = useCallback(() => {
-    setWfrState(prev => ({ ...prev, state: '2b' as const }))
+    setWfrState(prev => advanceAllHrbps(prev, 2 as WfrProgramState, '2b'))
   }, [setWfrState])
 
   const viewCollectionResults = useCallback(() => {
-    setWfrState(prev => ({ ...prev, state: 3 }))
+    setWfrState(prev => advanceAllHrbps(prev, '2b', 3))
   }, [setWfrState])
 
   const startUpskilling = useCallback((summary: UpskillingLaunchSummary) => {
-    setWfrState(prev => ({ ...prev, state: 4, upskillingLaunchSummary: summary }))
+    setWfrState(prev => {
+      const next = advanceAllHrbps(prev, 3 as WfrProgramState, 4)
+      return { ...next, upskillingLaunchSummary: summary }
+    })
     const deptCount = summary.departmentNames.length
     const empCount = summary.totalEmployees.toLocaleString()
     setSnackbar(`Upskilling launched for ${deptCount} department${deptCount === 1 ? '' : 's'} · ${empCount} employees`)
@@ -2618,7 +2885,7 @@ export function WorkforceReadinessDashboard({
   }, [setWfrState])
 
   const completeUpskilling = useCallback(() => {
-    setWfrState(prev => ({ ...prev, state: 5 }))
+    setWfrState(prev => advanceAllHrbps(prev, null, 5))
   }, [setWfrState])
 
   // Handle collection launch dialog callback (compatible with old FocusFirstModule API)
@@ -2634,13 +2901,14 @@ export function WorkforceReadinessDashboard({
   }, [advanceToCollection, cancelCollection])
 
   // Auto-advance from '2b' (just completed) to 3 (collection complete) after 1s
+  const anyAt2b = wfrState.state === '2b' || (wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.state === '2b'))
   useEffect(() => {
-    if (wfrState.state !== '2b') return
+    if (!anyAt2b) return
     const timer = setTimeout(() => {
-      setWfrState(prev => ({ ...prev, state: 3 }))
+      setWfrState(prev => advanceAllHrbps(prev, '2b', 3))
     }, 1000)
     return () => clearTimeout(timer)
-  }, [wfrState.state, setWfrState])
+  }, [anyAt2b, setWfrState])
 
   // Cleanup old localStorage keys on mount
   useEffect(() => {
@@ -2715,7 +2983,8 @@ export function WorkforceReadinessDashboard({
           const d = departments.find(x => x.name === assignment.dept)
           if (!d) return null
           const headcount = assignment.headcount
-          const { collectionComplete: hrbpCollectionComplete, hrbpPlansCreated: hrbpPlansComplete } = deriveWfrFlags(wfrState.state)
+          const hrbpEffState = getHrbpEffectiveState(wfrState, hrbpName)
+          const { collectionComplete: hrbpCollectionComplete, hrbpPlansCreated: hrbpPlansComplete } = deriveWfrFlags(hrbpEffState)
           const trend = deptReadinessTrend(d.name)
           const measuredReadiness = hrbpCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
           const deptGapTotal = hrbpCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
@@ -2808,9 +3077,49 @@ export function WorkforceReadinessDashboard({
           const collBadge = hrbpCollectionComplete
             ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
             : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+          // Data collection status for this HRBP
+          const hrbpDelegatedPending = hasHrbpPendingDelegation(wfrState, hrbpName)
+          const hrbpCollecting = stateNum(hrbpEffState) >= 2 && !hrbpCollectionComplete
+          const hrbpResponseRate = hrbpCollecting ? wfrDemoDeptResponseRate(d.name) : 0
+          // Build the CTA card for the heroCard slot
+          const hrbpHeroCard = hrbpDelegatedPending ? (
+            <div className="wfr-dash__focus-module">
+              <div className="wfr-ra-card wfr-ra-card--warn">
+                <div className="wfr-ra-card__header">
+                  <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>assignment_ind</span> Awaiting launch</span>
+                </div>
+                <div className="wfr-ra-card__cta-row">
+                  <p className="wfr-ra-card__cta-text">
+                    Data collection has been delegated to <strong>{hrbpName}</strong>. Waiting for them to launch for {d.name}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : hrbpCollecting ? (
+            <div className="wfr-dash__focus-module">
+              <div className="wfr-ra-card wfr-ra-card--warn">
+                <div className="wfr-ra-card__header">
+                  <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Collection in progress</span>
+                </div>
+                <div className="wfr-ra-card__cta-row">
+                  <div style={{ flex: 1 }}>
+                    <p className="wfr-ra-card__cta-text">
+                      <strong>{hrbpName}</strong> is collecting data for {d.name}.
+                    </p>
+                    <div className="wfr-dash__plan-progress" style={{ marginTop: 8, maxWidth: 320 }}>
+                      <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)', height: 8 }}>
+                        <div className="wfr-dash__plan-progress-fill" style={{ width: `${hrbpResponseRate}%`, background: '#d97706' }} />
+                      </div>
+                      <span className="wfr-dash__plan-progress-label">{hrbpResponseRate}% responded</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : undefined
           return (
             <PersonDetailLayout
-              breadcrumb={
+              breadcrumb={isHrbp ? undefined : (
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
@@ -2818,9 +3127,10 @@ export function WorkforceReadinessDashboard({
                     <BreadcrumbItem><BreadcrumbPage><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{hrbpName}</BreadcrumbPage></BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
-              }
-              name={hrbpName}
-              subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
+              )}
+              name={isHrbp ? undefined : hrbpName}
+              subtitle={isHrbp ? undefined : `HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
+              heroCard={hrbpHeroCard}
               readiness={{
                 value: `${measuredReadiness}%`,
                 description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
@@ -2830,7 +3140,7 @@ export function WorkforceReadinessDashboard({
               }}
               potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
-              managerTable={{
+              managerTable={isHrbp ? undefined : {
                 title: 'Manager summary',
                 hint: d.name,
                 hideTitle: true,
@@ -2875,6 +3185,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI adoption</DataTableHead>
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
+                    {(hrbpDelegatedPending || hrbpCollecting) && <DataCollectionHead />}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -2883,6 +3194,8 @@ export function WorkforceReadinessDashboard({
                     .reverse()
                     .map((dir) => {
                       const notReady = dir.employees - dir.readyCount
+                      // Deterministic per-director response rate (varies around HRBP dept rate)
+                      const dirResponseRate = hrbpCollecting ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
                       return (
                         <DataTableRow
                           key={dir.name}
@@ -2912,6 +3225,12 @@ export function WorkforceReadinessDashboard({
                               {notReady} not ready
                             </span>
                           </DataTableCell>
+                          {hrbpDelegatedPending && (
+                            <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
+                          )}
+                          {hrbpCollecting && (
+                            <DataCollectionProgressCell rate={dirResponseRate} inScope />
+                          )}
                         </DataTableRow>
                       )
                     })}
@@ -2926,7 +3245,10 @@ export function WorkforceReadinessDashboard({
           const allMgrs = deptManagerTeams(d.name, d.employees)
           const teamMgrs = allMgrs.slice(directorData.mgrIdxStart, directorData.mgrIdxStart + directorData.mgrCount)
           const dirHeadcount = teamMgrs.reduce((s, m) => s + m.employees, 0)
-          const { collectionComplete: dirCollComplete, hrbpPlansCreated: dirPlansComplete } = deriveWfrFlags(wfrState.state)
+          const dirEffState = isHrbp && wfrState.hrbpStates && personaHrbpNames?.length
+            ? getPersonaEffectiveState(wfrState, personaHrbpNames)
+            : wfrState.state
+          const { collectionActive: dirCollActive, collectionComplete: dirCollComplete, hrbpPlansCreated: dirPlansComplete } = deriveWfrFlags(dirEffState)
           const dirTrend = deptReadinessTrend(d.name)
           const dirMeasuredReadiness = dirCollComplete ? d.aiReadiness + dirTrend.delta : d.aiReadiness
 
@@ -3047,11 +3369,13 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>Team AI adoption</DataTableHead>
                         <DataTableHead metric>Team AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
+                        {dirCollActive && !dirCollComplete && <DataCollectionHead />}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       {seniorMgrs.map(sr => {
                         const notReady = sr.employees - sr.readyCount
+                        const srRate = dirCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((sr.name.length * 7) % 30) - 15)) : 0
                         return (
                           <DataTableRow
                             key={sr.name}
@@ -3086,6 +3410,7 @@ export function WorkforceReadinessDashboard({
                             <DataTableCell align="right">
                               <span style={{ color: sr.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
                             </DataTableCell>
+                            {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={srRate} inScope />}
                           </DataTableRow>
                         )
                       })}
@@ -3101,6 +3426,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI adoption</DataTableHead>
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
+                    {dirCollActive && !dirCollComplete && <DataCollectionHead />}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3109,6 +3435,7 @@ export function WorkforceReadinessDashboard({
                     const en = mgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
+                    const mgrRate = dirCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((mgr.manager.length * 3) % 20) - 10)) : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3134,6 +3461,7 @@ export function WorkforceReadinessDashboard({
                             {notReady} not ready
                           </span>
                         </DataTableCell>
+                        {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={mgrRate} inScope />}
                       </DataTableRow>
                     )
                   })}
@@ -3304,6 +3632,7 @@ export function WorkforceReadinessDashboard({
               setView('hrbp')
               window.scrollTo(0, 0)
             }}
+            onHrbpCollectionLaunch={advanceHrbpToCollection}
           />
         )}
       </div>

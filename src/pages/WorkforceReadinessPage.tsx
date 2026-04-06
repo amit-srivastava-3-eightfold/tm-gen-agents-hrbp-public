@@ -10,6 +10,7 @@ import {
   HeaderTitle,
 } from '@tonyh-2-eightfold/ef-design-system'
 import { WorkforceReadinessDashboard } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import './WorkforceReadinessPage.css'
 
 export function WorkforceReadinessPage() {
@@ -18,7 +19,8 @@ export function WorkforceReadinessPage() {
   const [wfrView, setWfrView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>('board')
   const autoLaunch = searchParams.get('action') === 'launch'
   const isHrbp = currentUser.id === 'jaydon-torff'
-  const hrbpDepartments = isHrbp ? ['Customer Success'] : undefined
+  const hrbpDepartments = isHrbp ? ['Engineering'] : undefined
+  const personaHrbpNames = isHrbp ? getPersonaHrbpNames(currentUser.id) : undefined
 
   // Clear the action param after reading it so it doesn't persist on refresh
   if (autoLaunch) {
@@ -53,10 +55,10 @@ export function WorkforceReadinessPage() {
 
       {/* Main content */}
       <main className="wfr-page__main">
-        <div className="wfr-page__content" style={wfrView !== 'board' ? { paddingTop: 0 } : undefined}>
+        <div className="wfr-page__content" style={wfrView !== 'board' && !isHrbp ? { paddingTop: 0 } : undefined}>
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
-              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} />
+              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} personaHrbpNames={personaHrbpNames} />
             </div>
           </div>
         </div>

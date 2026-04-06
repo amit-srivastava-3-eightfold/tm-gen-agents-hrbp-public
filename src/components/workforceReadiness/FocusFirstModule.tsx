@@ -17,7 +17,10 @@ import type { UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 
 export type { FocusCollectionLaunchSummary }
 
-function focusCollectionUnderwaySubtext(summary: FocusCollectionLaunchSummary): ReactNode {
+function focusCollectionUnderwaySubtext(summary: FocusCollectionLaunchSummary, isHrbp?: boolean): ReactNode {
+  if (isHrbp) {
+    return <>AI-powered interviews are underway with your teams. Responses are rolling in—check back as participation grows.</>
+  }
   if (summary.delegated) {
     return <>This rollout is assigned to HRBPs for <strong>{summary.scopeLabel}</strong>. Delegates will choose the collection method for their teams—survey responses will appear as they configure and launch.</>
   }
@@ -28,8 +31,12 @@ function focusCollectionUnderwaySubtextDept(
   deptName: string,
   summary: FocusCollectionLaunchSummary,
   snapshot: WfrDemoCollectionSnapshot,
+  isHrbp?: boolean,
 ): ReactNode {
   const here = <>{snapshot.respondedCount.toLocaleString()} of {snapshot.sampleTarget.toLocaleString()} sampled in <strong>{deptName}</strong> have responded so far</>
+  if (isHrbp) {
+    return <>Your teams in <strong>{deptName}</strong> are being interviewed. {here}. Results will refine adoption scores and surface upskilling priorities for your client managers.</>
+  }
   if (summary.delegated) {
     return <>In <strong>{deptName}</strong>, {here}. This department is part of the <strong>{summary.scopeLabel}</strong> rollout—HRBPs own how collection runs in each unit.</>
   }
@@ -151,10 +158,10 @@ export function FocusFirstCollectionCard({
   const subtext: ReactNode =
     attentionScope === 'dept' && deptName
       ? launchSummary
-        ? focusCollectionUnderwaySubtextDept(deptName, launchSummary, snapshot)
+        ? focusCollectionUnderwaySubtextDept(deptName, launchSummary, snapshot, isHrbp)
         : focusCollectionUnderwaySubtextDeptNoWizard(deptName, snapshot)
       : launchSummary
-        ? focusCollectionUnderwaySubtext(launchSummary)
+        ? focusCollectionUnderwaySubtext(launchSummary, isHrbp)
         : 'Survey responses are rolling in. Check back as participation grows.'
 
   // HRBP view: hide RA card when collection complete
@@ -520,6 +527,18 @@ export type FocusFirstModuleBoardProps = {
   upskillingLaunchSummary?: UpskillingLaunchSummary | null
   isHrbp?: boolean
   hrbpPlansCreated?: boolean
+  /** Whether the HRBP has a pending delegation from the CHRO */
+  hrbpDelegationPending?: boolean
+  /** Callback when HRBP launches collection from the delegation CTA */
+  onHrbpCollectionLaunch?: (channelsLabel: string) => void
+  /** Name of the person who delegated (for CTA copy) */
+  delegatorName?: string
+  /** Department name for delegation CTA copy */
+  delegationDeptName?: string
+  /** CHRO has delegated to HRBPs and is waiting for them to start */
+  chroDelegationActive?: boolean
+  /** Scope label for the CHRO delegation CTA (e.g. "Jaydon Torff" or "3 HRBPs") */
+  chroDelegationScopeLabel?: string
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -570,7 +589,20 @@ function FocusFirstModuleBoard({
   upskillingLaunchSummary: boardUpskillingLaunchSummary,
   isHrbp = false,
   hrbpPlansCreated = false,
-}: Omit<FocusFirstModuleBoardProps, 'mode'>) {
+  hrbpDelegationPending = false,
+  onHrbpCollectionLaunch,
+  delegatorName,
+  delegationDeptName,
+  chroDelegationActive = false,
+  chroDelegationScopeLabel,
+}: Omit<FocusFirstModuleBoardProps, 'mode'> & {
+  hrbpDelegationPending?: boolean
+  onHrbpCollectionLaunch?: (channelsLabel: string) => void
+  delegatorName?: string
+  delegationDeptName?: string
+  chroDelegationActive?: boolean
+  chroDelegationScopeLabel?: string
+}) {
   const orgCollectionSnap = useMemo(() => {
     const scoped = collectionLaunchSummary?.scopedDepartmentNames
     if (scoped?.length) return wfrDemoCollectionSnapshotForDeptNames(scoped)
@@ -584,6 +616,11 @@ function FocusFirstModuleBoard({
 
   // CHRO: hide entire RA module when upskilling is done (plans assigned org-wide)
   if (!isHrbp && hrbpPlansCreated) {
+    return null
+  }
+
+  // HRBP: hide CTA in state 1 (no delegation pending) — they can't launch collection themselves
+  if (isHrbp && !collectionActive && !hrbpDelegationPending) {
     return null
   }
 
@@ -611,6 +648,65 @@ function FocusFirstModuleBoard({
               onLaunchOpenChange(true)
             }}
           />
+        ) : hrbpDelegationPending ? (
+          <div className="wfr-ra-card">
+            <div className="wfr-ra-card__header">
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>assignment_ind</span> Delegated to you</span>
+            </div>
+            <div className="wfr-ra-card__cta-row">
+              <div>
+                <p className="wfr-ra-card__cta-text">
+                  {delegatorName ?? 'The CHRO'} has delegated AI data collection for <strong>{delegationDeptName ?? 'your department'}</strong> to you.
+                </p>
+                <p className="wfr-ra-card__hint">
+                  Select a collection method and get started — results will refine adoption scores and surface upskilling priorities.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                className="wfr-ra-card__cta-btn shrink-0"
+                onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onRequestCloseMetricSheet?.()
+                  onLaunchOpenChange(true)
+                }}
+              >
+                Get started&nbsp;→
+              </Button>
+            </div>
+          </div>
+        ) : chroDelegationActive ? (
+          <div className="wfr-ra-card wfr-ra-card--warn">
+            <div className="wfr-ra-card__header">
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Delegation sent</span>
+            </div>
+            <div className="wfr-ra-card__cta-row">
+              <div>
+                <p className="wfr-ra-card__cta-text">
+                  Data collection has been delegated to <strong>{chroDelegationScopeLabel ?? 'HRBPs'}</strong>. Waiting for them to launch collection for their teams.
+                </p>
+                <p className="wfr-ra-card__hint">
+                  Each HRBP will choose when to start — progress will appear here as teams respond.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="wfr-ra-card__cta-btn shrink-0"
+                onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onRequestCloseMetricSheet?.()
+                  onLaunchOpenChange(true)
+                }}
+              >
+                Add more departments
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="wfr-ra-card">
             <div className="wfr-ra-card__header">
@@ -651,6 +747,11 @@ function FocusFirstModuleBoard({
         }}
         onLaunch={(summary) => onCollectionActiveChange(true, summary)}
         defaultScopeDepartmentName={deptContext?.name}
+        hrbpMode={hrbpDelegationPending}
+        onHrbpLaunch={(channelsLabel) => {
+          onHrbpCollectionLaunch?.(channelsLabel)
+          onLaunchOpenChange(false)
+        }}
       />
     </>
   )
@@ -687,6 +788,12 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     upskillingLaunchSummary: propsUpskillingLaunchSummary,
     isHrbp: propsIsHrbp,
     hrbpPlansCreated: propsHrbpPlansCreated,
+    hrbpDelegationPending: propsHrbpDelegationPending,
+    onHrbpCollectionLaunch: propsOnHrbpCollectionLaunch,
+    delegatorName: propsDelegatorName,
+    delegationDeptName: propsDelegationDeptName,
+    chroDelegationActive: propsChroDelegationActive,
+    chroDelegationScopeLabel: propsChroDelegationScopeLabel,
   } = props
 
   return (
@@ -708,6 +815,12 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       upskillingLaunchSummary={propsUpskillingLaunchSummary}
       isHrbp={propsIsHrbp}
       hrbpPlansCreated={propsHrbpPlansCreated}
+      hrbpDelegationPending={propsHrbpDelegationPending}
+      onHrbpCollectionLaunch={propsOnHrbpCollectionLaunch}
+      delegatorName={propsDelegatorName}
+      delegationDeptName={propsDelegationDeptName}
+      chroDelegationActive={propsChroDelegationActive}
+      chroDelegationScopeLabel={propsChroDelegationScopeLabel}
     />
   )
 }

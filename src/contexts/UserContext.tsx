@@ -19,7 +19,16 @@ const UserContext = createContext<{
 } | null>(null)
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<CurrentUser>(resolveInitialUser)
+  const [currentUser, setCurrentUserState] = useState<CurrentUser>(resolveInitialUser)
+  const setCurrentUser = (user: CurrentUser) => {
+    localStorage.setItem('tm:current-user', user.id)
+    // Force full reload on WFR pages to reset dashboard state (useState initializers don't re-run)
+    if (window.location.pathname.startsWith('/workforce')) {
+      window.location.href = `${window.location.pathname}?user=${user.id}`
+      return
+    }
+    setCurrentUserState(user)
+  }
   return (
     <UserContext.Provider value={{ currentUser, setCurrentUser }}>
       {children}

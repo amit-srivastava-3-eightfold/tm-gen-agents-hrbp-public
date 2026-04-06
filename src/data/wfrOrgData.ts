@@ -2082,7 +2082,7 @@ function computeDeptAiPotential(deptName: string): number {
  */
 export const hrbpAssignments: { hrbp: string; dept: string; headcount: number }[] = [
   // Engineering (10,500) → 4 HRBPs
-  { hrbp: 'Jordan Kim', dept: 'Engineering', headcount: 3000 },
+  { hrbp: 'Jaydon Torff', dept: 'Engineering', headcount: 3000 },
   { hrbp: 'Priya Thompson', dept: 'Engineering', headcount: 2800 },
   { hrbp: 'Morgan Patel', dept: 'Engineering', headcount: 2500 },
   { hrbp: 'Jamie Reyes', dept: 'Engineering', headcount: 2200 },
@@ -2135,6 +2135,30 @@ export function getDeptHrbps(deptName: string): { hrbp: string; headcount: numbe
 /** Get all departments an HRBP covers */
 export function getHrbpDepts(hrbpName: string): { dept: string; headcount: number }[] {
   return hrbpAssignments.filter(a => a.hrbp === hrbpName)
+}
+
+/**
+ * Map a demo persona to the HRBP names they "act as" in the hrbpAssignments table.
+ * The jaydon-torff persona IS "Jaydon Torff", an HRBP in Engineering.
+ */
+export function getPersonaHrbpNames(personaId: string): string[] {
+  if (personaId === 'jaydon-torff') {
+    return ['Jaydon Torff']
+  }
+  return []
+}
+
+/** Get the departments the demo persona is responsible for via HRBP assignments. */
+export function getPersonaDepartments(personaId: string): string[] {
+  const hrbpNames = getPersonaHrbpNames(personaId)
+  if (hrbpNames.length === 0) return []
+  const deptSet = new Set<string>()
+  for (const name of hrbpNames) {
+    for (const a of hrbpAssignments) {
+      if (a.hrbp === name) deptSet.add(a.dept)
+    }
+  }
+  return [...deptSet]
 }
 
 export const departments: Dept[] = ORG.departments.map((d) => ({

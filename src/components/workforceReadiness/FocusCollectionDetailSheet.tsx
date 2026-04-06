@@ -15,7 +15,7 @@ const BODY_ATTR = 'data-wfr-coll-sheet-open'
 const DEMO_MANAGERS = [
   'Priya Thompson',
   'Alex Rivera',
-  'Jordan Kim',
+  'Jaydon Torff',
   'Sam Okonkwo',
   'Sarah Culhane',
   'Morgan Patel',

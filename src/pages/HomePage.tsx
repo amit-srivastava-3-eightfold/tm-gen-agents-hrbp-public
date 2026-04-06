@@ -6,21 +6,34 @@ import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
-import { EM, ORG } from '../data/wfrOrgData'
+import { EM, ORG, getPersonaHrbpNames } from '../data/wfrOrgData'
+import {
+  type WfrPersistedState,
+  type WfrProgramState,
+  computeOrgAggregateState,
+  getPersonaEffectiveState,
+  hasPersonaPendingDelegation,
+} from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
 
-type WfrState = 1 | 2 | '2b' | 3 | 4 | 5
-
-function readWfrState(): WfrState {
+function readWfrPersistedState(): WfrPersistedState {
   try {
     const raw = localStorage.getItem('tm:wfr-state')
-    if (!raw) return 1
-    const parsed = JSON.parse(raw)
-    return (parsed?.state as WfrState) ?? 1
+    if (!raw) return { state: 1 }
+    return JSON.parse(raw) as WfrPersistedState
   } catch {
-    return 1
+    return { state: 1 }
   }
+}
+
+function readEffectiveWfrState(personaId: string): WfrProgramState {
+  const persisted = readWfrPersistedState()
+  if (personaId === 'jaydon-torff') {
+    const names = getPersonaHrbpNames(personaId)
+    return getPersonaEffectiveState(persisted, names)
+  }
+  return computeOrgAggregateState(persisted)
 }
 
 /* Inline compact semicircle — readiness only, matches WFR overview hero */
@@ -51,7 +64,8 @@ function WfrReadinessArc({ readiness }: { readiness: number }) {
 }
 
 function ChroWorkforceReadinessTeaser() {
-  const wfrState = readWfrState()
+  const { currentUser } = useUser()
+  const wfrState = readEffectiveWfrState(currentUser.id)
   const gapPeople =
     ORG.peopleInAugRoles - Math.round((ORG.peopleInAugRoles * ORG.aiReadiness) / 100)
 
@@ -65,13 +79,44 @@ function ChroWorkforceReadinessTeaser() {
   }
 
   const rec: RecConfig | null = (() => {
-    if (wfrState === 1) return {
-      icon: 'flag',
-      iconColor: '#dc2626',
-      eyebrow: 'FIRST PRIORITY',
-      body: "Collect employee data to sharpen your adoption scores and surface upskilling priorities.",
-      cta: 'Get started →',
-      href: '/workforce?action=launch',
+    if (wfrState === 1) {
+      if (currentUser.id === 'jaydon-torff') {
+        // Check if CHRO has delegated collection to this HRBP
+        const persisted = readWfrPersistedState()
+        const names = getPersonaHrbpNames(currentUser.id)
+        if (hasPersonaPendingDelegation(persisted, names)) {
+          return {
+            icon: 'assignment_ind',
+            iconColor: '#d97706',
+            eyebrow: 'DELEGATED TO YOU',
+            body: 'Data collection has been delegated to you. Select a collection method and get started.',
+            cta: 'Get started →',
+            href: '/workforce',
+          }
+        }
+        return null // Not delegated yet, no CTA for HRBP
+      }
+      // CHRO: check if delegation has been sent
+      const persisted = readWfrPersistedState()
+      if (persisted.hrbpStates && Object.values(persisted.hrbpStates).some(h => h.delegated)) {
+        const scopeLabel = persisted.collectionLaunchSummary?.scopeLabel ?? 'HRBPs'
+        return {
+          icon: 'sync',
+          iconColor: '#d97706',
+          eyebrow: 'DELEGATION SENT',
+          body: `Data collection has been delegated to ${scopeLabel}. Waiting for them to launch.`,
+          cta: 'View dashboard →',
+          href: '/workforce',
+        }
+      }
+      return {
+        icon: 'flag',
+        iconColor: '#dc2626',
+        eyebrow: 'FIRST PRIORITY',
+        body: "Collect employee data to sharpen your adoption scores and surface upskilling priorities.",
+        cta: 'Get started →',
+        href: '/workforce?action=launch',
+      }
     }
     if (wfrState === 2 || wfrState === '2b') return {
       icon: 'sync',

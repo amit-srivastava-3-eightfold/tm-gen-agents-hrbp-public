@@ -28,7 +28,8 @@ import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type R
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { deriveWfrFlags, DeptTableSoloBar, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { deriveWfrFlags, DeptTableSoloBar, DataCollectionHead, DataCollectionStatusCell, getHrbpEffectiveState, getPersonaEffectiveState, stateNum, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
@@ -75,7 +76,12 @@ export function ManagerDetailPage() {
     } catch { /* ignore */ }
     return { state: 1 }
   }, [])
-  const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
+  // Use persona-aware state so HRBP sees collection status even when org aggregate is still 1
+  const personaHrbpNames = isHrbp ? getPersonaHrbpNames(currentUser.id) : []
+  const effectiveState = isHrbp && wfrState.hrbpStates
+    ? getPersonaEffectiveState(wfrState, personaHrbpNames)
+    : wfrState.state
+  const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(effectiveState)
 
   // Find the department
   const dept = departments.find(d => d.name === deptName)
@@ -204,7 +210,10 @@ export function ManagerDetailPage() {
   const showCollection = collectionActive && !collectionComplete
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
-  const deptInScope = !collectionLaunchSummary?.scopedDepartmentNames || collectionLaunchSummary.scopedDepartmentNames.includes(deptName)
+  // Department is in scope if any of its HRBPs were selected for delegation (per-HRBP state)
+  const deptInScope = wfrState.hrbpStates
+    ? getDeptHrbps(deptName).some(h => stateNum(getHrbpEffectiveState(wfrState, h.hrbp)) >= 2)
+    : !collectionLaunchSummary?.scopedDepartmentNames || collectionLaunchSummary.scopedDepartmentNames.includes(deptName)
   const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(deptName)
 
   // Table hint
@@ -257,6 +266,17 @@ export function ManagerDetailPage() {
           <PersonDetailLayout
             breadcrumb={(() => {
               const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
+              // HRBP persona: simple breadcrumb (no HRBP/director intermediaries)
+              if (isHrbp) return (
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              )
               const deptHrbpList = getDeptHrbps(deptName)
               const allMgrs = deptManagerTeams(deptName, dept.employees)
               let mgrStart = 0
@@ -295,8 +315,12 @@ export function ManagerDetailPage() {
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink></BreadcrumbItem>
+                    {!isHrbp && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?dept=${encodeURIComponent(dept.name)}`)}>{dept.name}</BreadcrumbLink></BreadcrumbItem>
+                      </>
+                    )}
                     {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
                     <BreadcrumbSeparator />
                     <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
@@ -372,10 +396,7 @@ export function ManagerDetailPage() {
                 <DataTableHead metric>AI potential</DataTableHead>
                 <DataTableHead>Gap</DataTableHead>
                 {showCollection ? (
-                  <>
-                    <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]">Collection progress</DataTableHead>
-                    <DataTableHead className="bg-[#f8fafc]">Channels</DataTableHead>
-                  </>
+                  <DataCollectionHead />
                 ) : null}
                 {collectionComplete ? (
                   <>
@@ -460,32 +481,9 @@ export function ManagerDetailPage() {
                       )}
                     </DataTableCell>
 
-                    {/* Collection columns — state 2 */}
+                    {/* Collection column — state 2 */}
                     {showCollection ? (
-                      <>
-                        <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
-                          {deptInScope ? (
-                            <span className={`inline-flex items-center gap-1 text-[12px] ${empResponded ? 'text-[#15803d]' : 'text-[#94a3b8]'}`}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                                {empResponded ? 'check_circle' : 'pending'}
-                              </span>
-                              {empResponded ? 'Responded' : 'Pending'}
-                            </span>
-                          ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
-                        </DataTableCell>
-                        <DataTableCell className="bg-[#fafbfc]">
-                          {deptInScope ? (
-                            <span className="inline-flex items-center gap-1 text-[12px] text-[#1a212e]">
-                              {(collectionLaunchSummary?.channelsLabel ?? '').includes('AI') ? (
-                                <img src="/ai-agent-icon.svg" alt="" style={{ width: 14, height: 14 }} />
-                              ) : (
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>assignment</span>
-                              )}
-                              {collectionLaunchSummary?.channelsLabel ?? 'Survey'}
-                            </span>
-                          ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
-                        </DataTableCell>
-                      </>
+                      <DataCollectionStatusCell responded={empResponded} inScope={deptInScope} />
                     ) : null}
 
                     {/* Upskilling status + Plan columns — hidden until collection complete */}

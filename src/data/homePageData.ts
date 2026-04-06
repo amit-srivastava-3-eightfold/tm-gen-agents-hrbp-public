@@ -97,9 +97,9 @@ const CSM_TASKS: HomeTask[] = [
 
 const LAURA_TASKS: HomeTask[] = [
   {
-    label: 'Review workforce readiness for Customer Success',
+    label: 'Review workforce readiness for Engineering',
     href: '/workforce',
-    meta: '820 employees',
+    meta: '3,000 employees',
     tag: 'Workforce readiness',
     tagIcon: 'trending_up',
   },
@@ -161,7 +161,7 @@ const CHRO_MENTOR: HomeMentor = {
 
 const CSM_MENTOR: HomeMentor = {
   name: 'Jaydon Torff',
-  role: 'HR Business Partner, Customer Success',
+  role: 'HR Business Partner, Engineering',
   avatarSrc: '/jaydon-torff.png',
   matchText: 'Your HRBP, strong in team development',
   matchCount: 0,

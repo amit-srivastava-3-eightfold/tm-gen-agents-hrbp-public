@@ -47,7 +47,7 @@ export const LAURA: CurrentUser = {
   avatarPhotoSrc: '/jaydon-torff.png',
   avatarInitials: 'JT',
   avatarColor: '#5C6BC0',
-  about: 'As an HR Business Partner, I partner with Sales Engineering, Customer Success, and Professional Services to drive talent strategy, employee engagement, and organizational effectiveness. I bring a data-driven approach to workforce planning, performance management, and talent development. My focus is on building inclusive teams, supporting career growth, and ensuring our people have the resources they need to succeed.',
+  about: 'As an HR Business Partner, I partner with Engineering to drive talent strategy, employee engagement, and organizational effectiveness. I bring a data-driven approach to workforce planning, performance management, and talent development. My focus is on building inclusive teams, supporting career growth, and ensuring our people have the resources they need to succeed.',
   employeeId: '52980',
   businessUnit: 'HR',
   hireDate: '2019-03-15',
