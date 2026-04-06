@@ -383,6 +383,11 @@ export function FocusFirstCollectionCard({
       )
     }
 
+    const channelMethod = launchSummary?.channelsLabel ?? 'data collection'
+    const scopeDesc = scopedNames.length > 0 && scopedNames.length < departments.length
+      ? `across ${remainingDepts.map(d => d.name).join(', ')}`
+      : `across ${remainingDepts.length} department${remainingDepts.length === 1 ? '' : 's'}`
+
     return (
       <div className="wfr-ra-card wfr-ra-card--success">
         <div className="wfr-ra-card__header">
@@ -395,16 +400,16 @@ export function FocusFirstCollectionCard({
               <div className="wfr-ra-card__mini-fill" />
             </div>
             <span className="wfr-ra-card__mini-label">
-              Sample threshold reached — {scopedDepts.length} department{scopedDepts.length === 1 ? '' : 's'} ready for upskilling
+              Sample threshold reached — {remainingDepts.length} department{remainingDepts.length === 1 ? '' : 's'} ready for upskilling
             </span>
           </div>
         </div>
         <div className="wfr-ra-card__cta-row">
           <div>
             <p className="wfr-ra-card__cta-text">
-              Based on the AI agent interviews, improve your organization's productivity by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
+              Based on {channelMethod.toLowerCase()}, you can improve productivity {scopeDesc} by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
             </p>
-            <p className="wfr-ra-card__hint">Create development plans to {'close adoption gaps'} across these departments.</p>
+            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps {scopeDesc}.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             Start upskilling&nbsp;→
