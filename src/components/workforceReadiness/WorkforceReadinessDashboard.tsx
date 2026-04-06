@@ -524,27 +524,30 @@ export function DataCollectionStatusCell({ responded, inScope = true }: { respon
 
 /* ─── End Data Collection column templates ─── */
 
-/** Dev plan status cell with a "View plan" link in front of the progress bar. */
-export function DevPlanStatusCell({ pct, plansComplete }: { pct: number; plansComplete?: boolean }) {
+/** Dev plan status cell with an optional "View plan" link in front of the progress bar. */
+export function DevPlanStatusCell({ pct, plansComplete, showLink }: { pct: number; plansComplete?: boolean; showLink?: boolean }) {
   const finalPct = plansComplete ? 100 : pct
-  const barColor = finalPct === 100 ? '#22c55e' : '#818cf8'
-  const labelColor = finalPct === 100 ? '#15803d' : '#6366f1'
+  const barColor = finalPct === 100 ? '#22c55e' : finalPct > 0 ? '#818cf8' : '#e2e8f0'
+  const labelColor = finalPct === 100 ? '#15803d' : finalPct > 0 ? '#6366f1' : '#94a3b8'
+  const label = plansComplete ? 'Assigned' : finalPct > 0 ? `${finalPct}%` : 'Ready'
   return (
     <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          type="button"
-          className="text-[#3b5bdb] hover:underline"
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          View plan
-        </button>
+        {showLink && (
+          <button
+            type="button"
+            className="text-[#3b5bdb] hover:underline"
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            View plan
+          </button>
+        )}
         <div className="wfr-dash__plan-progress" style={{ flex: 1 }}>
           <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
             <div className="wfr-dash__plan-progress-fill" style={{ width: `${finalPct}%`, background: barColor }} />
           </div>
-          <span className="wfr-dash__plan-progress-label" style={{ color: labelColor }}>{finalPct}%</span>
+          <span className="wfr-dash__plan-progress-label" style={{ color: labelColor }}>{label}</span>
         </div>
       </div>
     </DataTableCell>
