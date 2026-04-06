@@ -3128,8 +3128,8 @@ export function WorkforceReadinessDashboard({
                   </BreadcrumbList>
                 </Breadcrumb>
               )}
-              name={isHrbp ? undefined : hrbpName}
-              subtitle={isHrbp ? undefined : `HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
+              name={isHrbp ? '' : (hrbpName ?? '')}
+              subtitle={isHrbp ? '' : `HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
               heroCard={hrbpHeroCard}
               readiness={{
                 value: `${measuredReadiness}%`,

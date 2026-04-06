@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, ORG, hrbpAssignments } from '../../data/wfrOrgData'
+import { departments, hrbpAssignments } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
 export type FocusAssignOwner = 'hrbp' | 'self'
@@ -71,7 +71,6 @@ export function FocusFirstLaunchDialog({
   const delegated = assignOwner === 'hrbp'
 
   // Both flows: Assign → Scope → Review (channel is org-level config, not a user choice)
-  const totalSteps = 3
 
   // Derive selected HRBP names from either direct selection or department-based derivation
   const selectedHrbpNames = useMemo(() => {
