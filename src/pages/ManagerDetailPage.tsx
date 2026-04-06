@@ -410,7 +410,6 @@ export function ManagerDetailPage() {
             </DataTableHeader>
             <DataTableBody>
               {[...displayEmployees].sort((a, b) => b.displayReadiness - a.displayReadiness).map((emp, i) => {
-                const isAssigned = assignedPlans.has(emp.name)
                 const h = nameHash(emp.name)
 
                 // Collection: deterministic response status
@@ -494,7 +493,7 @@ export function ManagerDetailPage() {
                               setRemovedCourses(new Set())
                             }}
                           >
-                            {(deptInUpskilling || isAssigned) ? 'View plan' : 'Assign plan'}
+                            Development plan
                           </button>
                           <div className="wfr-dash__plan-progress" style={{ flex: 1 }}>
                             <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
