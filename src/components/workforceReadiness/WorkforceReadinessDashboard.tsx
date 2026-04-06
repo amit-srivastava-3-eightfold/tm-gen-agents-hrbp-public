@@ -3161,6 +3161,35 @@ export function WorkforceReadinessDashboard({
                 </div>
               </div>
             </div>
+          ) : hrbpCollectionComplete && !hrbpPlansComplete ? (
+            <div className="wfr-dash__focus-module">
+              <div className="wfr-ra-card wfr-ra-card--success">
+                <div className="wfr-ra-card__header">
+                  <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete</span>
+                  <div className="wfr-ra-card__mini-progress">
+                    <span className="wfr-ra-card__mini-pct">100%</span>
+                    <div className="wfr-ra-card__mini-track"><div className="wfr-ra-card__mini-fill" /></div>
+                    <span className="wfr-ra-card__mini-label">Sample threshold reached — {d.name} ready for upskilling</span>
+                  </div>
+                </div>
+                <div className="wfr-ra-card__cta-row">
+                  <div>
+                    <p className="wfr-ra-card__cta-text">
+                      Data collection for <strong>{d.name}</strong> is complete. Create development plans to close adoption gaps for <strong>{totalGap.toLocaleString()}</strong> employees across {directors.length} teams.
+                    </p>
+                    <p className="wfr-ra-card__hint">Assign plans to managers so they can enroll their teams in targeted upskilling courses.</p>
+                  </div>
+                  <Button type="button" variant="primary" className="shrink-0" onClick={() => {
+                    // Navigate to DeptView to access the upskilling launch dialog
+                    setDept(d)
+                    setView('dept')
+                    window.scrollTo(0, 0)
+                  }}>
+                    Start upskilling&nbsp;→
+                  </Button>
+                </div>
+              </div>
+            </div>
           ) : undefined
           return (
             <PersonDetailLayout
