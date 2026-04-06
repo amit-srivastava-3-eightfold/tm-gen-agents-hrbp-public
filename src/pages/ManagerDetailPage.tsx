@@ -480,11 +480,11 @@ export function ManagerDetailPage() {
 
                     {/* Upskilling status — single column with dev plan link + progress bar */}
                     {collectionComplete ? (
-                      <DataTableCell metric>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <DataTableCell metric className="!whitespace-normal">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                           <button
                             type="button"
-                            className="text-[#3b5bdb] hover:underline"
+                            className="text-[#3b5bdb] hover:underline shrink-0"
                             style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
                             onClick={(e) => {
                               e.stopPropagation()
@@ -495,7 +495,7 @@ export function ManagerDetailPage() {
                           >
                             Development plan
                           </button>
-                          <div className="wfr-dash__plan-progress" style={{ flex: 1 }}>
+                          <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
                             <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
                               <div className="wfr-dash__plan-progress-fill" style={{ width: `${planPct}%`, background: planBarColor }} />
                             </div>
