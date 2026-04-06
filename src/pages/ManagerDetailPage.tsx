@@ -390,8 +390,7 @@ export function ManagerDetailPage() {
             }}
             tableTitle="Team members"
             tableHint={tableHint}
-            sixColTable={showCollection}
-            wideTable={collectionComplete}
+            sixColTable={showCollection || collectionComplete}
           >
           <DataTable bordered>
             <DataTableHeader>
@@ -405,11 +404,7 @@ export function ManagerDetailPage() {
                   <DataCollectionHead />
                 ) : null}
                 {collectionComplete ? (
-                  <>
-                    <DataTableHead>Upskilling status</DataTableHead>
-                    <DataTableHead>Plan</DataTableHead>
-                    <DataTableHead>Plan progress</DataTableHead>
-                  </>
+                    <DataTableHead metric>Upskilling status</DataTableHead>
                 ) : null}
               </DataTableRow>
             </DataTableHeader>
@@ -420,14 +415,6 @@ export function ManagerDetailPage() {
 
                 // Collection: deterministic response status
                 const empResponded = deptInScope && (h % 3 !== 0)
-
-                // Upskilling: deterministic progress
-                const upskillingPct = hrbpPlansCreated
-                  ? Math.min(95, 35 + (h % 45) + 15)
-                  : Math.min(80, 10 + (h % 40))
-                const upskillingStatus = upskillingPct > 85 ? 'Completed' : upskillingPct > 30 ? 'In progress' : 'Not started'
-                const upskillingBarColor = upskillingStatus === 'Completed' ? '#22c55e' : upskillingStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                const upskillingTextColor = upskillingStatus === 'Completed' ? '#15803d' : upskillingStatus === 'In progress' ? '#6366f1' : '#94a3b8'
 
                 // Plan progress: deterministic
                 const planPct = hrbpPlansCreated
@@ -492,71 +479,31 @@ export function ManagerDetailPage() {
                       <DataCollectionStatusCell responded={empResponded} inScope={deptInScope} />
                     ) : null}
 
-                    {/* Upskilling status + Plan columns — hidden until collection complete */}
+                    {/* Upskilling status — single column with dev plan link + progress bar */}
                     {collectionComplete ? (
-                      <>
-                    <DataTableCell>
-                      {upskillingActive ? (
-                        <div>
-                          <div className="wfr-dash__plan-progress">
+                      <DataTableCell metric>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <button
+                            type="button"
+                            className="text-[#3b5bdb] hover:underline"
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
+                              setEditingCourses(false)
+                              setRemovedCourses(new Set())
+                            }}
+                          >
+                            {(deptInUpskilling || isAssigned) ? 'View plan' : 'Assign plan'}
+                          </button>
+                          <div className="wfr-dash__plan-progress" style={{ flex: 1 }}>
                             <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${upskillingPct}%`, background: upskillingBarColor }} />
+                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${planPct}%`, background: planBarColor }} />
                             </div>
-                            <span className="wfr-dash__plan-progress-label" style={{ color: upskillingTextColor }}>{upskillingPct}%</span>
+                            <span className="wfr-dash__plan-progress-label" style={{ color: planTextColor }}>{planPct > 0 ? `${planPct}%` : '—'}</span>
                           </div>
-                          <div className="text-[10px] mt-0.5" style={{ color: upskillingTextColor }}>{upskillingStatus}</div>
                         </div>
-                      ) : (
-                        <span className="text-[12px] font-medium text-[#94a3b8]">Not started</span>
-                      )}
-                    </DataTableCell>
-
-                    {/* Plan column */}
-                    <DataTableCell>
-                      {(deptInUpskilling) || isAssigned ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
-                            setEditingCourses(false)
-                            setRemovedCourses(new Set())
-                          }}
-                        >
-                          View plan
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
-                            setEditingCourses(false)
-                            setRemovedCourses(new Set())
-                          }}
-                        >
-                          Assign plan
-                        </Button>
-                      )}
-                    </DataTableCell>
-
-                    {/* Plan progress column */}
-                      <DataTableCell>
-                        {(deptInUpskilling || isAssigned) ? (
-                          <div>
-                            <div className="wfr-dash__plan-progress">
-                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${planPct}%`, background: planBarColor }} />
-                              </div>
-                              <span className="wfr-dash__plan-progress-label" style={{ color: planTextColor }}>{planPct}%</span>
-                            </div>
-                            <div className="text-[10px] mt-0.5" style={{ color: planTextColor }}>{planStatus}</div>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-[#94a3b8]">—</span>
-                        )}
                       </DataTableCell>
-                      </>
                     ) : null}
                   </DataTableRow>
                 )
