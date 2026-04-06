@@ -72,6 +72,8 @@ export function ManagerDetailPage() {
       if (stored) {
         const parsed = JSON.parse(stored) as WfrPersistedState
         if (parsed.state === 5) return parsed
+        // Preserve delegation state so collection columns show when HRBPs are collecting
+        if (parsed.hrbpStates && Object.keys(parsed.hrbpStates).length > 0) return parsed
       }
     } catch { /* ignore */ }
     return { state: 1 }
