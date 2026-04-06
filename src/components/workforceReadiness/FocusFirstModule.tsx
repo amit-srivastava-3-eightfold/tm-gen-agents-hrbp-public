@@ -164,8 +164,40 @@ export function FocusFirstCollectionCard({
         ? focusCollectionUnderwaySubtext(launchSummary, isHrbp)
         : 'Survey responses are rolling in. Check back as participation grows.'
 
-  // HRBP view: hide RA card when collection complete
-  if (isHrbp && (collectionJustCompleted || collectionComplete)) {
+  // HRBP view: show upskilling CTA when collection complete (not just-completed transition)
+  if (isHrbp && collectionComplete && !collectionJustCompleted) {
+    if (hrbpPlansCreated) return null // Plans assigned — hide card
+    const currentDept = deptName ? departments.find(d => d.name === deptName) : undefined
+    const gapCount = currentDept ? deptGapHeadcount(currentDept) : 0
+    const topRoles = currentDept ? getRolesForDept(currentDept.name).slice(0, 3) : []
+    return (
+      <div className="wfr-ra-card wfr-ra-card--success">
+        <div className="wfr-ra-card__header">
+          <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
+          </span>
+          <div className="wfr-ra-card__mini-progress">
+            <span className="wfr-ra-card__mini-pct">100%</span>
+            <div className="wfr-ra-card__mini-track"><div className="wfr-ra-card__mini-fill" /></div>
+            <span className="wfr-ra-card__mini-label">Sample threshold reached{currentDept ? ` — ${currentDept.name} ready for upskilling` : ''}</span>
+          </div>
+        </div>
+        <div className="wfr-ra-card__cta-row">
+          <div>
+            <p className="wfr-ra-card__cta-text">
+              Data collection is complete. Create development plans for <strong>{gapCount.toLocaleString()}</strong> employees{topRoles.length > 0 && <> — prioritize {topRoles.map((r, i) => (<span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>))}</>}.
+            </p>
+            <p className="wfr-ra-card__hint">Assign development plans to your client managers so they can enroll their teams.</p>
+          </div>
+          <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
+            Start upskilling&nbsp;→
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  // HRBP view: hide during transition
+  if (isHrbp && collectionJustCompleted) {
     return null
   }
   // CHRO view: hide RA card when upskilling is done (plans assigned org-wide)

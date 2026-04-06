@@ -896,12 +896,15 @@ function DeptView({
                         <DataTableHead metric>Team AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
                         {orgCollectionActive && !orgCollectionComplete && <DataCollectionHead />}
+                        {orgCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       {directors.sort((a, b) => (dept.aiPotential - a.readiness) - (dept.aiPotential - b.readiness)).reverse().map(dir => {
                         const notReady = dir.employees - dir.readyCount
                         const dirResponseRate = orgCollectionActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(dept.name) + ((dir.name.length * 7) % 30) - 15)) : 0
+                        const dirPlanPct = deptHrbpPlansCreated ? 100 : Math.max(10, Math.min(90, 25 + ((dir.name.length * 11) % 55)))
+                        const deptTrend = orgCollectionComplete ? deptReadinessTrend(dept.name) : { delta: 0, direction: 'up' as const }
                         return (
                           <DataTableRow key={dir.name} style={{ cursor: 'pointer' }} onClick={() => navigate(`/workforce/manager/${encodeURIComponent(dir.name)}?dept=${encodeURIComponent(dept.name)}&mgrIdx=${dir.firstMgrIdx}`)}>
                             <DataTableCell className="font-semibold">
@@ -913,7 +916,14 @@ function DeptView({
                             <DataTableCell align="right" numeric>{dir.employees.toLocaleString()}</DataTableCell>
                             <DataTableCell metric>
                               <div>
-                                <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                                {orgCollectionComplete && deptTrend.delta !== 0 ? (
+                                  <div className="wfr-dash__readiness-with-trend">
+                                    <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                                    <span className={`wfr-dash__trend-badge ${deptTrend.delta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                      <span className="wfr-dash__trend-badge-text">{deptTrend.delta >= 0 ? '↑' : '↓'}{Math.abs(deptTrend.delta)}pt</span>
+                                    </span>
+                                  </div>
+                                ) : <DeptTableSoloBar variant="readiness" pct={dir.readiness} />}
                                 <div className="text-[10px] text-[#94a3b8] mt-0.5">{dir.readyCount} of {dir.employees} AI-ready</div>
                               </div>
                             </DataTableCell>
@@ -924,6 +934,7 @@ function DeptView({
                             {orgCollectionActive && !orgCollectionComplete && (
                               <DataCollectionProgressCell rate={dirResponseRate} inScope />
                             )}
+                            {orgCollectionComplete && <DevPlanStatusCell pct={dirPlanPct} plansComplete={deptHrbpPlansCreated} />}
                           </DataTableRow>
                         )
                       })}
