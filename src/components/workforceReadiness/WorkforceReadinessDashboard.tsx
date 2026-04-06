@@ -2036,7 +2036,7 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
-                {focusCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]">Upskilling status</DataTableHead>}
+                {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Upskilling progress</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -2086,21 +2086,27 @@ function BoardView({
                         ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
                         : <DataCollectionProgressCell rate={0} inScope={false} />
                   )}
-                  {focusCollectionComplete && (
-                    <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]">
-                      {hrbpInUpskilling ? (
-                        <span className="inline-flex items-center gap-1 text-[12px] text-[#7c3aed]">
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>school</span>
-                          Upskilling
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[12px] text-[#15803d]">
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
-                          Ready for upskilling
-                        </span>
-                      )}
-                    </DataTableCell>
-                  )}
+                  {focusCollectionComplete && (() => {
+                    // Deterministic upskilling progress per HRBP
+                    const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+                    const plansPct = hrbpPlansCreated ? 100
+                      : hrbpInUpskilling ? Math.max(15, Math.min(85, 30 + (nh(row.hrbp) % 50)))
+                      : 0
+                    const barColor = plansPct === 100 ? '#22c55e' : plansPct > 0 ? '#818cf8' : '#e2e8f0'
+                    const label = hrbpPlansCreated ? 'Plans assigned'
+                      : hrbpInUpskilling ? `${plansPct}% assigned`
+                      : 'Ready'
+                    return (
+                      <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                        <div className="wfr-dash__plan-progress">
+                          <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                            <div className="wfr-dash__plan-progress-fill" style={{ width: `${plansPct}%`, background: barColor }} />
+                          </div>
+                          <span className="wfr-dash__plan-progress-label" style={{ color: plansPct === 100 ? '#15803d' : plansPct > 0 ? '#6366f1' : '#94a3b8' }}>{label}</span>
+                        </div>
+                      </DataTableCell>
+                    )
+                  })()}
                 </DataTableRow>
               )})}
             </DataTableBody>
@@ -3191,6 +3197,16 @@ export function WorkforceReadinessDashboard({
                           <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {showHrbpCollection && <DataCollectionProgressCell rate={hrbpResponseRate} inScope />}
+                        {hrbpCollectionComplete && (
+                          <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${hrbpPlansComplete ? 100 : 0}%`, background: hrbpPlansComplete ? '#22c55e' : '#e2e8f0' }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: hrbpPlansComplete ? '#15803d' : '#94a3b8' }}>{hrbpPlansComplete ? 'Assigned' : 'Ready'}</span>
+                            </div>
+                          </DataTableCell>
+                        )}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3198,7 +3214,7 @@ export function WorkforceReadinessDashboard({
               }}
               tableTitle="Client managers"
               tableHint={`${directors.length} client manager${directors.length !== 1 ? 's' : ''} · click to view team`}
-              sixColTable={showHrbpCollection}
+              sixColTable={showHrbpCollection || hrbpCollectionComplete}
             >
               <DataTable bordered>
                 <DataTableHeader>
@@ -3209,6 +3225,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
                     {showHrbpCollection && <DataCollectionHead />}
+                    {hrbpCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3253,6 +3270,21 @@ export function WorkforceReadinessDashboard({
                               ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
                               : <DataCollectionProgressCell rate={dirResponseRate} inScope />
                           )}
+                          {hrbpCollectionComplete && (() => {
+                            const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+                            const dirPlanPct = hrbpPlansComplete ? 100 : Math.max(10, Math.min(90, 25 + (nh2(dir.name) % 55)))
+                            const barColor = dirPlanPct === 100 ? '#22c55e' : '#818cf8'
+                            return (
+                              <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                                <div className="wfr-dash__plan-progress">
+                                  <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                    <div className="wfr-dash__plan-progress-fill" style={{ width: `${dirPlanPct}%`, background: barColor }} />
+                                  </div>
+                                  <span className="wfr-dash__plan-progress-label" style={{ color: dirPlanPct === 100 ? '#15803d' : '#6366f1' }}>{dirPlanPct}%</span>
+                                </div>
+                              </DataTableCell>
+                            )
+                          })()}
                         </DataTableRow>
                       )
                     })}
@@ -3338,6 +3370,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
                         {dirCollActive && !dirCollComplete && <DataCollectionHead />}
+                        {dirCollComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3355,6 +3388,16 @@ export function WorkforceReadinessDashboard({
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={wfrDemoDeptResponseRate(d.name)} inScope />}
+                        {dirCollComplete && (
+                          <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${dirPlansComplete ? 100 : 0}%`, background: dirPlansComplete ? '#22c55e' : '#e2e8f0' }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: dirPlansComplete ? '#15803d' : '#94a3b8' }}>{dirPlansComplete ? 'Assigned' : 'Ready'}</span>
+                            </div>
+                          </DataTableCell>
+                        )}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3368,7 +3411,7 @@ export function WorkforceReadinessDashboard({
                   })()
                 : `${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`
               }
-              sixColTable={dirCollActive && !dirCollComplete}
+              sixColTable={(dirCollActive && !dirCollComplete) || dirCollComplete}
             >
               {teamMgrs.length > 4 ? (() => {
                 // Group into senior managers
@@ -3395,12 +3438,14 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>Team AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
                         {dirCollActive && !dirCollComplete && <DataCollectionHead />}
+                        {dirCollComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       {seniorMgrs.map(sr => {
                         const notReady = sr.employees - sr.readyCount
                         const srRate = dirCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((sr.name.length * 7) % 30) - 15)) : 0
+                        const srPlanPct = dirPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((sr.name.length * 11) % 60)))
                         return (
                           <DataTableRow
                             key={sr.name}
@@ -3436,6 +3481,16 @@ export function WorkforceReadinessDashboard({
                               <span style={{ color: sr.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
                             </DataTableCell>
                             {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={srRate} inScope />}
+                            {dirCollComplete && (
+                              <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                                <div className="wfr-dash__plan-progress">
+                                  <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                    <div className="wfr-dash__plan-progress-fill" style={{ width: `${srPlanPct}%`, background: srPlanPct === 100 ? '#22c55e' : '#818cf8' }} />
+                                  </div>
+                                  <span className="wfr-dash__plan-progress-label" style={{ color: srPlanPct === 100 ? '#15803d' : '#6366f1' }}>{srPlanPct}%</span>
+                                </div>
+                              </DataTableCell>
+                            )}
                           </DataTableRow>
                         )
                       })}
@@ -3452,6 +3507,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
                     {dirCollActive && !dirCollComplete && <DataCollectionHead />}
+                    {dirCollComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3461,6 +3517,7 @@ export function WorkforceReadinessDashboard({
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
                     const mgrRate = dirCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((mgr.manager.length * 3) % 20) - 10)) : 0
+                    const mgrPlanPct = dirPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((mgr.manager.length * 7) % 60)))
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3487,6 +3544,16 @@ export function WorkforceReadinessDashboard({
                           </span>
                         </DataTableCell>
                         {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={mgrRate} inScope />}
+                        {dirCollComplete && (
+                          <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrPlanPct}%`, background: mgrPlanPct === 100 ? '#22c55e' : '#818cf8' }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: mgrPlanPct === 100 ? '#15803d' : '#6366f1' }}>{mgrPlanPct}%</span>
+                            </div>
+                          </DataTableCell>
+                        )}
                       </DataTableRow>
                     )
                   })}
@@ -3570,6 +3637,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
                         {srCollActive && !srCollComplete && <DataCollectionHead />}
+                        {srCollComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3589,6 +3657,16 @@ export function WorkforceReadinessDashboard({
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {srCollActive && !srCollComplete && <DataCollectionProgressCell rate={wfrDemoDeptResponseRate(d.name)} inScope />}
+                        {srCollComplete && (
+                          <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${srPlansComplete ? 100 : 0}%`, background: srPlansComplete ? '#22c55e' : '#e2e8f0' }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: srPlansComplete ? '#15803d' : '#94a3b8' }}>{srPlansComplete ? 'Assigned' : 'Ready'}</span>
+                            </div>
+                          </DataTableCell>
+                        )}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3596,7 +3674,7 @@ export function WorkforceReadinessDashboard({
               }}
               tableTitle="Team managers"
               tableHint={`${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`}
-              sixColTable={srCollActive && !srCollComplete}
+              sixColTable={(srCollActive && !srCollComplete) || srCollComplete}
             >
               <DataTable bordered>
                 <DataTableHeader>
@@ -3607,6 +3685,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
                     {srCollActive && !srCollComplete && <DataCollectionHead />}
+                    {srCollComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3616,6 +3695,7 @@ export function WorkforceReadinessDashboard({
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
                     const mgrRate = srCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((mgr.manager.length * 3) % 20) - 10)) : 0
+                    const mgrPlanPct = srPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((mgr.manager.length * 7) % 60)))
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3642,6 +3722,16 @@ export function WorkforceReadinessDashboard({
                           </span>
                         </DataTableCell>
                         {srCollActive && !srCollComplete && <DataCollectionProgressCell rate={mgrRate} inScope />}
+                        {srCollComplete && (
+                          <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
+                            <div className="wfr-dash__plan-progress">
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrPlanPct}%`, background: mgrPlanPct === 100 ? '#22c55e' : '#818cf8' }} />
+                              </div>
+                              <span className="wfr-dash__plan-progress-label" style={{ color: mgrPlanPct === 100 ? '#15803d' : '#6366f1' }}>{mgrPlanPct}%</span>
+                            </div>
+                          </DataTableCell>
+                        )}
                       </DataTableRow>
                     )
                   })}
