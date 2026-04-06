@@ -1764,7 +1764,13 @@ function BoardView({
         ? Math.round(row.depts.reduce((s, d) => s + wfrDemoDeptResponseRate(d.name) * d.headcount, 0) / headcount)
         : 0
       const hrbpDelegated = wfrState.hrbpStates?.[row.hrbp]?.delegated
-      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalGap, hrbpState, responseRate, hrbpDelegated }
+      // Pre-collection baseline readiness (before calibration delta)
+      const baseReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d2) => {
+        const dept = allDeptsSorted.find(x => x.name === d2.name)
+        return s + (dept?.aiReadiness ?? d2.readiness) * d2.headcount
+      }, 0) / headcount) : 0
+      const trendDelta = avgReadiness - baseReadiness
+      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
     }).sort((a, b) => b.totalGap - a.totalGap)
   }, [allDeptsSorted, focusCollectionComplete, wfrState])
 
@@ -2074,7 +2080,16 @@ function BoardView({
                     </div>
                   </DataTableCell>
                   <DataTableCell align="right" numeric>{row.headcount.toLocaleString()}</DataTableCell>
-                  <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={row.avgReadiness} /></DataTableCell>
+                  <DataTableCell metric>
+                    {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 ? (
+                      <div className="wfr-dash__readiness-with-trend">
+                        <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} />
+                        <span className={`wfr-dash__trend-badge ${row.trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                          <span className="wfr-dash__trend-badge-text">{row.trendDelta >= 0 ? '↑' : '↓'}{Math.abs(row.trendDelta)}pt</span>
+                        </span>
+                      </div>
+                    ) : <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} />}
+                  </DataTableCell>
                   <DataTableCell metric><DeptTableSoloBar variant="potential" pct={row.avgPotential} /></DataTableCell>
                   <DataTableCell align="right">
                     <span className="wfr-type-h6 tabular-nums">{row.totalGap.toLocaleString()}</span>
@@ -3259,7 +3274,14 @@ export function WorkforceReadinessDashboard({
                           <DataTableCell align="right" numeric>{dir.employees.toLocaleString()}</DataTableCell>
                           <DataTableCell metric>
                             <div>
-                              <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                              {hrbpCollectionComplete && deptTrendDelta !== 0 ? (
+                                <div className="wfr-dash__readiness-with-trend">
+                                  <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                                  <span className={`wfr-dash__trend-badge ${deptTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                    <span className="wfr-dash__trend-badge-text">{deptTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(deptTrendDelta)}pt</span>
+                                  </span>
+                                </div>
+                              ) : <DeptTableSoloBar variant="readiness" pct={dir.readiness} />}
                               <div className="text-[10px] text-[#94a3b8] mt-0.5">{dir.readyCount} of {dir.employees} AI-ready</div>
                             </div>
                           </DataTableCell>
@@ -3476,7 +3498,14 @@ export function WorkforceReadinessDashboard({
                             <DataTableCell align="right" numeric>{sr.employees.toLocaleString()}</DataTableCell>
                             <DataTableCell metric>
                               <div>
-                                <DeptTableSoloBar variant="readiness" pct={sr.readiness} />
+                                {dirCollComplete && trendDelta !== 0 ? (
+                                  <div className="wfr-dash__readiness-with-trend">
+                                    <DeptTableSoloBar variant="readiness" pct={sr.readiness} />
+                                    <span className={`wfr-dash__trend-badge ${trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                      <span className="wfr-dash__trend-badge-text">{trendDelta >= 0 ? '↑' : '↓'}{Math.abs(trendDelta)}pt</span>
+                                    </span>
+                                  </div>
+                                ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                                 <div className="text-[10px] text-[#94a3b8] mt-0.5">{sr.readyCount} of {sr.employees} AI-ready</div>
                               </div>
                             </DataTableCell>
@@ -3537,7 +3566,14 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right" numeric>{mgr.employees.toLocaleString()}</DataTableCell>
                         <DataTableCell metric>
                           <div>
-                            <DeptTableSoloBar variant="readiness" pct={en.readiness} />
+                            {dirCollComplete && trendDelta !== 0 ? (
+                              <div className="wfr-dash__readiness-with-trend">
+                                <DeptTableSoloBar variant="readiness" pct={en.readiness} />
+                                <span className={`wfr-dash__trend-badge ${trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                  <span className="wfr-dash__trend-badge-text">{trendDelta >= 0 ? '↑' : '↓'}{Math.abs(trendDelta)}pt</span>
+                                </span>
+                              </div>
+                            ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                             <div className="text-[10px] text-[#94a3b8] mt-0.5">{en.readyCount} of {mgr.employees} AI-ready</div>
                           </div>
                         </DataTableCell>
@@ -3715,7 +3751,14 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right" numeric>{mgr.employees.toLocaleString()}</DataTableCell>
                         <DataTableCell metric>
                           <div>
-                            <DeptTableSoloBar variant="readiness" pct={en.readiness} />
+                            {srCollComplete && tDelta !== 0 ? (
+                              <div className="wfr-dash__readiness-with-trend">
+                                <DeptTableSoloBar variant="readiness" pct={en.readiness} />
+                                <span className={`wfr-dash__trend-badge ${tDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                  <span className="wfr-dash__trend-badge-text">{tDelta >= 0 ? '↑' : '↓'}{Math.abs(tDelta)}pt</span>
+                                </span>
+                              </div>
+                            ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                             <div className="text-[10px] text-[#94a3b8] mt-0.5">{en.readyCount} of {mgr.employees} AI-ready</div>
                           </div>
                         </DataTableCell>
