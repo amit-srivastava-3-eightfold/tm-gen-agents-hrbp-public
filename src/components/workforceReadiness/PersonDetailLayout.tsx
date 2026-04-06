@@ -35,6 +35,8 @@ export interface PersonDetailLayoutProps {
   managerTable?: TableSectionProps
   /** Enable 6-column table alignment (e.g. when data collection column is shown) */
   sixColTable?: boolean
+  /** Disable fixed table layout on the children table (for 7+ column tables that need auto layout) */
+  wideTable?: boolean
   children: ReactNode
 }
 
@@ -50,6 +52,7 @@ export function PersonDetailLayout({
   heroCard,
   managerTable,
   sixColTable,
+  wideTable,
   children,
 }: PersonDetailLayoutProps) {
   return (
@@ -112,7 +115,7 @@ export function PersonDetailLayout({
           </div>
         )}
 
-        <div className={managerTable ? `person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}` : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className={managerTable && !wideTable ? `person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}` : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{tableTitle}</h3>
             <span className="wfr-dash__panel-hint">{tableHint}</span>

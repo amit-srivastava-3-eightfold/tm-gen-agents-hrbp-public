@@ -391,6 +391,7 @@ export function ManagerDetailPage() {
             tableTitle="Team members"
             tableHint={tableHint}
             sixColTable={showCollection}
+            wideTable={collectionComplete}
           >
           <DataTable bordered>
             <DataTableHeader>
