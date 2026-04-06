@@ -3318,6 +3318,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>AI adoption</DataTableHead>
                         <DataTableHead metric>AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
+                        {dirCollActive && !dirCollComplete && <DataCollectionHead />}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3334,6 +3335,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
+                        {dirCollActive && !dirCollComplete && <DataCollectionProgressCell rate={wfrDemoDeptResponseRate(d.name)} inScope />}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3347,6 +3349,7 @@ export function WorkforceReadinessDashboard({
                   })()
                 : `${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`
               }
+              sixColTable={dirCollActive && !dirCollComplete}
             >
               {teamMgrs.length > 4 ? (() => {
                 // Group into senior managers
@@ -3479,7 +3482,10 @@ export function WorkforceReadinessDashboard({
           const allMgrs = deptManagerTeams(d.name, d.employees)
           const teamMgrs = allMgrs.slice(seniorMgrData.mgrIdxStart, seniorMgrData.mgrIdxStart + seniorMgrData.mgrCount)
           const srHeadcount = teamMgrs.reduce((s, m) => s + m.employees, 0)
-          const { collectionComplete: srCollComplete, hrbpPlansCreated: srPlansComplete } = deriveWfrFlags(wfrState.state)
+          const srEffState = isHrbp && wfrState.hrbpStates && personaHrbpNames?.length
+            ? getPersonaEffectiveState(wfrState, personaHrbpNames)
+            : wfrState.state
+          const { collectionActive: srCollActive, collectionComplete: srCollComplete, hrbpPlansCreated: srPlansComplete } = deriveWfrFlags(srEffState)
           const srTrend = deptReadinessTrend(d.name)
           const srMeasuredReadiness = srCollComplete ? d.aiReadiness + srTrend.delta : d.aiReadiness
           const nh2 = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
@@ -3544,6 +3550,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>AI adoption</DataTableHead>
                         <DataTableHead metric>AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
+                        {srCollActive && !srCollComplete && <DataCollectionHead />}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3562,6 +3569,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
+                        {srCollActive && !srCollComplete && <DataCollectionProgressCell rate={wfrDemoDeptResponseRate(d.name)} inScope />}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3569,6 +3577,7 @@ export function WorkforceReadinessDashboard({
               }}
               tableTitle="Team managers"
               tableHint={`${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`}
+              sixColTable={srCollActive && !srCollComplete}
             >
               <DataTable bordered>
                 <DataTableHeader>
@@ -3578,6 +3587,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI adoption</DataTableHead>
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
+                    {srCollActive && !srCollComplete && <DataCollectionHead />}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3586,6 +3596,7 @@ export function WorkforceReadinessDashboard({
                     const en = srMgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
+                    const mgrRate = srCollActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(d.name) + ((mgr.manager.length * 3) % 20) - 10)) : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3611,6 +3622,7 @@ export function WorkforceReadinessDashboard({
                             {notReady} not ready
                           </span>
                         </DataTableCell>
+                        {srCollActive && !srCollComplete && <DataCollectionProgressCell rate={mgrRate} inScope />}
                       </DataTableRow>
                     )
                   })}

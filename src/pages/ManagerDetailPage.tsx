@@ -24,11 +24,11 @@ import {
   DataTableCell,
   Pill,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, wfrDemoDeptResponseRate, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { deriveWfrFlags, DeptTableSoloBar, DataCollectionHead, DataCollectionStatusCell, getHrbpEffectiveState, getPersonaEffectiveState, stateNum, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { deriveWfrFlags, DeptTableSoloBar, DataCollectionHead, DataCollectionProgressCell, DataCollectionStatusCell, getHrbpEffectiveState, getPersonaEffectiveState, stateNum, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
@@ -363,6 +363,7 @@ export function ManagerDetailPage() {
                       <DataTableHead metric>AI adoption</DataTableHead>
                       <DataTableHead metric>AI potential</DataTableHead>
                       <DataTableHead numeric>Gap</DataTableHead>
+                      {showCollection && <DataCollectionHead />}
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
@@ -379,6 +380,7 @@ export function ManagerDetailPage() {
                       <DataTableCell align="right">
                         <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626' }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                       </DataTableCell>
+                      {showCollection && <DataCollectionProgressCell rate={deptInScope ? wfrDemoDeptResponseRate(deptName) : 0} inScope={deptInScope} />}
                     </DataTableRow>
                   </DataTableBody>
                 </DataTable>
@@ -386,6 +388,7 @@ export function ManagerDetailPage() {
             }}
             tableTitle="Team members"
             tableHint={tableHint}
+            sixColTable={showCollection}
           >
           <DataTable bordered>
             <DataTableHeader>
