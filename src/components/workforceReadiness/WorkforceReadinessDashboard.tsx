@@ -3077,9 +3077,10 @@ export function WorkforceReadinessDashboard({
           const collBadge = hrbpCollectionComplete
             ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
             : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
-          // Data collection status for this HRBP
+          // Data collection status for this HRBP (covers both delegation and non-delegation flows)
           const hrbpDelegatedPending = hasHrbpPendingDelegation(wfrState, hrbpName)
           const hrbpCollecting = stateNum(hrbpEffState) >= 2 && !hrbpCollectionComplete
+          const showHrbpCollection = hrbpDelegatedPending || hrbpCollecting
           const hrbpResponseRate = hrbpCollecting ? wfrDemoDeptResponseRate(d.name) : 0
           // Build the CTA card for the heroCard slot
           const hrbpHeroCard = hrbpDelegatedPending ? (
@@ -3153,6 +3154,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric>AI adoption</DataTableHead>
                         <DataTableHead metric>AI potential</DataTableHead>
                         <DataTableHead numeric>Gap</DataTableHead>
+                        {showHrbpCollection && <DataCollectionHead />}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3169,6 +3171,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
+                        {showHrbpCollection && <DataCollectionProgressCell rate={hrbpResponseRate} inScope />}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3185,7 +3188,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric>Team AI adoption</DataTableHead>
                     <DataTableHead metric>Team AI potential</DataTableHead>
                     <DataTableHead numeric>Gap</DataTableHead>
-                    {(hrbpDelegatedPending || hrbpCollecting) && <DataCollectionHead />}
+                    {showHrbpCollection && <DataCollectionHead />}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -3225,11 +3228,10 @@ export function WorkforceReadinessDashboard({
                               {notReady} not ready
                             </span>
                           </DataTableCell>
-                          {hrbpDelegatedPending && (
-                            <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
-                          )}
-                          {hrbpCollecting && (
-                            <DataCollectionProgressCell rate={dirResponseRate} inScope />
+                          {showHrbpCollection && (
+                            hrbpDelegatedPending
+                              ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
+                              : <DataCollectionProgressCell rate={dirResponseRate} inScope />
                           )}
                         </DataTableRow>
                       )
