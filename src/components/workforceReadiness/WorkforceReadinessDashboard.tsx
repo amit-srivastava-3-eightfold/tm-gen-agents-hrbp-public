@@ -775,6 +775,24 @@ function BoardView({
 
   const effectiveRollup = hrbpRollup ?? scopedRollup
 
+  // When CHRO has delegated to HRBPs, scope the collection-complete card numbers to just the HRBP's departments
+  const chroDelegatedGap = useMemo(() => {
+    if (!chroDelegationActive || !wfrState.hrbpStates) return undefined
+    const delegatedHrbps = Object.entries(wfrState.hrbpStates)
+      .filter(([, h]) => h.delegated)
+      .map(([name]) => name)
+    const hrbpDeptNames = new Set(
+      delegatedHrbps.flatMap(hrbp => getHrbpDepts(hrbp).map(d => d.dept))
+    )
+    const relevantDepts = departments.filter(d => hrbpDeptNames.has(d.name))
+    const upskillingDeptSet = new Set(upskillingLaunchSummary?.departmentNames ?? [])
+    const remainingDepts = relevantDepts.filter(d => !upskillingDeptSet.has(d.name))
+    return remainingDepts.reduce((sum, d) => {
+      const augPeople = Math.round((d.employees / ORG.totalEmployees) * ORG.peopleInAugRoles)
+      return sum + Math.round(augPeople * (1 - d.aiReadiness / 100))
+    }, 0)
+  }, [chroDelegationActive, wfrState, upskillingLaunchSummary])
+
   // Collection calibration: when data collection is complete, AI readiness changes based on calibrated scores
   // This is a weighted average of per-dept deltas
   // Calibration applies when collection is complete OR plans have been assigned (which implies collection was done)
@@ -958,6 +976,7 @@ function BoardView({
           hrbpPlansCreated={hrbpPlansCreated}
           chroDelegationActive={chroDelegationActive}
           chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
+          gapPeopleOverride={chroDelegatedGap}
         />
 
         <div className="wfr-dash__cards-row">

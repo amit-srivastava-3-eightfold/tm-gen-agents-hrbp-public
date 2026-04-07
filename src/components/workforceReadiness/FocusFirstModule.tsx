@@ -49,6 +49,8 @@ export interface FocusFirstCollectionCardProps {
   isHrbp?: boolean
   /** HRBP has created development plans */
   hrbpPlansCreated?: boolean
+  /** Override the computed remainingGapPeople (e.g. CHRO delegation scoped to HRBP's departments) */
+  gapPeopleOverride?: number
 }
 
 /** Shared Focus First card — collecting state or complete state. */
@@ -68,6 +70,7 @@ export function FocusFirstCollectionCard({
   upskillingLaunchSummary = null,
   isHrbp = false,
   hrbpPlansCreated = false,
+  gapPeopleOverride,
 }: FocusFirstCollectionCardProps) {
   // Animation phases: idle → filling → bell → hold → done
   const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
@@ -331,10 +334,11 @@ export function FocusFirstCollectionCard({
       : departments
     const upskillingDeptSet = new Set(upskillingLaunchSummary?.departmentNames ?? [])
     const remainingDepts = scopedDepts.filter((d) => !upskillingDeptSet.has(d.name))
-    const remainingGapPeople = remainingDepts.reduce((sum, d) => {
+    const computedGapPeople = remainingDepts.reduce((sum, d) => {
       const augPeople = Math.round((d.employees / ORG.totalEmployees) * ORG.peopleInAugRoles)
       return sum + Math.round(augPeople * (1 - d.aiReadiness / 100))
     }, 0)
+    const remainingGapPeople = gapPeopleOverride ?? computedGapPeople
 
     // After upskilling is launched — keep state 3 card with confirmation
     if (upskillingActive) {
@@ -510,6 +514,8 @@ export type FocusFirstModuleBoardProps = {
   chroDelegationActive?: boolean
   /** Scope label for the CHRO delegation CTA (e.g. "Jaydon Torff" or "3 HRBPs") */
   chroDelegationScopeLabel?: string
+  /** Override the gap people count in the collection-complete card (e.g. scoped to HRBP's depts) */
+  gapPeopleOverride?: number
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -566,6 +572,7 @@ function FocusFirstModuleBoard({
   delegationDeptName,
   chroDelegationActive = false,
   chroDelegationScopeLabel,
+  gapPeopleOverride,
 }: Omit<FocusFirstModuleBoardProps, 'mode'> & {
   hrbpDelegationPending?: boolean
   onHrbpCollectionLaunch?: (channelsLabel: string) => void
@@ -614,6 +621,7 @@ function FocusFirstModuleBoard({
             upskillingLaunchSummary={boardUpskillingLaunchSummary}
             isHrbp={isHrbp}
             hrbpPlansCreated={hrbpPlansCreated}
+            gapPeopleOverride={gapPeopleOverride}
             onAddDepartments={collectionComplete ? undefined : () => {
               onRequestCloseMetricSheet?.()
               onLaunchOpenChange(true)
@@ -751,6 +759,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     delegationDeptName: propsDelegationDeptName,
     chroDelegationActive: propsChroDelegationActive,
     chroDelegationScopeLabel: propsChroDelegationScopeLabel,
+    gapPeopleOverride: propsGapPeopleOverride,
   } = props
 
   return (
@@ -778,6 +787,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       delegationDeptName={propsDelegationDeptName}
       chroDelegationActive={propsChroDelegationActive}
       chroDelegationScopeLabel={propsChroDelegationScopeLabel}
+      gapPeopleOverride={propsGapPeopleOverride}
     />
   )
 }
