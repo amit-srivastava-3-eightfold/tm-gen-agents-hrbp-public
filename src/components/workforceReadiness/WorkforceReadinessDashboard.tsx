@@ -832,119 +832,6 @@ function DeptView({
           }))
           const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(dept.name)
 
-          // HRBP: show client managers (directors) instead of tabs
-          if (isHrbp && personaHrbpNames?.length) {
-            const hrbpNameForDir = personaHrbpNames[0]
-            const deptHrbpList = getDeptHrbps(dept.name)
-            const allMgrsFull = deptManagerTeams(dept.name, dept.employees)
-            const hrbpIdx = deptHrbpList.findIndex(h => h.hrbp === hrbpNameForDir)
-            const hrbpAssign = deptHrbpList[hrbpIdx]
-            if (hrbpAssign) {
-              let mgrStart = 0
-              for (let i = 0; i < hrbpIdx; i++) {
-                let covered = 0
-                for (let m = mgrStart; m < allMgrsFull.length; m++) {
-                  if (covered + allMgrsFull[m].employees > deptHrbpList[i].headcount && covered > 0) break
-                  covered += allMgrsFull[m].employees
-                  mgrStart = m + 1
-                }
-              }
-              const slicedMgrs: typeof allMgrsFull = []
-              let covHc = 0
-              for (let m = mgrStart; m < allMgrsFull.length && covHc < hrbpAssign.headcount; m++) {
-                slicedMgrs.push(allMgrsFull[m])
-                covHc += allMgrsFull[m].employees
-              }
-              const targetDirs = Math.max(4, Math.min(12, Math.round(hrbpAssign.headcount / 300)))
-              const perDir = Math.ceil(slicedMgrs.length / targetDirs)
-              const DIRECTOR_TITLES: Record<string, string[]> = {
-                Engineering: ['VP Engineering', 'Sr. Director Engineering', 'Director Platform', 'Director Frontend', 'Director QA', 'Director DevOps', 'Director Mobile', 'Director Infrastructure', 'Director ML', 'Director SRE', 'Director Architecture', 'Director Security Eng'],
-                default: ['VP', 'Sr. Director', 'Director', 'Associate Director'],
-              }
-              const dirTitles = DIRECTOR_TITLES[dept.name] ?? DIRECTOR_TITLES.default
-              const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-              const directors: { name: string; title: string; employees: number; readiness: number; readyCount: number; teamManagers: number; firstMgrIdx: number }[] = []
-              for (let di = 0; di < targetDirs; di++) {
-                const batch = slicedMgrs.slice(di * perDir, (di + 1) * perDir)
-                if (batch.length === 0) continue
-                const batchStart = mgrStart + di * perDir
-                const empCount = batch.reduce((s, m) => s + m.employees, 0)
-                const avgReadiness = dept.aiReadiness
-                const ready = Math.round(empCount * avgReadiness / 100)
-                directors.push({
-                  name: DEMO_MANAGERS[(nh(dept.name) + di * 7) % DEMO_MANAGERS.length],
-                  title: dirTitles[di % dirTitles.length],
-                  employees: empCount,
-                  readiness: avgReadiness,
-                  readyCount: ready,
-                  teamManagers: batch.length,
-                  firstMgrIdx: batchStart,
-                })
-              }
-              return (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: 0 }}>Client managers</h3>
-                    <span className="wfr-dash__panel-hint">{directors.length} client managers · click to view team</span>
-                  </div>
-                  <DataTable bordered>
-                    <DataTableHeader>
-                      <DataTableRow>
-                        <DataTableHead>Manager</DataTableHead>
-                        <DataTableHead numeric>Employees</DataTableHead>
-                        <DataTableHead metric>Team AI adoption</DataTableHead>
-                        <DataTableHead metric>Team AI potential</DataTableHead>
-                        <DataTableHead numeric>Gap</DataTableHead>
-                        {orgCollectionActive && !orgCollectionComplete && <DataCollectionHead />}
-                        {orgCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Dev plan status</DataTableHead>}
-                      </DataTableRow>
-                    </DataTableHeader>
-                    <DataTableBody>
-                      {directors.sort((a, b) => (dept.aiPotential - a.readiness) - (dept.aiPotential - b.readiness)).reverse().map(dir => {
-                        const notReady = dir.employees - dir.readyCount
-                        const dirResponseRate = orgCollectionActive ? Math.max(5, Math.min(95, wfrDemoDeptResponseRate(dept.name) + ((dir.name.length * 7) % 30) - 15)) : 0
-                        const dirPlanPct = deptHrbpPlansCreated ? 100 : Math.max(10, Math.min(90, 25 + ((dir.name.length * 11) % 55)))
-                        const deptTrend = orgCollectionComplete ? deptReadinessTrend(dept.name) : { delta: 0, direction: 'up' as const }
-                        return (
-                          <DataTableRow key={dir.name} style={{ cursor: 'pointer' }} onClick={() => navigate(`/workforce/manager/${encodeURIComponent(dir.name)}?dept=${encodeURIComponent(dept.name)}&mgrIdx=${dir.firstMgrIdx}`)}>
-                            <DataTableCell className="font-semibold">
-                              <div>
-                                <div className="text-[#3b5bdb] hover:underline">{dir.name}</div>
-                                <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
-                              </div>
-                            </DataTableCell>
-                            <DataTableCell align="right" numeric>{dir.employees.toLocaleString()}</DataTableCell>
-                            <DataTableCell metric>
-                              <div>
-                                {orgCollectionComplete && deptTrend.delta !== 0 ? (
-                                  <div className="wfr-dash__readiness-with-trend">
-                                    <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
-                                    <span className={`wfr-dash__trend-badge ${deptTrend.delta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
-                                      <span className="wfr-dash__trend-badge-text">{deptTrend.delta >= 0 ? '↑' : '↓'}{Math.abs(deptTrend.delta)}pt</span>
-                                    </span>
-                                  </div>
-                                ) : <DeptTableSoloBar variant="readiness" pct={dir.readiness} />}
-                                <div className="text-[10px] text-[#94a3b8] mt-0.5">{dir.readyCount} of {dir.employees} AI-ready</div>
-                              </div>
-                            </DataTableCell>
-                            <DataTableCell metric><DeptTableSoloBar variant="potential" pct={dept.aiPotential} /></DataTableCell>
-                            <DataTableCell align="right">
-                              <span style={{ color: dir.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
-                            </DataTableCell>
-                            {orgCollectionActive && !orgCollectionComplete && (
-                              <DataCollectionProgressCell rate={dirResponseRate} inScope />
-                            )}
-                            {orgCollectionComplete && <DevPlanStatusCell pct={dirPlanPct} plansComplete={deptHrbpPlansCreated} />}
-                          </DataTableRow>
-                        )
-                      })}
-                    </DataTableBody>
-                  </DataTable>
-                </>
-              )
-            }
-          }
-
           return (
             <Tabs defaultValue={isHrbp ? 'team' : 'hrbps'}>
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2754,7 +2641,7 @@ export function WorkforceReadinessDashboard({
 
   // Auto-select view from query params (e.g. navigating back from Manager Detail breadcrumbs)
   const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>(() => {
-    if (singleDeptHrbp) return 'dept'
+    if (singleDeptHrbp) return 'hrbp'
     const p = new URLSearchParams(window.location.search)
     if (p.get('director')) return 'director'
     if (p.get('hrbp')) return 'hrbp'
@@ -3416,7 +3303,7 @@ export function WorkforceReadinessDashboard({
               breadcrumb={
                 <Breadcrumb>
                   <BreadcrumbList>
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null); setDirectorData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView(singleDeptHrbp ? 'hrbp' : 'board'); if (!singleDeptHrbp) setHrbpName(null); setDirectorData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(directorData.parentHrbp); setView('hrbp'); setDirectorData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{directorData.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
                     <BreadcrumbSeparator />
@@ -3668,7 +3555,7 @@ export function WorkforceReadinessDashboard({
               breadcrumb={
                 <Breadcrumb>
                   <BreadcrumbList>
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null); setDirectorData(null); setSeniorMgrData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setView(singleDeptHrbp ? 'hrbp' : 'board'); if (!singleDeptHrbp) setHrbpName(null); setDirectorData(null); setSeniorMgrData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(seniorMgrData.parentDirector.parentHrbp); setView('hrbp'); setDirectorData(null); setSeniorMgrData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{seniorMgrData.parentDirector.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
                     <BreadcrumbSeparator />

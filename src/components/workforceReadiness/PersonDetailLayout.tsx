@@ -65,10 +65,12 @@ export function PersonDetailLayout({
         </div>
       )}
       <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div className="mgr-detail-page__summary">
-          <h2 className="mgr-detail-page__name">{name}</h2>
-          <p className="mgr-detail-page__subtitle" style={{ margin: 0 }}>{subtitle}</p>
-        </div>
+        {(name || subtitle) && (
+          <div className="mgr-detail-page__summary">
+            <h2 className="mgr-detail-page__name">{name}</h2>
+            <p className="mgr-detail-page__subtitle" style={{ margin: 0 }}>{subtitle}</p>
+          </div>
+        )}
 
         {heroCard}
 
