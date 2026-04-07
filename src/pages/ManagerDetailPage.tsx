@@ -24,11 +24,11 @@ import {
   DataTableCell,
   Pill,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, wfrDemoDeptResponseRate, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { deriveWfrFlags, DeptTableSoloBar, DataCollectionHead, DataCollectionProgressCell, DataCollectionStatusCell, getHrbpEffectiveState, getPersonaEffectiveState, stateNum, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffectiveState, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
@@ -60,6 +60,10 @@ export function ManagerDetailPage() {
   const deptName = searchParams.get('dept') ?? ''
   const parentParam = searchParams.get('parent') ?? ''
   const mgrIdxParam = searchParams.get('mgrIdx')
+  const directorParam = searchParams.get('director') ?? ''
+  const parentHrbpParam = searchParams.get('parentHrbp') ?? ''
+  const seniorMgrParam = searchParams.get('seniorMgr') ?? ''
+  const srStartParam = searchParams.get('srStart') ?? ''
   const managerName = decodeURIComponent(managerId ?? '')
   const isHrbp = currentUser.id === 'jaydon-torff'
 
@@ -83,7 +87,19 @@ export function ManagerDetailPage() {
   const effectiveState = isHrbp && wfrState.hrbpStates
     ? getPersonaEffectiveState(wfrState, personaHrbpNames)
     : wfrState.state
-  const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(effectiveState)
+  const { collectionActive, collectionComplete: rawCollectionComplete, upskillingActive, hrbpPlansCreated: rawHrbpPlansCreated } = deriveWfrFlags(effectiveState)
+  // Gate on director scope — if this manager's director didn't participate in collection, hide upskilling data
+  const dirSelectedDirs = directorParam && parentHrbpParam ? wfrState.hrbpStates?.[parentHrbpParam]?.selectedDirectors : undefined
+  const dirInScope = !dirSelectedDirs || !directorParam || dirSelectedDirs.includes(directorParam)
+  const collectionComplete = rawCollectionComplete && dirInScope
+  const hrbpPlansCreated = rawHrbpPlansCreated && dirInScope
+  // Upskilling column gates on the specific HRBP's state (not org-level) so the CHRO drilling into
+  // an HRBP's team only sees upskilling after THAT HRBP has launched upskilling (state >= 4).
+  const parentHrbpEffState = parentHrbpParam
+    ? getHrbpEffectiveState(wfrState, parentHrbpParam)
+    : effectiveState
+  const hrbpUpskillingActive = deriveWfrFlags(parentHrbpEffState).upskillingActive
+  const upskillingInScope = hrbpUpskillingActive && dirInScope
 
   // Find the department
   const dept = departments.find(d => d.name === deptName)
@@ -210,12 +226,7 @@ export function ManagerDetailPage() {
 
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
-  const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
-  // Department is in scope if any of its HRBPs were selected for delegation (per-HRBP state)
-  const deptInScope = wfrState.hrbpStates
-    ? getDeptHrbps(deptName).some(h => stateNum(getHrbpEffectiveState(wfrState, h.hrbp)) >= 2)
-    : !collectionLaunchSummary?.scopedDepartmentNames || collectionLaunchSummary.scopedDepartmentNames.includes(deptName)
   const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(deptName)
 
   // Table hint
@@ -285,7 +296,9 @@ export function ManagerDetailPage() {
                   const perDir = Math.ceil(sliceCount / targetDirs)
                   const dirIdx = Math.floor((mgrIdx - startIdx) / perDir)
                   const nh = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
-                  const dirName = DEMO_MANAGERS[(nh(deptName) + dirIdx * 7) % DEMO_MANAGERS.length]
+                  // Use explicit directorParam from URL if available (more reliable), else hash-derive
+                  const dirName = directorParam || DEMO_MANAGERS[(nh(deptName) + dirIdx * 7) % DEMO_MANAGERS.length]
+                  const dirUrl = `/workforce?hrbp=${encodeURIComponent(h.hrbp)}&director=${encodeURIComponent(dirName)}&dept=${encodeURIComponent(deptName)}&dirIdx=${dirIdx}`
                   return (
                     <Breadcrumb>
                       <BreadcrumbList>
@@ -293,7 +306,8 @@ export function ManagerDetailPage() {
                         <BreadcrumbSeparator />
                         <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}`)}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{h.hrbp}</BreadcrumbLink></BreadcrumbItem>
                         <BreadcrumbSeparator />
-                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}&director=${encodeURIComponent(dirName)}&dept=${encodeURIComponent(deptName)}&dirIdx=${dirIdx}`)}>{dirName}</BreadcrumbLink></BreadcrumbItem>
+                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(dirUrl)}>{dirName}</BreadcrumbLink></BreadcrumbItem>
+                        {seniorMgrParam && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`${dirUrl}&seniorMgr=${encodeURIComponent(seniorMgrParam)}&srStart=${encodeURIComponent(srStartParam)}`)}>{seniorMgrParam}</BreadcrumbLink></BreadcrumbItem></>)}
                         {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
                         <BreadcrumbSeparator />
                         <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
@@ -346,15 +360,14 @@ export function ManagerDetailPage() {
               hint: dept.name,
               hideTitle: true,
               children: (
-                <DataTable bordered>
+                <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                   <DataTableHeader>
                     <DataTableRow>
-                      <DataTableHead>Manager</DataTableHead>
-                      <DataTableHead numeric>Employees</DataTableHead>
-                      <DataTableHead metric>AI adoption</DataTableHead>
-                      <DataTableHead metric>AI potential</DataTableHead>
-                      <DataTableHead numeric>Gap</DataTableHead>
-                      {showCollection && <DataCollectionHead />}
+                      <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
+                      <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
+                      <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                      <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                      {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
@@ -365,13 +378,45 @@ export function ManagerDetailPage() {
                           <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>
                         </div>
                       </DataTableCell>
-                      <DataTableCell align="right" numeric>{displayEmployees.length.toLocaleString()}</DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="potential" pct={dept.aiPotential} /></DataTableCell>
-                      <DataTableCell align="right">
+                      <DataTableCell>
                         <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626' }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                       </DataTableCell>
-                      {showCollection && <DataCollectionProgressCell rate={deptInScope ? wfrDemoDeptResponseRate(deptName) : 0} inScope={deptInScope} />}
+                      {upskillingInScope && (() => {
+                        const mgrH = nameHash(mgr.manager)
+                        const mgrPlanPct = hrbpPlansCreated
+                          ? Math.min(100, 25 + (mgrH % 55) + 20)
+                          : deptInUpskilling ? Math.min(80, 10 + (mgrH % 50)) : 0
+                        const mgrDisplayPct = mgrPlanPct > 0 ? mgrPlanPct : assignedPlans.has(mgr.manager) ? Math.min(85, 10 + (mgrH % 55)) : 0
+                        return (
+                          <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }); setEditingCourses(false); setRemovedCourses(new Set()) }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
+                              </button>
+                              {(mgrPlanPct === 0 && !assignedPlans.has(mgr.manager)) ? (
+                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                  onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])) }}>Assign
+                                </button>
+                              ) : (() => {
+                                const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Not started'
+                                const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                                const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+                                return (
+                                  <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
+                                    <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                      <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrDisplayPct}%`, background: bColor }} />
+                                    </div>
+                                    <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{mgrDisplayPct}%</span>
+                                  </div>
+                                )
+                              })()}
+                            </div>
+                          </DataTableCell>
+                        )
+                      })()}
                     </DataTableRow>
                   </DataTableBody>
                 </DataTable>
@@ -379,30 +424,20 @@ export function ManagerDetailPage() {
             }}
             tableTitle="Team members"
             tableHint={tableHint}
-            sixColTable={showCollection || collectionComplete}
           >
-          <DataTable bordered>
+          <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>Employee</DataTableHead>
-                <DataTableHead>Manager</DataTableHead>
-                <DataTableHead metric>{'AI adoption'}</DataTableHead>
-                <DataTableHead metric>AI potential</DataTableHead>
-                <DataTableHead>Gap</DataTableHead>
-                {showCollection ? (
-                  <DataCollectionHead />
-                ) : null}
-                {collectionComplete ? (
-                    <DataTableHead metric>Upskilling status</DataTableHead>
-                ) : null}
+                <DataTableHead style={{ width: '28%' }}>Employee</DataTableHead>
+                <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
+                <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
               {[...displayEmployees].sort((a, b) => b.displayReadiness - a.displayReadiness).map((emp, i) => {
                 const h = nameHash(emp.name)
-
-                // Collection: deterministic response status
-                const empResponded = deptInScope && (h % 3 !== 0)
 
                 // Plan progress: deterministic
                 const planPct = hrbpPlansCreated
@@ -410,10 +445,6 @@ export function ManagerDetailPage() {
                   : deptInUpskilling
                     ? Math.min(80, 10 + (h % 50))
                     : 0
-                const planStatus = planPct > 85 ? 'Completed' : planPct > 20 ? 'In progress' : 'Not started'
-                const planBarColor = planStatus === 'Completed' ? '#22c55e' : planStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                const planTextColor = planStatus === 'Completed' ? '#15803d' : planStatus === 'In progress' ? '#6366f1' : '#94a3b8'
-
                 // Readiness trend badge
                 const empDelta = emp.displayReadiness - emp.readinessPct
 
@@ -422,23 +453,6 @@ export function ManagerDetailPage() {
                     <DataTableCell className="font-semibold">
                       <div className="text-[13px] text-[#1a212e]">{emp.name}</div>
                       <div className="text-[11px] text-[#94a3b8] font-normal">{emp.title ?? '—'}</div>
-                    </DataTableCell>
-                    <DataTableCell>
-                      {emp.manager === mgr.manager ? (
-                        <span className="text-[12px] text-[#475569]">{emp.manager}</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="text-[12px] text-[#3b5bdb] font-medium hover:underline"
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/workforce/manager/${encodeURIComponent(emp.manager)}?dept=${encodeURIComponent(dept.name)}&parent=${encodeURIComponent(mgr.manager)}`)
-                          }}
-                        >
-                          {emp.manager}
-                        </button>
-                      )}
                     </DataTableCell>
                     <DataTableCell metric>
                       <div className="flex items-center gap-2">
@@ -462,19 +476,14 @@ export function ManagerDetailPage() {
                       )}
                     </DataTableCell>
 
-                    {/* Collection column — state 2 */}
-                    {showCollection ? (
-                      <DataCollectionStatusCell responded={empResponded} inScope={deptInScope} />
-                    ) : null}
-
-                    {/* Upskilling status — single column with dev plan link + progress bar */}
-                    {collectionComplete ? (
+                    {/* Upskilling status — dev plan chip + assign button (pre-assign) or progress bar (post-assign) */}
+                    {upskillingInScope ? (
                       <DataTableCell metric className="!whitespace-normal">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          {/* Dev plan chip */}
                           <button
                             type="button"
-                            className="text-[#3b5bdb] hover:underline shrink-0"
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
                             onClick={(e) => {
                               e.stopPropagation()
                               setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
@@ -482,14 +491,35 @@ export function ManagerDetailPage() {
                               setRemovedCourses(new Set())
                             }}
                           >
-                            Development plan
+                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
+                            Dev plan
                           </button>
-                          <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
-                            <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${planPct}%`, background: planBarColor }} />
-                            </div>
-                            <span className="wfr-dash__plan-progress-label" style={{ color: planTextColor }}>{planPct > 0 ? `${planPct}%` : '—'}</span>
-                          </div>
+                          {/* Pre-assign: Assign button; post-assign: progress bar */}
+                          {(planPct === 0 && !assignedPlans.has(emp.name)) ? (
+                            <button
+                              type="button"
+                              style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setAssignedPlans(prev => new Set([...prev, emp.name]))
+                              }}
+                            >
+                              Assign
+                            </button>
+                          ) : (() => {
+                            const displayPct = planPct > 0 ? planPct : Math.min(85, 10 + (h % 55))
+                            const displayStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Not started'
+                            const bColor = displayStatus === 'Completed' ? '#22c55e' : displayStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                            const tColor = displayStatus === 'Completed' ? '#15803d' : displayStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+                            return (
+                              <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
+                                <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                  <div className="wfr-dash__plan-progress-fill" style={{ width: `${displayPct}%`, background: bColor }} />
+                                </div>
+                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayPct}%</span>
+                              </div>
+                            )
+                          })()}
                         </div>
                       </DataTableCell>
                     ) : null}

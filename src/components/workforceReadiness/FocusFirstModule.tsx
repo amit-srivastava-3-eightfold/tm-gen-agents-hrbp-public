@@ -1,5 +1,5 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type MouseEvent } from 'react'
 import {
   departments,
   ORG,
@@ -16,39 +16,6 @@ import { deptManagerTeams } from './collectionHelpers'
 import type { UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 
 export type { FocusCollectionLaunchSummary }
-
-function focusCollectionUnderwaySubtext(summary: FocusCollectionLaunchSummary, isHrbp?: boolean): ReactNode {
-  if (isHrbp) {
-    return <>AI-powered interviews are underway with your teams. Responses are rolling in—check back as participation grows.</>
-  }
-  if (summary.delegated) {
-    return <>This rollout is assigned to HRBPs for <strong>{summary.scopeLabel}</strong>. Delegates will choose the collection method for their teams—survey responses will appear as they configure and launch.</>
-  }
-  return <>You are running this for <strong>{summary.scopeLabel}</strong>, using <strong>{summary.channelsLabel}</strong> to reach people. Survey responses are rolling in—check back as participation grows.</>
-}
-
-function focusCollectionUnderwaySubtextDept(
-  deptName: string,
-  summary: FocusCollectionLaunchSummary,
-  snapshot: WfrDemoCollectionSnapshot,
-  isHrbp?: boolean,
-): ReactNode {
-  const here = <>{snapshot.respondedCount.toLocaleString()} of {snapshot.sampleTarget.toLocaleString()} sampled in <strong>{deptName}</strong> have responded so far</>
-  if (isHrbp) {
-    return <>Your teams in <strong>{deptName}</strong> are being interviewed. {here}. Results will refine adoption scores and surface upskilling priorities for your client managers.</>
-  }
-  if (summary.delegated) {
-    return <>In <strong>{deptName}</strong>, {here}. This department is part of the <strong>{summary.scopeLabel}</strong> rollout—HRBPs own how collection runs in each unit.</>
-  }
-  return <>In <strong>{deptName}</strong>, {here}. You launched <strong>{summary.scopeLabel}</strong> using <strong>{summary.channelsLabel}</strong>; the bar reflects participation in this department only.</>
-}
-
-function focusCollectionUnderwaySubtextDeptNoWizard(
-  deptName: string,
-  snapshot: WfrDemoCollectionSnapshot,
-): ReactNode {
-  return <>In <strong>{deptName}</strong>, {snapshot.respondedCount.toLocaleString()} of {snapshot.sampleTarget.toLocaleString()} sampled have responded so far. Open details to see employee-level status across departments.</>
-}
 
 export type FocusFirstCollectionAttentionScope = 'org' | 'dept'
 
@@ -90,7 +57,7 @@ export function FocusFirstCollectionCard({
   attentionScope = 'org',
   launchSummary = null,
   departmentContextName,
-  onAddDepartments,
+  onAddDepartments: _onAddDepartments,
   collectionComplete = false,
   collectionJustCompleted = false,
   onCollectionComplete,
@@ -107,8 +74,9 @@ export function FocusFirstCollectionCard({
   const [animPct, setAnimPct] = useState(0)
   const handleProgressClick = useCallback(() => {
     if (animPhase !== 'idle' || collectionJustCompleted || collectionComplete) return
-    setAnimPhase('filling')
     const startPct = snapshot.orgResponseRate
+    setAnimPhase('filling')
+    setAnimPct(startPct) // initialize at current value — prevents 0% flash before first rAF tick
     const startTime = performance.now()
     const duration = 3000 // 3s — matches CSS animation on .wfr-ra-card__fill--animating
 
@@ -155,14 +123,6 @@ export function FocusFirstCollectionCard({
 
   const showAttentionBadge = snapshot.needAttentionDeptCount > 0
   const deptName = departmentContextName
-  const subtext: ReactNode =
-    attentionScope === 'dept' && deptName
-      ? launchSummary
-        ? focusCollectionUnderwaySubtextDept(deptName, launchSummary, snapshot, isHrbp)
-        : focusCollectionUnderwaySubtextDeptNoWizard(deptName, snapshot)
-      : launchSummary
-        ? focusCollectionUnderwaySubtext(launchSummary, isHrbp)
-        : 'Survey responses are rolling in. Check back as participation grows.'
 
   // HRBP view: show upskilling CTA when collection complete (not just-completed transition)
   if (isHrbp && collectionComplete && !collectionJustCompleted) {
@@ -382,20 +342,11 @@ export function FocusFirstCollectionCard({
       const totalLaunchedGap = launchedDepts.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
 
       return (
-        <div className="wfr-ra-card wfr-ra-card--success">
+        <div className="wfr-ra-card wfr-ra-card--warn">
           <div className="wfr-ra-card__header">
-            <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Upskilling started
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#b45309' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>rocket_launch</span> Upskilling started
             </span>
-            <div className="wfr-ra-card__mini-progress">
-              <span className="wfr-ra-card__mini-pct">100%</span>
-              <div className="wfr-ra-card__mini-track">
-                <div className="wfr-ra-card__mini-fill" />
-              </div>
-              <span className="wfr-ra-card__mini-label">
-                {launchedDepts.length} department{launchedDepts.length === 1 ? '' : 's'} · {totalLaunchedGap.toLocaleString()} employees to upskill
-              </span>
-            </div>
           </div>
           <div className="wfr-ra-card__cta-row">
             <div>
@@ -406,8 +357,8 @@ export function FocusFirstCollectionCard({
                 Once plans are assigned, {'adoption scores'} will update to reflect upskilling progress.
               </p>
             </div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, fontWeight: 600, color: '#15803d', whiteSpace: 'nowrap' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 13, fontWeight: 600, color: '#b45309', whiteSpace: 'nowrap' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>rocket_launch</span>
               Upskilling started
             </span>
           </div>
@@ -415,10 +366,9 @@ export function FocusFirstCollectionCard({
       )
     }
 
-    const channelMethod = launchSummary?.channelsLabel ?? 'data collection'
-    const scopeDesc = scopedNames.length > 0 && scopedNames.length < departments.length
-      ? `across ${remainingDepts.map(d => d.name).join(', ')}`
-      : `across ${remainingDepts.length} department${remainingDepts.length === 1 ? '' : 's'}`
+    const scopeLabel = launchSummary?.delegated && launchSummary?.scopeLabel
+      ? `${launchSummary.scopeLabel}'s teams`
+      : `${remainingDepts.length} department${remainingDepts.length === 1 ? '' : 's'}`
 
     return (
       <div className="wfr-ra-card wfr-ra-card--success">
@@ -426,25 +376,16 @@ export function FocusFirstCollectionCard({
           <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
           </span>
-          <div className="wfr-ra-card__mini-progress">
-            <span className="wfr-ra-card__mini-pct">100%</span>
-            <div className="wfr-ra-card__mini-track">
-              <div className="wfr-ra-card__mini-fill" />
-            </div>
-            <span className="wfr-ra-card__mini-label">
-              Sample threshold reached — {remainingDepts.length} department{remainingDepts.length === 1 ? '' : 's'} ready for upskilling
-            </span>
-          </div>
         </div>
         <div className="wfr-ra-card__cta-row">
           <div>
             <p className="wfr-ra-card__cta-text">
-              Based on {channelMethod.toLowerCase()}, you can improve productivity {scopeDesc} by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
+              Based on AI Coaching, you can improve productivity across <strong>{scopeLabel}</strong> by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
             </p>
-            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps {scopeDesc}.</p>
+            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps across {scopeLabel}.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
-            Start upskilling&nbsp;→
+            What's next?
           </Button>
         </div>
       </div>
@@ -482,28 +423,28 @@ export function FocusFirstCollectionCard({
         )}
       </div>
 
+      {!showBell && (
+        <p className="wfr-ra-card__cta-text" style={{ marginTop: 8 }}>
+          {launchSummary?.delegated
+            ? <><strong>{launchSummary.scopeLabel}</strong>'s collection is underway — survey responses are rolling in from their teams.</>
+            : launchSummary
+              ? <>Collection is underway for <strong>{launchSummary.scopeLabel}</strong> — survey responses are rolling in.</>
+              : <>Responses are rolling in — check back as participation grows.</>}
+        </p>
+      )}
+
       <div
-        className="wfr-ra-card__progress"
+        className="wfr-ra-card__mini-progress"
         onClick={handleProgressClick}
-        style={onCollectionComplete && !isAnimating ? { cursor: 'pointer' } : undefined}
+        style={{ marginTop: 10, marginLeft: 0, ...(onCollectionComplete && !isAnimating ? { cursor: 'pointer' } : {}) }}
         title={onCollectionComplete && !isAnimating ? 'Click to simulate collection complete' : undefined}
       >
-        <div className="wfr-ra-card__progress-info">
-          <span className="wfr-ra-card__progress-pct tabular-nums" style={showBell ? { color: '#15803d' } : undefined}>
-            {showBell ? '100' : isFilling ? animPct : snapshot.orgResponseRate}%
-          </span>
-          <span className="wfr-ra-card__progress-label">
-            {showBell
-              ? 'Sample threshold reached!'
-              : isFilling
-                ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
-                : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
-            }
-          </span>
-        </div>
-        <div className="wfr-ra-card__track" style={showBell ? { position: 'relative', overflow: 'visible' } : undefined}>
+        <span className="wfr-ra-card__mini-pct tabular-nums" style={showBell ? { color: '#15803d' } : undefined}>
+          {showBell ? '100' : isFilling ? animPct : snapshot.orgResponseRate}%
+        </span>
+        <div className="wfr-ra-card__mini-track" style={{ width: 200, height: 6, ...(showBell ? { position: 'relative', overflow: 'visible' } : {}) }}>
           <div
-            className="wfr-ra-card__fill"
+            className="wfr-ra-card__mini-fill"
             style={{ width: `${isAnimating ? animPct : snapshot.orgResponseRate}%`, transition: isAnimating ? 'none' : undefined }}
           />
           {showBell ? (
@@ -512,28 +453,21 @@ export function FocusFirstCollectionCard({
             </div>
           ) : null}
         </div>
+        <span className="wfr-ra-card__mini-label">
+          {showBell
+            ? 'Sample threshold reached!'
+            : isFilling
+              ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+              : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+          }
+        </span>
       </div>
 
       {showBell ? (
         <p className="wfr-ra-card__sub" style={{ color: '#15803d', animation: 'fadeIn 0.4s ease-out' }}>
           Enough responses are in for statistically accurate results. Preparing upskilling priorities…
         </p>
-      ) : (
-        <p className="wfr-ra-card__sub">{subtext}</p>
-      )}
-
-      <div className="wfr-ra-card__actions">
-        {onScrollToTable ? (
-          <button type="button" className="wfr-ra-card__link" onClick={onScrollToTable}>
-            View details&nbsp;↓
-          </button>
-        ) : null}
-        {onAddDepartments ? (
-          <button type="button" className="wfr-ra-card__link" onClick={onAddDepartments}>
-            Add more departments&nbsp;→
-          </button>
-        ) : null}
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -728,20 +662,6 @@ function FocusFirstModuleBoard({
                   Each HRBP will choose when to start — progress will appear here as teams respond.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="wfr-ra-card__cta-btn shrink-0"
-                onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onRequestCloseMetricSheet?.()
-                  onLaunchOpenChange(true)
-                }}
-              >
-                Add more departments
-              </Button>
             </div>
           </div>
         ) : (

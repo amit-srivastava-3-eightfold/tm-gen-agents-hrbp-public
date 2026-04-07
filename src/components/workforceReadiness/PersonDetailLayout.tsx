@@ -26,7 +26,7 @@ export interface PersonDetailLayoutProps {
   potential: MetricCardData
   gap: MetricCardData
   tableTitle: string
-  tableHint: string
+  tableHint: React.ReactNode
   /** Optional breadcrumb content rendered in a sticky bar flush under the header */
   breadcrumb?: ReactNode
   /** Optional hero/RA card rendered between the title and metric cards */
@@ -106,7 +106,7 @@ export function PersonDetailLayout({
         </div>
 
         {managerTable && (
-          <div className={`person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className={!wideTable ? `person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}` : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {!managerTable.hideTitle && (
               <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 0 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{managerTable.title}</h3>

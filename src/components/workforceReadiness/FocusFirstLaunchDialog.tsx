@@ -20,6 +20,9 @@ export type HrbpDirector = {
   title: string
   employees: number
   teamManagers: number
+  readiness?: number
+  readyCount?: number
+  aiPotential?: number
 }
 
 export interface FocusFirstLaunchDialogProps {
@@ -36,7 +39,7 @@ export interface FocusFirstLaunchDialogProps {
   hrbpDirectors?: HrbpDirector[]
 }
 
-// Unique HRBPs with their departments and headcount
+// Unique HRBPs with their departments, headcount, and priority score
 const uniqueHrbps = (() => {
   const map = new Map<string, { hrbp: string; depts: string[]; headcount: number }>()
   for (const a of hrbpAssignments) {
@@ -45,7 +48,21 @@ const uniqueHrbps = (() => {
     entry.depts.push(a.dept)
     entry.headcount += a.headcount
   }
-  return [...map.values()].sort((a, b) => b.headcount - a.headcount)
+  return [...map.values()].map(row => {
+    const deptObjs = row.depts.map(name => departments.find(d => d.name === name)).filter(Boolean) as typeof departments
+    const totalHc = deptObjs.reduce((s, d) => s + d.employees, 0) || row.headcount
+    const avgPotential = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiPotential * d.employees, 0) / totalHc) : 0
+    const avgReadiness = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiReadiness * d.employees, 0) / totalHc) : 0
+    const priorityScore = (avgPotential - avgReadiness) * (avgPotential - avgReadiness) / 100
+    return { ...row, avgPotential, avgReadiness, priorityScore }
+  }).sort((a, b) => b.priorityScore - a.priorityScore)
+})()
+
+// Top ~30% of HRBPs by priority score get the Priority tag
+const hrbpPrioritySet = (() => {
+  if (uniqueHrbps.length === 0) return new Set<string>()
+  const count = Math.max(1, Math.round(uniqueHrbps.length * 0.3))
+  return new Set(uniqueHrbps.slice(0, count).map(h => h.hrbp))
 })()
 
 export function FocusFirstLaunchDialog({
@@ -160,7 +177,15 @@ export function FocusFirstLaunchDialog({
 
   // ─── HRBP mode: 2-step dialog (select teams → review + launch) ───
   if (hrbpMode) {
-    const dirs = hrbpDirectors ?? []
+    const rawDirs = hrbpDirectors ?? []
+    // Sort directors by priority score: (aiPotential − readiness) × (gap rate)
+    const dirs = [...rawDirs].sort((a, b) => {
+      const scoreA = ((a.aiPotential ?? 0) - (a.readiness ?? 0)) * ((a.employees - (a.readyCount ?? 0)) / Math.max(1, a.employees))
+      const scoreB = ((b.aiPotential ?? 0) - (b.readiness ?? 0)) * ((b.employees - (b.readyCount ?? 0)) / Math.max(1, b.employees))
+      return scoreB - scoreA
+    })
+    const dirPriorityCount = Math.max(1, Math.round(dirs.length * 0.3))
+    const dirPrioritySet = new Set(dirs.slice(0, dirPriorityCount).map(d => d.name))
     const hrbpSelCount = Object.values(hrbpSelectedDirs).filter(Boolean).length
     const hrbpAllSelected = hrbpSelCount === dirs.length
     const hrbpSelectedEmps = dirs.filter(d => hrbpSelectedDirs[d.name]).reduce((s, d) => s + d.employees, 0)
@@ -234,7 +259,12 @@ export function FocusFirstLaunchDialog({
                         onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))}
                       >
                         <span className="wfr-focus-launch__check">{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
-                        <span className="wfr-focus-launch__dept-name">{dir.name}</span>
+                        <span className="wfr-focus-launch__dept-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {dir.name}
+                          {dirPrioritySet.has(dir.name) && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                          )}
+                        </span>
                         <span className="wfr-focus-launch__dept-detail">{dir.title} · {dir.employees.toLocaleString()} employees · {dir.teamManagers} teams</span>
                       </button>
                     ))}
@@ -417,7 +447,12 @@ export function FocusFirstLaunchDialog({
                           onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))}
                         >
                           <span className="wfr-focus-launch__check">{selectedHrbps[h.hrbp] ? '✓' : ''}</span>
-                          <span className="wfr-focus-launch__dept-name">{h.hrbp}</span>
+                          <span className="wfr-focus-launch__dept-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {h.hrbp}
+                            {hrbpPrioritySet.has(h.hrbp) && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                            )}
+                          </span>
                           <span className="wfr-focus-launch__dept-detail">{h.depts.join(', ')} · {h.headcount.toLocaleString()} employees</span>
                         </button>
                       ))
