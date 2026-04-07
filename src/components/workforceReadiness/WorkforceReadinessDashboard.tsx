@@ -30,6 +30,7 @@ import {
 import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
+import { FocusFirstLaunchDialog } from './FocusFirstLaunchDialog'
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
 import { MetricCard } from './MetricCard'
@@ -52,6 +53,8 @@ export type HrbpState = {
   delegated?: boolean
   /** Collection method chosen by HRBP when they launch (e.g. 'AI Agent Interviews') */
   channelsLabel?: string
+  /** Director names selected for collection (when HRBP launches from delegation) */
+  selectedDirectors?: string[]
 }
 
 export type WfrPersistedState = {
@@ -2820,14 +2823,14 @@ export function WorkforceReadinessDashboard({
   }, [setWfrState])
 
   /** Called when an individual HRBP launches collection from the delegation CTA */
-  const advanceHrbpToCollection = useCallback((hrbpName: string, channelsLabel: string) => {
+  const advanceHrbpToCollection = useCallback((hrbpName: string, channelsLabel: string, selectedDirectors?: string[]) => {
     setWfrState(prev => {
       if (!prev.hrbpStates?.[hrbpName]) return prev
       const next: WfrPersistedState = {
         ...prev,
         hrbpStates: {
           ...prev.hrbpStates,
-          [hrbpName]: { ...prev.hrbpStates[hrbpName], state: 2, channelsLabel },
+          [hrbpName]: { ...prev.hrbpStates[hrbpName], state: 2, channelsLabel, selectedDirectors },
         },
       }
       next.state = computeOrgAggregateState(next)
@@ -3056,17 +3059,33 @@ export function WorkforceReadinessDashboard({
           const hrbpCollecting = stateNum(hrbpEffState) >= 2 && !hrbpCollectionComplete
           const showHrbpCollection = hrbpDelegatedPending || hrbpCollecting
           const hrbpResponseRate = hrbpCollecting ? wfrDemoDeptResponseRate(d.name) : 0
+          const hrbpSelectedDirNames = wfrState.hrbpStates?.[hrbpName]?.selectedDirectors
+          const hrbpDirInScope = (dirName: string) => !hrbpSelectedDirNames || hrbpSelectedDirNames.includes(dirName)
           // Build the CTA card for the heroCard slot
           const hrbpHeroCard = hrbpDelegatedPending ? (
             <div className="wfr-dash__focus-module">
-              <div className="wfr-ra-card wfr-ra-card--warn">
+              <div className={`wfr-ra-card ${isHrbp ? 'wfr-ra-card--warn' : 'wfr-ra-card--warn'}`}>
                 <div className="wfr-ra-card__header">
-                  <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>assignment_ind</span> Awaiting launch</span>
+                  <span className="wfr-ra-card__eyebrow" style={{ color: isHrbp ? '#dc2626' : '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>{isHrbp ? 'flag' : 'assignment_ind'}</span> {isHrbp ? 'Ready to launch' : 'Awaiting launch'}</span>
                 </div>
                 <div className="wfr-ra-card__cta-row">
-                  <p className="wfr-ra-card__cta-text">
-                    Data collection has been delegated to <strong>{hrbpName}</strong>. Waiting for them to launch for {d.name}.
-                  </p>
+                  {isHrbp ? (
+                    <>
+                      <div>
+                        <p className="wfr-ra-card__cta-text">
+                          Launch data collection for your team to measure how your {headcount.toLocaleString()} employees are actually using AI today. Results will replace estimated scores with measured adoption data.
+                        </p>
+                        <p className="wfr-ra-card__hint">AI-powered interviews take ~3 minutes per employee. You'll see responses roll in as people complete them.</p>
+                      </div>
+                      <Button type="button" variant="primary" className="wfr-ra-card__cta-btn shrink-0" onClick={() => setFocusLaunchOpen(true)}>
+                        Get started&nbsp;→
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="wfr-ra-card__cta-text">
+                      Data collection has been delegated to <strong>{hrbpName}</strong>. Waiting for them to launch for {d.name}.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -3079,7 +3098,10 @@ export function WorkforceReadinessDashboard({
                 <div className="wfr-ra-card__cta-row">
                   <div style={{ flex: 1 }}>
                     <p className="wfr-ra-card__cta-text">
-                      <strong>{hrbpName}</strong> is collecting data for {d.name}.
+                      {isHrbp
+                        ? <>AI-powered interviews are underway with your teams. Responses are rolling in — check back as participation grows.</>
+                        : <><strong>{hrbpName}</strong> is collecting data for {d.name}.</>
+                      }
                     </p>
                     <div className="wfr-dash__plan-progress" style={{ marginTop: 8, maxWidth: 320 }}>
                       <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)', height: 8 }}>
@@ -3122,6 +3144,7 @@ export function WorkforceReadinessDashboard({
             </div>
           ) : undefined
           return (
+            <>
             <PersonDetailLayout
               breadcrumb={isHrbp ? undefined : (
                 <Breadcrumb>
@@ -3244,7 +3267,7 @@ export function WorkforceReadinessDashboard({
                           {showHrbpCollection && (
                             hrbpDelegatedPending
                               ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
-                              : <DataCollectionProgressCell rate={dirResponseRate} inScope />
+                              : <DataCollectionProgressCell rate={hrbpDirInScope(dir.name) ? dirResponseRate : 0} inScope={hrbpDirInScope(dir.name)} />
                           )}
                           {hrbpCollectionComplete && (() => {
                             const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
@@ -3257,6 +3280,28 @@ export function WorkforceReadinessDashboard({
                 </DataTableBody>
               </DataTable>
             </PersonDetailLayout>
+            {isHrbp && hrbpDelegatedPending && (
+              <FocusFirstLaunchDialog
+                open={focusLaunchOpen}
+                onOpenChange={setFocusLaunchOpen}
+                hrbpMode
+                hrbpDirectors={directors.map(dir => ({
+                  name: dir.name,
+                  title: dir.title,
+                  employees: dir.employees,
+                  teamManagers: dir.teamManagers,
+                }))}
+                onHrbpLaunch={(channelsLabel, selectedDirectors) => {
+                  if (personaHrbpNames?.length) {
+                    for (const name of personaHrbpNames) {
+                      advanceHrbpToCollection(name, channelsLabel, selectedDirectors)
+                    }
+                  }
+                  setFocusLaunchOpen(false)
+                }}
+              />
+            )}
+            </>
           )
         })()}
         {view === 'director' && directorData && (() => {

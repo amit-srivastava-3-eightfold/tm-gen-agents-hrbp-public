@@ -15,6 +15,13 @@ export type FocusCollectionLaunchSummary = {
   selectedHrbpNames?: string[]
 }
 
+export type HrbpDirector = {
+  name: string
+  title: string
+  employees: number
+  teamManagers: number
+}
+
 export interface FocusFirstLaunchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -23,8 +30,10 @@ export interface FocusFirstLaunchDialogProps {
   defaultScopeDepartmentName?: string
   /** When true, show simplified dialog: Channels + Review only (for HRBP-initiated collection) */
   hrbpMode?: boolean
-  /** Callback for HRBP mode launch — passes just the channels label */
-  onHrbpLaunch?: (channelsLabel: string) => void
+  /** Callback for HRBP mode launch — passes channels label and selected director names */
+  onHrbpLaunch?: (channelsLabel: string, selectedDirectors?: string[]) => void
+  /** Directors/client managers for HRBP team selection */
+  hrbpDirectors?: HrbpDirector[]
 }
 
 // Unique HRBPs with their departments and headcount
@@ -46,12 +55,14 @@ export function FocusFirstLaunchDialog({
   defaultScopeDepartmentName: _defaultScope,
   hrbpMode = false,
   onHrbpLaunch,
+  hrbpDirectors,
 }: FocusFirstLaunchDialogProps) {
   const [step, setStep] = useState(1)
   const [assignOwner, setAssignOwner] = useState<FocusAssignOwner>('hrbp')
   const [scopeBy, setScopeBy] = useState<'hrbps' | 'departments'>('hrbps')
   const [selectedDepts, setSelectedDepts] = useState<Record<string, boolean>>({})
   const [selectedHrbps, setSelectedHrbps] = useState<Record<string, boolean>>({})
+  const [hrbpSelectedDirs, setHrbpSelectedDirs] = useState<Record<string, boolean>>({})
 
   // Reset when dialog opens
   useEffect(() => {
@@ -61,8 +72,16 @@ export function FocusFirstLaunchDialog({
       setScopeBy('hrbps')
       setSelectedDepts({})
       setSelectedHrbps({})
+      // Default all directors selected
+      if (hrbpDirectors?.length) {
+        const all: Record<string, boolean> = {}
+        hrbpDirectors.forEach(d => { all[d.name] = true })
+        setHrbpSelectedDirs(all)
+      } else {
+        setHrbpSelectedDirs({})
+      }
     }
-  }, [open])
+  }, [open, hrbpDirectors])
 
   const handleOpenChange = (next: boolean) => {
     onOpenChange(next)
@@ -139,8 +158,20 @@ export function FocusFirstLaunchDialog({
   const handleNext = () => setStep(step + 1)
   const handleBack = () => setStep(step - 1)
 
-  // ─── HRBP mode: single-step confirmation dialog ───
+  // ─── HRBP mode: 2-step dialog (select teams → review + launch) ───
   if (hrbpMode) {
+    const dirs = hrbpDirectors ?? []
+    const hrbpSelCount = Object.values(hrbpSelectedDirs).filter(Boolean).length
+    const hrbpAllSelected = hrbpSelCount === dirs.length
+    const hrbpSelectedEmps = dirs.filter(d => hrbpSelectedDirs[d.name]).reduce((s, d) => s + d.employees, 0)
+    const hrbpStep = step // reuse existing step state
+    const hrbpIsReview = hrbpStep === 2
+    const hrbpTeamLabel = hrbpSelCount === dirs.length
+      ? `All ${dirs.length} teams`
+      : hrbpSelCount === 1
+        ? dirs.find(d => hrbpSelectedDirs[d.name])?.name ?? '1 team'
+        : `${hrbpSelCount} teams`
+
     return (
       <Dialog.Root open={open} onOpenChange={handleOpenChange}>
         <Dialog.Portal>
@@ -157,25 +188,97 @@ export function FocusFirstLaunchDialog({
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
                 </Dialog.Close>
               </div>
+              <Stepper value={hrbpStep - 1} size="sm" className="mt-3 mb-4">
+                <StepperList>
+                  <StepperItem step={0} className="flex-row gap-1.5">
+                    <StepperIndicator />
+                    <StepperTitle>Teams</StepperTitle>
+                  </StepperItem>
+                  <StepperSeparator />
+                  <StepperItem step={1} className="flex-row gap-1.5">
+                    <StepperIndicator />
+                    <StepperTitle>Review</StepperTitle>
+                  </StepperItem>
+                </StepperList>
+              </Stepper>
             </div>
-            <Dialog.Description className="sr-only">Launch AI-powered data collection for your teams.</Dialog.Description>
+            <Dialog.Description className="sr-only">Select teams and launch AI-powered data collection.</Dialog.Description>
             <div className="wfr-focus-launch__body">
-              <p className="wfr-focus-launch__sub">AI-powered interviews will be sent to employees in your teams to measure task-level AI adoption. Results will refine readiness scores and surface upskilling priorities.</p>
-              <div className="wfr-focus-launch__review">
-                <div className="wfr-focus-launch__review-row">
-                  <div>
-                    <p className="wfr-focus-launch__review-k">Collection method</p>
-                    <p className="wfr-focus-launch__review-v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
-                      AI Agent Interviews
-                    </p>
+
+              {/* Step 1: Select client manager teams */}
+              {hrbpStep === 1 && (
+                <>
+                  <h2 className="wfr-focus-launch__title">Select teams to include</h2>
+                  <p className="wfr-focus-launch__sub">Choose which client manager teams to include in data collection. AI-powered interviews will be sent to employees in the selected teams.</p>
+
+                  {/* Select all / Deselect all */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                    <button
+                      type="button"
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 500, fontSize: 13 }}
+                      onClick={() => {
+                        if (hrbpAllSelected) setHrbpSelectedDirs({})
+                        else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) }
+                      }}
+                    >
+                      {hrbpAllSelected ? 'Deselect all' : 'Select all'}
+                    </button>
                   </div>
-                </div>
-              </div>
+
+                  <div className="wfr-focus-launch__dept-list">
+                    {dirs.map((dir) => (
+                      <button
+                        key={dir.name}
+                        type="button"
+                        className={`wfr-focus-launch__dept-row ${hrbpSelectedDirs[dir.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                        onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))}
+                      >
+                        <span className="wfr-focus-launch__check">{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
+                        <span className="wfr-focus-launch__dept-name">{dir.name}</span>
+                        <span className="wfr-focus-launch__dept-detail">{dir.title} · {dir.employees.toLocaleString()} employees · {dir.teamManagers} teams</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Step 2: Review */}
+              {hrbpIsReview && (
+                <>
+                  <h2 className="wfr-focus-launch__title">Ready to launch</h2>
+                  <p className="wfr-focus-launch__sub">Review your selections.</p>
+                  <div className="wfr-focus-launch__review">
+                    <div className="wfr-focus-launch__review-row">
+                      <div>
+                        <p className="wfr-focus-launch__review-k">Teams</p>
+                        <p className="wfr-focus-launch__review-v">{hrbpTeamLabel} · {hrbpSelectedEmps.toLocaleString()} employees</p>
+                      </div>
+                      <button type="button" className="wfr-focus-launch__edit" onClick={() => setStep(1)}>Edit</button>
+                    </div>
+                    <div className="wfr-focus-launch__review-row">
+                      <div>
+                        <p className="wfr-focus-launch__review-k">Collection method</p>
+                        <p className="wfr-focus-launch__review-v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
+                          AI Agent Interviews
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             <div className="wfr-focus-launch__footer">
-              <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="button" variant="primary" onClick={() => { onHrbpLaunch?.('AI Agent Interviews'); onOpenChange(false) }}>Launch →</Button>
+              {hrbpStep === 1 ? (
+                <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
+              ) : (
+                <Button type="button" variant="secondary" onClick={() => setStep(1)}>Back</Button>
+              )}
+              {hrbpIsReview ? (
+                <Button type="button" variant="primary" onClick={() => { onHrbpLaunch?.('AI Agent Interviews', dirs.filter(d => hrbpSelectedDirs[d.name]).map(d => d.name)); onOpenChange(false) }}>Launch →</Button>
+              ) : (
+                <Button type="button" variant="primary" onClick={() => setStep(2)} disabled={hrbpSelCount === 0}>Next →</Button>
+              )}
             </div>
           </Dialog.Content>
         </Dialog.Portal>
