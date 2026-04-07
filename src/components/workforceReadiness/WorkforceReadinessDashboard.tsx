@@ -2624,13 +2624,18 @@ export function WorkforceReadinessDashboard({
             {hrbpUpskillingDialogOpen && (() => {
               // Only directors who participated in data collection are eligible for upskilling
               const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))
-              const eligibleScores = eligibleDirs.map(dir => ({
+              // Priority is based on ALL directors (same as table), not just eligible subset
+              const allDirScores = directors.map(dir => ({
                 dir,
                 score: (d.aiPotential - dir.readiness) * ((dir.employees - dir.readyCount) / Math.max(1, dir.employees)),
               })).sort((a, b) => b.score - a.score)
-              const priorityCount = Math.max(1, Math.round(eligibleScores.length * 0.3))
-              const priorityNames = new Set(eligibleScores.slice(0, priorityCount).map(r => r.dir.name))
-              const sortedDirs = eligibleScores.map(r => r.dir)
+              const priorityCount = Math.max(1, Math.round(allDirScores.length * 0.3))
+              const priorityNames = new Set(allDirScores.slice(0, priorityCount).map(r => r.dir.name))
+              const sortedDirs = eligibleDirs.sort((a, b) => {
+                const scoreA = (d.aiPotential - a.readiness) * ((a.employees - a.readyCount) / Math.max(1, a.employees))
+                const scoreB = (d.aiPotential - b.readiness) * ((b.employees - b.readyCount) / Math.max(1, b.employees))
+                return scoreB - scoreA
+              })
               const selectedCount = hrbpUpskillingSelectedDirs.size
               const totalGapSelected = sortedDirs
                 .filter(dir => hrbpUpskillingSelectedDirs.has(dir.name))
