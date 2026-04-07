@@ -2858,9 +2858,7 @@ export function WorkforceReadinessDashboard({
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {effDirCollComplete && (() => {
-                          const dnh = nh(directorData.name)
-                          const dirPlanPct = effDirPlansComplete ? 100 : Math.max(0, Math.min(90, 20 + (dnh % 60)))
-                          const dirAssigned = dirPlanPct > 0
+                          const dirPlanPct = effDirPlansComplete ? 100 : 0
                           return (
                             <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2868,10 +2866,8 @@ export function WorkforceReadinessDashboard({
                                   <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
                                   Dev plan
                                 </button>
-                                {!dirAssigned ? (
-                                  <button type="button" style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                    Assign
-                                  </button>
+                                {dirPlanPct === 0 ? (
+                                  <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
                                 ) : (() => {
                                   const dStatus = dirPlanPct > 85 ? 'Completed' : dirPlanPct > 20 ? 'In progress' : 'Not started'
                                   const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
@@ -2932,7 +2928,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableBody>
                       {seniorMgrs.map(sr => {
                         const notReady = sr.employees - sr.readyCount
-                        const srPlanPct = effDirPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((sr.name.length * 11) % 60)))
+                        const srPlanPct = effDirPlansComplete ? 100 : 0
                         return (
                           <DataTableRow
                             key={sr.name}
@@ -2996,7 +2992,7 @@ export function WorkforceReadinessDashboard({
                     const en = mgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
-                    const mgrPlanPct = effDirPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((mgr.manager.length * 7) % 60)))
+                    const mgrPlanPct = effDirPlansComplete ? 100 : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3133,8 +3129,7 @@ export function WorkforceReadinessDashboard({
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {effSrCollComplete && (() => {
-                          const snh = nh2(seniorMgrData.name)
-                          const srPlanPct = effSrPlansComplete ? 100 : Math.max(0, Math.min(90, 20 + (snh % 60)))
+                          const srPlanPct = effSrPlansComplete ? 100 : 0
                           const srAssigned = srPlanPct > 0
                           return (
                             <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
@@ -3144,9 +3139,7 @@ export function WorkforceReadinessDashboard({
                                   Dev plan
                                 </button>
                                 {!srAssigned ? (
-                                  <button type="button" style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                    Assign
-                                  </button>
+                                  <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
                                 ) : (() => {
                                   const sStatus = srPlanPct > 85 ? 'Completed' : srPlanPct > 20 ? 'In progress' : 'Not started'
                                   const bColor = sStatus === 'Completed' ? '#22c55e' : sStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
@@ -3188,7 +3181,7 @@ export function WorkforceReadinessDashboard({
                     const en = srMgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
-                    const mgrPlanPct = effSrPlansComplete ? 100 : Math.max(10, Math.min(90, 20 + ((mgr.manager.length * 7) % 60)))
+                    const mgrPlanPct = effSrPlansComplete ? 100 : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
