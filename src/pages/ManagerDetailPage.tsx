@@ -268,17 +268,6 @@ export function ManagerDetailPage() {
           <PersonDetailLayout
             breadcrumb={(() => {
               const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
-              // HRBP persona: simple breadcrumb (no HRBP/director intermediaries)
-              if (isHrbp) return (
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
-                    {parentManager && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce/manager/${encodeURIComponent(parentManager)}?dept=${encodeURIComponent(dept.name)}${parentMgrIdx !== null ? `&mgrIdx=${parentMgrIdx}` : ''}`)}>{parentManager}</BreadcrumbLink></BreadcrumbItem></>)}
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-              )
               const deptHrbpList = getDeptHrbps(deptName)
               const allMgrs = deptManagerTeams(deptName, dept.employees)
               let mgrStart = 0

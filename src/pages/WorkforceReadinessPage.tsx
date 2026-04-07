@@ -31,7 +31,8 @@ export function WorkforceReadinessPage() {
     return <Navigate to="/" replace />
   }
 
-  const chSize = wfrView === 'board' ? 'parent' as const : 'child' as const
+  const isHomeView = wfrView === 'board' || (isHrbp && wfrView === 'hrbp')
+  const chSize = isHomeView ? 'parent' as const : 'child' as const
 
   return (
     <div className="wfr-page">
@@ -55,7 +56,7 @@ export function WorkforceReadinessPage() {
 
       {/* Main content */}
       <main className="wfr-page__main">
-        <div className="wfr-page__content" style={wfrView !== 'board' && !isHrbp ? { paddingTop: 0 } : undefined}>
+        <div className="wfr-page__content" style={wfrView !== 'board' && (isHrbp ? wfrView !== 'hrbp' : true) ? { paddingTop: 0 } : undefined}>
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
               <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} personaHrbpNames={personaHrbpNames} />
