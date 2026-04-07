@@ -226,9 +226,6 @@ export function ManagerDetailPage() {
 
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
-  const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
-  const deptInUpskilling = upskillingActive && upskillingLaunchSummary?.departmentNames?.includes(deptName)
-
   // Table hint
   const tableHint = hrbpPlansCreated
     ? `${displayEmployees.length} employees · upskilling complete`
@@ -387,7 +384,7 @@ export function ManagerDetailPage() {
                         const mgrH = nameHash(mgr.manager)
                         const mgrPlanPct = hrbpPlansCreated
                           ? Math.min(100, 25 + (mgrH % 55) + 20)
-                          : deptInUpskilling ? Math.min(80, 10 + (mgrH % 50)) : 0
+                          : 0
                         const mgrDisplayPct = mgrPlanPct > 0 ? mgrPlanPct : assignedPlans.has(mgr.manager) ? Math.min(85, 10 + (mgrH % 55)) : 0
                         return (
                           <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ verticalAlign: 'middle' }}>
@@ -396,10 +393,8 @@ export function ManagerDetailPage() {
                                 onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }); setEditingCourses(false); setRemovedCourses(new Set()) }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
                               </button>
-                              {(mgrPlanPct === 0 && !assignedPlans.has(mgr.manager)) ? (
-                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                                  onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])) }}>Assign
-                                </button>
+                              {(mgrDisplayPct === 0 && !assignedPlans.has(mgr.manager)) ? (
+                                <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
                               ) : (() => {
                                 const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Not started'
                                 const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
@@ -439,12 +434,10 @@ export function ManagerDetailPage() {
               {[...displayEmployees].sort((a, b) => b.displayReadiness - a.displayReadiness).map((emp, i) => {
                 const h = nameHash(emp.name)
 
-                // Plan progress: deterministic
+                // Plan progress: 0 until state 5 (hrbpPlansCreated); Assign button shows until then
                 const planPct = hrbpPlansCreated
                   ? Math.min(100, 25 + (h % 55) + 20)
-                  : deptInUpskilling
-                    ? Math.min(80, 10 + (h % 50))
-                    : 0
+                  : 0
                 // Readiness trend badge
                 const empDelta = emp.displayReadiness - emp.readinessPct
 

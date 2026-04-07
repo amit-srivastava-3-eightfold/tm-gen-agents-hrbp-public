@@ -2610,7 +2610,7 @@ export function WorkforceReadinessDashboard({
                           {hrbpUpskillingActive && (
                             hrbpDirInScope(dir.name) ? (() => {
                               const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-                              const dirPlanPct = hrbpPlansComplete ? 100 : Math.max(10, Math.min(90, 25 + (nh2(dir.name) % 55)))
+                              const dirPlanPct = hrbpPlansComplete ? 100 : 0
                               return <UpskillingKpiCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpPlansComplete} nameHash={nh2(dir.name)} />
                             })() : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span style={{ color: '#94a3b8' }}>—</span></DataTableCell>
                           )}
