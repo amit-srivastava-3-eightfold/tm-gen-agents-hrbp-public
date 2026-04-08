@@ -237,23 +237,13 @@ export function FocusFirstLaunchDialog({
                   <h2 className="wfr-focus-launch__title">Select teams to include</h2>
                   <p className="wfr-focus-launch__sub">Choose which client manager teams to include in data collection. AI-powered interviews will be sent to employees in the selected teams.</p>
 
-                  {/* Select all / Deselect all */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-                    <button
-                      type="button"
-                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 500, fontSize: 13 }}
-                      onClick={() => {
-                        if (hrbpAllSelected) setHrbpSelectedDirs({})
-                        else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) }
-                      }}
-                    >
-                      {hrbpAllSelected ? 'Deselect all' : 'Select all'}
-                    </button>
-                  </div>
-
                   <div className="wfr-focus-launch__dept-list">
-                    <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      <span style={{ width: 16 }} />
+                    <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
+                      <span
+                        className={`wfr-focus-launch__check ${hrbpAllSelected ? '' : ''}`}
+                        style={{ cursor: 'pointer', ...(hrbpAllSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                        onClick={() => { if (hrbpAllSelected) setHrbpSelectedDirs({}); else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) } }}
+                      >{hrbpAllSelected ? '✓' : ''}</span>
                       <span style={{ flex: 1 }}>Manager</span>
                       <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                       <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
@@ -429,34 +419,18 @@ export function FocusFirstLaunchDialog({
                   ))}
                 </div>
 
-                {/* Select all / Deselect all */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-                  <button
-                    type="button"
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 500, fontSize: 13 }}
-                    onClick={() => {
-                      if (scopeBy === 'hrbps') {
-                        if (selectedHrbpNames.length === uniqueHrbps.length) setSelectedHrbps({})
-                        else { const all: Record<string, boolean> = {}; uniqueHrbps.forEach(h => { all[h.hrbp] = true }); setSelectedHrbps(all) }
-                      } else {
-                        const selDepts = Object.keys(selectedDepts).filter(k => selectedDepts[k])
-                        if (selDepts.length === departments.length) setSelectedDepts({})
-                        else { const all: Record<string, boolean> = {}; departments.forEach(d => { all[d.name] = true }); setSelectedDepts(all) }
-                      }
-                    }}
-                  >
-                    {scopeBy === 'hrbps'
-                      ? (selectedHrbpNames.length === uniqueHrbps.length ? 'Deselect all' : 'Select all')
-                      : (Object.keys(selectedDepts).filter(k => selectedDepts[k]).length === departments.length ? 'Deselect all' : 'Select all')}
-                  </button>
-                </div>
-
                 {/* List */}
                 <div className="wfr-focus-launch__dept-list">
                   {scopeBy === 'hrbps'
-                    ? (<>
-                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          <span style={{ width: 16 }} />
+                    ? (() => {
+                        const allHrbpSelected = selectedHrbpNames.length === uniqueHrbps.length
+                        return (<>
+                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
+                          <span
+                            className="wfr-focus-launch__check"
+                            style={{ cursor: 'pointer', ...(allHrbpSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                            onClick={() => { if (allHrbpSelected) setSelectedHrbps({}); else { const all: Record<string, boolean> = {}; uniqueHrbps.forEach(h => { all[h.hrbp] = true }); setSelectedHrbps(all) } }}
+                          >{allHrbpSelected ? '✓' : ''}</span>
                           <span style={{ flex: 1 }}>HRBP</span>
                           <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                           <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
@@ -489,9 +463,16 @@ export function FocusFirstLaunchDialog({
                           )
                         })}
                       </>)
-                    : (<>
-                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          <span style={{ width: 16 }} />
+                    })()
+                    : (() => {
+                        const allDeptSelected = Object.keys(selectedDepts).filter(k => selectedDepts[k]).length === departments.length
+                        return (<>
+                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
+                          <span
+                            className="wfr-focus-launch__check"
+                            style={{ cursor: 'pointer', ...(allDeptSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                            onClick={() => { if (allDeptSelected) setSelectedDepts({}); else { const all: Record<string, boolean> = {}; departments.forEach(d => { all[d.name] = true }); setSelectedDepts(all) } }}
+                          >{allDeptSelected ? '✓' : ''}</span>
                           <span style={{ flex: 1 }}>Department</span>
                           <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                           <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
@@ -515,7 +496,8 @@ export function FocusFirstLaunchDialog({
                             </button>
                           )
                         })}
-                      </>)}
+                      </>)
+                    })()}
                 </div>
               </>
             )}
