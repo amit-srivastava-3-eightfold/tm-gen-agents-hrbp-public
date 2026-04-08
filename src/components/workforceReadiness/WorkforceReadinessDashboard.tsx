@@ -1061,7 +1061,7 @@ function BoardView({
                 const isHighlighted = stateNum(row.hrbpState) >= 2 || !!row.hrbpDelegated
                 return (
                 <DataTableRow key={row.hrbp}>
-                  <DataTableCell className="font-semibold" style={isHighlighted ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 9 } : { borderLeft: '3px solid transparent', paddingLeft: 9 }}>
+                  <DataTableCell className="font-semibold" style={isHighlighted ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <button
                         type="button"
@@ -2559,7 +2559,7 @@ export function WorkforceReadinessDashboard({
                             window.scrollTo(0, 0)
                           }}
                         >
-                          <DataTableCell className="font-semibold" style={(showHrbpCollection || hrbpCollectionComplete) && hrbpDirInScope(dir.name) ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 9 } : { borderLeft: '3px solid transparent', paddingLeft: 9 }}>
+                          <DataTableCell className="font-semibold" style={(showHrbpCollection || hrbpCollectionComplete) && hrbpDirInScope(dir.name) ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                 <span className="text-[#3b5bdb] hover:underline">{dir.name}</span>
