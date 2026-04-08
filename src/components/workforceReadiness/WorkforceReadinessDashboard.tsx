@@ -742,10 +742,7 @@ function BoardView({
       const aActive = a.hrbpDelegated || stateNum(a.hrbpState) >= 2 ? 1 : 0
       const bActive = b.hrbpDelegated || stateNum(b.hrbpState) >= 2 ? 1 : 0
       if (aActive !== bActive) return bActive - aActive
-      const scoreA = (a.avgPotential - a.avgReadiness) * (a.totalGap / Math.max(1, a.headcount))
-      const scoreB = (b.avgPotential - b.avgReadiness) * (b.totalGap / Math.max(1, b.headcount))
-      if (Math.abs(scoreB - scoreA) < 0.1) return b.headcount - a.headcount
-      return scoreB - scoreA
+      return b.totalUnrealizedValue - a.totalUnrealizedValue
     })
   }, [allDeptsSorted, focusCollectionComplete, wfrState])
 
@@ -2540,6 +2537,12 @@ export function WorkforceReadinessDashboard({
                 <DataTableBody>
                   {(() => {
                     const sortedDirs = [...directors].sort((a, b) => {
+                      // Pin in-scope directors to top when collection is active or complete
+                      if (showHrbpCollection || hrbpCollectionComplete) {
+                        const aIn = hrbpDirInScope(a.name) ? 1 : 0
+                        const bIn = hrbpDirInScope(b.name) ? 1 : 0
+                        if (aIn !== bIn) return bIn - aIn
+                      }
                       const scoreA = (d.aiPotential - a.readiness) * ((a.employees - a.readyCount) / Math.max(1, a.employees))
                       const scoreB = (d.aiPotential - b.readiness) * ((b.employees - b.readyCount) / Math.max(1, b.employees))
                       return scoreB - scoreA
