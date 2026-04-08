@@ -3,14 +3,14 @@
   "configurations": [
     {
       "name": "tm-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && npm run dev"],
       "port": 5173
     },
     {
       "name": "tm-preview",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && npm run preview"],
       "port": 4173
     }
   ]

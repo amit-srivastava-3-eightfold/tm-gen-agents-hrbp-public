@@ -247,7 +247,7 @@ export function FocusFirstLaunchDialog({
                       <span style={{ flex: 1 }}>Manager</span>
                       <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                       <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                      <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                      <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
                     </div>
                     {dirs.map((dir) => {
                       const dirNotReady = dir.employees - (dir.readyCount ?? 0)
@@ -269,7 +269,7 @@ export function FocusFirstLaunchDialog({
                           </span>
                           <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
                           <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
-                          <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dirNotReady.toLocaleString()}</span>
+                          <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dirNotReady.toLocaleString()} ({dir.employees > 0 ? Math.round((dirNotReady / dir.employees) * 100) : 0}%)</span>
                         </button>
                       )
                     })}
@@ -434,7 +434,7 @@ export function FocusFirstLaunchDialog({
                           <span style={{ flex: 1 }}>HRBP</span>
                           <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                           <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                          <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                          <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
                         </div>
                         {uniqueHrbps.map((h) => {
                           const hDept = departments.find(dd => dd.name === h.depts[0])
@@ -458,7 +458,7 @@ export function FocusFirstLaunchDialog({
                               </span>
                               <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hReadiness}%</span>
                               <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(hUnrealized)}</span>
-                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hGap.toLocaleString()}</span>
+                              <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hGap.toLocaleString()} ({h.headcount > 0 ? Math.round((hGap / h.headcount) * 100) : 0}%)</span>
                             </button>
                           )
                         })}
@@ -476,7 +476,7 @@ export function FocusFirstLaunchDialog({
                           <span style={{ flex: 1 }}>Department</span>
                           <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
                           <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                          <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                          <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
                         </div>
                         {departments.map((d) => {
                           const gapCount = deptGapHeadcount(d)
@@ -492,7 +492,7 @@ export function FocusFirstLaunchDialog({
                               <span className="wfr-focus-launch__dept-name" style={{ flex: 1 }}>{d.name}</span>
                               <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{d.aiReadiness}%</span>
                               <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(d.unrealizedValue)}</span>
-                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gapCount.toLocaleString()}</span>
+                              <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
                             </button>
                           )
                         })}

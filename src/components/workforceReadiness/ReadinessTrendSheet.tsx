@@ -20,13 +20,15 @@ export interface ReadinessTrendSheetProps {
   managerContext?: { manager: string; mgrIndex: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
   roleContext?: { title: string; dept: string; measuredReadiness?: number } | null
+  /** When set, frame the sheet as HRBP team data instead of department data */
+  hrbpContext?: { hrbpName: string; headcount: number } | null
   /** When true, add upskilling boost to readiness deltas */
   upskillingActive?: boolean
   /** Whether data collection is complete — controls whether trends/deltas are shown */
   collectionComplete?: boolean
 }
 
-export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, upskillingActive = false, collectionComplete = true }: ReadinessTrendSheetProps) {
+export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true }: ReadinessTrendSheetProps) {
   const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   // Reset filter when sheet closes or role changes
@@ -96,12 +98,14 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
 
   const { trend, estimated, measured } = data
 
-  const sheetTitle = roleContext ? roleContext.title : managerContext ? managerContext.manager : dept.name
+  const sheetTitle = roleContext ? roleContext.title : managerContext ? managerContext.manager : hrbpContext ? hrbpContext.hrbpName : dept.name
   const sheetSub = roleContext
     ? `${roleContext.dept} — Task-level readiness`
     : managerContext
       ? `${dept.name} — Employee readiness trend`
-      : `${dept.name} — AI adoption change`
+      : hrbpContext
+        ? `${hrbpContext.hrbpName}'s team — AI adoption change`
+        : `${dept.name} — AI adoption change`
 
   // ── Unified card values ──────────────────────────────────────────────────
   const roleForCtx = roleContext ? getRolesForDept(roleContext.dept).find(r => r.title === roleContext.title) : null
@@ -111,7 +115,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
     : roleContext ? cardBase : measured
   const cardDelta = cardMeasured - cardBase
   const cardIsUp = cardDelta >= 0
-  const cardEmployees = roleContext ? (roleForCtx?.employees ?? 0) : managerContext ? (mgrEmployeeData?.length ?? 0) : data.respondedCount
+  const cardEmployees = roleContext ? (roleForCtx?.employees ?? 0) : managerContext ? (mgrEmployeeData?.length ?? 0) : hrbpContext ? Math.round(hrbpContext.headcount * data.responseRate / 100) : data.respondedCount
 
   // Gauge SVG helper
   const GaugeSVG = ({ pct, basePct, isPositive }: { pct: number; basePct: number; isPositive: boolean }) => {
@@ -224,7 +228,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
               </div>
               <div className="wfr-trend-sheet__stat">
-                <span className="wfr-trend-sheet__stat-label">{managerContext ? 'Employees in team' : 'Employees interviewed'}</span>
+                <span className="wfr-trend-sheet__stat-label">{managerContext ? 'Employees in team' : hrbpContext ? 'Employees interviewed' : 'Employees interviewed'}</span>
                 <span className="wfr-trend-sheet__stat-value">{cardEmployees.toLocaleString()}</span>
               </div>
             </div>
@@ -362,7 +366,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
             <div className="wfr-trend-sheet__teams">
               <h3 className="wfr-trend-sheet__teams-title">Roles</h3>
               <p className="wfr-trend-sheet__teams-sub">
-                Readiness by role — {getRolesForDept(dept.name).length} roles in {dept.name}
+                Readiness by role — {getRolesForDept(dept.name).length} roles in {hrbpContext ? `${hrbpContext.hrbpName}'s team` : dept.name}
               </p>
               <div className="wfr-trend-sheet__teams-table">
                 <div className="wfr-trend-sheet__teams-header">

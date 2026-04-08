@@ -65,6 +65,9 @@ export type WfrPersistedState = {
 
 const WFR_STATE_KEY = 'tm:wfr-state'
 
+// Track HRBPs who just launched collection in this session — start at 0% response rate
+const hrbpJustLaunchedSet = new Set<string>()
+
 function writeWfrState(s: WfrPersistedState) {
   try { localStorage.setItem(WFR_STATE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
 }
@@ -658,6 +661,7 @@ function BoardView({
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
+  const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
   const [boardTab, setBoardTab] = useState<'hrbps' | 'roles' | 'departments'>('hrbps')
   const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
   const toggleDeptSort = (col: typeof deptSort['col']) => {
@@ -722,7 +726,7 @@ function BoardView({
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
       const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
       // Headcount-weighted response rate across the HRBP's departments (for collection-active view)
-      const responseRate = stateNum(hrbpState) >= 2 && headcount > 0
+      const responseRate = stateNum(hrbpState) >= 2 && headcount > 0 && !hrbpJustLaunchedSet.has(row.hrbp)
         ? Math.round(row.depts.reduce((s, d) => s + wfrDemoDeptResponseRate(d.name) * d.headcount, 0) / headcount)
         : 0
       const hrbpDelegated = wfrState.hrbpStates?.[row.hrbp]?.delegated
@@ -842,9 +846,6 @@ function BoardView({
     peopleInAugForCards > 0 ? Math.min(100, Math.round((gapPeople / peopleInAugForCards) * 100)) : 0
   const tasksInAug = effectiveRollup ? effectiveRollup.tasksInAugZone : ORG.tasksInAugZone
   const totalRoleTasks = effectiveRollup ? effectiveRollup.totalRoleTasks : ORG.totalRoleTasks
-  const tasksAbove = effectiveRollup ? effectiveRollup.tasksAboveThreshold : ORG.tasksAboveThreshold
-  const tasksBelow = effectiveRollup ? effectiveRollup.tasksBelowThreshold : ORG.tasksBelowThreshold
-
   const learnMoreDataCollection =
     focusCollectionActive && collectionLaunchSummary
       ? {
@@ -1102,7 +1103,7 @@ function BoardView({
                       {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 ? (
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} />
-                          <button type="button" className={`wfr-dash__trend-badge ${row.trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetDept(allDeptsSorted.find(x => x.name === row.depts[0].name) ?? null) }} title="View readiness trend details">
+                          <button type="button" className={`wfr-dash__trend-badge ${row.trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp({ hrbpName: row.hrbp, headcount: row.headcount }); setTrendSheetDept(allDeptsSorted.find(x => x.name === row.depts[0].name) ?? null) }} title="View readiness trend details">
                             <span className="wfr-dash__trend-badge-text">{row.trendDelta >= 0 ? '↑' : '↓'}{Math.abs(row.trendDelta)}pt</span>
                             <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                           </button>
@@ -1125,7 +1126,7 @@ function BoardView({
                   </DataTableCell>
                   {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && (
                     stateNum(row.hrbpState) === 1 && row.hrbpDelegated
-                      ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
+                      ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
                       : stateNum(row.hrbpState) >= 2
                         ? <DataCollectionProgressCell rate={row.responseRate} inScope />
                         : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
@@ -1198,7 +1199,7 @@ function BoardView({
                       <DataTableCell metric>
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
-                          <button type="button" className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetDept(d) }} title="View readiness trend details">
+                          <button type="button" className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp(null); setTrendSheetDept(d) }} title="View readiness trend details">
                             <span className="wfr-dash__trend-badge-text">{trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt</span>
                             <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                           </button>
@@ -1333,7 +1334,7 @@ function BoardView({
                           <button
                             type="button"
                             className={`wfr-dash__trend-badge ${r.measuredReadiness >= r.aiReadiness ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}
-                            onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: r.title, dept: r.dept, measuredReadiness: r.measuredReadiness }); setTrendSheetDept(allDeptsSorted.find(d => d.name === r.dept) ?? null) }}
+                            onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: r.title, dept: r.dept, measuredReadiness: r.measuredReadiness }); setTrendSheetHrbp(null); setTrendSheetDept(allDeptsSorted.find(d => d.name === r.dept) ?? null) }}
                             title="View readiness trend details"
                           >
                             <span className="wfr-dash__trend-badge-text">{r.measuredReadiness >= r.aiReadiness ? '↑' : '↓'}{Math.abs(r.measuredReadiness - r.aiReadiness)}pt</span>
@@ -1409,10 +1410,11 @@ function BoardView({
       {/* Readiness trend detail sheet — opens when clicking a trend badge in complete state */}
       <ReadinessTrendSheet
         open={trendSheetDept != null}
-        onClose={() => { setTrendSheetDept(null); setTrendSheetRole(null) }}
+        onClose={() => { setTrendSheetDept(null); setTrendSheetRole(null); setTrendSheetHrbp(null) }}
         dept={trendSheetDept}
         channelsLabel={collectionLaunchSummary?.channelsLabel}
         roleContext={trendSheetRole}
+        hrbpContext={trendSheetHrbp}
         upskillingActive={hrbpPlansCreated}
         collectionComplete={focusCollectionComplete}
       />
@@ -2043,6 +2045,7 @@ export function WorkforceReadinessDashboard({
 
   /** Called when an individual HRBP launches collection from the delegation CTA */
   const advanceHrbpToCollection = useCallback((hrbpName: string, channelsLabel: string, selectedDirectors?: string[]) => {
+    hrbpJustLaunchedSet.add(hrbpName)
     setWfrState(prev => {
       if (!prev.hrbpStates?.[hrbpName]) return prev
       const next: WfrPersistedState = {
@@ -2294,7 +2297,8 @@ export function WorkforceReadinessDashboard({
           const hrbpDelegatedPending = hasHrbpPendingDelegation(wfrState, hrbpName)
           const hrbpCollecting = stateNum(hrbpEffState) >= 2 && !hrbpCollectionComplete
           const showHrbpCollection = hrbpCollecting
-          const hrbpResponseRate = hrbpCollecting ? wfrDemoDeptResponseRate(d.name) : 0
+          const hrbpJustLaunched = hrbpJustLaunchedSet.has(hrbpName)
+          const hrbpResponseRate = hrbpCollecting && !hrbpJustLaunched ? wfrDemoDeptResponseRate(d.name) : 0
           const hrbpSelectedDirNames = wfrState.hrbpStates?.[hrbpName]?.selectedDirectors
           const hrbpDirInScope = (dirName: string) => !hrbpSelectedDirNames || hrbpSelectedDirNames.includes(dirName)
           // Build the CTA card for the heroCard slot
@@ -2550,7 +2554,7 @@ export function WorkforceReadinessDashboard({
                     return sortedDirs.map((dir) => {
                       const notReady = dir.employees - dir.readyCount
                       // Deterministic per-director response rate (varies around HRBP dept rate)
-                      const dirResponseRate = hrbpCollecting ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
+                      const dirResponseRate = hrbpCollecting && !hrbpJustLaunched ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
                       return (
                         <DataTableRow
                           key={dir.name}
@@ -2602,7 +2606,7 @@ export function WorkforceReadinessDashboard({
                           </DataTableCell>
                           {showHrbpCollection && (
                             hrbpDelegatedPending
-                              ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><HrbpStatusPill state={1} delegated /></DataTableCell>
+                              ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
                               : <DataCollectionProgressCell rate={hrbpDirInScope(dir.name) ? dirResponseRate : 0} inScope={hrbpDirInScope(dir.name)} />
                           )}
                           {hrbpUpskillingActive && (

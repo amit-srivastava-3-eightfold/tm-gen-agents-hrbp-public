@@ -22,9 +22,8 @@ import {
   DataTableRow,
   DataTableHead,
   DataTableCell,
-  Pill,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -189,8 +188,10 @@ export function ManagerDetailPage() {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
-  const [, setEditingCourses] = useState(false)
+  const [editingCourses, setEditingCourses] = useState(false)
+  const [editingSkills, setEditingSkills] = useState(false)
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
+  const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
 
   if (!dept || !managerData) {
     return (
@@ -392,7 +393,11 @@ export function ManagerDetailPage() {
                                 <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
                               </button>
                               {(mgrDisplayPct === 0 && !assignedPlans.has(mgr.manager)) ? (
-                                <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
+                                <button
+                                  type="button"
+                                  style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                  onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])) }}
+                                >Assign</button>
                               ) : (() => {
                                 const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Not started'
                                 const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
@@ -536,54 +541,178 @@ export function ManagerDetailPage() {
 
       {/* Dev plan sheet */}
       {devPlanEmployee && createPortal(
-        <div className="mgr-detail-page__plan-overlay" onClick={() => setDevPlanEmployee(null)}>
+        <div className="mgr-detail-page__plan-overlay" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>
           <div className="mgr-detail-page__plan-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="mgr-detail-page__plan-header">
               <div>
                 <h3 className="mgr-detail-page__plan-name">{devPlanEmployee.name}</h3>
-                <p className="mgr-detail-page__plan-meta">{devPlanEmployee.title} · {dept.name} · Readiness: {devPlanEmployee.displayReadiness}%</p>
+                <p className="mgr-detail-page__plan-meta">{devPlanEmployee.title} · {dept.name} — Development plan</p>
               </div>
-              <button type="button" className="mgr-detail-page__plan-close" onClick={() => setDevPlanEmployee(null)}>
+              <button type="button" className="mgr-detail-page__plan-close" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
               </button>
             </div>
 
             <div className="mgr-detail-page__plan-body">
-              {/* Courses */}
-              <div className="mgr-detail-page__plan-section">
-                <h4 className="mgr-detail-page__plan-section-title">Recommended Courses</h4>
-                {devPlanCourses.filter((_, i) => !removedCourses.has(i)).map((c, i) => (
-                  <div key={i} className="mgr-detail-page__plan-course">
-                    <div>
-                      <div className="mgr-detail-page__plan-course-name">{c.course}</div>
-                      <div className="mgr-detail-page__plan-course-meta">{c.provider} · {c.duration} · {c.level}{c.free ? ' · Free' : ''}</div>
+              {/* Status row */}
+              {(() => {
+                const isAssigned = assignedPlans.has(devPlanEmployee.name)
+                const planHash = devPlanEmployee.name.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
+                const overallPct = isAssigned ? (Math.abs(planHash) % 100 > 85 ? 100 : Math.abs(planHash) % 100 > 20 ? (20 + Math.abs(planHash) % 60) : 0) : 0
+                const overallStatus = !isAssigned ? 'Not assigned' : overallPct === 100 ? 'Completed' : overallPct > 0 ? 'In progress' : 'Not started'
+                const statusColor = overallStatus === 'Completed' ? '#15803d' : overallStatus === 'In progress' ? '#6366f1' : overallStatus === 'Not assigned' ? '#d97706' : '#94a3b8'
+                const statusIcon = overallStatus === 'Completed' ? 'check_circle' : overallStatus === 'In progress' ? 'sync' : 'schedule'
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: 24, marginBottom: isAssigned ? 12 : 20 }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Status</div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: statusColor }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{statusIcon}</span>
+                          {overallStatus}
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>AI adoption</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: devPlanEmployee.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
+                          {devPlanEmployee.displayReadiness}%
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Gap status</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: devPlanEmployee.displayReadiness < 50 ? '#dc2626' : '#15803d' }}>
+                          {devPlanEmployee.displayReadiness < 50 ? 'Not AI-ready' : 'AI-ready'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                    {isAssigned && (
+                      <div style={{ marginBottom: 20, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a212e' }}>Plan progress</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor }}>{overallPct}%</span>
+                        </div>
+                        <div style={{ background: 'rgba(99, 102, 241, 0.08)', height: 6, borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ width: `${overallPct}%`, background: overallPct === 100 ? '#22c55e' : '#818cf8', height: 6, borderRadius: 3, transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+
+              {/* Courses */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Courses</h4>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: editingCourses ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }}
+                  onClick={() => setEditingCourses(!editingCourses)}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{editingCourses ? 'check' : 'edit'}</span>
+                    {editingCourses ? 'Done' : 'Edit'}
+                  </span>
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {devPlanCourses.map((c, i) => {
+                  if (removedCourses.has(i)) return null
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="mgr-detail-page__plan-course-name">{c.course}</div>
+                        <div className="mgr-detail-page__plan-course-meta">{c.provider} · {c.duration} · {c.level}{c.free ? ' · Free to audit' : ''}</div>
+                      </div>
+                      {editingCourses && (
+                        <button
+                          type="button"
+                          className="material-symbols-outlined"
+                          style={{ fontSize: 18, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                          onClick={() => setRemovedCourses(prev => new Set([...prev, i]))}
+                        >
+                          remove_circle
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+                {editingCourses && (
+                  <button
+                    type="button"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', borderRadius: 8, border: '1px dashed #c7d2fe', background: '#fafbff', cursor: 'pointer', color: '#3b5bdb', fontSize: 13, fontWeight: 500 }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+                    Add course
+                  </button>
+                )}
               </div>
 
               {/* Skills */}
-              <div className="mgr-detail-page__plan-section">
-                <h4 className="mgr-detail-page__plan-section-title">Target Skills</h4>
-                <div className="mgr-detail-page__plan-skills">
-                  {devPlanSkills.map((s, i) => (
-                    <Pill key={i} variant="neutral" size="small">{s}</Pill>
-                  ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
+                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Skills to develop</h4>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: editingSkills ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }}
+                  onClick={() => setEditingSkills(!editingSkills)}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{editingSkills ? 'check' : 'edit'}</span>
+                    {editingSkills ? 'Done' : 'Edit'}
+                  </span>
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {devPlanSkills.filter(s => !removedSkills.has(s)).map((s) => (
+                  <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#eef2ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 500, color: '#4338ca' }}>
+                    {s}
+                    {editingSkills && (
+                      <button
+                        type="button"
+                        className="material-symbols-outlined"
+                        style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, lineHeight: 1 }}
+                        onClick={() => setRemovedSkills(prev => new Set([...prev, s]))}
+                      >
+                        close
+                      </button>
+                    )}
+                  </span>
+                ))}
+                {editingSkills && (
+                  <button
+                    type="button"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#fafbff', border: '1px dashed #c7d2fe', fontSize: 12, fontWeight: 500, color: '#3b5bdb', cursor: 'pointer' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+                    Add skill
+                  </button>
+                )}
+              </div>
+
+              {/* Estimated completion */}
+              <div style={{ marginTop: 20, padding: '12px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a' }}>
+                <div style={{ fontSize: 12, color: '#92400e' }}>
+                  <strong>Estimated completion:</strong> 6–8 weeks after assignment · ~46 hours of coursework
                 </div>
               </div>
             </div>
 
             <div className="mgr-detail-page__plan-footer">
-              {assignedPlans.has(devPlanEmployee.name) ? (
-                <Button variant="secondary" onClick={() => setDevPlanEmployee(null)}>Done</Button>
-              ) : (
-                <Button variant="primary" onClick={() => {
-                  setAssignedPlans(prev => new Set([...prev, devPlanEmployee!.name]))
-                  setDevPlanEmployee(null)
-                }}>
-                  Assign plan →
-                </Button>
-              )}
+              <span style={{ fontSize: 13, color: '#64748b' }}>{devPlanCourses.filter((_, i) => !removedCourses.has(i)).length} courses · {devPlanSkills.filter(s => !removedSkills.has(s)).length} skills</span>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Close</Button>
+                {assignedPlans.has(devPlanEmployee.name) ? (
+                  <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Done</Button>
+                ) : (
+                  <Button variant="primary" onClick={() => {
+                    setAssignedPlans(prev => new Set([...prev, devPlanEmployee!.name]))
+                    setDevPlanEmployee(null)
+                    setEditingCourses(false)
+                    setEditingSkills(false)
+                  }}>
+                    Assign plan →
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>,
