@@ -2468,10 +2468,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
                         <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{totalGap.toLocaleString()} ({headcount > 0 ? Math.round((totalGap / headcount) * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {headcount.toLocaleString()}</div>
-                          </div>
+                          <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {hrbpCollectionComplete && (() => {
                           const hnh = nameHash(hrbpName ?? '')
@@ -2854,10 +2851,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
                         <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{dirGap.toLocaleString()} ({dirHeadcount > 0 ? Math.round((dirGap / dirHeadcount) * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dirHeadcount.toLocaleString()}</div>
-                          </div>
+                          <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {effDirCollComplete && (() => {
                           const dirPlanPct = effDirPlansComplete ? 100 : 0
@@ -3132,10 +3126,7 @@ export function WorkforceReadinessDashboard({
                         </DataTableCell>
                         <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{srGap.toLocaleString()} ({srHeadcount > 0 ? Math.round((srGap / srHeadcount) * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {srHeadcount.toLocaleString()}</div>
-                          </div>
+                          <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
                         {effSrCollComplete && (() => {
                           const srPlanPct = effSrPlansComplete ? 100 : 0

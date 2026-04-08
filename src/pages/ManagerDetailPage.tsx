@@ -378,10 +378,7 @@ export function ManagerDetailPage() {
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
                       <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(dept.unrealizedValue)}</span></DataTableCell>
                       <DataTableCell align="right">
-                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                          <span className="wfr-type-h6">{notReady.toLocaleString()} ({displayEmployees.length > 0 ? Math.round((notReady / displayEmployees.length) * 100) : 0}%)</span>
-                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {displayEmployees.length.toLocaleString()}</div>
-                        </div>
+                        <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                       </DataTableCell>
                       {upskillingInScope && (() => {
                         const mgrH = nameHash(mgr.manager)
