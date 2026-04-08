@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, hrbpAssignments } from '../../data/wfrOrgData'
+import { departments, hrbpAssignments, deptGapHeadcount, formatDollar } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
 export type FocusAssignOwner = 'hrbp' | 'self'
@@ -177,6 +177,7 @@ export function FocusFirstLaunchDialog({
 
   // ─── HRBP mode: 2-step dialog (select teams → review + launch) ───
   if (hrbpMode) {
+    const hrbpDept = defaultScopeDepartmentName ? departments.find(dd => dd.name === defaultScopeDepartmentName) : null
     const rawDirs = hrbpDirectors ?? []
     // Sort directors by priority score: (aiPotential − readiness) × (gap rate)
     const dirs = [...rawDirs].sort((a, b) => {
@@ -251,23 +252,37 @@ export function FocusFirstLaunchDialog({
                   </div>
 
                   <div className="wfr-focus-launch__dept-list">
-                    {dirs.map((dir) => (
-                      <button
-                        key={dir.name}
-                        type="button"
-                        className={`wfr-focus-launch__dept-row ${hrbpSelectedDirs[dir.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                        onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))}
-                      >
-                        <span className="wfr-focus-launch__check">{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
-                        <span className="wfr-focus-launch__dept-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {dir.name}
-                          {dirPrioritySet.has(dir.name) && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                          )}
-                        </span>
-                        <span className="wfr-focus-launch__dept-detail">{dir.title} · {dir.employees.toLocaleString()} employees · {dir.teamManagers} teams</span>
-                      </button>
-                    ))}
+                    <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <span style={{ width: 16 }} />
+                      <span style={{ flex: 1 }}>Manager</span>
+                      <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
+                      <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                      <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                    </div>
+                    {dirs.map((dir) => {
+                      const dirNotReady = dir.employees - (dir.readyCount ?? 0)
+                      const dirUnrealized = dir.employees > 0 && hrbpDept ? Math.round(hrbpDept.unrealizedValue * dir.employees / Math.max(1, hrbpDept.employees)) : 0
+                      return (
+                        <button
+                          key={dir.name}
+                          type="button"
+                          className={`wfr-focus-launch__dept-row ${hrbpSelectedDirs[dir.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                          style={{ alignItems: 'center' }}
+                          onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))}
+                        >
+                          <span className="wfr-focus-launch__check">{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
+                          <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {dir.name}
+                            {dirPrioritySet.has(dir.name) && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                            )}
+                          </span>
+                          <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
+                          <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
+                          <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dirNotReady.toLocaleString()}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </>
               )}
@@ -439,35 +454,68 @@ export function FocusFirstLaunchDialog({
                 {/* List */}
                 <div className="wfr-focus-launch__dept-list">
                   {scopeBy === 'hrbps'
-                    ? uniqueHrbps.map((h) => (
-                        <button
-                          key={h.hrbp}
-                          type="button"
-                          className={`wfr-focus-launch__dept-row ${selectedHrbps[h.hrbp] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                          onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))}
-                        >
-                          <span className="wfr-focus-launch__check">{selectedHrbps[h.hrbp] ? '✓' : ''}</span>
-                          <span className="wfr-focus-launch__dept-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {h.hrbp}
-                            {hrbpPrioritySet.has(h.hrbp) && (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                            )}
-                          </span>
-                          <span className="wfr-focus-launch__dept-detail">{h.depts.join(', ')} · {h.headcount.toLocaleString()} employees</span>
-                        </button>
-                      ))
-                    : departments.map((d) => (
-                        <button
-                          key={d.name}
-                          type="button"
-                          className={`wfr-focus-launch__dept-row ${selectedDepts[d.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                          onClick={() => setSelectedDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}
-                        >
-                          <span className="wfr-focus-launch__check">{selectedDepts[d.name] ? '✓' : ''}</span>
-                          <span className="wfr-focus-launch__dept-name">{d.name}</span>
-                          <span className="wfr-focus-launch__dept-detail">{d.employees.toLocaleString()} employees</span>
-                        </button>
-                      ))}
+                    ? (<>
+                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <span style={{ width: 16 }} />
+                          <span style={{ flex: 1 }}>HRBP</span>
+                          <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
+                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                          <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                        </div>
+                        {uniqueHrbps.map((h) => {
+                          const hDept = departments.find(dd => dd.name === h.depts[0])
+                          const hReadiness = hDept?.aiReadiness ?? 0
+                          const hUnrealized = hDept ? Math.round(hDept.unrealizedValue * h.headcount / Math.max(1, hDept.employees)) : 0
+                          const hGap = hDept ? Math.round(deptGapHeadcount(hDept) * h.headcount / Math.max(1, hDept.employees)) : 0
+                          return (
+                            <button
+                              key={h.hrbp}
+                              type="button"
+                              className={`wfr-focus-launch__dept-row ${selectedHrbps[h.hrbp] ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                              style={{ alignItems: 'center' }}
+                              onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))}
+                            >
+                              <span className="wfr-focus-launch__check">{selectedHrbps[h.hrbp] ? '✓' : ''}</span>
+                              <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {h.hrbp}
+                                {hrbpPrioritySet.has(h.hrbp) && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                )}
+                              </span>
+                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hReadiness}%</span>
+                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(hUnrealized)}</span>
+                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hGap.toLocaleString()}</span>
+                            </button>
+                          )
+                        })}
+                      </>)
+                    : (<>
+                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <span style={{ width: 16 }} />
+                          <span style={{ flex: 1 }}>Department</span>
+                          <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
+                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                          <span style={{ width: 80, textAlign: 'right' }}>Gap</span>
+                        </div>
+                        {departments.map((d) => {
+                          const gapCount = deptGapHeadcount(d)
+                          return (
+                            <button
+                              key={d.name}
+                              type="button"
+                              className={`wfr-focus-launch__dept-row ${selectedDepts[d.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                              style={{ alignItems: 'center' }}
+                              onClick={() => setSelectedDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}
+                            >
+                              <span className="wfr-focus-launch__check">{selectedDepts[d.name] ? '✓' : ''}</span>
+                              <span className="wfr-focus-launch__dept-name" style={{ flex: 1 }}>{d.name}</span>
+                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{d.aiReadiness}%</span>
+                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(d.unrealizedValue)}</span>
+                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gapCount.toLocaleString()}</span>
+                            </button>
+                          )
+                        })}
+                      </>)}
                 </div>
               </>
             )}

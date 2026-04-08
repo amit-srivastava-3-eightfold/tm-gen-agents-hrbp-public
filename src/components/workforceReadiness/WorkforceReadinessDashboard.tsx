@@ -2735,6 +2735,7 @@ export function WorkforceReadinessDashboard({
                 open={focusLaunchOpen}
                 onOpenChange={setFocusLaunchOpen}
                 hrbpMode
+                defaultScopeDepartmentName={d.name}
                 hrbpDirectors={directors.map(dir => ({
                   name: dir.name,
                   title: dir.title,
