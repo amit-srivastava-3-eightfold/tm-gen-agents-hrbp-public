@@ -718,7 +718,7 @@ function BoardView({
       const headcount = row.depts.reduce((s, d) => s + d.headcount, 0)
       const avgReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.readiness * d.headcount, 0) / headcount) : 0
       const avgPotential = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.aiPotential * d.headcount, 0) / headcount) : 0
-      const totalUnrealizedValue = row.depts.reduce((s, d) => { const dept = departments.find(x => x.name === d.name); return s + (dept?.unrealizedValue ?? 0) }, 0)
+      const totalUnrealizedValue = row.depts.reduce((s, d) => { const dept = departments.find(x => x.name === d.name); return s + (dept ? Math.round(dept.unrealizedValue * d.headcount / Math.max(1, dept.employees)) : 0) }, 0)
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
       const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
       // Headcount-weighted response rate across the HRBP's departments (for collection-active view)
