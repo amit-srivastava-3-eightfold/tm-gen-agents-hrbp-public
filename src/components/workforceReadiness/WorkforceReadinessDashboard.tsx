@@ -442,6 +442,14 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
   )
 }
 
+type MgrSortCol = 'name' | 'readiness' | 'potential' | 'gap'
+
+function SortIcon({ sortDir, onSortClick }: { sortDir?: 'asc' | 'desc' | null; onSortClick?: () => void }) {
+  if (sortDir) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
+  if (onSortClick) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
+  return null
+}
+
 function MetricHeaderLabel({ label, metric, onInfoClick, sortDir, onSortClick }: { label: string; metric: keyof typeof METRIC_INFO; onInfoClick?: () => void; sortDir?: 'asc' | 'desc' | null; onSortClick?: () => void }) {
   return (
     <span className="inline-flex items-center gap-1" onClick={onSortClick} style={onSortClick ? { cursor: 'pointer' } : undefined}>
@@ -454,11 +462,7 @@ function MetricHeaderLabel({ label, metric, onInfoClick, sortDir, onSortClick }:
       >
         info
       </span>
-      {sortDir ? (
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
-      ) : onSortClick ? (
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
-      ) : null}
+      <SortIcon sortDir={sortDir} onSortClick={onSortClick} />
     </span>
   )
 }
@@ -667,6 +671,14 @@ function BoardView({
   const toggleDeptSort = (col: typeof deptSort['col']) => {
     setDeptSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'hrbp' ? 'asc' : 'desc' })
   }
+  const [hrbpSort, setHrbpSort] = useState<{ col: 'hrbp' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
+  const toggleHrbpSort = (col: typeof hrbpSort['col']) => {
+    setHrbpSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'hrbp' ? 'asc' : 'desc' })
+  }
+  const [roleSort, setRoleSort] = useState<{ col: 'name' | 'dept' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
+  const toggleRoleSort = (col: typeof roleSort['col']) => {
+    setRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'dept' ? 'asc' : 'desc' })
+  }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
   const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
@@ -742,9 +754,16 @@ function BoardView({
       const aActive = a.hrbpDelegated || stateNum(a.hrbpState) >= 2 ? 1 : 0
       const bActive = b.hrbpDelegated || stateNum(b.hrbpState) >= 2 ? 1 : 0
       if (aActive !== bActive) return bActive - aActive
-      return b.totalUnrealizedValue - a.totalUnrealizedValue
+      const mul = hrbpSort.dir === 'asc' ? 1 : -1
+      switch (hrbpSort.col) {
+        case 'hrbp': return mul * a.hrbp.localeCompare(b.hrbp)
+        case 'readiness': return mul * (a.avgReadiness - b.avgReadiness)
+        case 'potential': return mul * (a.totalUnrealizedValue - b.totalUnrealizedValue)
+        case 'gap': return mul * (a.totalGap - b.totalGap)
+        default: return 0
+      }
     })
-  }, [allDeptsSorted, focusCollectionComplete, wfrState])
+  }, [allDeptsSorted, focusCollectionComplete, wfrState, hrbpSort])
 
   // All roles across org for the Roles tab
   const allRoles = useMemo(() => {
@@ -759,8 +778,19 @@ function BoardView({
         roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, unrealizedValue: r.unrealizedValue, gap: r.aiPotential - measured })
       }
     }
-    return roles.sort((a, b) => b.gap - a.gap)
-  }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete])
+    const mul = roleSort.dir === 'asc' ? 1 : -1
+    return roles.sort((a, b) => {
+      switch (roleSort.col) {
+        case 'name': return mul * a.title.localeCompare(b.title)
+        case 'dept': return mul * a.dept.localeCompare(b.dept)
+        case 'headcount': return mul * (a.employees - b.employees)
+        case 'readiness': return mul * ((focusCollectionComplete ? a.measuredReadiness : a.aiReadiness) - (focusCollectionComplete ? b.measuredReadiness : b.aiReadiness))
+        case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
+        case 'gap': return mul * (a.gap - b.gap)
+        default: return 0
+      }
+    })
+  }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete, roleSort])
 
 
   // Top 3 departments by gap for opportunity tags in complete state
@@ -1045,16 +1075,16 @@ function BoardView({
         )}
 
         <TabsContent value="hrbps">
-          <DataTable bordered>
+          <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>HRBP</DataTableHead>
-                <DataTableHead>Departments</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                <DataTableHead style={{ width: '22%', cursor: 'pointer' }} onClick={() => toggleHrbpSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={hrbpSort.col === 'hrbp' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('hrbp')} /></span></DataTableHead>
+                <DataTableHead style={{ width: '16%' }}>Departments</DataTableHead>
+                <DataTableHead metric style={{ width: '14%' }}><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'readiness' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('readiness')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: '16%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: '18%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpSort.col === 'gap' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('gap')} /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
-                {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Upskilling progress</DataTableHead>}
+                {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '18%' }}>Upskilling progress</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1099,13 +1129,13 @@ function BoardView({
                     <div>
                       {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 ? (
                         <div className="wfr-dash__readiness-with-trend">
-                          <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} />
+                          <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} width={90} />
                           <button type="button" className={`wfr-dash__trend-badge ${row.trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp({ hrbpName: row.hrbp, headcount: row.headcount }); setTrendSheetDept(allDeptsSorted.find(x => x.name === row.depts[0].name) ?? null) }} title="View readiness trend details">
                             <span className="wfr-dash__trend-badge-text">{row.trendDelta >= 0 ? '↑' : '↓'}{Math.abs(row.trendDelta)}pt</span>
                             <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                           </button>
                         </div>
-                      ) : <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} />}
+                      ) : <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} width={90} />}
                       {stateNum(row.hrbpState) >= 3 && (
                         <div style={{ fontSize: 10, color: '#15803d', marginTop: 7, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 11, verticalAlign: -1 }}>verified</span>
@@ -1165,8 +1195,8 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
@@ -1220,8 +1250,8 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
@@ -1254,8 +1284,8 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
@@ -1295,13 +1325,13 @@ function BoardView({
           <DataTable bordered>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead>Role</DataTableHead>
-                {!isHrbp && <DataTableHead>Department</DataTableHead>}
-                <DataTableHead numeric>Headcount</DataTableHead>
+                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('name')}><span className="inline-flex items-center gap-1">Role <SortIcon sortDir={roleSort.col === 'name' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('name')} /></span></DataTableHead>
+                {!isHrbp && <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('dept')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={roleSort.col === 'dept' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('dept')} /></span></DataTableHead>}
+                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('headcount')}><span className="inline-flex items-center gap-1">Headcount <SortIcon sortDir={roleSort.col === 'headcount' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('headcount')} /></span></DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'readiness' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('readiness')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={roleSort.col === 'gap' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('gap')} /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
@@ -1829,6 +1859,10 @@ export function WorkforceReadinessDashboard({
       window.location.href = `/workforce?user=${isHrbp ? 'jaydon-torff' : 'chro'}`
     }
   }, [isHrbp])
+  const [mgrSort, setMgrSort] = useState<{ col: MgrSortCol, dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
+  const toggleMgrSort = (col: MgrSortCol) => {
+    setMgrSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
+  }
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; dept: Dept } | null>(null)
   const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(() => {
     const p = new URLSearchParams(window.location.search)
@@ -2455,10 +2489,10 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                        <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                        {hrbpCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
+                        <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
+                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
+                        {hrbpCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -2526,10 +2560,10 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                    <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
-                    <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {showHrbpCollection && <DataCollectionHead />}
                     {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
@@ -2543,9 +2577,14 @@ export function WorkforceReadinessDashboard({
                         const bIn = hrbpDirInScope(b.name) ? 1 : 0
                         if (aIn !== bIn) return bIn - aIn
                       }
-                      const scoreA = (d.aiPotential - a.readiness) * ((a.employees - a.readyCount) / Math.max(1, a.employees))
-                      const scoreB = (d.aiPotential - b.readiness) * ((b.employees - b.readyCount) / Math.max(1, b.employees))
-                      return scoreB - scoreA
+                      const mul = mgrSort.dir === 'asc' ? 1 : -1
+                      switch (mgrSort.col) {
+                        case 'name': return mul * a.name.localeCompare(b.name)
+                        case 'readiness': return mul * (a.readiness - b.readiness)
+                        case 'potential': return mul * (Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees)) - Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees)))
+                        case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount))
+                        default: return 0
+                      }
                     })
                     const dirScores = sortedDirs.map(dir => ({
                       key: dir.name,
@@ -2843,10 +2882,10 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                        <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
+                        <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
+                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
+                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -2922,15 +2961,15 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                        <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
-                        <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                        <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                        <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
-                      {seniorMgrs.map(sr => {
+                      {[...seniorMgrs].sort((a, b) => { const mul = mgrSort.dir === 'asc' ? 1 : -1; switch (mgrSort.col) { case 'name': return mul * a.name.localeCompare(b.name); case 'readiness': return mul * (a.readiness - b.readiness); case 'potential': return mul * (a.employees - b.employees); case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount)); default: return 0 } }).map(sr => {
                         const notReady = sr.employees - sr.readyCount
                         const srPlanPct = effDirPlansComplete ? 100 : 0
                         return (
@@ -2986,15 +3025,15 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                    <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
-                    <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
-                  {teamMgrs.map((mgr, i) => {
+                  {[...teamMgrs.map((mgr, i) => ({ mgr, i }))].sort((a, b) => { const enA = mgrEnriched[directorData.mgrIdxStart + a.i]; const enB = mgrEnriched[directorData.mgrIdxStart + b.i]; if (!enA || !enB) return 0; const mul = mgrSort.dir === 'asc' ? 1 : -1; switch (mgrSort.col) { case 'name': return mul * a.mgr.manager.localeCompare(b.mgr.manager); case 'readiness': return mul * (enA.readiness - enB.readiness); case 'potential': return mul * (a.mgr.employees - b.mgr.employees); case 'gap': return mul * ((a.mgr.employees - enA.readyCount) - (b.mgr.employees - enB.readyCount)); default: return 0 } }).map(({ mgr, i }) => {
                     const globalIdx = directorData.mgrIdxStart + i
                     const en = mgrEnriched[globalIdx]
                     if (!en) return null
@@ -3114,10 +3153,10 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                        <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                        {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
+                        <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
+                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
+                        {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3174,15 +3213,15 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                    <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
-                    <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
+                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
-                  {teamMgrs.map((mgr, i) => {
+                  {[...teamMgrs.map((mgr, i) => ({ mgr, i }))].sort((a, b) => { const enA = srMgrEnriched[seniorMgrData.mgrIdxStart + a.i]; const enB = srMgrEnriched[seniorMgrData.mgrIdxStart + b.i]; if (!enA || !enB) return 0; const mul = mgrSort.dir === 'asc' ? 1 : -1; switch (mgrSort.col) { case 'name': return mul * a.mgr.manager.localeCompare(b.mgr.manager); case 'readiness': return mul * (enA.readiness - enB.readiness); case 'potential': return mul * (a.mgr.employees - b.mgr.employees); case 'gap': return mul * ((a.mgr.employees - enA.readyCount) - (b.mgr.employees - enB.readyCount)); default: return 0 } }).map(({ mgr, i }) => {
                     const globalIdx = seniorMgrData.mgrIdxStart + i
                     const en = srMgrEnriched[globalIdx]
                     if (!en) return null
