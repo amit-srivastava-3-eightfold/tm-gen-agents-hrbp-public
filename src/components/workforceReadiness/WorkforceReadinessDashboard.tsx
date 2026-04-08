@@ -117,7 +117,7 @@ export function computeOrgAggregateState(wfrState: WfrPersistedState): WfrProgra
 /** Check if a specific HRBP has a pending delegation (CHRO delegated, HRBP hasn't launched yet). */
 export function hasHrbpPendingDelegation(wfrState: WfrPersistedState, hrbpName: string): boolean {
   const hs = wfrState.hrbpStates?.[hrbpName]
-  return hs?.delegated === true && hs.state === 1
+  return hs?.delegated === true && String(hs.state) === '1'
 }
 
 /** Check if any of the persona's mapped HRBPs have a pending delegation. */
@@ -328,7 +328,7 @@ function MetricArc({
 
 const METRIC_INFO = {
   readiness: 'People in augmentable roles using AI effectively ÷ total people in augmentable roles',
-  potential: 'BLS median wages × automation probability × 60% realization rate',
+  potential: 'BLS median wages × weekly hours unlocked × 52 weeks',
   gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
 } as const
 
@@ -444,6 +444,53 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
 
 type MgrSortCol = 'name' | 'readiness' | 'potential' | 'gap'
 
+/** Shared overview layout: hero section (MetricArc + headline + pill) + 3 metric cards row. */
+function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, subtitle, pill, cards, beforeCards, hideHero, children }: {
+  aiPotentialPct: number
+  aiReadinessPct: number
+  totalEmployees: number
+  headline: React.ReactNode
+  subtitle?: React.ReactNode
+  pill: React.ReactNode
+  cards: { id: 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: string; hint: string; onLearnMore?: () => void }[]
+  /** Content rendered between hero and cards (e.g. FocusFirst module) */
+  beforeCards?: React.ReactNode
+  hideHero?: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {!hideHero && <div className="wfr-dash__hero">
+        <div className="shrink-0">
+          <MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />
+        </div>
+        <div className="wfr-dash__hero-copy">
+          <p className="wfr-dash__eyebrow">
+            {totalEmployees.toLocaleString()} employees {EM} Q1 2026
+          </p>
+          <h2 className="wfr-dash__headline">{headline}</h2>
+          {subtitle && <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>{subtitle}</p>}
+          <div className="wfr-dash__capture-tag-wrap">
+            <Pill variant="neutral" size="small" className="wfr-dash__capture-tag !h-auto !max-w-none !py-2 !px-3.5">
+              <span className="wfr-type-body2 text-[#1a212e]">{pill}</span>
+            </Pill>
+          </div>
+        </div>
+      </div>}
+
+      {beforeCards}
+
+      <div className="wfr-dash__cards-row">
+        {cards.map((c) => (
+          <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} description={c.description} hint={c.hint} onLearnMore={c.onLearnMore} />
+        ))}
+      </div>
+
+      {children}
+    </div>
+  )
+}
+
 function SortIcon({ sortDir, onSortClick }: { sortDir?: 'asc' | 'desc' | null; onSortClick?: () => void }) {
   if (sortDir) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
   if (onSortClick) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
@@ -532,33 +579,107 @@ export function DataCollectionStatusCell({ responded, inScope = true }: { respon
 
 /* ─── End Data Collection column templates ─── */
 
-/** Rolled-up upskilling status cell showing 4 KPI counts for a manager's team. */
-export function UpskillingKpiCell({ total, pct, plansComplete, nameHash }: { total: number; pct: number; plansComplete?: boolean; nameHash: number }) {
+/** Rolled-up upskilling status cell showing a stacked progress bar. */
+export function UpskillingProgressCell({ total, pct, plansComplete, nameHash }: { total: number; pct: number; plansComplete?: boolean; nameHash: number }) {
+  const [hovered, setHovered] = useState(false)
   const notAssigned = plansComplete ? 0 : Math.round(total * Math.max(0, (100 - pct) / 100))
   const pool = total - notAssigned
-  // Complete scales with pct: higher progress → more people done (with small hash variation per row)
   const completeFrac = plansComplete ? 1 : Math.min(0.95, (pct / 100) * 0.8 + (nameHash % 12) / 100)
   const completeCount = Math.round(pool * completeFrac)
-  // Of remaining pool: bulk are actively in progress (65–80%), rest just assigned not yet started
   const remainder = pool - completeCount
   const inProgressFrac = plansComplete ? 0 : 0.65 + (nameHash % 15) / 100
   const inProgressCount = Math.min(remainder, Math.round(remainder * inProgressFrac))
   const assignedCount = Math.max(0, pool - completeCount - inProgressCount)
-  const kpis = [
-    { label: 'Unassigned', count: notAssigned, color: '#94a3b8', bg: '#f1f5f9' },
-    { label: 'Assigned',   count: assignedCount,   color: '#6366f1', bg: '#eef2ff' },
-    { label: 'In progress', count: inProgressCount, color: '#7c3aed', bg: '#f5f3ff' },
-    { label: 'Complete',   count: completeCount,   color: '#15803d', bg: '#f0fdf4' },
+  // Stacked bar segments (left to right: complete → in-progress → assigned → unassigned)
+  const segments = [
+    { count: completeCount,   pct: total > 0 ? (completeCount / total) * 100 : 0,   color: '#22c55e' },
+    { count: inProgressCount, pct: total > 0 ? (inProgressCount / total) * 100 : 0, color: '#818cf8' },
+    { count: assignedCount,   pct: total > 0 ? (assignedCount / total) * 100 : 0,   color: '#6366f1' },
   ]
+  const assignedTotal = pool
+  const label = plansComplete
+    ? `${total.toLocaleString()} assigned`
+    : assignedTotal === 0
+      ? `${total.toLocaleString()} unassigned`
+      : `${assignedTotal.toLocaleString()} of ${total.toLocaleString()} assigned`
+
+  const tooltipRows: { label: string; color: string; count: number }[] = [
+    { label: 'Completed', color: '#22c55e', count: completeCount },
+    { label: 'In progress', color: '#818cf8', count: inProgressCount },
+    { label: 'Assigned', color: '#6366f1', count: assignedCount },
+    { label: 'Unassigned', color: '#cbd5e1', count: notAssigned },
+  ]
+
   return (
-    <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '1%', verticalAlign: 'middle', padding: '8px 14px' }}>
-      <div style={{ display: 'flex', gap: 4 }}>
-        {kpis.map(k => k.count > 0 && (
-          <div key={k.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 8px', borderRadius: 6, background: k.bg, minWidth: 44 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: k.color, lineHeight: 1.2 }}>{k.count}</span>
-            <span style={{ fontSize: 10, color: k.color, opacity: 0.8, lineHeight: 1.3, whiteSpace: 'nowrap' }}>{k.label}</span>
+    <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ verticalAlign: 'middle', padding: '10px 14px' }}>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: 5, position: 'relative', cursor: 'default' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: '#e2e8f0', display: 'flex', minWidth: 80 }}>
+          {segments.map((seg, i) => seg.count > 0 && (
+            <div key={i} style={{ width: `${seg.pct}%`, background: seg.color, height: '100%' }} />
+          ))}
+        </div>
+        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
+        {hovered && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 50, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', padding: '10px 14px', minWidth: 160, pointerEvents: 'none' }}>
+            {tooltipRows.map(row => (
+              <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: row.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: '#475569', fontWeight: 500 }}>{row.label}</span>
+                </div>
+                <span style={{ fontSize: 11, color: '#0f172a', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{row.count.toLocaleString()}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 4, paddingTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>Total</span>
+              <span style={{ fontSize: 11, color: '#0f172a', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{total.toLocaleString()}</span>
+            </div>
           </div>
-        ))}
+        )}
+      </div>
+    </DataTableCell>
+  )
+}
+
+/** Director/senior-manager summary cell: "Dev plan → Assign" when unassigned, progress bar when in-flight. */
+export function DevPlanAssignCell({ planPct, plansComplete }: { planPct: number; plansComplete?: boolean }) {
+  return (
+    <DataTableCell metric className="!whitespace-normal bg-[#fafbfc] border-l border-[#e2e8f0]">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <button
+          type="button"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
+        </button>
+        {planPct === 0 && !plansComplete ? (
+          <>
+            <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
+            <button
+              type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+              onClick={(e) => e.stopPropagation()}
+            >Assign</button>
+          </>
+        ) : (() => {
+          const finalPct = plansComplete ? 100 : planPct
+          const status = finalPct > 85 ? 'Completed' : finalPct > 20 ? 'In progress' : 'Not started'
+          const bColor = status === 'Completed' ? '#22c55e' : status === 'In progress' ? '#818cf8' : '#e2e8f0'
+          const tColor = status === 'Completed' ? '#15803d' : status === 'In progress' ? '#6366f1' : '#94a3b8'
+          return (
+            <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
+              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                <div className="wfr-dash__plan-progress-fill" style={{ width: `${finalPct}%`, background: bColor }} />
+              </div>
+              <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{finalPct}%</span>
+            </div>
+          )
+        })()}
       </div>
     </DataTableCell>
   )
@@ -913,8 +1034,8 @@ function BoardView({
       label: 'Unrealized value',
       val: formatDollar(orgUnrealizedValue),
       icon: 'auto_awesome',
-      l1: `${tasksInAug} of ${totalRoleTasks} tasks in the augmentation zone`,
-      hint: `BLS median wages \u00d7 automation probability \u00d7 60% realization`,
+      l1: `${tasksInAug} of ${totalRoleTasks} role task types in the augmentation zone`,
+      hint: `BLS median wages \u00d7 weekly hours unlocked \u00d7 52 weeks`,
       delta: null,
       deltaUp: true,
     },
@@ -923,70 +1044,52 @@ function BoardView({
       label: 'Transformation gap',
       val: gapPeople.toLocaleString(),
       icon: 'groups',
-      l1: `${gapPeople.toLocaleString()} people in augmentable roles are not yet AI-ready—that's your prioritized development pool.`,
+      l1: `${gapPeople.toLocaleString()} not yet AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles—that's your prioritized development pool.`,
       hint: `${gapSharePct}% of augmentable-role headcount still in the gap.`,
       delta: gapDelta !== 0 ? `${gapDelta > 0 ? '+' : ''}${gapDelta}` : null,
       deltaUp: gapDelta < 0, // gap going down is good
     },
   ]
 
-  // Priority tags — top ~30% of rows by combined opportunity score
+  // Priority tags — top ~30% of rows by unrealized value
   const hrbpPrioritySet = (() => {
     if (hrbpRows.length === 0) return new Set<string>()
-    const scores = hrbpRows.map(row => ({
-      key: row.hrbp,
-      score: (row.avgPotential - row.avgReadiness) * (row.totalGap / Math.max(1, row.headcount)),
-    }))
-    const sorted = [...scores].sort((a, b) => b.score - a.score)
+    const sorted = [...hrbpRows].sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
     const count = Math.max(1, Math.round(sorted.length * 0.3))
-    return new Set(sorted.slice(0, count).map(r => r.key))
+    return new Set(sorted.slice(0, count).map(r => r.hrbp))
   })()
 
   return (
-    <div className="wfr-dash">
-      <div className="wfr-dash__hero">
-        <div className="shrink-0">
-          <MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />
-        </div>
-        <div className="wfr-dash__hero-copy">
-          <p className="wfr-dash__eyebrow">
-            {totalEmployeesHero.toLocaleString()} employees {EM} Q1 2026
-          </p>
-          <h2 className="wfr-dash__headline">
-            {hrbpPlansCreated ? (
-              <>
-                <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
-                <span className="wfr-dash__headline-text">
-                  {` ${'AI adoption'} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="wfr-dash__headline-text">
-                  Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> of people in augmentable roles are AI-ready.
-                </span>
-              </>
-            )}
-          </h2>
-          {!hrbpPlansCreated && (
-            <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>
-              Your org has <span className="font-bold wfr-text-potential">{formatDollar(orgUnrealizedValue)}</span> in unrealized value. You're capturing less than a third of it.
-            </p>
-          )}
-          <div className="wfr-dash__capture-tag-wrap">
-            <Pill variant="neutral" size="small" className="wfr-dash__capture-tag !h-auto !max-w-none !py-2 !px-3.5">
-              <span className="wfr-type-body2 text-[#1a212e]">
-                {hrbpPlansCreated
-                  ? <><span className="font-bold text-[#15803d]">{(preCollectionGap - gapPeople).toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> remaining.</>
-                  : <>~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable roles are not yet AI-ready.</>
-                }
-              </span>
-            </Pill>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-6">
+    <WfrOverviewLayout
+      aiPotentialPct={aiPotentialPct}
+      aiReadinessPct={aiReadinessPct}
+      totalEmployees={totalEmployeesHero}
+      headline={hrbpPlansCreated ? (
+        <>
+          <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
+          <span className="wfr-dash__headline-text">
+            {` ${'AI adoption'} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+          </span>
+        </>
+      ) : (
+        <span className="wfr-dash__headline-text">
+          Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> of people in augmentable roles are AI-ready.
+        </span>
+      )}
+      subtitle={!hrbpPlansCreated ? <>Your org has <span className="font-bold wfr-text-potential">{formatDollar(orgUnrealizedValue)}</span> in unrealized value. You're capturing less than a third of it.</> : undefined}
+      pill={hrbpPlansCreated
+        ? <><span className="font-bold text-[#15803d]">{(preCollectionGap - gapPeople).toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> remaining.</>
+        : <>~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable roles are not yet AI-ready.</>
+      }
+      cards={cards.map(c => ({
+        ...c,
+        value: c.delta ? (
+          <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
+        ) : c.val,
+        description: c.l1,
+        onLearnMore: () => setMetricInfoOpen(true),
+      }))}
+      beforeCards={
         <FocusFirstModule
           collectionActive={focusCollectionActive}
           collectionComplete={focusCollectionComplete}
@@ -1016,25 +1119,8 @@ function BoardView({
           chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
           gapPeopleOverride={chroDelegatedGap}
         />
-
-        <div className="wfr-dash__cards-row">
-          {cards.map((c) => (
-            <MetricCard
-              key={c.id}
-              variant={c.id}
-              icon={c.icon}
-              label={c.label}
-              badge={c.badge}
-              value={c.delta ? (
-                <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
-              ) : c.val}
-              description={c.l1}
-              hint={c.hint}
-              onLearnMore={() => setMetricInfoOpen(true)}
-            />
-          ))}
-        </div>
-
+      }
+    >
         <WorkforceMetricSheet
           metric={openMetric}
           onClose={() => setOpenMetric(null)}
@@ -1043,8 +1129,6 @@ function BoardView({
           hrsUnlocked={hrsUnlocked}
           dataCollection={learnMoreDataCollection}
         />
-
-      </div>
 
       <Tabs value={boardTab} onValueChange={(v: string) => setBoardTab(v as 'hrbps' | 'roles' | 'departments')}>
 
@@ -1089,7 +1173,6 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {hrbpRows.map((row) => {
-                const hrbpInUpskilling = stateNum(row.hrbpState) >= 4
                 const isHighlighted = stateNum(row.hrbpState) >= 2 || !!row.hrbpDelegated
                 return (
                 <DataTableRow key={row.hrbp}>
@@ -1153,7 +1236,7 @@ function BoardView({
                   </DataTableCell>
                   {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && (
                     stateNum(row.hrbpState) === 1 && row.hrbpDelegated
-                      ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
+                      ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
                       : stateNum(row.hrbpState) >= 2
                         ? <DataCollectionProgressCell rate={row.responseRate} inScope />
                         : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
@@ -1163,24 +1246,9 @@ function BoardView({
                     if (!hrbpWasInScope) {
                       return <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
                     }
-                    const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-                    const plansPct = hrbpPlansCreated ? 100
-                      : hrbpInUpskilling ? Math.max(15, Math.min(85, 30 + (nh(row.hrbp) % 50)))
-                      : 0
-                    const barColor = plansPct === 100 ? '#22c55e' : '#818cf8'
-                    const pctColor = plansPct === 100 ? '#15803d' : plansPct > 0 ? '#6366f1' : '#94a3b8'
-                    return (
-                      <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]">
-                        {plansPct > 0 ? (
-                          <div className="wfr-dash__plan-progress">
-                            <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                              <div className="wfr-dash__plan-progress-fill" style={{ width: `${plansPct}%`, background: barColor }} />
-                            </div>
-                            <span className="wfr-dash__plan-progress-label" style={{ color: pctColor }}>{plansPct}%</span>
-                          </div>
-                        ) : <span className="text-[11px] text-[#94a3b8]">—</span>}
-                      </DataTableCell>
-                    )
+                    const nhLocal = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+                    const plansPct = hrbpPlansCreated ? 100 : 0
+                    return <UpskillingProgressCell total={row.totalGap} pct={plansPct} plansComplete={hrbpPlansCreated} nameHash={nhLocal(row.hrbp)} />
                   })()}
                 </DataTableRow>
               )})}
@@ -1403,25 +1471,23 @@ function BoardView({
                           const cW = total > 0 ? (completed / total) * barW : 0
                           const iW = total > 0 ? (inProgress / total) * barW : 0
                           const nW = total > 0 ? (notStarted / total) * barW : barW
+                          const assignedTotal = completed + inProgress
+                          const label = total === 0 ? '' : assignedTotal === 0 ? `${total.toLocaleString()} unassigned` : completed === total ? `${total.toLocaleString()} assigned` : `${assignedTotal.toLocaleString()} of ${total.toLocaleString()} assigned`
                           return (
-                            <div style={{ minWidth: 140 }}>
-                              <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: '#e5e7eb', marginBottom: 4 }}>
-                                <div style={{ width: `${cW}%`, background: '#22c55e', transition: 'width 0.3s' }} />
-                                <div style={{ width: `${iW}%`, background: '#f59e0b', transition: 'width 0.3s' }} />
-                                <div style={{ width: `${nW}%`, background: '#e5e7eb' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 100 }}>
+                              <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: '#e2e8f0' }}>
+                                <div style={{ width: `${cW}%`, background: '#22c55e' }} />
+                                <div style={{ width: `${iW}%`, background: '#818cf8' }} />
+                                <div style={{ width: `${nW}%`, background: '#6366f1' }} />
                               </div>
-                              <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#64748b' }}>
-                                <span><span style={{ color: '#15803d', fontWeight: 600 }}>{completed}</span> done</span>
-                                <span><span style={{ color: '#d97706', fontWeight: 600 }}>{inProgress}</span> active</span>
-                                <span><span style={{ color: '#94a3b8', fontWeight: 600 }}>{notStarted}</span> pending</span>
-                              </div>
+                              <span style={{ fontSize: 11, color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
                             </div>
                           )
                         })() : (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, background: '#fffbeb', border: '1px solid #fcd34d', fontSize: 12, fontWeight: 600, color: '#92400e', whiteSpace: 'nowrap' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit_note</span>
-                            Creating plans
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 100 }}>
+                            <div style={{ height: 6, borderRadius: 3, background: '#e2e8f0' }} />
+                            <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>{r.gap.toLocaleString()} unassigned</span>
+                          </div>
                         )}
                       </DataTableCell>
                     )}
@@ -1809,7 +1875,7 @@ function BoardView({
       />
 
       <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} collectionComplete={focusCollectionComplete} />
-    </div>
+    </WfrOverviewLayout>
   )
 }
 
@@ -1818,6 +1884,7 @@ export function WorkforceReadinessDashboard({
   autoLaunchCollection = false,
   scopedDepartments,
   isHrbp = false,
+  isManager = false,
   personaHrbpNames,
 }: {
   onViewChange?: (view: 'board' | 'hrbp' | 'director' | 'seniorMgr') => void
@@ -1826,6 +1893,8 @@ export function WorkforceReadinessDashboard({
   scopedDepartments?: string[]
   /** HRBP persona — different RA card, no departments tab, scoped roles */
   isHrbp?: boolean
+  /** Manager persona — shows team-level view with employee table */
+  isManager?: boolean
   /** HRBP names this persona maps to in hrbpAssignments (for per-HRBP state) */
   personaHrbpNames?: string[]
 } = {}) {
@@ -1864,6 +1933,9 @@ export function WorkforceReadinessDashboard({
     setMgrSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; dept: Dept } | null>(null)
+  const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
+  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; employeeName?: string } | null>(null)
+  const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
   const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(() => {
     const p = new URLSearchParams(window.location.search)
     const srName = p.get('seniorMgr')
@@ -2055,9 +2127,6 @@ export function WorkforceReadinessDashboard({
   const [upskillingLaunchOpen, setUpskillingLaunchOpen] = useState(false)
   const [hrbpUpskillingDialogOpen, setHrbpUpskillingDialogOpen] = useState(false)
   const [hrbpUpskillingSelectedDirs, setHrbpUpskillingSelectedDirs] = useState<Set<string>>(new Set())
-  // HRBP collection progress bar animation state
-  const [hrbpBarPhase, setHrbpBarPhase] = useState<'idle' | 'filling' | 'done'>('idle')
-  const [hrbpBarPct, setHrbpBarPct] = useState(0)
   const [snackbar, setSnackbar] = useState<string | null>(null)
 
   // State transition functions — per-HRBP aware
@@ -2096,45 +2165,26 @@ export function WorkforceReadinessDashboard({
   }, [setWfrState])
 
   const completeCollection = useCallback(() => {
-    setWfrState(prev => advanceAllHrbps(prev, 2 as WfrProgramState, '2b'))
+    setWfrState(prev => advanceAllHrbps(prev, '2' as WfrProgramState, '2b'))
   }, [setWfrState])
 
-  const handleHrbpBarClick = useCallback((startPct: number) => {
-    if (hrbpBarPhase !== 'idle') return
-    setHrbpBarPhase('filling')
-    setHrbpBarPct(startPct)
-    const startTime = performance.now()
-    const duration = 3000
-    const cubicBezier = (x1: number, y1: number, x2: number, y2: number) => (x: number) => {
-      let t = x
-      for (let i = 0; i < 8; i++) {
-        const ct = 1 - t
-        const bx = 3 * ct * ct * t * x1 + 3 * ct * t * t * x2 + t * t * t - x
-        const dx = 3 * ct * ct * x1 + 6 * ct * t * (x2 - x1) + 3 * t * t * (1 - x2)
-        if (Math.abs(dx) < 1e-6) break
-        t -= bx / dx
-        t = Math.max(0, Math.min(1, t))
+  /** Advance the HRBP persona's own HRBPs directly to state 3 (collection complete).
+   *  Used by the HRBP view's progress bar — the fill+bell animations have already played
+   *  inside FocusFirstCollectionCard, so we skip the '2b' intermediate state. */
+  const completeHrbpCollection = useCallback(() => {
+    setWfrState(prev => {
+      if (!prev.hrbpStates || !personaHrbpNames?.length) return prev
+      const nextHrbpStates = { ...prev.hrbpStates }
+      for (const name of personaHrbpNames) {
+        const hs = nextHrbpStates[name]
+        if (hs) nextHrbpStates[name] = { ...hs, state: 3 }
       }
-      const ct = 1 - t
-      return 3 * ct * ct * t * y1 + 3 * ct * t * t * y2 + t * t * t
-    }
-    const ease = cubicBezier(0.25, 0.1, 0.25, 1)
-    const tick = (now: number) => {
-      const linear = Math.min((now - startTime) / duration, 1)
-      setHrbpBarPct(Math.round(startPct + (100 - startPct) * (linear >= 1 ? 1 : ease(linear))))
-      if (linear < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-    setTimeout(() => {
-      setHrbpBarPct(100)
-      setHrbpBarPhase('done')
-      setTimeout(() => {
-        setHrbpBarPhase('idle')
-        setHrbpBarPct(0)
-        completeCollection()
-      }, 1500)
-    }, duration)
-  }, [hrbpBarPhase, completeCollection])
+      const next: WfrPersistedState = { ...prev, hrbpStates: nextHrbpStates }
+      next.state = computeOrgAggregateState(next)
+      return next
+    })
+  }, [setWfrState, personaHrbpNames])
+
 
   const viewCollectionResults = useCallback(() => {
     setWfrState(prev => advanceAllHrbps(prev, '2b', 3))
@@ -2188,6 +2238,447 @@ export function WorkforceReadinessDashboard({
   useEffect(() => {
     onViewChange?.(view)
   }, [view, onViewChange])
+
+  const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [mgrTaskSheetZoneFilter, setMgrTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
+  const [mgrAssignedPlans, setMgrAssignedPlans] = useState<Set<string>>(new Set())
+  const [mgrToast, setMgrToast] = useState<string | null>(null)
+  const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
+  const [mgrEditingCourses, setMgrEditingCourses] = useState(false)
+  const [mgrRemovedCourses, setMgrRemovedCourses] = useState<Set<number>>(new Set())
+  const [mgrEditingSkills, setMgrEditingSkills] = useState(false)
+  const [mgrRemovedSkills, setMgrRemovedSkills] = useState<Set<string>>(new Set())
+
+  // ─── Manager persona: compute team data for Dana Tanaka ───
+  const managerTeamData = useMemo(() => {
+    if (!isManager) return null
+    const dept = departments.find(d => d.name === 'Engineering')
+    if (!dept) return null
+    const managers = deptManagerTeams(dept.name, dept.employees)
+    const mgrIdx = 36
+    const mgr = managers[mgrIdx]
+    if (!mgr) return null
+    const deptRoles = getRolesForDept(dept.name)
+    const rawEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as unknown as Parameters<typeof getEmployeesForRole>[0])
+    const allDeptEmps = rawEmps.map((e, i) => ({ ...e, title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined }))
+    const cumStart = managers.slice(0, mgrIdx).reduce((s, m) => s + m.employees, 0)
+    const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
+    const displayEmployees = mgrEmployees.map(e => {
+      const displayReadiness = Math.max(0, Math.min(100, e.readinessPct))
+      return { ...e, displayReadiness }
+    })
+    const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
+    const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
+    const notReady = displayEmployees.length - readyCount
+    const unrealizedValue = Math.round(dept.unrealizedValue * mgr.employees / Math.max(1, dept.employees))
+    const tasksInAug = Math.round(getTasksForRole(deptRoles[0]?.title ?? '').filter(t => { const s = t.score ?? 0; return s >= 15 && s <= 75 }).length)
+    const totalTasks = getTasksForRole(deptRoles[0]?.title ?? '').length
+    return { mgr, employees: displayEmployees, dept, avgReadiness, readyCount, notReady, unrealizedValue, tasksInAug, totalTasks }
+  }, [isManager])
+
+  if (isManager && managerTeamData) {
+    const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: mgrTasksInAug, totalTasks: mgrTotalTasks } = managerTeamData
+    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated } = deriveWfrFlags(wfrState.state)
+    const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
+    const mgrUpskillingBoost = mgrPlansCreated ? 10 : 0
+    const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
+    const showUpskilling = mgrCollComplete && mgrUpskillingActive && engInScope
+    const calibratedAvgReadiness = mgrCollComplete
+      ? Math.min(100, Math.round(mgrEmployees.reduce((s, e) => s + Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)), 0) / Math.max(1, mgrEmployees.length)))
+      : mgrReadiness
+    const calibratedNotReady = mgrEmployees.filter(e => Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)) < 50).length
+    const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
+    const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
+    const readinessBadge = mgrCollComplete
+      ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#166534', padding: '1px 7px', borderRadius: 10, background: '#dcfce7', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+      : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+    return (
+      <>
+      <WfrOverviewLayout
+        aiPotentialPct={mgrDept.aiPotential}
+        aiReadinessPct={displayReadinessPct}
+        totalEmployees={mgrData.employees}
+        hideHero
+        headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>}
+        subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
+        pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
+        cards={[
+          { id: 'readiness', icon: 'school', label: 'AI adoption', badge: readinessBadge, value: `${displayReadinessPct}%`, description: mgrCollComplete ? `Calibrated from data collection.` : `Estimated: ${managerTeamData.readyCount} of ${mgrData.employees} may be AI-ready based on skill profiles`, hint: mgrCollComplete ? 'Updated from data collection.' : 'Estimated from skill profiles.' },
+          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: `${mgrTasksInAug} of ${mgrTotalTasks} role task types in the augmentation zone`, hint: `Role-level potential for ${mgrDept.name}` },
+          { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${displayNotReady} not ready`, description: `out of ${mgrData.employees} employees`, hint: `${displayReadinessPct}% adoption is below the 50% threshold.` },
+        ]}
+      >
+        <div>
+          {showUpskilling && (
+            <div className="wfr-ra-card wfr-ra-card--warn" style={{ marginBottom: 16 }}>
+              <div className="wfr-ra-card__header">
+                <span className="wfr-ra-card__eyebrow" style={{ color: '#b45309' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>rocket_launch</span> Upskilling started
+                </span>
+              </div>
+              <div className="wfr-ra-card__cta-row">
+                <div>
+                  <p className="wfr-ra-card__cta-text">
+                    <strong>{displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
+                  </p>
+                  <p className="wfr-ra-card__hint">Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.</p>
+                </div>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 13, fontWeight: 600, color: '#b45309', whiteSpace: 'nowrap' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>rocket_launch</span>
+                  Upskilling started
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="wfr-dash__panel-head">
+            <span className="wfr-dash__panel-title">Team members</span>
+            <span className="wfr-dash__panel-hint">{mgrEmployees.length} employees · sorted by readiness</span>
+          </div>
+          <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
+            <DataTableHeader>
+              <DataTableRow>
+                <DataTableHead style={{ width: showUpskilling ? '30%' : '34%' }}>Employee</DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '13%' : '16%' }}>Tasks</DataTableHead>
+                <DataTableHead metric style={{ width: showUpskilling ? '24%' : '28%' }}>AI adoption</DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '22%' }}>Transformation gap</DataTableHead>
+                {showUpskilling && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '15%', whiteSpace: 'nowrap' }}>Upskilling</DataTableHead>}
+              </DataTableRow>
+            </DataTableHeader>
+            <DataTableBody>
+              {[...mgrEmployees].sort((a, b) => {
+                const ma = Math.max(0, Math.min(100, a.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
+                const mb = Math.max(0, Math.min(100, b.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
+                return mb - ma
+              }).map((emp, idx) => {
+                const empTaskCount = emp.title ? getTasksForRole(emp.title).length : 0
+                const measuredReadiness = Math.max(0, Math.min(100, emp.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
+                const displayEmpReadiness = mgrCollComplete ? measuredReadiness : emp.displayReadiness
+                return (
+                <DataTableRow key={`${emp.name}-${idx}`}>
+                  <DataTableCell className="font-semibold">
+                    <div>
+                      <div className="text-[#1e293b]">{emp.name}</div>
+                      {emp.title && <div className="text-[#94a3b8] text-[11px] font-normal">{emp.title}</div>}
+                    </div>
+                  </DataTableCell>
+                  <DataTableCell align="right">
+                    {empTaskCount > 0 && emp.title ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name }) }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}
+                      >
+                        {empTaskCount}
+                      </button>
+                    ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  </DataTableCell>
+                  <DataTableCell metric>
+                    <div>
+                      {mgrCollComplete && mgrTrendDelta !== 0 ? (
+                        <div className="wfr-dash__readiness-with-trend">
+                          <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />
+                          <button type="button" className={`wfr-dash__trend-badge ${mgrTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: emp.title ?? mgrDept.name, dept: mgrDept.name, measuredReadiness: displayEmpReadiness, employeeName: emp.name }); setTrendSheetHrbp(null); setTrendSheetDept(mgrDept) }} title="View readiness trend details">
+                            <span className="wfr-dash__trend-badge-text">{mgrTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(mgrTrendDelta)}pt</span>
+                            <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
+                          </button>
+                        </div>
+                      ) : <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />}
+                    </div>
+                  </DataTableCell>
+                  <DataTableCell align="right">
+                    <span style={{ color: displayEmpReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{displayEmpReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                  </DataTableCell>
+                  {showUpskilling && (() => {
+                    const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+                    const planPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(h) % 55) + 20) : 0
+                    const displayPct = planPct > 0 ? planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
+                    return (
+                      <DataTableCell metric className="!whitespace-normal bg-[#fafbfc] border-l border-[#e2e8f0]">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <button
+                            type="button"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                            onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness }); setMgrEditingCourses(false); setMgrRemovedCourses(new Set()) }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
+                          </button>
+                          {displayPct === 0 && !mgrAssignedPlans.has(emp.name) ? (
+                            <>
+                              <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
+                              <button
+                                type="button"
+                                style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                onClick={(e) => { e.stopPropagation(); setMgrAssignedPlans(prev => new Set([...prev, emp.name])); setMgrToast(`Development plan assigned to ${emp.name}`); setTimeout(() => setMgrToast(null), 3000) }}
+                              >Assign</button>
+                            </>
+                          ) : (() => {
+                            const dStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Not started'
+                            const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                            const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+                            return (
+                              <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
+                                <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                  <div className="wfr-dash__plan-progress-fill" style={{ width: `${displayPct}%`, background: bColor }} />
+                                </div>
+                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayPct}%</span>
+                              </div>
+                            )
+                          })()}
+                        </div>
+                      </DataTableCell>
+                    )
+                  })()}
+                </DataTableRow>
+                )
+              })}
+            </DataTableBody>
+          </DataTable>
+        </div>
+      </WfrOverviewLayout>
+      {mgrTaskSheetRole && createPortal(
+        <div className="wfr-trend-sheet__root">
+          <div className="wfr-trend-sheet__backdrop" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} />
+          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.title}`}>
+            <div className="wfr-trend-sheet__header">
+              <div>
+                <div className="wfr-trend-sheet__title-row">
+                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetRole.title}</h2>
+                </div>
+                <p className="wfr-trend-sheet__sub">{mgrTaskSheetRole.dept} — Task breakdown</p>
+              </div>
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} aria-label="Close">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="wfr-trend-sheet__body">
+              {(() => {
+                const tasks = getTasksForRole(mgrTaskSheetRole.title)
+                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
+                const aboveCount = tasks.filter(t => t.score > 75).length
+                const belowCount = tasks.filter(t => t.score < 15).length
+                const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; label: string; desc: string; color: string; bg: string; border: string; activeBorder: string }[] = [
+                  { zone: 'above', count: aboveCount, label: 'Automate', desc: 'AI runs autonomously', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
+                  { zone: 'augment', count: augCount, label: 'Augment', desc: 'Human leads, AI assists', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
+                  { zone: 'below', count: belowCount, label: 'Human', desc: 'Requires judgment or trust', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
+                ]
+                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
+                const automateSkills = ['Process automation', 'AI pipeline', 'Zero-touch processing']
+                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'train': ['Facilitation', 'Knowledge transfer'], 'strateg': ['Vision', 'Business judgment'] }
+                function getSkillsForTask(task: string, zone: string): string[] {
+                  const lower = task.toLowerCase()
+                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
+                  if (zone === 'above') return automateSkills.slice(0, 2)
+                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
+                  return ['Critical thinking', 'Human judgment']
+                }
+                const groups = [
+                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
+                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
+                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
+                ]
+                const visibleGroups = mgrTaskSheetZoneFilter ? groups.filter(g => g.zone === mgrTaskSheetZoneFilter && g.tasks.length > 0) : groups.filter(g => g.tasks.length > 0)
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      {zoneCards.map((zc) => {
+                        const isActive = mgrTaskSheetZoneFilter === zc.zone
+                        const isDimmed = mgrTaskSheetZoneFilter != null && !isActive
+                        return (
+                          <div key={zc.zone} onClick={() => setMgrTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>{zc.desc}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {visibleGroups.map((group) => (
+                      <div key={group.label} style={{ marginBottom: 16 }}>
+                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
+                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{group.desc}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {group.tasks.sort((a, b) => b.score - a.score).map((t, i) => {
+                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
+                            const skills = getSkillsForTask(t.task, zone)
+                            return (
+                              <div key={i} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                <div style={{ marginBottom: 4 }}>
+                                  <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                  {skills.map((skill) => (
+                                    <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+      {mgrDevPlanEmployee && createPortal(
+        <div className="mgr-detail-page__plan-overlay" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>
+          <div className="mgr-detail-page__plan-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="mgr-detail-page__plan-header">
+              <div>
+                <h3 className="mgr-detail-page__plan-name">{mgrDevPlanEmployee.name}</h3>
+                <p className="mgr-detail-page__plan-meta">{mgrDevPlanEmployee.title} · Engineering — Development plan</p>
+              </div>
+              <button type="button" className="mgr-detail-page__plan-close" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+              </button>
+            </div>
+            <div className="mgr-detail-page__plan-body">
+              {(() => {
+                const isAssigned = mgrAssignedPlans.has(mgrDevPlanEmployee.name)
+                const planHash = mgrDevPlanEmployee.name.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
+                const overallPct = isAssigned ? (Math.abs(planHash) % 100 > 85 ? 100 : Math.abs(planHash) % 100 > 20 ? (20 + Math.abs(planHash) % 60) : 0) : 0
+                const overallStatus = !isAssigned ? 'Not assigned' : overallPct === 100 ? 'Completed' : overallPct > 0 ? 'In progress' : 'Not started'
+                const statusColor = overallStatus === 'Completed' ? '#15803d' : overallStatus === 'In progress' ? '#6366f1' : overallStatus === 'Not assigned' ? '#d97706' : '#94a3b8'
+                const statusIcon = overallStatus === 'Completed' ? 'check_circle' : overallStatus === 'In progress' ? 'sync' : 'schedule'
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: 24, marginBottom: isAssigned ? 12 : 20 }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Status</div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: statusColor }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{statusIcon}</span>
+                          {overallStatus}
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>AI adoption</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: mgrDevPlanEmployee.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>{mgrDevPlanEmployee.displayReadiness}%</span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Gap status</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: mgrDevPlanEmployee.displayReadiness < 50 ? '#dc2626' : '#15803d' }}>
+                          {mgrDevPlanEmployee.displayReadiness < 50 ? 'Not AI-ready' : 'AI-ready'}
+                        </span>
+                      </div>
+                    </div>
+                    {isAssigned && (
+                      <div style={{ marginBottom: 20, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a212e' }}>Plan progress</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor }}>{overallPct}%</span>
+                        </div>
+                        <div style={{ background: 'rgba(99, 102, 241, 0.08)', height: 6, borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ width: `${overallPct}%`, background: overallPct === 100 ? '#22c55e' : '#818cf8', height: 6, borderRadius: 3, transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+              {/* Courses */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Courses</h4>
+                <button type="button" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: mgrEditingCourses ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }} onClick={() => setMgrEditingCourses(!mgrEditingCourses)}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{mgrEditingCourses ? 'check' : 'edit'}</span>
+                    {mgrEditingCourses ? 'Done' : 'Edit'}
+                  </span>
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { course: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '4 weeks at 3 hours a week', level: 'Beginner', free: true },
+                  { course: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hours to complete', level: 'Intermediate', free: true },
+                  { course: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '18 hours to complete', level: 'Beginner', free: true },
+                  { course: `AI-Powered ${(mgrDevPlanEmployee.title?.split(' ')[0] ?? 'Business')} Workflows`, provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Intermediate', free: false },
+                ].map((c, i) => {
+                  if (mgrRemovedCourses.has(i)) return null
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="mgr-detail-page__plan-course-name">{c.course}</div>
+                        <div className="mgr-detail-page__plan-course-meta">{c.provider} · {c.duration} · {c.level}{c.free ? ' · Free to audit' : ''}</div>
+                      </div>
+                      {mgrEditingCourses && (
+                        <button type="button" className="material-symbols-outlined" style={{ fontSize: 18, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }} onClick={() => setMgrRemovedCourses(prev => new Set([...prev, i]))}>remove_circle</button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {/* Skills */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
+                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Skills to develop</h4>
+                <button type="button" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: mgrEditingSkills ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }} onClick={() => setMgrEditingSkills(!mgrEditingSkills)}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{mgrEditingSkills ? 'check' : 'edit'}</span>
+                    {mgrEditingSkills ? 'Done' : 'Edit'}
+                  </span>
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['Prompt engineering', 'AI tool fluency', 'Data interpretation with AI', 'Critical evaluation of AI output', ...(mgrDevPlanEmployee.title ? [`AI for ${mgrDevPlanEmployee.title.split(' ')[0].toLowerCase()} tasks`] : [])].filter(s => !mgrRemovedSkills.has(s)).map((s) => (
+                  <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#eef2ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 500, color: '#4338ca' }}>
+                    {s}
+                    {mgrEditingSkills && (
+                      <button type="button" className="material-symbols-outlined" style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, lineHeight: 1 }} onClick={() => setMgrRemovedSkills(prev => new Set([...prev, s]))}>close</button>
+                    )}
+                  </span>
+                ))}
+              </div>
+              <div style={{ marginTop: 20, padding: '12px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a' }}>
+                <div style={{ fontSize: 12, color: '#92400e' }}>
+                  <strong>Estimated completion:</strong> 6–8 weeks after assignment · ~46 hours of coursework
+                </div>
+              </div>
+            </div>
+            <div className="mgr-detail-page__plan-footer">
+              <span style={{ fontSize: 13, color: '#64748b' }}>4 courses · 5 skills</span>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button variant="secondary" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>Close</Button>
+                {mgrAssignedPlans.has(mgrDevPlanEmployee.name) ? (
+                  <Button variant="secondary" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>Done</Button>
+                ) : (
+                  <Button variant="primary" onClick={() => { const n = mgrDevPlanEmployee!.name; setMgrAssignedPlans(prev => new Set([...prev, n])); setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false); setMgrToast(`Development plan assigned to ${n}`); setTimeout(() => setMgrToast(null), 3000) }}>Assign plan →</Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+      <ReadinessTrendSheet
+        open={trendSheetDept != null}
+        onClose={() => { setTrendSheetDept(null); setTrendSheetRole(null); setTrendSheetHrbp(null) }}
+        dept={trendSheetDept}
+        channelsLabel={wfrState.collectionLaunchSummary?.channelsLabel}
+        roleContext={trendSheetRole}
+        hrbpContext={trendSheetHrbp}
+        upskillingActive={deriveWfrFlags(wfrState.state).hrbpPlansCreated}
+        collectionComplete={deriveWfrFlags(wfrState.state).collectionComplete}
+      />
+      {mgrToast && createPortal(
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', borderRadius: 10, background: '#0f172a', color: '#fff', fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 8, zIndex: 10000, animation: 'fadeInUp 0.3s ease-out', whiteSpace: 'nowrap' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#4ade80' }}>check_circle</span>
+          {mgrToast}
+        </div>,
+        document.body,
+      )}
+    </>
+    )
+  }
 
   return (
     <>
@@ -2332,135 +2823,336 @@ export function WorkforceReadinessDashboard({
           const hrbpResponseRate = hrbpCollecting && !hrbpJustLaunched ? wfrDemoDeptResponseRate(d.name) : 0
           const hrbpSelectedDirNames = wfrState.hrbpStates?.[hrbpName]?.selectedDirectors
           const hrbpDirInScope = (dirName: string) => !hrbpSelectedDirNames || hrbpSelectedDirNames.includes(dirName)
+          const hrbpUpskillingDirNames = wfrState.upskillingLaunchSummary?.selectedDirectorNames
+          const hrbpDirInUpskilling = (dirName: string) => !!hrbpUpskillingDirNames && hrbpUpskillingDirNames.includes(dirName)
           // Build the CTA card for the heroCard slot
-          const hrbpHeroCard = hrbpDelegatedPending ? (
-            <div className="wfr-dash__focus-module">
-              <div className={`wfr-ra-card ${isHrbp ? 'wfr-ra-card--warn' : 'wfr-ra-card--warn'}`}>
-                <div className="wfr-ra-card__header">
-                  <span className="wfr-ra-card__eyebrow" style={{ color: isHrbp ? '#dc2626' : '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>{isHrbp ? 'flag' : 'assignment_ind'}</span> {isHrbp ? 'Ready to launch' : 'Awaiting launch'}</span>
-                </div>
-                <div className="wfr-ra-card__cta-row">
-                  {isHrbp ? (
-                    <>
-                      <div>
-                        <p className="wfr-ra-card__cta-text">
-                          Launch data collection for your team to measure how your {headcount.toLocaleString()} employees are actually using AI today. Results will replace estimated scores with measured adoption data.
-                        </p>
-                        <p className="wfr-ra-card__hint">AI-powered interviews take ~3 minutes per employee. You'll see responses roll in as people complete them.</p>
-                      </div>
-                      <Button type="button" variant="primary" className="wfr-ra-card__cta-btn shrink-0" onClick={() => setFocusLaunchOpen(true)}>
-                        Get started&nbsp;→
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="wfr-ra-card__cta-text">
-                      Data collection has been delegated to <strong>{hrbpName}</strong>. Waiting for them to launch for their client managers in {d.name}.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : hrbpCollecting ? (
-            <div className="wfr-dash__focus-module">
-              <div className="wfr-ra-card wfr-ra-card--warn">
-                <div className="wfr-ra-card__header">
-                  <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>sync</span> Collection in progress</span>
-                </div>
-                <div className="wfr-ra-card__cta-row">
-                  <div style={{ flex: 1 }}>
-                    <p className="wfr-ra-card__cta-text">
-                      {isHrbp
-                        ? <>AI-powered interviews are underway with your teams. Responses are rolling in — check back as participation grows.</>
-                        : (() => { const scopedDirs = directors.filter(dir => hrbpDirInScope(dir.name)); const scopedHeadcount = scopedDirs.reduce((s, d) => s + d.employees, 0); return <><strong>{Math.round(scopedHeadcount * hrbpResponseRate / 100).toLocaleString()} of {scopedHeadcount.toLocaleString()}</strong> employees across <strong>{hrbpName}</strong>'s {scopedDirs.length} selected client manager team{scopedDirs.length !== 1 ? 's' : ''} have responded.</>; })()
-                      }
-                    </p>
-                    <div
-                      className="wfr-dash__plan-progress"
-                      style={{ marginTop: 8, maxWidth: 320, cursor: hrbpBarPhase === 'idle' ? 'pointer' : 'default' }}
-                      title={hrbpBarPhase === 'idle' ? 'Click to simulate collection complete' : undefined}
-                      onClick={() => hrbpBarPhase === 'idle' && handleHrbpBarClick(hrbpResponseRate)}
-                    >
-                      <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(217, 119, 6, 0.15)', height: 8 }}>
-                        <div
-                          className="wfr-dash__plan-progress-fill"
-                          style={{
-                            width: `${hrbpBarPhase !== 'idle' ? hrbpBarPct : hrbpResponseRate}%`,
-                            background: hrbpBarPhase === 'done' ? '#15803d' : '#d97706',
-                            transition: hrbpBarPhase === 'filling' ? 'none' : undefined,
-                          }}
-                        />
-                      </div>
-                      <span className="wfr-dash__plan-progress-label">
-                        {hrbpBarPhase !== 'idle' ? `${hrbpBarPct}% responded` : `${hrbpResponseRate}% responded`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : hrbpCollectionComplete && !hrbpUpskillingActive ? (
-            <div className="wfr-dash__focus-module">
-              <div className="wfr-ra-card wfr-ra-card--success">
-                <div className="wfr-ra-card__header">
-                  <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete</span>
-                </div>
-                <div className="wfr-ra-card__cta-row">
-                  <div>
-                    <p className="wfr-ra-card__cta-text">
-                      {(() => {
-                        const scopedDirs = directors.filter(dir => hrbpDirInScope(dir.name))
-                        const scopedHeadcount = scopedDirs.reduce((s, dir) => s + dir.employees, 0)
-                        const totalHeadcount = directors.reduce((s, dir) => s + dir.employees, 0)
-                        const scopedGap = totalHeadcount > 0 ? Math.round(totalGap * scopedHeadcount / totalHeadcount) : 0
-                        return <>Based on AI Coaching, you can close adoption gaps for <strong>{scopedGap.toLocaleString()}</strong> employees across the <strong>{scopedDirs.length} client manager team{scopedDirs.length !== 1 ? 's' : ''}</strong> that completed data collection.</>
-                      })()}
-                    </p>
-                    <p className="wfr-ra-card__hint">Assign development plans to your client managers so they can enroll their teams in targeted upskilling courses.</p>
-                  </div>
-                  <Button type="button" variant="primary" className="shrink-0" onClick={() => {
-                    // Pre-select all directors who participated in data collection
-                    const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name)
-                    setHrbpUpskillingSelectedDirs(new Set(inScope))
-                    setHrbpUpskillingDialogOpen(true)
-                  }}>
-                    Start upskilling&nbsp;→
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : hrbpUpskillingActive && !hrbpPlansComplete ? (() => {
-            const scopedDirs = directors.filter(dir => hrbpDirInScope(dir.name))
-            const scopedGap = scopedDirs.reduce((s, dir) => s + Math.max(0, dir.employees - dir.readyCount), 0)
+          const hrbpShowFocusModule = hrbpDelegatedPending || hrbpCollecting || (hrbpCollectionComplete && !hrbpUpskillingActive) || (hrbpUpskillingActive && !hrbpPlansComplete)
+          const hrbpFocusFirstModule = !hrbpShowFocusModule ? undefined : (
+            <FocusFirstModule
+              collectionActive={hrbpCollecting}
+              collectionComplete={hrbpCollectionComplete}
+              collectionJustCompleted={String(hrbpEffState) === '2b'}
+              onCollectionActiveChange={() => {}}
+              onCollectionComplete={completeHrbpCollection}
+              onViewResults={() => {}}
+              launchOpen={focusLaunchOpen}
+              onLaunchOpenChange={setFocusLaunchOpen}
+              onRequestCloseMetricSheet={() => setDashOpenMetric(null)}
+              collectionLaunchSummary={hrbpCollecting || hrbpCollectionComplete ? {
+                assignOwner: 'self' as const,
+                scopeLabel: isHrbp ? (() => {
+                  const inScope = directors.filter(dir => hrbpDirInScope(dir.name))
+                  if (inScope.length === 0) return 'your teams'
+                  if (inScope.length === 1) return `${inScope[0].name}'s team`
+                  return `${inScope[0].name}'s team + ${inScope.length - 1} more`
+                })() : hrbpName ?? '',
+                channelsLabel: wfrState.hrbpStates?.[hrbpName ?? '']?.channelsLabel ?? 'AI Agent Interviews',
+                delegated: !isHrbp,
+                scopedDepartmentNames: [],
+              } : null}
+              onScrollToTable={() => {}}
+              onStartUpskilling={() => {
+                const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name)
+                setHrbpUpskillingSelectedDirs(new Set(inScope))
+                setHrbpUpskillingDialogOpen(true)
+              }}
+              upskillingActive={hrbpUpskillingActive}
+              upskillingLaunchSummary={wfrState.upskillingLaunchSummary ?? null}
+              isHrbp={isHrbp}
+              hrbpPlansCreated={hrbpPlansComplete}
+              hrbpDelegationPending={isHrbp && hrbpDelegatedPending}
+              delegationDeptName={d.name}
+              chroDelegationActive={!isHrbp && hrbpDelegatedPending}
+              chroDelegationScopeLabel={hrbpName ?? undefined}
+              gapPeopleOverride={totalGap}
+              suppressInternalDialog={isHrbp && hrbpDelegatedPending}
+            />
+          )
+          const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
+          const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
+            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${measuredReadiness}%`, description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`, hint: hrbpPlansComplete ? 'After upskilling plans completed.' : hrbpCollectionComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.', onLearnMore: () => setDashOpenMetric('readiness') },
+            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: 'BLS median wages \u00d7 weekly hours unlocked', hint: `Unrealized value for ${hrbpName}'s team`, onLearnMore: () => setDashOpenMetric('potential') },
+            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') },
+          ]
+          // HRBP persona: use WfrOverviewLayout directly with table as children
+          if (isHrbp) {
             return (
-              <div className="wfr-dash__focus-module">
-                <div className="wfr-ra-card wfr-ra-card--warn">
-                  <div className="wfr-ra-card__header">
-                    <span className="wfr-ra-card__eyebrow" style={{ color: '#b45309' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>rocket_launch</span> Upskilling started
+              <>
+              <WfrOverviewLayout
+                aiPotentialPct={d.aiPotential}
+                aiReadinessPct={measuredReadiness}
+                totalEmployees={headcount}
+                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{measuredReadiness}%</span> of your team is AI-ready.</span>}
+                subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
+                pill={<>~<span className="font-bold text-[#b91c1c]">{totalGap.toLocaleString()}</span> of your {headcount.toLocaleString()} employees are not yet AI-ready.</>}
+                cards={hrbpOverviewCards}
+                beforeCards={hrbpFocusFirstModule}
+              >
+                <div>
+                  <div className="wfr-dash__panel-head">
+                    <span className="wfr-dash__panel-title">Client managers</span>
+                    <span className="wfr-dash__panel-hint">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                        <span>{directors.length} client manager{directors.length !== 1 ? 's' : ''} · click to view team</span>
+                        {showHrbpCollection && directors.some(dir => hrbpDirInScope(dir.name)) && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
+                            <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                            <span>In data collection</span>
+                          </span>
+                        )}
+                        {hrbpUpskillingActive && directors.some(dir => hrbpDirInUpskilling(dir.name)) && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
+                            <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                            <span>In upskilling</span>
+                          </span>
+                        )}
+                      </span>
                     </span>
                   </div>
-                  <div className="wfr-ra-card__cta-row">
-                    <div>
-                      <p className="wfr-ra-card__cta-text">
-                        Development plans are being created for <strong>{scopedGap.toLocaleString()}</strong> employees across <strong>{scopedDirs.length} client manager team{scopedDirs.length !== 1 ? 's' : ''}</strong>.
-                      </p>
-                      <p className="wfr-ra-card__hint">
-                        Once plans are assigned, adoption scores will update to reflect upskilling progress.
-                      </p>
-                    </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 13, fontWeight: 600, color: '#b45309', whiteSpace: 'nowrap' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>rocket_launch</span>
-                      Upskilling started
-                    </span>
-                  </div>
+                  <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <DataTableHeader>
+                      <DataTableRow>
+                        <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                        <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                        {showHrbpCollection && <DataCollectionHead />}
+                        {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                      </DataTableRow>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {(() => {
+                        const sortedDirs = [...directors].sort((a, b) => {
+                          if (hrbpUpskillingActive) {
+                            const aIn = hrbpDirInUpskilling(a.name) ? 1 : 0
+                            const bIn = hrbpDirInUpskilling(b.name) ? 1 : 0
+                            if (aIn !== bIn) return bIn - aIn
+                          } else if (showHrbpCollection) {
+                            const aIn = hrbpDirInScope(a.name) ? 1 : 0
+                            const bIn = hrbpDirInScope(b.name) ? 1 : 0
+                            if (aIn !== bIn) return bIn - aIn
+                          }
+                          const mul = mgrSort.dir === 'asc' ? 1 : -1
+                          switch (mgrSort.col) {
+                            case 'name': return mul * a.name.localeCompare(b.name)
+                            case 'readiness': return mul * (a.readiness - b.readiness)
+                            case 'potential': return mul * (Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees)) - Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees)))
+                            case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount))
+                            default: return 0
+                          }
+                        })
+                        const dirScores = sortedDirs.map(dir => ({ key: dir.name, score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }))
+                        const dirScoresSorted = [...dirScores].sort((a, b) => b.score - a.score)
+                        const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
+                        const dirPrioritySet = new Set(dirScoresSorted.slice(0, dirPriorityCount).map(r => r.key))
+                        return sortedDirs.map((dir) => {
+                          const notReady = dir.employees - dir.readyCount
+                          const dirResponseRate = hrbpCollecting && !hrbpJustLaunched ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
+                          return (
+                            <DataTableRow
+                              key={dir.name}
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => {
+                                setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName })
+                                setView('director')
+                                window.scrollTo(0, 0)
+                              }}
+                            >
+                              <DataTableCell className="font-semibold" style={
+                                (showHrbpCollection && hrbpDirInScope(dir.name)) ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } :
+                                (hrbpUpskillingActive && hrbpDirInUpskilling(dir.name)) ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } :
+                                { borderLeft: '3px solid transparent', paddingLeft: 17 }
+                              }>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                    <span className="text-[#3b5bdb] hover:underline">{dir.name}</span>
+                                    {dirPrioritySet.has(dir.name) && (
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                    )}
+                                  </div>
+                                  <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
+                                </div>
+                              </DataTableCell>
+                              <DataTableCell metric>
+                                <div>
+                                  {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) ? (
+                                    <div className="wfr-dash__readiness-with-trend">
+                                      <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
+                                      <button type="button" className={`wfr-dash__trend-badge ${deptTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setHrbpTrendSheetDir({ manager: dir.name, mgrIndex: dir.firstMgrIdx, dept: d }) }} title="View readiness trend details">
+                                        <span className="wfr-dash__trend-badge-text">{deptTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(deptTrendDelta)}pt</span>
+                                        <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
+                                      </button>
+                                    </div>
+                                  ) : <DeptTableSoloBar variant="readiness" pct={dir.readiness} />}
+                                  {hrbpCollectionComplete && hrbpDirInScope(dir.name) && (
+                                    <div style={{ fontSize: 10, color: '#15803d', marginTop: 7, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                                      <span className="material-symbols-outlined" style={{ fontSize: 11, verticalAlign: -1 }}>verified</span>
+                                      Updated from data collection
+                                    </div>
+                                  )}
+                                </div>
+                              </DataTableCell>
+                              <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}</span></DataTableCell>
+                              <DataTableCell align="right">
+                                <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                                  <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
+                                  <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dir.employees.toLocaleString()}</div>
+                                </div>
+                              </DataTableCell>
+                              {showHrbpCollection && (
+                                hrbpDelegatedPending
+                                  ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
+                                  : <DataCollectionProgressCell rate={hrbpDirInScope(dir.name) ? dirResponseRate : 0} inScope={hrbpDirInScope(dir.name)} />
+                              )}
+                              {hrbpUpskillingActive && (
+                                hrbpDirInUpskilling(dir.name) ? (() => {
+                                  const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+                                  const dirPlanPct = hrbpPlansComplete ? 100 : 0
+                                  return <UpskillingProgressCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpPlansComplete} nameHash={nh2(dir.name)} />
+                                })() : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span style={{ color: '#94a3b8' }}>—</span></DataTableCell>
+                              )}
+                            </DataTableRow>
+                          )
+                        })
+                      })()}
+                    </DataTableBody>
+                  </DataTable>
                 </div>
-              </div>
+                {hrbpUpskillingDialogOpen && (() => {
+                  const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))
+                  const allDirScores = directors.map(dir => ({
+                    dir,
+                    score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
+                  })).sort((a, b) => b.score - a.score)
+                  const priorityCount = Math.max(1, Math.round(allDirScores.length * 0.3))
+                  const priorityNames = new Set(allDirScores.slice(0, priorityCount).map(r => r.dir.name))
+                  const sortedDirs = eligibleDirs.sort((a, b) => {
+                    const scoreA = Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees))
+                    const scoreB = Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees))
+                    return scoreB - scoreA
+                  })
+                  const selectedCount = hrbpUpskillingSelectedDirs.size
+                  const totalGapSelected = sortedDirs.filter(dir => hrbpUpskillingSelectedDirs.has(dir.name)).reduce((s, dir) => s + (dir.employees - dir.readyCount), 0)
+                  return createPortal(
+                    <>
+                      <div className="wfr-focus-launch__overlay" onClick={() => setHrbpUpskillingDialogOpen(false)} />
+                      <div className="wfr-focus-launch__content">
+                        <div className="wfr-focus-launch__header">
+                          <div className="wfr-focus-launch__header-top">
+                            <h2 className="wfr-focus-launch__dialog-title">Start upskilling</h2>
+                            <button type="button" className="wfr-focus-launch__close" onClick={() => setHrbpUpskillingDialogOpen(false)}>
+                              <span className="material-symbols-outlined">close</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="wfr-focus-launch__body">
+                          <h3 className="wfr-focus-launch__title">Which client manager teams should start upskilling?</h3>
+                          <p className="wfr-focus-launch__sub">Only teams that completed data collection are eligible. Priority teams have the highest unrealized value.</p>
+                          <div className="wfr-focus-launch__dept-list" style={{ marginTop: 16 }}>
+                            <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
+                              <span
+                                className="wfr-focus-launch__check"
+                                style={{ cursor: 'pointer', ...(selectedCount === sortedDirs.length ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                                onClick={() => setHrbpUpskillingSelectedDirs(selectedCount === sortedDirs.length ? new Set() : new Set(sortedDirs.map(dir => dir.name)))}
+                              >{selectedCount === sortedDirs.length ? '✓' : ''}</span>
+                              <span style={{ flex: 1 }}>Manager</span>
+                              <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
+                              <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                              <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
+                            </div>
+                            {sortedDirs.map(dir => {
+                              const checked = hrbpUpskillingSelectedDirs.has(dir.name)
+                              const gap = dir.employees - dir.readyCount
+                              const isPriority = priorityNames.has(dir.name)
+                              const dirUnrealized = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                              return (
+                                <button key={dir.name} type="button"
+                                  className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                                  style={{ alignItems: 'center' }}
+                                  onClick={() => setHrbpUpskillingSelectedDirs(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(dir.name)) next.delete(dir.name); else next.add(dir.name)
+                                    return next
+                                  })}>
+                                  <span className="wfr-focus-launch__check">{checked ? '✓' : ''}</span>
+                                  <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                    {dir.name}
+                                    {isPriority && <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>}
+                                  </span>
+                                  <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
+                                  <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
+                                  <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gap.toLocaleString()} ({dir.employees > 0 ? Math.round((gap / dir.employees) * 100) : 0}%)</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                          {directors.length > sortedDirs.length && (
+                            <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 10, paddingLeft: 4 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 12, verticalAlign: -2, marginRight: 3 }}>info</span>
+                              {directors.length - sortedDirs.length} team{directors.length - sortedDirs.length !== 1 ? 's' : ''} not shown — did not participate in data collection.
+                            </p>
+                          )}
+                        </div>
+                        <div className="wfr-focus-launch__footer">
+                          <Button variant="outline" onClick={() => setHrbpUpskillingDialogOpen(false)}>Cancel</Button>
+                          <Button variant="primary" disabled={selectedCount === 0}
+                            onClick={() => {
+                              setHrbpUpskillingDialogOpen(false)
+                              startUpskilling({
+                                assignOwner: 'hrbp',
+                                departmentNames: [d.name],
+                                scopeLabel: hrbpName ?? d.name,
+                                delegated: false,
+                                totalEmployees: totalGapSelected,
+                                selectedDirectorNames: sortedDirs.filter(dir => hrbpUpskillingSelectedDirs.has(dir.name)).map(dir => dir.name),
+                              })
+                            }}>
+                            Start upskilling&nbsp;→
+                          </Button>
+                        </div>
+                      </div>
+                    </>,
+                    document.body,
+                  )
+                })()}
+              </WfrOverviewLayout>
+              {hrbpDelegatedPending && (
+                <FocusFirstLaunchDialog
+                  open={focusLaunchOpen}
+                  onOpenChange={setFocusLaunchOpen}
+                  hrbpMode
+                  defaultScopeDepartmentName={d.name}
+                  hrbpDirectors={directors.map(dir => ({
+                    name: dir.name,
+                    title: dir.title,
+                    employees: dir.employees,
+                    teamManagers: dir.teamManagers,
+                    readiness: dir.readiness,
+                    readyCount: dir.readyCount,
+                    aiPotential: d.aiPotential,
+                  }))}
+                  onHrbpLaunch={(channelsLabel, selectedDirectors) => {
+                    if (personaHrbpNames?.length) {
+                      for (const name of personaHrbpNames) {
+                        advanceHrbpToCollection(name, channelsLabel, selectedDirectors)
+                      }
+                    }
+                    setFocusLaunchOpen(false)
+                  }}
+                />
+              )}
+              </>
             )
-          })() : undefined
+          }
+
+          // CHRO persona: use PersonDetailLayout with full chrome
           return (
             <>
             <PersonDetailLayout
-              breadcrumb={isHrbp ? undefined : (
+              heroCard={hrbpFocusFirstModule}
+              breadcrumb={(
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setHrbpName(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
@@ -2469,9 +3161,8 @@ export function WorkforceReadinessDashboard({
                   </BreadcrumbList>
                 </Breadcrumb>
               )}
-              name={isHrbp ? '' : (hrbpName ?? '')}
-              subtitle={isHrbp ? '' : `HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
-              heroCard={hrbpHeroCard}
+              name={hrbpName ?? ''}
+              subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
               readiness={{
                 value: `${measuredReadiness}%`,
                 description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
@@ -2479,70 +3170,8 @@ export function WorkforceReadinessDashboard({
                 badge: collBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${hrbpName ?? d.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', hint: `Unrealized value for ${hrbpName ?? d.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
-              managerTable={isHrbp ? undefined : {
-                title: 'Manager summary',
-                hint: d.name,
-                hideTitle: true,
-                children: (
-                  <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
-                    <DataTableHeader>
-                      <DataTableRow>
-                        <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
-                        <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
-                        {hrbpCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
-                      </DataTableRow>
-                    </DataTableHeader>
-                    <DataTableBody>
-                      <DataTableRow>
-                        <DataTableCell className="font-semibold">
-                          <div>
-                            <div>{hrbpName}</div>
-                            <div className="text-[#94a3b8] text-[11px] font-normal">HRBP · {d.name}</div>
-                          </div>
-                        </DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
-                        <DataTableCell align="right">
-                          <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
-                        </DataTableCell>
-                        {hrbpCollectionComplete && (() => {
-                          const hnh = nameHash(hrbpName ?? '')
-                          const hPlanPct = hrbpPlansComplete ? 100 : Math.max(0, Math.min(90, 20 + (hnh % 60)))
-                          return (
-                            <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
-                                  Dev plan
-                                </button>
-                                {hPlanPct === 0 ? (
-                                  <button type="button" style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                    Assign
-                                  </button>
-                                ) : (() => {
-                                  const hStatus = hPlanPct > 85 ? 'Completed' : hPlanPct > 20 ? 'In progress' : 'Not started'
-                                  const bColor = hStatus === 'Completed' ? '#22c55e' : hStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                                  const tColor = hStatus === 'Completed' ? '#15803d' : hStatus === 'In progress' ? '#6366f1' : '#94a3b8'
-                                  return (
-                                    <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
-                                      <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                                        <div className="wfr-dash__plan-progress-fill" style={{ width: `${hPlanPct}%`, background: bColor }} />
-                                      </div>
-                                      <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{hPlanPct}%</span>
-                                    </div>
-                                  )
-                                })()}
-                              </div>
-                            </DataTableCell>
-                          )
-                        })()}
-                      </DataTableRow>
-                    </DataTableBody>
-                  </DataTable>
-                ),
-              }}
               tableTitle="Client managers"
               tableHint={
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
@@ -2588,7 +3217,7 @@ export function WorkforceReadinessDashboard({
                     })
                     const dirScores = sortedDirs.map(dir => ({
                       key: dir.name,
-                      score: (d.aiPotential - dir.readiness) * ((dir.employees - dir.readyCount) / Math.max(1, dir.employees)),
+                      score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
                     }))
                     const dirScoresSorted = [...dirScores].sort((a, b) => b.score - a.score)
                     const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
@@ -2648,14 +3277,14 @@ export function WorkforceReadinessDashboard({
                           </DataTableCell>
                           {showHrbpCollection && (
                             hrbpDelegatedPending
-                              ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
+                              ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
                               : <DataCollectionProgressCell rate={hrbpDirInScope(dir.name) ? dirResponseRate : 0} inScope={hrbpDirInScope(dir.name)} />
                           )}
                           {hrbpUpskillingActive && (
                             hrbpDirInScope(dir.name) ? (() => {
                               const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
                               const dirPlanPct = hrbpPlansComplete ? 100 : 0
-                              return <UpskillingKpiCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpPlansComplete} nameHash={nh2(dir.name)} />
+                              return <UpskillingProgressCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpPlansComplete} nameHash={nh2(dir.name)} />
                             })() : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span style={{ color: '#94a3b8' }}>—</span></DataTableCell>
                           )}
                         </DataTableRow>
@@ -2671,13 +3300,13 @@ export function WorkforceReadinessDashboard({
               // Priority is based on ALL directors (same as table), not just eligible subset
               const allDirScores = directors.map(dir => ({
                 dir,
-                score: (d.aiPotential - dir.readiness) * ((dir.employees - dir.readyCount) / Math.max(1, dir.employees)),
+                score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
               })).sort((a, b) => b.score - a.score)
               const priorityCount = Math.max(1, Math.round(allDirScores.length * 0.3))
               const priorityNames = new Set(allDirScores.slice(0, priorityCount).map(r => r.dir.name))
               const sortedDirs = eligibleDirs.sort((a, b) => {
-                const scoreA = (d.aiPotential - a.readiness) * ((a.employees - a.readyCount) / Math.max(1, a.employees))
-                const scoreB = (d.aiPotential - b.readiness) * ((b.employees - b.readyCount) / Math.max(1, b.employees))
+                const scoreA = Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees))
+                const scoreB = Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees))
                 return scoreB - scoreA
               })
               const selectedCount = hrbpUpskillingSelectedDirs.size
@@ -2687,7 +3316,7 @@ export function WorkforceReadinessDashboard({
               return createPortal(
                 <>
                   <div className="wfr-focus-launch__overlay" onClick={() => setHrbpUpskillingDialogOpen(false)} />
-                  <div className="wfr-focus-launch__content" style={{ width: 'min(520px, calc(100vw - 32px))' }}>
+                  <div className="wfr-focus-launch__content">
                     <div className="wfr-focus-launch__header">
                       <div className="wfr-focus-launch__header-top">
                         <h2 className="wfr-focus-launch__dialog-title">Start upskilling</h2>
@@ -2698,31 +3327,30 @@ export function WorkforceReadinessDashboard({
                     </div>
                     <div className="wfr-focus-launch__body">
                       <h3 className="wfr-focus-launch__title">Which client manager teams should start upskilling?</h3>
-                      <p className="wfr-focus-launch__sub">
-                        Only teams that completed data collection are eligible. Priority teams have the highest gap-to-potential ratio.
-                      </p>
-                      <div className="wfr-focus-launch__dept-list-header" style={{ marginTop: 16 }}>
-                        <span className="wfr-focus-launch__dept-count" style={{ paddingLeft: 4 }}>
-                          {selectedCount} of {sortedDirs.length} selected · {totalGapSelected.toLocaleString()} employees to upskill
-                        </span>
-                        <button type="button" className="wfr-focus-launch__select-all"
-                          onClick={() => {
-                            const allSelected = selectedCount === sortedDirs.length
-                            setHrbpUpskillingSelectedDirs(allSelected ? new Set() : new Set(sortedDirs.map(dir => dir.name)))
-                          }}>
-                          {selectedCount === sortedDirs.length ? 'Deselect all' : 'Select all'}
-                        </button>
-                      </div>
-                      <div className="wfr-focus-launch__dept-list">
+                      <p className="wfr-focus-launch__sub">Only teams that completed data collection are eligible. Priority teams have the highest unrealized value.</p>
+                      <div className="wfr-focus-launch__dept-list" style={{ marginTop: 16 }}>
+                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
+                          <span
+                            className="wfr-focus-launch__check"
+                            style={{ cursor: 'pointer', ...(selectedCount === sortedDirs.length ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                            onClick={() => setHrbpUpskillingSelectedDirs(selectedCount === sortedDirs.length ? new Set() : new Set(sortedDirs.map(dir => dir.name)))}
+                          >{selectedCount === sortedDirs.length ? '✓' : ''}</span>
+                          <span style={{ flex: 1 }}>Manager</span>
+                          <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
+                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                          <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
+                        </div>
                         {sortedDirs.map(dir => {
                           const checked = hrbpUpskillingSelectedDirs.has(dir.name)
                           const gap = dir.employees - dir.readyCount
                           const isPriority = priorityNames.has(dir.name)
+                          const dirUnrealized = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
                           return (
                             <button
                               key={dir.name}
                               type="button"
                               className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
+                              style={{ alignItems: 'center' }}
                               onClick={() => setHrbpUpskillingSelectedDirs(prev => {
                                 const next = new Set(prev)
                                 if (next.has(dir.name)) next.delete(dir.name); else next.add(dir.name)
@@ -2730,19 +3358,13 @@ export function WorkforceReadinessDashboard({
                               })}
                             >
                               <span className="wfr-focus-launch__check">{checked ? '✓' : ''}</span>
-                              <div className="wfr-focus-launch__dept-info">
-                                <div className="wfr-focus-launch__dept-name-row">
-                                  <span className="wfr-focus-launch__dept-name" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                    {dir.name}
-                                    {isPriority && (
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                                    )}
-                                  </span>
-                                </div>
-                                <span className="wfr-focus-launch__dept-detail">
-                                  {dir.title} · {dir.employees.toLocaleString()} employees · {gap.toLocaleString()} to upskill
-                                </span>
-                              </div>
+                              <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                {dir.name}
+                                {isPriority && <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>}
+                              </span>
+                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
+                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
+                              <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gap.toLocaleString()} ({dir.employees > 0 ? Math.round((gap / dir.employees) * 100) : 0}%)</span>
                             </button>
                           )
                         })}
@@ -2767,6 +3389,7 @@ export function WorkforceReadinessDashboard({
                             scopeLabel: hrbpName ?? d.name,
                             delegated: false,
                             totalEmployees: totalGapSelected,
+                            selectedDirectorNames: sortedDirs.filter(dir => hrbpUpskillingSelectedDirs.has(dir.name)).map(dir => dir.name),
                           })
                         }}
                       >
@@ -2778,31 +3401,6 @@ export function WorkforceReadinessDashboard({
                 document.body,
               )
             })()}
-            {isHrbp && hrbpDelegatedPending && (
-              <FocusFirstLaunchDialog
-                open={focusLaunchOpen}
-                onOpenChange={setFocusLaunchOpen}
-                hrbpMode
-                defaultScopeDepartmentName={d.name}
-                hrbpDirectors={directors.map(dir => ({
-                  name: dir.name,
-                  title: dir.title,
-                  employees: dir.employees,
-                  teamManagers: dir.teamManagers,
-                  readiness: dir.readiness,
-                  readyCount: dir.readyCount,
-                  aiPotential: d.aiPotential,
-                }))}
-                onHrbpLaunch={(channelsLabel, selectedDirectors) => {
-                  if (personaHrbpNames?.length) {
-                    for (const name of personaHrbpNames) {
-                      advanceHrbpToCollection(name, channelsLabel, selectedDirectors)
-                    }
-                  }
-                  setFocusLaunchOpen(false)
-                }}
-              />
-            )}
             </>
           )
         })()}
@@ -2871,7 +3469,7 @@ export function WorkforceReadinessDashboard({
                 badge: dirBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${directorData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', hint: `Unrealized value for ${directorData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${dirGap.toLocaleString()} not ready`, description: `out of ${dirHeadcount.toLocaleString()} employees`, hint: dirMeasuredReadiness >= 50 ? `${dirMeasuredReadiness}% adoption meets the 50% threshold.` : `${dirMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -2883,8 +3481,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
-                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -2895,38 +3493,22 @@ export function WorkforceReadinessDashboard({
                             <div className="text-[#94a3b8] text-[11px] font-normal">{directorData.title} · {d.name}</div>
                           </div>
                         </DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
+                        <DataTableCell metric>
+                          <div>
+                            {effDirCollComplete && trendDelta !== 0 ? (
+                              <div className="wfr-dash__readiness-with-trend">
+                                <DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} />
+                                <span className={`wfr-dash__trend-badge ${trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                  <span className="wfr-dash__trend-badge-text">{trendDelta >= 0 ? '↑' : '↓'}{Math.abs(trendDelta)}pt</span>
+                                </span>
+                              </div>
+                            ) : <DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} />}
+                          </div>
+                        </DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
-                        {effDirCollComplete && (() => {
-                          const dirPlanPct = effDirPlansComplete ? 100 : 0
-                          return (
-                            <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
-                                  Dev plan
-                                </button>
-                                {dirPlanPct === 0 ? (
-                                  <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
-                                ) : (() => {
-                                  const dStatus = dirPlanPct > 85 ? 'Completed' : dirPlanPct > 20 ? 'In progress' : 'Not started'
-                                  const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                                  const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
-                                  return (
-                                    <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
-                                      <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                                        <div className="wfr-dash__plan-progress-fill" style={{ width: `${dirPlanPct}%`, background: bColor }} />
-                                      </div>
-                                      <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{dirPlanPct}%</span>
-                                    </div>
-                                  )
-                                })()}
-                              </div>
-                            </DataTableCell>
-                          )
-                        })()}
+                        {effDirCollComplete && <DevPlanAssignCell planPct={effDirPlansComplete ? 100 : 0} plansComplete={effDirPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3013,7 +3595,7 @@ export function WorkforceReadinessDashboard({
                                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
                               </div>
                             </DataTableCell>
-                            {effDirCollComplete && <UpskillingKpiCell total={sr.employees} pct={srPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(sr.name)} />}
+                            {effDirCollComplete && <DevPlanAssignCell planPct={srPlanPct} plansComplete={effDirPlansComplete} />}
                           </DataTableRow>
                         )
                       })}
@@ -3069,7 +3651,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {effDirCollComplete && <UpskillingKpiCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(mgr.manager)} />}
+                        {effDirCollComplete && <DevPlanAssignCell planPct={mgrPlanPct} plansComplete={effDirPlansComplete} />}
                       </DataTableRow>
                     )
                   })}
@@ -3141,7 +3723,7 @@ export function WorkforceReadinessDashboard({
                 badge: srBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${seniorMgrData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', hint: `Unrealized value for ${seniorMgrData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${srGap.toLocaleString()} not ready`, description: `out of ${srHeadcount.toLocaleString()} employees`, hint: srMeasuredReadiness >= 50 ? `${srMeasuredReadiness}% adoption meets the 50% threshold.` : `${srMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -3153,8 +3735,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '34%' }}>Transformation gap</DataTableHead>
-                        {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -3166,40 +3748,21 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric>
-                          <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
+                          <div>
+                            {effSrCollComplete && tDelta !== 0 ? (
+                              <div className="wfr-dash__readiness-with-trend">
+                                <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
+                                <span className={`wfr-dash__trend-badge ${tDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                  <span className="wfr-dash__trend-badge-text">{tDelta >= 0 ? '↑' : '↓'}{Math.abs(tDelta)}pt</span>
+                                </span>
+                              </div>
+                            ) : <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />}
+                          </div>
                         </DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
-                        {effSrCollComplete && (() => {
-                          const srPlanPct = effSrPlansComplete ? 100 : 0
-                          const srAssigned = srPlanPct > 0
-                          return (
-                            <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
-                                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
-                                  Dev plan
-                                </button>
-                                {!srAssigned ? (
-                                  <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
-                                ) : (() => {
-                                  const sStatus = srPlanPct > 85 ? 'Completed' : srPlanPct > 20 ? 'In progress' : 'Not started'
-                                  const bColor = sStatus === 'Completed' ? '#22c55e' : sStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                                  const tColor = sStatus === 'Completed' ? '#15803d' : sStatus === 'In progress' ? '#6366f1' : '#94a3b8'
-                                  return (
-                                    <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
-                                      <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                                        <div className="wfr-dash__plan-progress-fill" style={{ width: `${srPlanPct}%`, background: bColor }} />
-                                      </div>
-                                      <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{srPlanPct}%</span>
-                                    </div>
-                                  )
-                                })()}
-                              </div>
-                            </DataTableCell>
-                          )
-                        })()}
+                        {effSrCollComplete && <DevPlanAssignCell planPct={effSrPlansComplete ? 100 : 0} plansComplete={effSrPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
                   </DataTable>
@@ -3256,7 +3819,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {effSrCollComplete && <UpskillingKpiCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
+                        {effSrCollComplete && <DevPlanAssignCell planPct={mgrPlanPct} plansComplete={effSrPlansComplete} />}
                       </DataTableRow>
                     )
                   })}

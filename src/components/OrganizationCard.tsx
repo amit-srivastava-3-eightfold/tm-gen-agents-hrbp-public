@@ -1,7 +1,7 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { useUser } from '../contexts/UserContext'
 
-const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face'
+
 const sachitAvatar = 'https://i.pravatar.cc/80?u=sachit'
 
 // CHRO org photos
@@ -176,14 +176,12 @@ export function OrganizationCard() {
         <Button variant="default">View org chart</Button>
       </div>
       <div className="org-card__section">
-        <h4 className="org-card__section-title">Manager</h4>
+        <h4 className="org-card__section-title">Reports to</h4>
         <div className="org-card__person">
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>
-            CW
-          </div>
+          <img src={jamesWuAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
           <div className="org-card__person-info">
-            <span className="org-card__person-name">Cong Wang</span>
-            <span className="org-card__person-title">Director of Sales Engineering</span>
+            <span className="org-card__person-name">Alex Nakamura</span>
+            <span className="org-card__person-title">Senior Manager · Engineering</span>
           </div>
         </div>
       </div>
@@ -191,31 +189,31 @@ export function OrganizationCard() {
       <div className="org-card__section">
         <div className="org-card__section-head">
           <h4 className="org-card__section-title">Direct Reports</h4>
-          <span className="org-card__badge">4</span>
+          <span className="org-card__badge">43</span>
         </div>
-        <div className="org-card__avatar-row">
-          <img src={mateoAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>MM</div>
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>PL</div>
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#6B7B3C' }}>VP</div>
+        <div className="org-card__avatar-row org-card__avatar-row--with-badge">
+          <img src={sachitAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <img src={rachelKimAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <img src={anaMartinezAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[0] }}>SK</div>
+          <span className="org-card__badge org-card__badge--plus">+39</span>
         </div>
-        <p className="org-card__names">Mateo, Maureen, Priyanka and Venkat</p>
+        <p className="org-card__names">Skyler, Sofia, Sofia, Sofia and 39 others</p>
       </div>
       <div className="org-card__divider" />
       <div className="org-card__section">
         <div className="org-card__section-head">
           <h4 className="org-card__section-title">Peers</h4>
-          <span className="org-card__badge">7</span>
+          <span className="org-card__badge">5</span>
         </div>
         <div className="org-card__avatar-row org-card__avatar-row--with-badge">
-          <img src={sachitAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[0] }}>YA</div>
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[1] }}>YC</div>
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[2] }}>RB</div>
-          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[3] }}>CS</div>
-          <span className="org-card__badge org-card__badge--plus">+2</span>
+          <img src={tomNguyenAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <img src={karenLeeAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[1] }}>MK</div>
+          <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[2] }}>AL</div>
+          <span className="org-card__badge org-card__badge--plus">+1</span>
         </div>
-        <p className="org-card__names">Sachit, Yoseph, Yu, Rajarajan, Clinton and others</p>
+        <p className="org-card__names">Tom, Karen, Maya, Alex and others</p>
       </div>
     </div>
   )

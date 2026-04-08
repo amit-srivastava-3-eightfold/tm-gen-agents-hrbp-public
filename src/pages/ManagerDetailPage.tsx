@@ -65,6 +65,7 @@ export function ManagerDetailPage() {
   const srStartParam = searchParams.get('srStart') ?? ''
   const managerName = decodeURIComponent(managerId ?? '')
   const isHrbp = currentUser.id === 'jaydon-torff'
+  const isManager = currentUser.id === 'mateo'
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
@@ -188,6 +189,7 @@ export function ManagerDetailPage() {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
+  const [toast, setToast] = useState<string | null>(null)
   const [editingCourses, setEditingCourses] = useState(false)
   const [editingSkills, setEditingSkills] = useState(false)
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
@@ -261,7 +263,7 @@ export function ManagerDetailPage() {
       <ProductBackground
         className="mgr-detail-page__bg"
         variant="career-hub"
-        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isHrbp || isManager ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize="child" overlayBackground>
           <HeaderToolbar>
@@ -276,6 +278,16 @@ export function ManagerDetailPage() {
         <div className="mgr-detail-page__content">
           <PersonDetailLayout
             breadcrumb={(() => {
+              // Manager persona — simple breadcrumb, no drill-up navigation
+              if (isManager) {
+                return (
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      <BreadcrumbItem><BreadcrumbPage>{mgr.manager}</BreadcrumbPage></BreadcrumbItem>
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                )
+              }
               const mgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
               const deptHrbpList = getDeptHrbps(deptName)
               const allMgrs = deptManagerTeams(deptName, dept.employees)
@@ -392,11 +404,14 @@ export function ManagerDetailPage() {
                                 <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
                               </button>
                               {(mgrDisplayPct === 0 && !assignedPlans.has(mgr.manager)) ? (
-                                <button
-                                  type="button"
-                                  style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                                  onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])) }}
-                                >Assign</button>
+                                <>
+                                  <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
+                                  <button
+                                    type="button"
+                                    style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                    onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])); setToast(`Development plan assigned to ${mgr.manager}`); setTimeout(() => setToast(null), 3000) }}
+                                  >Assign</button>
+                                </>
                               ) : (() => {
                                 const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Not started'
                                 const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
@@ -487,16 +502,21 @@ export function ManagerDetailPage() {
                           </button>
                           {/* Pre-assign: Assign button; post-assign: progress bar */}
                           {(planPct === 0 && !assignedPlans.has(emp.name)) ? (
-                            <button
-                              type="button"
-                              style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setAssignedPlans(prev => new Set([...prev, emp.name]))
-                              }}
-                            >
-                              Assign
-                            </button>
+                            <>
+                              <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
+                              <button
+                                type="button"
+                                style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setAssignedPlans(prev => new Set([...prev, emp.name]))
+                                  setToast(`Development plan assigned to ${emp.name}`)
+                                  setTimeout(() => setToast(null), 3000)
+                                }}
+                              >
+                                Assign
+                              </button>
+                            </>
                           ) : (() => {
                             const displayPct = planPct > 0 ? planPct : Math.min(85, 10 + (h % 55))
                             const displayStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Not started'
@@ -528,6 +548,8 @@ export function ManagerDetailPage() {
                 onClick={() => {
                   const allNames = employees.map(e => e.name)
                   setAssignedPlans(new Set(allNames))
+                  setToast(`Development plans assigned to all ${employees.length} employees`)
+                  setTimeout(() => setToast(null), 3000)
                 }}
               >
                 Assign plans to all ({employees.length})
@@ -703,10 +725,13 @@ export function ManagerDetailPage() {
                   <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Done</Button>
                 ) : (
                   <Button variant="primary" onClick={() => {
-                    setAssignedPlans(prev => new Set([...prev, devPlanEmployee!.name]))
+                    const n = devPlanEmployee!.name
+                    setAssignedPlans(prev => new Set([...prev, n]))
                     setDevPlanEmployee(null)
                     setEditingCourses(false)
                     setEditingSkills(false)
+                    setToast(`Development plan assigned to ${n}`)
+                    setTimeout(() => setToast(null), 3000)
                   }}>
                     Assign plan →
                   </Button>
@@ -725,6 +750,13 @@ export function ManagerDetailPage() {
         hrsUnlocked={0}
         departmentGap={{ departmentName: dept.name, peopleInAugRoles: displayEmployees.length, ready: readyCount, gapPeople: notReady, hrsUnlocked: 0 }}
       />
+      {toast && createPortal(
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', borderRadius: 10, background: '#0f172a', color: '#fff', fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 8, zIndex: 10000, animation: 'fadeInUp 0.3s ease-out', whiteSpace: 'nowrap' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#4ade80' }}>check_circle</span>
+          {toast}
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

@@ -19,6 +19,7 @@ export function WorkforceReadinessPage() {
   const [wfrView, setWfrView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>('board')
   const autoLaunch = searchParams.get('action') === 'launch'
   const isHrbp = currentUser.id === 'jaydon-torff'
+  const isManager = currentUser.id === 'mateo'
   const hrbpDepartments = isHrbp ? ['Engineering'] : undefined
   const personaHrbpNames = isHrbp ? getPersonaHrbpNames(currentUser.id) : undefined
 
@@ -27,11 +28,11 @@ export function WorkforceReadinessPage() {
     setSearchParams((prev) => { prev.delete('action'); return prev }, { replace: true })
   }
 
-  if (currentUser.id !== 'chro' && currentUser.id !== 'jaydon-torff') {
+  if (currentUser.id !== 'chro' && currentUser.id !== 'jaydon-torff' && currentUser.id !== 'mateo') {
     return <Navigate to="/" replace />
   }
 
-  const isHomeView = wfrView === 'board' || (isHrbp && wfrView === 'hrbp')
+  const isHomeView = isManager || wfrView === 'board' || (isHrbp && wfrView === 'hrbp')
   const chSize = isHomeView ? 'parent' as const : 'child' as const
 
   return (
@@ -43,12 +44,19 @@ export function WorkforceReadinessPage() {
       <ProductBackground
         className="wfr-page__bg"
         variant="career-hub"
-        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isHrbp || isManager ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize={chSize} overlayBackground>
           <HeaderToolbar>
             <HeaderTextGroup>
               <HeaderTitle>Workforce Readiness</HeaderTitle>
+              <p style={{ fontSize: 14, color: '#475569', margin: '4px 0 0', fontWeight: 400 }}>
+                {isManager
+                  ? 'See how AI-ready your team is and where to focus development.'
+                  : isHrbp
+                    ? 'Track AI adoption across your departments and drive upskilling.'
+                    : 'Measure AI readiness across the organization and close the transformation gap.'}
+              </p>
             </HeaderTextGroup>
           </HeaderToolbar>
         </Header>
@@ -56,10 +64,10 @@ export function WorkforceReadinessPage() {
 
       {/* Main content */}
       <main className="wfr-page__main">
-        <div className="wfr-page__content" style={wfrView !== 'board' && (isHrbp ? wfrView !== 'hrbp' : true) ? { paddingTop: 0 } : undefined}>
+        <div className="wfr-page__content" style={!isManager && wfrView !== 'board' && (isHrbp ? wfrView !== 'hrbp' : true) ? { paddingTop: 0 } : undefined}>
           <div className="grid w-full grid-cols-12 gap-6">
             <div className="col-span-12 min-w-0">
-              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} personaHrbpNames={personaHrbpNames} />
+              <WorkforceReadinessDashboard onViewChange={setWfrView} autoLaunchCollection={autoLaunch} scopedDepartments={hrbpDepartments} isHrbp={isHrbp} isManager={isManager} personaHrbpNames={personaHrbpNames} />
             </div>
           </div>
         </div>

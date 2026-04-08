@@ -17,6 +17,8 @@ export type UpskillingLaunchSummary = {
   totalEmployees: number
   /** Departments whose plans have been assigned to employees */
   plansAssigned?: string[]
+  /** Director/manager names selected for upskilling (HRBP flow only) */
+  selectedDirectorNames?: string[]
 }
 
 export interface UpskillingLaunchDialogProps {

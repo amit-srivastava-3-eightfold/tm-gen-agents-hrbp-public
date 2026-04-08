@@ -1,7 +1,7 @@
 import { Button } from './ui/Button'
 import { useUser } from '../contexts/UserContext'
 
-const mateoAvatar = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face'
+const mateoAvatar = '/dana-tanaka.png'
 const lauraAvatar = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
 const ethanAvatar = 'https://i.pravatar.cc/150?u=ethan'
 const sarahAvatar = 'https://i.pravatar.cc/150?u=sarah-chen'
@@ -68,15 +68,15 @@ export function MentorshipCard() {
             <span className="material-symbols-outlined mentorship-card__detail-icon">track_changes</span>
             Experience in 1 of your role interests
           </span>
-          <span className="mentorship-card__pill">Solutions Architect</span>
+          <span className="mentorship-card__pill">Staff ML Engineer</span>
         </li>
         <li className="mentorship-card__detail">
           <span className="material-symbols-outlined mentorship-card__detail-icon">domain</span>
-          <span>Also a part of Sales Engineering</span>
+          <span>Also a part of Engineering</span>
         </li>
         <li className="mentorship-card__detail">
           <span className="material-symbols-outlined mentorship-card__detail-icon">work</span>
-          <span>Also works on Enterprise Solutions</span>
+          <span>Also works on ML Infrastructure</span>
         </li>
       </ul>
       <Button variant="orange" className="mentorship-card__btn mentorship-card__btn--full">

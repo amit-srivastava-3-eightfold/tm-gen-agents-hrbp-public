@@ -75,35 +75,35 @@ export function PersonDetailLayout({
         {heroCard}
 
         <div className="wfr-dash__cards-row person-detail__cards" style={{ margin: 0 }}>
-          <MetricCard
-            variant="readiness"
-            icon="school"
-            label="AI adoption"
-            badge={readiness.badge}
-            value={readiness.value}
-            description={readiness.description}
-            hint={readiness.hint}
-            onLearnMore={readiness.onLearnMore}
-          />
-          <MetricCard
-            variant="potential"
-            icon="auto_awesome"
-            label="Unrealized value"
-            value={potential.value}
-            description={potential.description}
-            hint={potential.hint}
-            onLearnMore={potential.onLearnMore}
-          />
-          <MetricCard
-            variant="gap"
-            icon="groups"
-            label="Transformation gap"
-            value={gap.value}
-            description={gap.description}
-            hint={gap.hint}
-            onLearnMore={gap.onLearnMore}
-          />
-        </div>
+            <MetricCard
+              variant="readiness"
+              icon="school"
+              label="AI adoption"
+              badge={readiness.badge}
+              value={readiness.value}
+              description={readiness.description}
+              hint={readiness.hint}
+              onLearnMore={readiness.onLearnMore}
+            />
+            <MetricCard
+              variant="potential"
+              icon="auto_awesome"
+              label="Unrealized value"
+              value={potential.value}
+              description={potential.description}
+              hint={potential.hint}
+              onLearnMore={potential.onLearnMore}
+            />
+            <MetricCard
+              variant="gap"
+              icon="groups"
+              label="Transformation gap"
+              value={gap.value}
+              description={gap.description}
+              hint={gap.hint}
+              onLearnMore={gap.onLearnMore}
+            />
+          </div>
 
         {managerTable && (
           <div className={!wideTable ? `person-detail__table-aligned${sixColTable ? ' person-detail__table-aligned--6col' : ''}` : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

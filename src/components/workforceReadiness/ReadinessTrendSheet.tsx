@@ -19,7 +19,7 @@ export interface ReadinessTrendSheetProps {
   /** When set, show employee-level readiness for this manager instead of dept collection data */
   managerContext?: { manager: string; mgrIndex: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
-  roleContext?: { title: string; dept: string; measuredReadiness?: number } | null
+  roleContext?: { title: string; dept: string; measuredReadiness?: number; employeeName?: string } | null
   /** When set, frame the sheet as HRBP team data instead of department data */
   hrbpContext?: { hrbpName: string; headcount: number } | null
   /** When true, add upskilling boost to readiness deltas */
@@ -98,14 +98,16 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
 
   const { trend, estimated, measured } = data
 
-  const sheetTitle = roleContext ? roleContext.title : managerContext ? managerContext.manager : hrbpContext ? hrbpContext.hrbpName : dept.name
-  const sheetSub = roleContext
-    ? `${roleContext.dept} — Task-level readiness`
-    : managerContext
-      ? `${dept.name} — Employee readiness trend`
-      : hrbpContext
-        ? `${hrbpContext.hrbpName}'s team — AI adoption change`
-        : `${dept.name} — AI adoption change`
+  const sheetTitle = roleContext?.employeeName ?? (roleContext ? roleContext.title : managerContext ? managerContext.manager : hrbpContext ? hrbpContext.hrbpName : dept.name)
+  const sheetSub = roleContext?.employeeName
+    ? `${roleContext.title} — AI adoption change`
+    : roleContext
+      ? `${roleContext.dept} — Task-level readiness`
+      : managerContext
+        ? `${dept.name} — Employee readiness trend`
+        : hrbpContext
+          ? `${hrbpContext.hrbpName}'s team — AI adoption change`
+          : `${dept.name} — AI adoption change`
 
   // ── Unified card values ──────────────────────────────────────────────────
   const roleForCtx = roleContext ? getRolesForDept(roleContext.dept).find(r => r.title === roleContext.title) : null
@@ -228,8 +230,8 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
               </div>
               <div className="wfr-trend-sheet__stat">
-                <span className="wfr-trend-sheet__stat-label">{managerContext ? 'Employees in team' : hrbpContext ? 'Employees interviewed' : 'Employees interviewed'}</span>
-                <span className="wfr-trend-sheet__stat-value">{cardEmployees.toLocaleString()}</span>
+                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Team member' : managerContext ? 'Employees in team' : 'Employees interviewed'}</span>
+                <span className="wfr-trend-sheet__stat-value">{roleContext?.employeeName ? roleContext.employeeName : cardEmployees.toLocaleString()}</span>
               </div>
             </div>
           )}

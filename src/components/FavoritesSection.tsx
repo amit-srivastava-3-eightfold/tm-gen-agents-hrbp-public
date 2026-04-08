@@ -24,39 +24,39 @@ type FavoriteCourse = {
 const MATEO_FAVORITES_PEOPLE: FavoritePerson[] = [
   {
     id: 'o1',
-    name: 'Jordan Kim',
-    title: 'Solutions Engineer • Sales Engineering',
-    email: 'jordan.kim@eightfold.ai',
-    avatarSrc: 'https://i.pravatar.cc/144?u=o1-jordan',
+    name: 'Skyler Petrov',
+    title: 'ML Engineer • Engineering',
+    email: 'skyler.petrov@acme.com',
+    avatarSrc: 'https://i.pravatar.cc/144?u=o1-skyler',
     openTo: 'mentoring',
   },
   {
     id: 'o4',
-    name: 'Alex Rivera',
-    title: 'Solutions Architect • Sales Engineering',
-    email: 'alex.rivera@eightfold.ai',
-    avatarSrc: 'https://i.pravatar.cc/144?u=o4-alex',
+    name: 'Sofia Martinez',
+    title: 'DevOps Engineer • Engineering',
+    email: 'sofia.martinez@acme.com',
+    avatarSrc: 'https://i.pravatar.cc/144?u=o4-sofia',
     openTo: 'coffee',
   },
   {
     id: 'o6',
-    name: 'Riley Foster',
-    title: 'Senior Sales Engineer • Sales Engineering',
-    email: 'riley.foster@eightfold.ai',
-    avatarSrc: 'https://i.pravatar.cc/144?u=o6-riley',
+    name: 'Taylor Miller',
+    title: 'Platform Engineer • Engineering',
+    email: 'taylor.miller@acme.com',
+    avatarSrc: 'https://i.pravatar.cc/144?u=o6-taylor',
     openTo: 'mentoring',
   },
 ]
 
 const MATEO_FAVORITES_COURSE: FavoriteCourse = {
-  title: 'Advanced Enterprise Demos',
+  title: 'AI-Assisted Development Workflows',
   provider: 'Eightfold Academy',
-  duration: '3h 15m',
-  skills: ['Technical Sales', 'Product Demos', 'Enterprise'],
+  duration: '2h 45m',
+  skills: ['AI/ML', 'Model Deployment', 'ML Pipelines'],
   completedBy: [
-    'https://i.pravatar.cc/48?u=mateo-c1',
-    'https://i.pravatar.cc/48?u=mateo-c2',
-    'https://i.pravatar.cc/48?u=mateo-c3',
+    'https://i.pravatar.cc/48?u=dana-c1',
+    'https://i.pravatar.cc/48?u=dana-c2',
+    'https://i.pravatar.cc/48?u=dana-c3',
   ],
 }
 

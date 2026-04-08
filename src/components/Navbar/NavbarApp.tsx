@@ -14,6 +14,7 @@ const CAREER_HUB_TABS: NavbarTabItem[] = [
   { id: 'my-activity', label: 'My activity', chevron: true },
   { id: 'people', label: 'People', path: '/people' },
   { id: 'my-team', label: 'My team', path: '/my-team' },
+  { id: 'workforce', label: 'Workforce Readiness', path: '/workforce' },
 ]
 
 /**

@@ -144,11 +144,11 @@ const LAURA_ACTIVITY: HomeActivity = {
 }
 
 const MATEO_MENTOR: HomeMentor = {
-  name: 'Cong Wang',
-  role: 'Director of Sales Engineering',
-  avatarSrc: 'https://i.pravatar.cc/56?u=cong-wang',
-  matchText: 'Matched 3 of your skill interests',
-  matchCount: 3,
+  name: 'Alex Nakamura',
+  role: 'Senior Manager · Engineering',
+  avatarSrc: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=56&h=56&fit=crop&crop=face',
+  matchText: 'Matched 4 of your skill interests',
+  matchCount: 4,
 }
 
 const CHRO_MENTOR: HomeMentor = {
@@ -176,11 +176,11 @@ const LAURA_MENTOR: HomeMentor = {
 }
 
 const MATEO_JOB: HomeRecommendedJob = {
-  title: 'Senior Sales Engineer',
+  title: 'Staff ML Engineer',
   tags: [
-    { label: 'Technical Demos' },
-    { label: 'Solutions Arch...', checked: true },
-    { label: 'Enterprise POC...' },
+    { label: 'ML Infrastructure' },
+    { label: 'Model Deploy...', checked: true },
+    { label: 'AI/ML Pipelines' },
   ],
 }
 

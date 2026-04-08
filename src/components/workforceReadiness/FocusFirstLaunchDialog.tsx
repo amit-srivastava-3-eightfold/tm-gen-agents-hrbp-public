@@ -179,12 +179,8 @@ export function FocusFirstLaunchDialog({
   if (hrbpMode) {
     const hrbpDept = _defaultScope ? departments.find(dd => dd.name === _defaultScope) : null
     const rawDirs = hrbpDirectors ?? []
-    // Sort directors by priority score: (aiPotential − readiness) × (gap rate)
-    const dirs = [...rawDirs].sort((a, b) => {
-      const scoreA = ((a.aiPotential ?? 0) - (a.readiness ?? 0)) * ((a.employees - (a.readyCount ?? 0)) / Math.max(1, a.employees))
-      const scoreB = ((b.aiPotential ?? 0) - (b.readiness ?? 0)) * ((b.employees - (b.readyCount ?? 0)) / Math.max(1, b.employees))
-      return scoreB - scoreA
-    })
+    // Sort directors by unrealized value (matches overview table sort)
+    const dirs = [...rawDirs].sort((a, b) => b.employees - a.employees)
     const dirPriorityCount = Math.max(1, Math.round(dirs.length * 0.3))
     const dirPrioritySet = new Set(dirs.slice(0, dirPriorityCount).map(d => d.name))
     const hrbpSelCount = Object.values(hrbpSelectedDirs).filter(Boolean).length

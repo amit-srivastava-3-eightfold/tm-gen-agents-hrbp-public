@@ -124,14 +124,16 @@ export function FocusFirstCollectionCard({
     }, duration)
   }, [animPhase, collectionJustCompleted, collectionComplete, onCollectionComplete, snapshot.orgResponseRate])
 
-  const showAttentionBadge = snapshot.needAttentionDeptCount > 0
+  const showAttentionBadge = false
   const deptName = departmentContextName
 
-  // HRBP view: show upskilling CTA when collection complete (not just-completed transition)
-  if (isHrbp && collectionComplete && !collectionJustCompleted) {
+  // HRBP view: show upskilling CTA when collection complete (not just-completed transition, not yet upskilling)
+  if (isHrbp && collectionComplete && !collectionJustCompleted && !upskillingActive) {
     if (hrbpPlansCreated) return null // Plans assigned — hide card
     const currentDept = deptName ? departments.find(d => d.name === deptName) : undefined
-    const gapCount = currentDept ? deptGapHeadcount(currentDept) : 0
+    const gapCount = gapPeopleOverride != null && gapPeopleOverride > 0
+      ? gapPeopleOverride
+      : currentDept ? deptGapHeadcount(currentDept) : 0
     const topRoles = currentDept ? getRolesForDept(currentDept.name).slice(0, 3) : []
     return (
       <div className="wfr-ra-card wfr-ra-card--success">
@@ -355,10 +357,17 @@ export function FocusFirstCollectionCard({
           <div className="wfr-ra-card__cta-row">
             <div>
               <p className="wfr-ra-card__cta-text">
-                HRBPs are creating development plans for <strong>{totalLaunchedGap.toLocaleString()}</strong> employees across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}.
+                {isHrbp ? (() => {
+                  const dirNames = upskillingLaunchSummary?.selectedDirectorNames
+                  const dirCount = dirNames?.length ?? launchedDepts.length
+                  const empCount = upskillingLaunchSummary?.totalEmployees ?? totalLaunchedGap
+                  return <>You're creating development plans for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{dirCount}</strong> client manager{dirCount === 1 ? '' : 's'}.</>
+                })() : <>HRBPs are creating development plans for <strong>{totalLaunchedGap.toLocaleString()}</strong> employees across <strong>{launchedDepts.length}</strong> department{launchedDepts.length === 1 ? '' : 's'}.</>}
               </p>
               <p className="wfr-ra-card__hint">
-                Once plans are assigned, {'adoption scores'} will update to reflect upskilling progress.
+                {isHrbp
+                  ? 'Client managers will review and assign plans to their teams. Adoption scores will update as employees complete their plans.'
+                  : 'Once plans are assigned, adoption scores will update to reflect upskilling progress.'}
               </p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 13, fontWeight: 600, color: '#b45309', whiteSpace: 'nowrap' }}>
@@ -516,6 +525,8 @@ export type FocusFirstModuleBoardProps = {
   chroDelegationScopeLabel?: string
   /** Override the gap people count in the collection-complete card (e.g. scoped to HRBP's depts) */
   gapPeopleOverride?: number
+  /** When true, the internal FocusFirstLaunchDialog is not rendered (parent handles the dialog) */
+  suppressInternalDialog?: boolean
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -573,6 +584,7 @@ function FocusFirstModuleBoard({
   chroDelegationActive = false,
   chroDelegationScopeLabel,
   gapPeopleOverride,
+  suppressInternalDialog = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'> & {
   hrbpDelegationPending?: boolean
   onHrbpCollectionLaunch?: (channelsLabel: string) => void
@@ -598,14 +610,15 @@ function FocusFirstModuleBoard({
   }
 
   // HRBP: hide CTA in state 1 (no delegation pending) — they can't launch collection themselves
-  if (isHrbp && !collectionActive && !hrbpDelegationPending) {
+  // But allow through when collection is complete (state 3 CTA) or upskilling active
+  if (isHrbp && !collectionActive && !hrbpDelegationPending && !collectionComplete) {
     return null
   }
 
   return (
     <>
       <div className="wfr-dash__focus-module">
-        {collectionActive ? (
+        {(collectionActive || (isHrbp && collectionComplete)) ? (
           <FocusFirstCollectionCard
             snapshot={collectionSnap}
             attentionScope={attentionScope}
@@ -704,20 +717,22 @@ function FocusFirstModuleBoard({
         )}
       </div>
 
-      <FocusFirstLaunchDialog
-        open={launchOpen}
-        onOpenChange={(next) => {
-          onLaunchOpenChange(next)
-          if (next) onRequestCloseMetricSheet?.()
-        }}
-        onLaunch={(summary) => onCollectionActiveChange(true, summary)}
-        defaultScopeDepartmentName={deptContext?.name}
-        hrbpMode={hrbpDelegationPending}
-        onHrbpLaunch={(channelsLabel) => {
-          onHrbpCollectionLaunch?.(channelsLabel)
-          onLaunchOpenChange(false)
-        }}
-      />
+      {!suppressInternalDialog && (
+        <FocusFirstLaunchDialog
+          open={launchOpen}
+          onOpenChange={(next) => {
+            onLaunchOpenChange(next)
+            if (next) onRequestCloseMetricSheet?.()
+          }}
+          onLaunch={(summary) => onCollectionActiveChange(true, summary)}
+          defaultScopeDepartmentName={deptContext?.name}
+          hrbpMode={hrbpDelegationPending}
+          onHrbpLaunch={(channelsLabel) => {
+            onHrbpCollectionLaunch?.(channelsLabel)
+            onLaunchOpenChange(false)
+          }}
+        />
+      )}
     </>
   )
 }
@@ -760,6 +775,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     chroDelegationActive: propsChroDelegationActive,
     chroDelegationScopeLabel: propsChroDelegationScopeLabel,
     gapPeopleOverride: propsGapPeopleOverride,
+    suppressInternalDialog: propsSuppressInternalDialog,
   } = props
 
   return (
@@ -788,6 +804,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       chroDelegationActive={propsChroDelegationActive}
       chroDelegationScopeLabel={propsChroDelegationScopeLabel}
       gapPeopleOverride={propsGapPeopleOverride}
+      suppressInternalDialog={propsSuppressInternalDialog}
     />
   )
 }

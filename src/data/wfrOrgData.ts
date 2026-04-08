@@ -11,13 +11,13 @@ export const ORG = {
   totalEmployees: 49500,
   aiPotential: 48,
   aiReadiness: 24,
-  totalRoleTasks: 220,
+  totalRoleTasks: 283,
   /** Tasks in 15–75% augmentation band */
   tasksInAugZone: 136,
   /** Tasks scoring above 75% (automatable) */
-  tasksAboveThreshold: 28,
+  tasksAboveThreshold: 47,
   /** Tasks scoring below 15% (human-only band) */
-  tasksBelowThreshold: 56,
+  tasksBelowThreshold: 100,
   peopleInAugRoles: 42000,
   hrsPerPersonWeek: 4,
   departments: [
@@ -1872,12 +1872,16 @@ export const ORG = {
 const rolesByDept = ORG.roles as unknown as Record<string, RoleRowType[]>
 const tasksByRole = ORG.tasks as unknown as Record<string, { task: string; score: number }[]>
 
-const REALIZATION_RATE = 0.60
-const ANNUAL_HOURS = 2080
+const WEEKS_PER_YEAR = 52
 
-/** Unrealized value = employees × annualWage × automationProbability × realizationRate */
+/**
+ * Unrealized value = employees × hourlyWage × weeklyHoursUnlocked × 52
+ * Weekly hours unlocked per person = ORG.hrsPerPersonWeek scaled by role's AI potential
+ * (hrsPerPersonWeek already incorporates 60% realization per CLAUDE.md methodology)
+ */
 function computeUnrealizedValue(role: { employees: number; aiPotential: number; medianHourlyWage: number }): number {
-  return Math.round(role.employees * (role.medianHourlyWage * ANNUAL_HOURS) * (role.aiPotential / 100) * REALIZATION_RATE)
+  const weeklyHrsUnlocked = ORG.hrsPerPersonWeek * (role.aiPotential / ORG.aiPotential)
+  return Math.round(role.employees * role.medianHourlyWage * weeklyHrsUnlocked * WEEKS_PER_YEAR)
 }
 
 /** Format dollar value for display: $1.2M, $456k, $123 */
