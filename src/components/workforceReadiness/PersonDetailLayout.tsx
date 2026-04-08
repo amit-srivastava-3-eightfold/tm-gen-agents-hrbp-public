@@ -88,7 +88,7 @@ export function PersonDetailLayout({
           <MetricCard
             variant="potential"
             icon="auto_awesome"
-            label="AI potential"
+            label="Unrealized value"
             value={potential.value}
             description={potential.description}
             hint={potential.hint}

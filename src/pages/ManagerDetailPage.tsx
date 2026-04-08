@@ -24,7 +24,7 @@ import {
   DataTableCell,
   Pill,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -362,7 +362,7 @@ export function ManagerDetailPage() {
                     <DataTableRow>
                       <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                       <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                      <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                      <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                       <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                       {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
                     </DataTableRow>
@@ -376,9 +376,12 @@ export function ManagerDetailPage() {
                         </div>
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
-                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={dept.aiPotential} /></DataTableCell>
-                      <DataTableCell>
-                        <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626' }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                      <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(dept.unrealizedValue)}</span></DataTableCell>
+                      <DataTableCell align="right">
+                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                          <span className="wfr-type-h6">{notReady.toLocaleString()} ({displayEmployees.length > 0 ? Math.round((notReady / displayEmployees.length) * 100) : 0}%)</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {displayEmployees.length.toLocaleString()}</div>
+                        </div>
                       </DataTableCell>
                       {upskillingInScope && (() => {
                         const mgrH = nameHash(mgr.manager)
@@ -425,7 +428,7 @@ export function ManagerDetailPage() {
               <DataTableRow>
                 <DataTableHead style={{ width: '28%' }}>Employee</DataTableHead>
                 <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                 <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                 {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
               </DataTableRow>
@@ -457,11 +460,11 @@ export function ManagerDetailPage() {
                         )}
                       </div>
                     </DataTableCell>
-                    <DataTableCell metric>
-                      <DeptTableSoloBar variant="potential" pct={dept.aiPotential} />
+                    <DataTableCell align="right">
+                      <span className="wfr-type-h6 tabular-nums">{formatDollar(dept.unrealizedValue)}</span>
                     </DataTableCell>
-                    <DataTableCell>
-                      <span style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
+                    <DataTableCell align="right">
+                      <span style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>
                         {emp.displayReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}
                       </span>
                       {emp.displayReadiness >= 35 && emp.displayReadiness < 50 && (

@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react'
+import { useEffect, type ComponentProps } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import { MATEO, LAURA, CHRO, CSM } from '../../contexts/demoUsers'
@@ -136,8 +136,22 @@ export function useNavbarProps() {
   }
 }
 
+const WFR_STATE_KEY = 'tm:wfr-state'
+
 /** TM app Navbar: the account selected in the user menu drives the navbar variant (tabs). */
 export function NavbarApp() {
   const navbarProps = useNavbarProps()
+
+  // Clicking the Eightfold logo resets WFR state from any page/account
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const logo = (e.target as HTMLElement).closest('.navbar__logo')
+      if (!logo) return
+      try { localStorage.removeItem(WFR_STATE_KEY) } catch { /* ignore */ }
+    }
+    document.addEventListener('click', handler, true)
+    return () => document.removeEventListener('click', handler, true)
+  }, [])
+
   return <Navbar {...navbarProps} />
 }

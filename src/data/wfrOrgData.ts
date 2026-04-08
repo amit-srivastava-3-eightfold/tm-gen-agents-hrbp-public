@@ -41,139 +41,139 @@ export const ORG = {
   ],
   roles: {
     Administrative: [
-      { title: 'Data Entry Clerk', employees: 650, aiPotential: 74, aiReadiness: 7 },
-      { title: 'Administrative Assistant', employees: 815, aiPotential: 68, aiReadiness: 12 },
-      { title: 'Document Controller', employees: 515, aiPotential: 62, aiReadiness: 11 },
-      { title: 'Executive Assistant', employees: 600, aiPotential: 45, aiReadiness: 21 },
-      { title: 'Records Manager', employees: 150, aiPotential: 58, aiReadiness: 9 },
-      { title: 'Office Coordinator', employees: 380, aiPotential: 50, aiReadiness: 15 },
-      { title: 'Receptionist', employees: 275, aiPotential: 42, aiReadiness: 18 },
+      { title: 'Data Entry Clerk', employees: 650, aiPotential: 74, aiReadiness: 7, medianHourlyWage: 18.50 },
+      { title: 'Administrative Assistant', employees: 815, aiPotential: 68, aiReadiness: 12, medianHourlyWage: 21.00 },
+      { title: 'Document Controller', employees: 515, aiPotential: 62, aiReadiness: 11, medianHourlyWage: 24.00 },
+      { title: 'Executive Assistant', employees: 600, aiPotential: 45, aiReadiness: 21, medianHourlyWage: 32.00 },
+      { title: 'Records Manager', employees: 150, aiPotential: 58, aiReadiness: 9, medianHourlyWage: 28.00 },
+      { title: 'Office Coordinator', employees: 380, aiPotential: 50, aiReadiness: 15, medianHourlyWage: 22.00 },
+      { title: 'Receptionist', employees: 275, aiPotential: 42, aiReadiness: 18, medianHourlyWage: 17.00 },
     ],
     Finance: [
-      { title: 'Financial Clerk', employees: 900, aiPotential: 63, aiReadiness: 11 },
-      { title: 'Accounts Payable Specialist', employees: 600, aiPotential: 58, aiReadiness: 13 },
-      { title: 'Financial Analyst', employees: 550, aiPotential: 42, aiReadiness: 22 },
-      { title: 'Revenue Accountant', employees: 475, aiPotential: 55, aiReadiness: 10 },
-      { title: 'Payroll Specialist', employees: 410, aiPotential: 60, aiReadiness: 14 },
-      { title: 'Tax Analyst', employees: 450, aiPotential: 48, aiReadiness: 18 },
+      { title: 'Financial Clerk', employees: 900, aiPotential: 63, aiReadiness: 11, medianHourlyWage: 22.00 },
+      { title: 'Accounts Payable Specialist', employees: 600, aiPotential: 58, aiReadiness: 13, medianHourlyWage: 24.50 },
+      { title: 'Financial Analyst', employees: 550, aiPotential: 42, aiReadiness: 22, medianHourlyWage: 45.00 },
+      { title: 'Revenue Accountant', employees: 475, aiPotential: 55, aiReadiness: 10, medianHourlyWage: 38.00 },
+      { title: 'Payroll Specialist', employees: 410, aiPotential: 60, aiReadiness: 14, medianHourlyWage: 26.00 },
+      { title: 'Tax Analyst', employees: 450, aiPotential: 48, aiReadiness: 18, medianHourlyWage: 42.00 },
     ],
     Operations: [
-      { title: 'Logistics Coordinator', employees: 1310, aiPotential: 53, aiReadiness: 15 },
-      { title: 'Supply Chain Analyst', employees: 965, aiPotential: 39, aiReadiness: 19 },
-      { title: 'Operations Manager', employees: 150, aiPotential: 25, aiReadiness: 27 },
-      { title: 'Process Improvement Specialist', employees: 760, aiPotential: 46, aiReadiness: 14 },
-      { title: 'Warehouse Supervisor', employees: 150, aiPotential: 38, aiReadiness: 11 },
-      { title: 'Fleet Coordinator', employees: 900, aiPotential: 42, aiReadiness: 13 },
+      { title: 'Logistics Coordinator', employees: 1310, aiPotential: 53, aiReadiness: 15, medianHourlyWage: 24.00 },
+      { title: 'Supply Chain Analyst', employees: 965, aiPotential: 39, aiReadiness: 19, medianHourlyWage: 36.00 },
+      { title: 'Operations Manager', employees: 150, aiPotential: 25, aiReadiness: 27, medianHourlyWage: 55.00 },
+      { title: 'Process Improvement Specialist', employees: 760, aiPotential: 46, aiReadiness: 14, medianHourlyWage: 40.00 },
+      { title: 'Warehouse Supervisor', employees: 150, aiPotential: 38, aiReadiness: 11, medianHourlyWage: 28.00 },
+      { title: 'Fleet Coordinator', employees: 900, aiPotential: 42, aiReadiness: 13, medianHourlyWage: 23.00 },
     ],
     'Customer Success': [
-      { title: 'Support Specialist', employees: 975, aiPotential: 42, aiReadiness: 17 },
-      { title: 'Implementation Consultant', employees: 650, aiPotential: 48, aiReadiness: 20 },
-      { title: 'Renewals Specialist', employees: 550, aiPotential: 50, aiReadiness: 19 },
-      { title: 'Customer Insights Analyst', employees: 475, aiPotential: 55, aiReadiness: 28 },
-      { title: 'Customer Success Manager', employees: 175, aiPotential: 85, aiReadiness: 5 },
-      { title: 'Technical Account Manager', employees: 325, aiPotential: 40, aiReadiness: 25 },
-      { title: 'Customer Education Specialist', employees: 275, aiPotential: 52, aiReadiness: 30 },
-      { title: 'Onboarding Coordinator', employees: 250, aiPotential: 46, aiReadiness: 22 },
-      { title: 'Customer Operations Analyst', employees: 225, aiPotential: 58, aiReadiness: 32 },
+      { title: 'Support Specialist', employees: 975, aiPotential: 42, aiReadiness: 17, medianHourlyWage: 22.00 },
+      { title: 'Implementation Consultant', employees: 650, aiPotential: 48, aiReadiness: 20, medianHourlyWage: 42.00 },
+      { title: 'Renewals Specialist', employees: 550, aiPotential: 50, aiReadiness: 19, medianHourlyWage: 30.00 },
+      { title: 'Customer Insights Analyst', employees: 475, aiPotential: 55, aiReadiness: 28, medianHourlyWage: 35.00 },
+      { title: 'Customer Success Manager', employees: 175, aiPotential: 85, aiReadiness: 5, medianHourlyWage: 48.00 },
+      { title: 'Technical Account Manager', employees: 325, aiPotential: 40, aiReadiness: 25, medianHourlyWage: 50.00 },
+      { title: 'Customer Education Specialist', employees: 275, aiPotential: 52, aiReadiness: 30, medianHourlyWage: 32.00 },
+      { title: 'Onboarding Coordinator', employees: 250, aiPotential: 46, aiReadiness: 22, medianHourlyWage: 25.00 },
+      { title: 'Customer Operations Analyst', employees: 225, aiPotential: 58, aiReadiness: 32, medianHourlyWage: 34.00 },
     ],
     Product: [
-      { title: 'Product Manager', employees: 150, aiPotential: 41, aiReadiness: 35 },
-      { title: 'Product Designer', employees: 645, aiPotential: 34, aiReadiness: 29 },
-      { title: 'Technical Program Manager', employees: 150, aiPotential: 30, aiReadiness: 44 },
-      { title: 'UX Researcher', employees: 525, aiPotential: 38, aiReadiness: 32 },
-      { title: 'Product Analyst', employees: 605, aiPotential: 52, aiReadiness: 30 },
+      { title: 'Product Manager', employees: 150, aiPotential: 41, aiReadiness: 35, medianHourlyWage: 65.00 },
+      { title: 'Product Designer', employees: 645, aiPotential: 34, aiReadiness: 29, medianHourlyWage: 52.00 },
+      { title: 'Technical Program Manager', employees: 150, aiPotential: 30, aiReadiness: 44, medianHourlyWage: 68.00 },
+      { title: 'UX Researcher', employees: 525, aiPotential: 38, aiReadiness: 32, medianHourlyWage: 48.00 },
+      { title: 'Product Analyst', employees: 605, aiPotential: 52, aiReadiness: 30, medianHourlyWage: 42.00 },
     ],
     'IT & Security': [
-      { title: 'IT Support Specialist', employees: 650, aiPotential: 37, aiReadiness: 40 },
-      { title: 'Security Operations Analyst', employees: 475, aiPotential: 33, aiReadiness: 44 },
-      { title: 'Systems Administrator', employees: 350, aiPotential: 27, aiReadiness: 43 },
-      { title: 'Network Engineer', employees: 425, aiPotential: 35, aiReadiness: 41 },
-      { title: 'Cloud Infrastructure Engineer', employees: 425, aiPotential: 40, aiReadiness: 45 },
+      { title: 'IT Support Specialist', employees: 650, aiPotential: 37, aiReadiness: 40, medianHourlyWage: 28.00 },
+      { title: 'Security Operations Analyst', employees: 475, aiPotential: 33, aiReadiness: 44, medianHourlyWage: 52.00 },
+      { title: 'Systems Administrator', employees: 350, aiPotential: 27, aiReadiness: 43, medianHourlyWage: 42.00 },
+      { title: 'Network Engineer', employees: 425, aiPotential: 35, aiReadiness: 41, medianHourlyWage: 48.00 },
+      { title: 'Cloud Infrastructure Engineer', employees: 425, aiPotential: 40, aiReadiness: 45, medianHourlyWage: 62.00 },
     ],
     'Data & Analytics': [
-      { title: 'Data Analyst', employees: 575, aiPotential: 48, aiReadiness: 35 },
-      { title: 'Analytics Engineer', employees: 450, aiPotential: 42, aiReadiness: 42 },
-      { title: 'BI Developer', employees: 325, aiPotential: 45, aiReadiness: 38 },
-      { title: 'Data Scientist', employees: 350, aiPotential: 50, aiReadiness: 44 },
-      { title: 'Data Engineer', employees: 275, aiPotential: 40, aiReadiness: 36 },
+      { title: 'Data Analyst', employees: 575, aiPotential: 48, aiReadiness: 35, medianHourlyWage: 38.00 },
+      { title: 'Analytics Engineer', employees: 450, aiPotential: 42, aiReadiness: 42, medianHourlyWage: 55.00 },
+      { title: 'BI Developer', employees: 325, aiPotential: 45, aiReadiness: 38, medianHourlyWage: 48.00 },
+      { title: 'Data Scientist', employees: 350, aiPotential: 50, aiReadiness: 44, medianHourlyWage: 58.00 },
+      { title: 'Data Engineer', employees: 275, aiPotential: 40, aiReadiness: 36, medianHourlyWage: 56.00 },
     ],
     Partnerships: [
-      { title: 'Partnerships Manager', employees: 150, aiPotential: 35, aiReadiness: 26 },
-      { title: 'Alliance Director', employees: 75, aiPotential: 25, aiReadiness: 22 },
-      { title: 'Channel Development Rep', employees: 850, aiPotential: 40, aiReadiness: 20 },
-      { title: 'Business Development Manager', employees: 150, aiPotential: 32, aiReadiness: 28 },
+      { title: 'Partnerships Manager', employees: 150, aiPotential: 35, aiReadiness: 26, medianHourlyWage: 52.00 },
+      { title: 'Alliance Director', employees: 75, aiPotential: 25, aiReadiness: 22, medianHourlyWage: 72.00 },
+      { title: 'Channel Development Rep', employees: 850, aiPotential: 40, aiReadiness: 20, medianHourlyWage: 30.00 },
+      { title: 'Business Development Manager', employees: 150, aiPotential: 32, aiReadiness: 28, medianHourlyWage: 58.00 },
     ],
     Procurement: [
-      { title: 'Procurement Specialist', employees: 360, aiPotential: 60, aiReadiness: 14 },
-      { title: 'Category Manager', employees: 150, aiPotential: 52, aiReadiness: 18 },
-      { title: 'Vendor Relations Analyst', employees: 250, aiPotential: 55, aiReadiness: 12 },
-      { title: 'Sourcing Coordinator', employees: 215, aiPotential: 48, aiReadiness: 16 },
+      { title: 'Procurement Specialist', employees: 360, aiPotential: 60, aiReadiness: 14, medianHourlyWage: 32.00 },
+      { title: 'Category Manager', employees: 150, aiPotential: 52, aiReadiness: 18, medianHourlyWage: 55.00 },
+      { title: 'Vendor Relations Analyst', employees: 250, aiPotential: 55, aiReadiness: 12, medianHourlyWage: 34.00 },
+      { title: 'Sourcing Coordinator', employees: 215, aiPotential: 48, aiReadiness: 16, medianHourlyWage: 28.00 },
     ],
     Facilities: [
-      { title: 'Workplace Coordinator', employees: 250, aiPotential: 54, aiReadiness: 11 },
-      { title: 'Facilities Manager', employees: 175, aiPotential: 45, aiReadiness: 14 },
-      { title: 'Space Planner', employees: 175, aiPotential: 42, aiReadiness: 10 },
-      { title: 'Building Services Technician', employees: 175, aiPotential: 30, aiReadiness: 13 },
+      { title: 'Workplace Coordinator', employees: 250, aiPotential: 54, aiReadiness: 11, medianHourlyWage: 24.00 },
+      { title: 'Facilities Manager', employees: 175, aiPotential: 45, aiReadiness: 14, medianHourlyWage: 48.00 },
+      { title: 'Space Planner', employees: 175, aiPotential: 42, aiReadiness: 10, medianHourlyWage: 32.00 },
+      { title: 'Building Services Technician', employees: 175, aiPotential: 30, aiReadiness: 13, medianHourlyWage: 22.00 },
     ],
     Communications: [
-      { title: 'Corporate Communications Manager', employees: 175, aiPotential: 45, aiReadiness: 29 },
-      { title: 'Internal Communications Specialist', employees: 150, aiPotential: 40, aiReadiness: 25 },
-      { title: 'PR Specialist', employees: 150, aiPotential: 48, aiReadiness: 27 },
-      { title: 'Content Editor', employees: 150, aiPotential: 52, aiReadiness: 24 },
+      { title: 'Corporate Communications Manager', employees: 175, aiPotential: 45, aiReadiness: 29, medianHourlyWage: 55.00 },
+      { title: 'Internal Communications Specialist', employees: 150, aiPotential: 40, aiReadiness: 25, medianHourlyWage: 35.00 },
+      { title: 'PR Specialist', employees: 150, aiPotential: 48, aiReadiness: 27, medianHourlyWage: 34.00 },
+      { title: 'Content Editor', employees: 150, aiPotential: 52, aiReadiness: 24, medianHourlyWage: 30.00 },
     ],
     'Quality & Compliance': [
-      { title: 'Quality Assurance Lead', employees: 175, aiPotential: 40, aiReadiness: 21 },
-      { title: 'Compliance Specialist', employees: 500, aiPotential: 37, aiReadiness: 18 },
-      { title: 'Internal Auditor', employees: 400, aiPotential: 34, aiReadiness: 17 },
-      { title: 'Risk Analyst', employees: 395, aiPotential: 42, aiReadiness: 19 },
-      { title: 'Regulatory Affairs Coordinator', employees: 350, aiPotential: 36, aiReadiness: 16 },
+      { title: 'Quality Assurance Lead', employees: 175, aiPotential: 40, aiReadiness: 21, medianHourlyWage: 45.00 },
+      { title: 'Compliance Specialist', employees: 500, aiPotential: 37, aiReadiness: 18, medianHourlyWage: 38.00 },
+      { title: 'Internal Auditor', employees: 400, aiPotential: 34, aiReadiness: 17, medianHourlyWage: 40.00 },
+      { title: 'Risk Analyst', employees: 395, aiPotential: 42, aiReadiness: 19, medianHourlyWage: 42.00 },
+      { title: 'Regulatory Affairs Coordinator', employees: 350, aiPotential: 36, aiReadiness: 16, medianHourlyWage: 36.00 },
     ],
     Marketing: [
-      { title: 'Marketing Manager', employees: 150, aiPotential: 52, aiReadiness: 24 },
-      { title: 'Content Marketing Specialist', employees: 725, aiPotential: 58, aiReadiness: 19 },
-      { title: 'Digital Campaign Analyst', employees: 685, aiPotential: 61, aiReadiness: 22 },
-      { title: 'Brand & Creative Lead', employees: 200, aiPotential: 46, aiReadiness: 28 },
-      { title: 'SEO Specialist', employees: 535, aiPotential: 55, aiReadiness: 20 },
-      { title: 'Marketing Operations Analyst', employees: 605, aiPotential: 50, aiReadiness: 25 },
-      { title: 'Growth Marketing Manager', employees: 150, aiPotential: 48, aiReadiness: 23 },
+      { title: 'Marketing Manager', employees: 150, aiPotential: 52, aiReadiness: 24, medianHourlyWage: 58.00 },
+      { title: 'Content Marketing Specialist', employees: 725, aiPotential: 58, aiReadiness: 19, medianHourlyWage: 32.00 },
+      { title: 'Digital Campaign Analyst', employees: 685, aiPotential: 61, aiReadiness: 22, medianHourlyWage: 34.00 },
+      { title: 'Brand & Creative Lead', employees: 200, aiPotential: 46, aiReadiness: 28, medianHourlyWage: 52.00 },
+      { title: 'SEO Specialist', employees: 535, aiPotential: 55, aiReadiness: 20, medianHourlyWage: 30.00 },
+      { title: 'Marketing Operations Analyst', employees: 605, aiPotential: 50, aiReadiness: 25, medianHourlyWage: 36.00 },
+      { title: 'Growth Marketing Manager', employees: 150, aiPotential: 48, aiReadiness: 23, medianHourlyWage: 55.00 },
     ],
     HR: [
-      { title: 'Talent Acquisition Specialist', employees: 320, aiPotential: 55, aiReadiness: 16 },
-      { title: 'People Operations Coordinator', employees: 290, aiPotential: 48, aiReadiness: 14 },
-      { title: 'HR Business Partner', employees: 200, aiPotential: 44, aiReadiness: 26 },
-      { title: 'Compensation Analyst', employees: 260, aiPotential: 38, aiReadiness: 20 },
-      { title: 'L&D Manager', employees: 150, aiPotential: 42, aiReadiness: 18 },
-      { title: 'Employee Experience Lead', employees: 175, aiPotential: 35, aiReadiness: 22 },
-      { title: 'HRIS Analyst', employees: 205, aiPotential: 50, aiReadiness: 15 },
+      { title: 'Talent Acquisition Specialist', employees: 320, aiPotential: 55, aiReadiness: 16, medianHourlyWage: 32.00 },
+      { title: 'People Operations Coordinator', employees: 290, aiPotential: 48, aiReadiness: 14, medianHourlyWage: 26.00 },
+      { title: 'HR Business Partner', employees: 200, aiPotential: 44, aiReadiness: 26, medianHourlyWage: 48.00 },
+      { title: 'Compensation Analyst', employees: 260, aiPotential: 38, aiReadiness: 20, medianHourlyWage: 40.00 },
+      { title: 'L&D Manager', employees: 150, aiPotential: 42, aiReadiness: 18, medianHourlyWage: 52.00 },
+      { title: 'Employee Experience Lead', employees: 175, aiPotential: 35, aiReadiness: 22, medianHourlyWage: 45.00 },
+      { title: 'HRIS Analyst', employees: 205, aiPotential: 50, aiReadiness: 15, medianHourlyWage: 38.00 },
     ],
     Sales: [
-      { title: 'Account Executive', employees: 1655, aiPotential: 42, aiReadiness: 28 },
-      { title: 'Sales Development Representative', employees: 1190, aiPotential: 49, aiReadiness: 21 },
-      { title: 'Solutions Consultant', employees: 1060, aiPotential: 51, aiReadiness: 31 },
-      { title: 'Regional Sales Director', employees: 75, aiPotential: 35, aiReadiness: 24 },
-      { title: 'Sales Operations Analyst', employees: 730, aiPotential: 56, aiReadiness: 18 },
-      { title: 'Enterprise Account Manager', employees: 150, aiPotential: 40, aiReadiness: 30 },
-      { title: 'Channel Sales Manager', employees: 150, aiPotential: 38, aiReadiness: 26 },
-      { title: 'Sales Enablement Specialist', employees: 530, aiPotential: 52, aiReadiness: 22 },
-      { title: 'Inside Sales Representative', employees: 660, aiPotential: 46, aiReadiness: 20 },
+      { title: 'Account Executive', employees: 1655, aiPotential: 42, aiReadiness: 28, medianHourlyWage: 38.00 },
+      { title: 'Sales Development Representative', employees: 1190, aiPotential: 49, aiReadiness: 21, medianHourlyWage: 25.00 },
+      { title: 'Solutions Consultant', employees: 1060, aiPotential: 51, aiReadiness: 31, medianHourlyWage: 52.00 },
+      { title: 'Regional Sales Director', employees: 75, aiPotential: 35, aiReadiness: 24, medianHourlyWage: 75.00 },
+      { title: 'Sales Operations Analyst', employees: 730, aiPotential: 56, aiReadiness: 18, medianHourlyWage: 36.00 },
+      { title: 'Enterprise Account Manager', employees: 150, aiPotential: 40, aiReadiness: 30, medianHourlyWage: 55.00 },
+      { title: 'Channel Sales Manager', employees: 150, aiPotential: 38, aiReadiness: 26, medianHourlyWage: 50.00 },
+      { title: 'Sales Enablement Specialist', employees: 530, aiPotential: 52, aiReadiness: 22, medianHourlyWage: 38.00 },
+      { title: 'Inside Sales Representative', employees: 660, aiPotential: 46, aiReadiness: 20, medianHourlyWage: 22.00 },
     ],
     Engineering: [
-      { title: 'Software Engineer', employees: 2835, aiPotential: 66, aiReadiness: 7 },
-      { title: 'Senior Software Engineer', employees: 2070, aiPotential: 58, aiReadiness: 7 },
-      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 9 },
-      { title: 'QA Automation Engineer', employees: 1090, aiPotential: 72, aiReadiness: 5 },
-      { title: 'DevOps Engineer', employees: 980, aiPotential: 58, aiReadiness: 7 },
-      { title: 'Frontend Engineer', employees: 1305, aiPotential: 64, aiReadiness: 7 },
-      { title: 'Platform Engineer', employees: 870, aiPotential: 55, aiReadiness: 7 },
-      { title: 'Mobile Developer', employees: 655, aiPotential: 60, aiReadiness: 8 },
-      { title: 'Site Reliability Engineer', employees: 545, aiPotential: 52, aiReadiness: 8 },
+      { title: 'Software Engineer', employees: 2835, aiPotential: 66, aiReadiness: 7, medianHourlyWage: 62.00 },
+      { title: 'Senior Software Engineer', employees: 2070, aiPotential: 58, aiReadiness: 7, medianHourlyWage: 75.00 },
+      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 9, medianHourlyWage: 90.00 },
+      { title: 'QA Automation Engineer', employees: 1090, aiPotential: 72, aiReadiness: 5, medianHourlyWage: 50.00 },
+      { title: 'DevOps Engineer', employees: 980, aiPotential: 58, aiReadiness: 7, medianHourlyWage: 58.00 },
+      { title: 'Frontend Engineer', employees: 1305, aiPotential: 64, aiReadiness: 7, medianHourlyWage: 58.00 },
+      { title: 'Platform Engineer', employees: 870, aiPotential: 55, aiReadiness: 7, medianHourlyWage: 62.00 },
+      { title: 'Mobile Developer', employees: 655, aiPotential: 60, aiReadiness: 8, medianHourlyWage: 60.00 },
+      { title: 'Site Reliability Engineer', employees: 545, aiPotential: 52, aiReadiness: 8, medianHourlyWage: 65.00 },
     ],
     Legal: [
-      { title: 'Corporate Counsel', employees: 200, aiPotential: 36, aiReadiness: 22 },
-      { title: 'Corporate Paralegal', employees: 510, aiPotential: 52, aiReadiness: 15 },
-      { title: 'Contract Manager', employees: 150, aiPotential: 58, aiReadiness: 19 },
-      { title: 'Employment Law Specialist', employees: 390, aiPotential: 34, aiReadiness: 16 },
-      { title: 'IP Counsel', employees: 200, aiPotential: 30, aiReadiness: 20 },
+      { title: 'Corporate Counsel', employees: 200, aiPotential: 36, aiReadiness: 22, medianHourlyWage: 85.00 },
+      { title: 'Corporate Paralegal', employees: 510, aiPotential: 52, aiReadiness: 15, medianHourlyWage: 30.00 },
+      { title: 'Contract Manager', employees: 150, aiPotential: 58, aiReadiness: 19, medianHourlyWage: 48.00 },
+      { title: 'Employment Law Specialist', employees: 390, aiPotential: 34, aiReadiness: 16, medianHourlyWage: 55.00 },
+      { title: 'IP Counsel', employees: 200, aiPotential: 30, aiReadiness: 20, medianHourlyWage: 90.00 },
     ],
   },
   tasks: {
@@ -1872,6 +1872,22 @@ export const ORG = {
 const rolesByDept = ORG.roles as unknown as Record<string, RoleRowType[]>
 const tasksByRole = ORG.tasks as unknown as Record<string, { task: string; score: number }[]>
 
+const REALIZATION_RATE = 0.60
+const ANNUAL_HOURS = 2080
+
+/** Unrealized value = employees × annualWage × automationProbability × realizationRate */
+function computeUnrealizedValue(role: { employees: number; aiPotential: number; medianHourlyWage: number }): number {
+  return Math.round(role.employees * (role.medianHourlyWage * ANNUAL_HOURS) * (role.aiPotential / 100) * REALIZATION_RATE)
+}
+
+/** Format dollar value for display: $1.2M, $456k, $123 */
+export function formatDollar(value: number): string {
+  if (value == null || isNaN(value)) return '$0'
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `$${Math.round(value / 1_000).toLocaleString()}k`
+  return `$${value.toLocaleString()}`
+}
+
 /** Compute aiPotential from task data per Octave: Tasks in Augmentation Zone / Total Tasks × 100 */
 function computeAiPotential(title: string): number {
   const tasks = tasksByRole[title]
@@ -1886,7 +1902,10 @@ function computeAiPotential(title: string): number {
 export function getRolesForDept(name: string): RoleRowType[] {
   const raw = rolesByDept[name] ?? []
   // Override hardcoded aiPotential with computed value from task data
-  return raw.map((r) => ({ ...r, aiPotential: computeAiPotential(r.title) }))
+  return raw.map((r) => {
+    const aiPotential = computeAiPotential(r.title)
+    return { ...r, aiPotential, unrealizedValue: computeUnrealizedValue({ ...r, aiPotential }) }
+  })
 }
 
 export function getTasksForRole(title: string): { task: string; score: number }[] {
@@ -2075,6 +2094,12 @@ function computeDeptAiPotential(deptName: string): number {
   return totalEmpl > 0 ? Math.round(weighted / totalEmpl) : 0
 }
 
+/** Compute dept-level unrealized value as sum of role unrealized values. */
+function computeDeptUnrealizedValue(deptName: string): number {
+  const roles = getRolesForDept(deptName)
+  return roles.reduce((sum, r) => sum + r.unrealizedValue, 0)
+}
+
 /** Departments with aiPotential computed from task data (Octave formula). */
 /**
  * HRBP assignments — multiple HRBPs per large department.
@@ -2164,15 +2189,19 @@ export function getPersonaDepartments(personaId: string): string[] {
 export const departments: Dept[] = ORG.departments.map((d) => ({
   ...d,
   aiPotential: computeDeptAiPotential(d.name),
+  unrealizedValue: computeDeptUnrealizedValue(d.name),
 })) as unknown as Dept[]
 
-export type Dept = (typeof ORG.departments)[number]
+export type Dept = (typeof ORG.departments)[number] & { unrealizedValue: number }
 export type RoleRowType = {
   title: string
   employees: number
   aiPotential: number
   aiReadiness: number
+  medianHourlyWage: number
+  unrealizedValue: number
 }
+
 
 export function taskZone(score: number): 'above' | 'augment' | 'below' {
   if (score > 75) return 'above'
@@ -2334,6 +2363,7 @@ export function wfrRollupDepartmentsByName(deptNames: string[]) {
   let peopleInAugRoles = 0
   let gapPeople = 0
   let potWeighted = 0
+  let unrealizedValue = 0
   for (const d of depts) {
     totalEmployees += d.employees
     const aug = deptPeopleInAugRoles(d)
@@ -2341,6 +2371,7 @@ export function wfrRollupDepartmentsByName(deptNames: string[]) {
     peopleInAugRoles += aug
     gapPeople += g
     potWeighted += d.aiPotential * aug
+    unrealizedValue += d.unrealizedValue
   }
   const ready = Math.max(0, peopleInAugRoles - gapPeople)
   const aiReadiness = peopleInAugRoles > 0 ? Math.round((ready / peopleInAugRoles) * 100) : 0
@@ -2359,6 +2390,7 @@ export function wfrRollupDepartmentsByName(deptNames: string[]) {
     gapPeople,
     aiReadiness,
     aiPotential,
+    unrealizedValue,
     hrsUnlocked,
     tasksInAugZone,
     totalRoleTasks,

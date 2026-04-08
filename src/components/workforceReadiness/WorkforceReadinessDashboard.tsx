@@ -20,6 +20,7 @@ import {
   getDeptHrbps,
   getHrbpDepts,
   hrbpAssignments,
+  formatDollar,
   type Dept,
   type RoleRowType,
 } from '../../data/wfrOrgData'
@@ -298,7 +299,7 @@ function MetricArc({
         {showInteriorLabels && (
           <>
             <text x={cx} y={cy + ty.lab} textAnchor="middle" className="wfr-metric-arc__label">
-              AI POTENTIAL
+              UNREALIZED VALUE
             </text>
             <text x={cx} y={cy + ty.ready} textAnchor="middle" className="wfr-metric-arc__ready">
               {readiness}% ready
@@ -310,7 +311,7 @@ function MetricArc({
         <div className="mt-1 flex gap-3.5">
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-potential)]" />
-            <span className="wfr-type-caption-sb wfr-text-potential">Potential</span>
+            <span className="wfr-type-caption-sb wfr-text-potential">Unrealized value</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-readiness)]" />
@@ -324,7 +325,7 @@ function MetricArc({
 
 const METRIC_INFO = {
   readiness: 'People in augmentable roles using AI effectively ÷ total people in augmentable roles',
-  potential: 'Tasks in augmentation zone (15–75%) ÷ total role tasks',
+  potential: 'BLS median wages × automation probability × 60% realization rate',
   gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
 } as const
 
@@ -342,11 +343,11 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
         <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 28px' }}>Two numbers work together to tell you where your workforce stands — and what it takes to close the gap.</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
-          {/* AI Potential card */}
+          {/* Unrealized Value card */}
           <div style={{ border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '24px 20px', background: '#eef2ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#6366f1', background: 'rgba(99,102,241,0.12)', borderRadius: 8, padding: 6 }}>layers</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>AI Potential</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>Unrealized Value</span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 10px' }}>How much of your workforce's work can AI meaningfully improve?</h3>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>We map every role into its tasks and score each one for how much AI can help — either by taking it over entirely or by making the person doing it faster and better.</p>
@@ -412,7 +413,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, color: '#6366f1', width: 90, flexShrink: 0 }}>AI Potential</span>
+              <span style={{ fontSize: 13, color: '#6366f1', width: 90, flexShrink: 0 }}>Unrealized value</span>
               <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#f1f5f9', overflow: 'hidden' }}>
                 <div style={{ width: `${ORG.aiPotential}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
               </div>
@@ -689,7 +690,7 @@ function BoardView({
         case 'hrbp': return mul * hrbpOf(a).localeCompare(hrbpOf(b))
         case 'headcount': return mul * (a.employees - b.employees)
         case 'readiness': return mul * (a.aiReadiness - b.aiReadiness)
-        case 'potential': return mul * (a.aiPotential - b.aiPotential)
+        case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
         case 'gap': return mul * (deptGapHeadcount(a) - deptGapHeadcount(b))
         default: return 0
       }
@@ -717,6 +718,7 @@ function BoardView({
       const headcount = row.depts.reduce((s, d) => s + d.headcount, 0)
       const avgReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.readiness * d.headcount, 0) / headcount) : 0
       const avgPotential = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.aiPotential * d.headcount, 0) / headcount) : 0
+      const totalUnrealizedValue = row.depts.reduce((s, d) => { const dept = departments.find(x => x.name === d.name); return s + (dept?.unrealizedValue ?? 0) }, 0)
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
       const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
       // Headcount-weighted response rate across the HRBP's departments (for collection-active view)
@@ -730,7 +732,7 @@ function BoardView({
         return s + (dept?.aiReadiness ?? d2.readiness) * d2.headcount
       }, 0) / headcount) : 0
       const trendDelta = avgReadiness - baseReadiness
-      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
+      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalUnrealizedValue, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
     }).sort((a, b) => {
       const scoreA = (a.avgPotential - a.avgReadiness) * (a.totalGap / Math.max(1, a.headcount))
       const scoreB = (b.avgPotential - b.avgReadiness) * (b.totalGap / Math.max(1, b.headcount))
@@ -741,7 +743,7 @@ function BoardView({
 
   // All roles across org for the Roles tab
   const allRoles = useMemo(() => {
-    const roles: { title: string; dept: string; employees: number; tasks: number; aiReadiness: number; measuredReadiness: number; aiPotential: number; gap: number }[] = []
+    const roles: { title: string; dept: string; employees: number; tasks: number; aiReadiness: number; measuredReadiness: number; aiPotential: number; unrealizedValue: number; gap: number }[] = []
     for (const d of allDeptsSorted) {
       const trend = deptReadinessTrend(d.name)
       for (const r of getRolesForDept(d.name)) {
@@ -749,7 +751,7 @@ function BoardView({
         const collectionDelta = focusCollectionComplete ? trend.delta + ((r.title.length % 3) - 1) : 0
         const upskillingBoost = hrbpPlansCreated ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
         const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
-        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, gap: r.aiPotential - measured })
+        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, unrealizedValue: r.unrealizedValue, gap: r.aiPotential - measured })
       }
     }
     return roles.sort((a, b) => b.gap - a.gap)
@@ -829,6 +831,7 @@ function BoardView({
   const gapPeople = basePeopleInAug - ready
   const peopleInAugForCards = basePeopleInAug
   const aiPotentialPct = effectiveRollup ? effectiveRollup.aiPotential : ORG.aiPotential
+  const orgUnrealizedValue = effectiveRollup ? effectiveRollup.unrealizedValue : departments.reduce((s, d) => s + d.unrealizedValue, 0)
   const totalEmployeesHero = effectiveRollup ? effectiveRollup.totalEmployees : ORG.totalEmployees
   const hrsUnlocked = effectiveRollup ? effectiveRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
   const gapSharePct =
@@ -875,11 +878,11 @@ function BoardView({
     },
     {
       id: 'potential' as const,
-      label: 'AI potential',
-      val: `${aiPotentialPct}%`,
+      label: 'Unrealized value',
+      val: formatDollar(orgUnrealizedValue),
       icon: 'auto_awesome',
       l1: `${tasksInAug} of ${totalRoleTasks} tasks in the augmentation zone`,
-      hint: `${tasksAbove} automatable, ${tasksBelow} human-only`,
+      hint: `BLS median wages \u00d7 automation probability \u00d7 60% realization`,
       delta: null,
       deltaUp: true,
     },
@@ -935,7 +938,7 @@ function BoardView({
           </h2>
           {!hrbpPlansCreated && (
             <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>
-              Your org has <span className="font-bold wfr-text-potential">{effectiveRollup?.aiPotential ?? ORG.aiPotential}%</span> AI Potential. You're capturing less than a third of it.
+              Your org has <span className="font-bold wfr-text-potential">{formatDollar(orgUnrealizedValue)}</span> in unrealized value. You're capturing less than a third of it.
             </p>
           )}
           <div className="wfr-dash__capture-tag-wrap">
@@ -1018,7 +1021,7 @@ function BoardView({
             <TabsList>
               <TabsTrigger value="hrbps">HRBPs</TabsTrigger>
               <TabsTrigger value="departments">Departments</TabsTrigger>
-              <TabsTrigger value="roles">Roles</TabsTrigger>
+              {isHrbp && <TabsTrigger value="roles">Roles</TabsTrigger>}
             </TabsList>
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'
@@ -1045,9 +1048,8 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead>HRBP</DataTableHead>
                 <DataTableHead>Departments</DataTableHead>
-                <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
                 {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]">Upskilling progress</DataTableHead>}
@@ -1091,7 +1093,6 @@ function BoardView({
                       ))}
                     </div>
                   </DataTableCell>
-                  <DataTableCell align="right" numeric>{row.headcount.toLocaleString()}</DataTableCell>
                   <DataTableCell metric>
                     <div>
                       {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 ? (
@@ -1111,9 +1112,12 @@ function BoardView({
                       )}
                     </div>
                   </DataTableCell>
-                  <DataTableCell metric><DeptTableSoloBar variant="potential" pct={row.avgPotential} /></DataTableCell>
+                  <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(row.totalUnrealizedValue)}</span></DataTableCell>
                   <DataTableCell align="right">
-                    <span className="wfr-type-h6 tabular-nums">{row.totalGap.toLocaleString()}</span>
+                    <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                      <span className="wfr-type-h6">{row.totalGap.toLocaleString()} ({row.headcount > 0 ? Math.round((row.totalGap / row.headcount) * 100) : 0}%)</span>
+                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {row.headcount.toLocaleString()}</div>
+                    </div>
                   </DataTableCell>
                   {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && (
                     stateNum(row.hrbpState) === 1 && row.hrbpDelegated
@@ -1161,9 +1165,8 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
@@ -1188,7 +1191,6 @@ function BoardView({
                         </div>
                       </DataTableCell>
                       <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
-                      <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
                       <DataTableCell metric>
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
@@ -1198,9 +1200,12 @@ function BoardView({
                           </button>
                         </div>
                       </DataTableCell>
-                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
-                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
+                      <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
+                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
+                        </div>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1215,9 +1220,8 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1229,11 +1233,13 @@ function BoardView({
                     <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
                       <DataTableCell className="font-semibold">{d.name}</DataTableCell>
                       <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
-                      <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
-                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
-                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
+                      <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                      <DataTableCell align="right">
+                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
+                        </div>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1248,9 +1254,8 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department {deptSort.col === 'name' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP {deptSort.col === 'hrbp' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
-                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('headcount')}><span className="inline-flex items-center gap-1">Headcount {deptSort.col === 'headcount' ? <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{deptSort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span> : <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>}</span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="Team AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1262,15 +1267,17 @@ function BoardView({
                     <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
                       <DataTableCell className="font-semibold">{d.name}</DataTableCell>
                       <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
-                      <DataTableCell align="right" numeric>{d.employees.toLocaleString()}</DataTableCell>
                       <DataTableCell metric>
                         <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
                       </DataTableCell>
-                      <DataTableCell metric>
-                        <DeptTableSoloBar variant="potential" pct={d.aiPotential} />
+                      <DataTableCell align="right">
+                        <span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span>
                       </DataTableCell>
-                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <span className="wfr-type-h6 tabular-nums">{gapCount.toLocaleString()}</span>
+                      <DataTableCell align="right">
+                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
+                        </div>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1291,7 +1298,7 @@ function BoardView({
                 <DataTableHead numeric>Headcount</DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>
@@ -1333,7 +1340,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} />
                       )}
                     </DataTableCell>
-                    <DataTableCell metric><DeptTableSoloBar variant="potential" pct={r.aiPotential} /></DataTableCell>
+                    <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(r.unrealizedValue)}</span></DataTableCell>
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
                     </DataTableCell>
@@ -2004,19 +2011,7 @@ export function WorkforceReadinessDashboard({
     })
   }, [])
 
-  // Clicking the Eightfold logo resets WFR state back to 1
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const logo = (e.target as HTMLElement).closest('.navbar__logo')
-      if (!logo) return
-      e.preventDefault()
-      e.stopPropagation()
-      try { localStorage.removeItem(WFR_STATE_KEY) } catch { /* ignore */ }
-      setWfrStateRaw({ state: 1 })
-    }
-    document.addEventListener('click', handler, true)
-    return () => document.removeEventListener('click', handler, true)
-  }, [])
+
 
   // UI-local dialog toggles (not program state)
   const [focusLaunchOpen, setFocusLaunchOpen] = useState(autoLaunchCollection)
@@ -2445,7 +2440,7 @@ export function WorkforceReadinessDashboard({
                 badge: collBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={isHrbp ? undefined : {
                 title: 'Manager summary',
@@ -2457,7 +2452,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {hrbpCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -2471,9 +2466,12 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{totalGap.toLocaleString()} ({headcount > 0 ? Math.round((totalGap / headcount) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {headcount.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {hrbpCollectionComplete && (() => {
                           const hnh = nameHash(hrbpName ?? '')
@@ -2530,7 +2528,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                     <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead metric style={{ width: '18%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                     <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                     {showHrbpCollection && <DataCollectionHead />}
                     {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
@@ -2596,11 +2594,12 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                          <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                           <DataTableCell align="right">
-                            <span style={{ color: dir.readiness >= 50 ? '#15803d' : '#dc2626' }}>
-                              {notReady} not ready
-                            </span>
+                            <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                              <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
+                              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dir.employees.toLocaleString()}</div>
+                            </div>
                           </DataTableCell>
                           {showHrbpCollection && (
                             hrbpDelegatedPending
@@ -2827,7 +2826,7 @@ export function WorkforceReadinessDashboard({
                 badge: dirBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${dirGap.toLocaleString()} not ready`, description: `out of ${dirHeadcount.toLocaleString()} employees`, hint: dirMeasuredReadiness >= 50 ? `${dirMeasuredReadiness}% adoption meets the 50% threshold.` : `${dirMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -2839,7 +2838,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -2853,9 +2852,12 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{dirGap.toLocaleString()} ({dirHeadcount > 0 ? Math.round((dirGap / dirHeadcount) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dirHeadcount.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {effDirCollComplete && (() => {
                           const dirPlanPct = effDirPlansComplete ? 100 : 0
@@ -2920,7 +2922,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                        <DataTableHead metric style={{ width: '18%' }}>Team AI potential</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -2964,9 +2966,12 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                            <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                             <DataTableCell align="right">
-                              <span style={{ color: sr.readiness >= 50 ? '#15803d' : '#dc2626' }}>{notReady} not ready</span>
+                              <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                                <span className="wfr-type-h6">{notReady.toLocaleString()} ({sr.employees > 0 ? Math.round((notReady / sr.employees) * 100) : 0}%)</span>
+                                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
+                              </div>
                             </DataTableCell>
                             {effDirCollComplete && <UpskillingKpiCell total={sr.employees} pct={srPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(sr.name)} />}
                           </DataTableRow>
@@ -2981,7 +2986,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                     <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead metric style={{ width: '18%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                     <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                     {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
@@ -3017,11 +3022,12 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: en.readiness >= 50 ? '#15803d' : '#dc2626' }}>
-                            {notReady} not ready
-                          </span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {effDirCollComplete && <UpskillingKpiCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(mgr.manager)} />}
                       </DataTableRow>
@@ -3096,7 +3102,7 @@ export function WorkforceReadinessDashboard({
                 badge: srBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: `${d.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${srGap.toLocaleString()} not ready`, description: `out of ${srHeadcount.toLocaleString()} employees`, hint: srMeasuredReadiness >= 50 ? `${srMeasuredReadiness}% adoption meets the 50% threshold.` : `${srMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -3108,7 +3114,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead metric style={{ width: '18%' }}>AI potential</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3124,9 +3130,12 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell metric>
                           <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
                         </DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626' }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{srGap.toLocaleString()} ({srHeadcount > 0 ? Math.round((srGap / srHeadcount) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {srHeadcount.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {effSrCollComplete && (() => {
                           const srPlanPct = effSrPlansComplete ? 100 : 0
@@ -3170,7 +3179,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                     <DataTableHead metric style={{ width: '22%' }}>Team AI adoption</DataTableHead>
-                    <DataTableHead metric style={{ width: '18%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                     <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                     {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
@@ -3206,11 +3215,12 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} /></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: en.readiness >= 50 ? '#15803d' : '#dc2626' }}>
-                            {notReady} not ready
-                          </span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {effSrCollComplete && <UpskillingKpiCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
                       </DataTableRow>
