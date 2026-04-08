@@ -2452,7 +2452,6 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {hrbpCollectionComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -2466,7 +2465,6 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -2836,7 +2834,6 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -2850,7 +2847,6 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -3109,7 +3105,6 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                         <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3125,7 +3120,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell metric>
                           <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
                         </DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>

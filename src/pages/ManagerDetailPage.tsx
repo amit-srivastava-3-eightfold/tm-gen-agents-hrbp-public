@@ -362,7 +362,6 @@ export function ManagerDetailPage() {
                     <DataTableRow>
                       <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
                       <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                      <DataTableHead numeric style={{ width: '18%' }}>Unrealized value</DataTableHead>
                       <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
                       {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
                     </DataTableRow>
@@ -376,7 +375,6 @@ export function ManagerDetailPage() {
                         </div>
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
-                      <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(dept.unrealizedValue * displayEmployees.length / Math.max(1, dept.employees)))}</span></DataTableCell>
                       <DataTableCell align="right">
                         <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                       </DataTableCell>
