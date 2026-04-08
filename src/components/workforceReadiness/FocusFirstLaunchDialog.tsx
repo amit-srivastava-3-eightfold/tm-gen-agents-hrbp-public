@@ -1,5 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog'
-import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, hrbpAssignments, deptGapHeadcount, formatDollar } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
@@ -64,6 +65,44 @@ const hrbpPrioritySet = (() => {
   const count = Math.max(1, Math.round(uniqueHrbps.length * 0.3))
   return new Set(uniqueHrbps.slice(0, count).map(h => h.hrbp))
 })()
+
+function PriorityTooltip({ tooltip, children }: { tooltip: string; children: ReactNode }) {
+  const triggerRef = useRef<HTMLSpanElement>(null)
+  const tipRef = useRef<HTMLDivElement>(null)
+  const [anchor, setAnchor] = useState<{ cx: number; y: number } | null>(null)
+  const [left, setLeft] = useState(0)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (anchor && tipRef.current) {
+      const w = tipRef.current.offsetWidth
+      const clamped = Math.max(8, Math.min(window.innerWidth - w - 8, anchor.cx - w / 2))
+      setLeft(clamped)
+      setReady(true)
+    }
+  }, [anchor])
+
+  return (
+    <span
+      ref={triggerRef}
+      style={{ display: 'inline-flex', flexShrink: 0 }}
+      onMouseEnter={() => {
+        const r = triggerRef.current?.getBoundingClientRect()
+        if (r) { setReady(false); setAnchor({ cx: r.left + r.width / 2, y: r.top }) }
+      }}
+      onMouseLeave={() => { setAnchor(null); setReady(false) }}
+    >
+      {children}
+      {anchor && createPortal(
+        <div ref={tipRef} style={{ position: 'fixed', top: anchor.y - 6, left, transform: 'translateY(-100%)', opacity: ready ? 1 : 0, background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 400, lineHeight: 1.5, borderRadius: 6, padding: '7px 10px', maxWidth: 160, zIndex: 9999, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', pointerEvents: 'none' }}>
+          {tooltip}
+          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1e293b' }} />
+        </div>,
+        document.body
+      )}
+    </span>
+  )
+}
 
 export function FocusFirstLaunchDialog({
   open,
@@ -260,7 +299,9 @@ export function FocusFirstLaunchDialog({
                           <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                             {dir.name}
                             {dirPrioritySet.has(dir.name) && (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                              <PriorityTooltip tooltip="Largest team — most employees to include in data collection">
+                                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                              </PriorityTooltip>
                             )}
                           </span>
                           <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
@@ -449,7 +490,9 @@ export function FocusFirstLaunchDialog({
                               <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                                 {h.hrbp}
                                 {hrbpPrioritySet.has(h.hrbp) && (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                  <PriorityTooltip tooltip="Highest priority score — widest gap between AI potential and current adoption">
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                  </PriorityTooltip>
                                 )}
                               </span>
                               <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hReadiness}%</span>

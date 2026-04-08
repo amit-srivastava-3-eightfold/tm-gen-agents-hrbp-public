@@ -38,6 +38,46 @@ import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMe
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
+/* ─── Priority Tooltip ─── */
+
+function PriorityTooltip({ tooltip, children }: { tooltip: string; children: React.ReactNode }) {
+  const triggerRef = useRef<HTMLSpanElement>(null)
+  const tipRef = useRef<HTMLDivElement>(null)
+  const [anchor, setAnchor] = useState<{ cx: number; y: number } | null>(null)
+  const [left, setLeft] = useState(0)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (anchor && tipRef.current) {
+      const w = tipRef.current.offsetWidth
+      const clamped = Math.max(8, Math.min(window.innerWidth - w - 8, anchor.cx - w / 2))
+      setLeft(clamped)
+      setReady(true)
+    }
+  }, [anchor])
+
+  return (
+    <span
+      ref={triggerRef}
+      style={{ display: 'inline-flex', flexShrink: 0 }}
+      onMouseEnter={() => {
+        const r = triggerRef.current?.getBoundingClientRect()
+        if (r) { setReady(false); setAnchor({ cx: r.left + r.width / 2, y: r.top }) }
+      }}
+      onMouseLeave={() => { setAnchor(null); setReady(false) }}
+    >
+      {children}
+      {anchor && createPortal(
+        <div ref={tipRef} style={{ position: 'fixed', top: anchor.y - 6, left, transform: 'translateY(-100%)', opacity: ready ? 1 : 0, background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 400, lineHeight: 1.5, borderRadius: 6, padding: '7px 10px', maxWidth: 160, zIndex: 9999, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', pointerEvents: 'none' }}>
+          {tooltip}
+          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1e293b' }} />
+        </div>,
+        document.body
+      )}
+    </span>
+  )
+}
+
 /* ─── WFR Universal Program State ─── */
 
 export type WfrProgramState = 1 | 2 | '2b' | 3 | 4 | 5
@@ -1187,9 +1227,11 @@ function BoardView({
                         {row.hrbp}
                       </button>
                       {hrbpPrioritySet.has(row.hrbp) && (!focusCollectionActive && !focusCollectionComplete || isHighlighted) && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>
-                          Priority
-                        </span>
+                        <PriorityTooltip tooltip="Top 30% by unrealized value — highest AI productivity potential">
+                          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>
+                            Priority
+                          </span>
+                        </PriorityTooltip>
                       )}
                     </div>
                   </DataTableCell>
@@ -1284,9 +1326,11 @@ function BoardView({
                         <div className="flex items-center gap-2">
                           {d.name}
                           {isPriority ? (
-                            <Badge variant="outline" size="24" className="ml-1 shrink-0 font-semibold" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
-                              {priorityRank === 0 ? 'Top priority' : 'High priority'}
-                            </Badge>
+                            <PriorityTooltip tooltip={priorityRank === 0 ? 'Largest transformation gap — highest AI potential with lowest current adoption' : 'Top 3 by transformation gap — among the widest adoption gaps in your org'}>
+                              <Badge variant="outline" size="24" className="ml-1 shrink-0 font-semibold" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
+                                {priorityRank === 0 ? 'Top priority' : 'High priority'}
+                              </Badge>
+                            </PriorityTooltip>
                           ) : null}
                         </div>
                       </DataTableCell>
@@ -2969,7 +3013,9 @@ export function WorkforceReadinessDashboard({
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                     <span className="text-[#3b5bdb] hover:underline">{dir.name}</span>
                                     {dirPrioritySet.has(dir.name) && (
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                      <PriorityTooltip tooltip="Top 30% by unrealized value — highest AI productivity potential in your scope">
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                      </PriorityTooltip>
                                     )}
                                   </div>
                                   <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
@@ -3079,7 +3125,7 @@ export function WorkforceReadinessDashboard({
                                   <span className="wfr-focus-launch__check">{checked ? '✓' : ''}</span>
                                   <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     {dir.name}
-                                    {isPriority && <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>}
+                                    {isPriority && <PriorityTooltip tooltip="Top 30% by unrealized value — recommended to start here for most impact"><span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span></PriorityTooltip>}
                                   </span>
                                   <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
                                   <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
@@ -3241,9 +3287,11 @@ export function WorkforceReadinessDashboard({
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                 <span className="text-[#3b5bdb] hover:underline">{dir.name}</span>
                                 {dirPrioritySet.has(dir.name) && (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>
-                                    Priority
-                                  </span>
+                                  <PriorityTooltip tooltip="Top 30% by unrealized value — highest AI productivity potential in your scope">
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>
+                                      Priority
+                                    </span>
+                                  </PriorityTooltip>
                                 )}
                               </div>
                               <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
@@ -3360,7 +3408,7 @@ export function WorkforceReadinessDashboard({
                               <span className="wfr-focus-launch__check">{checked ? '✓' : ''}</span>
                               <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                 {dir.name}
-                                {isPriority && <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>}
+                                {isPriority && <PriorityTooltip tooltip="Top 30% by unrealized value — recommended to start here for most impact"><span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span></PriorityTooltip>}
                               </span>
                               <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
                               <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
