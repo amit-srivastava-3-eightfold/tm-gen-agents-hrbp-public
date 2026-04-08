@@ -734,6 +734,10 @@ function BoardView({
       const trendDelta = avgReadiness - baseReadiness
       return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalUnrealizedValue, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
     }).sort((a, b) => {
+      // Pin delegated/active HRBPs to the top
+      const aActive = a.hrbpDelegated || stateNum(a.hrbpState) >= 2 ? 1 : 0
+      const bActive = b.hrbpDelegated || stateNum(b.hrbpState) >= 2 ? 1 : 0
+      if (aActive !== bActive) return bActive - aActive
       const scoreA = (a.avgPotential - a.avgReadiness) * (a.totalGap / Math.max(1, a.headcount))
       const scoreB = (b.avgPotential - b.avgReadiness) * (b.totalGap / Math.max(1, b.headcount))
       if (Math.abs(scoreB - scoreA) < 0.1) return b.headcount - a.headcount
