@@ -2440,7 +2440,7 @@ export function WorkforceReadinessDashboard({
                 badge: collBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${hrbpName ?? d.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={isHrbp ? undefined : {
                 title: 'Manager summary',
@@ -2466,7 +2466,7 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={measuredReadiness} /></DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: measuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{measuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -2591,7 +2591,7 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                          <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}</span></DataTableCell>
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
                               <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
@@ -2823,7 +2823,7 @@ export function WorkforceReadinessDashboard({
                 badge: dirBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${directorData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${dirGap.toLocaleString()} not ready`, description: `out of ${dirHeadcount.toLocaleString()} employees`, hint: dirMeasuredReadiness >= 50 ? `${dirMeasuredReadiness}% adoption meets the 50% threshold.` : `${dirMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -2849,7 +2849,7 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} /></DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -2960,7 +2960,7 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                            <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)))}</span></DataTableCell>
                             <DataTableCell align="right">
                               <div className="tabular-nums" style={{ textAlign: 'right' }}>
                                 <span className="wfr-type-h6">{notReady.toLocaleString()} ({sr.employees > 0 ? Math.round((notReady / sr.employees) * 100) : 0}%)</span>
@@ -3016,7 +3016,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
@@ -3096,7 +3096,7 @@ export function WorkforceReadinessDashboard({
                 badge: srBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
-              potential={{ value: formatDollar(d.unrealizedValue), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${d.name}`, onLearnMore: () => setDashOpenMetric('potential') }}
+              potential={{ value: formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 automation probability', hint: `Unrealized value for ${seniorMgrData.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${srGap.toLocaleString()} not ready`, description: `out of ${srHeadcount.toLocaleString()} employees`, hint: srMeasuredReadiness >= 50 ? `${srMeasuredReadiness}% adoption meets the 50% threshold.` : `${srMeasuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
               managerTable={{
                 title: 'Manager summary',
@@ -3124,7 +3124,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell metric>
                           <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />
                         </DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -3206,7 +3206,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span></DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
