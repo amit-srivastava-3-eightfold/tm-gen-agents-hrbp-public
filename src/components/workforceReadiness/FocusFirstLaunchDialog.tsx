@@ -177,7 +177,7 @@ export function FocusFirstLaunchDialog({
 
   // ─── HRBP mode: 2-step dialog (select teams → review + launch) ───
   if (hrbpMode) {
-    const hrbpDept = defaultScopeDepartmentName ? departments.find(dd => dd.name === defaultScopeDepartmentName) : null
+    const hrbpDept = _defaultScope ? departments.find(dd => dd.name === _defaultScope) : null
     const rawDirs = hrbpDirectors ?? []
     // Sort directors by priority score: (aiPotential − readiness) × (gap rate)
     const dirs = [...rawDirs].sort((a, b) => {
