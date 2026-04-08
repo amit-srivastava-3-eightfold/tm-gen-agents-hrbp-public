@@ -301,8 +301,7 @@ export function ManagerDetailPage() {
                     <Breadcrumb>
                       <BreadcrumbList>
                         <BreadcrumbItem><BreadcrumbLink onClick={() => navigate('/workforce')}>Overview</BreadcrumbLink></BreadcrumbItem>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}`)}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{h.hrbp}</BreadcrumbLink></BreadcrumbItem>
+                        {!isHrbp && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`/workforce?hrbp=${encodeURIComponent(h.hrbp)}`)}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{h.hrbp}</BreadcrumbLink></BreadcrumbItem></>)}
                         <BreadcrumbSeparator />
                         <BreadcrumbItem><BreadcrumbLink onClick={() => navigate(dirUrl)}>{dirName}</BreadcrumbLink></BreadcrumbItem>
                         {seniorMgrParam && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => navigate(`${dirUrl}&seniorMgr=${encodeURIComponent(seniorMgrParam)}&srStart=${encodeURIComponent(srStartParam)}`)}>{seniorMgrParam}</BreadcrumbLink></BreadcrumbItem></>)}

@@ -2856,8 +2856,7 @@ export function WorkforceReadinessDashboard({
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setView(singleDeptHrbp ? 'hrbp' : 'board'); if (!singleDeptHrbp) setHrbpName(null); setDirectorData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(directorData.parentHrbp); setView('hrbp'); setDirectorData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{directorData.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
+                    {!isHrbp && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(directorData.parentHrbp); setView('hrbp'); setDirectorData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{directorData.parentHrbp}</BreadcrumbLink></BreadcrumbItem></>)}
                     <BreadcrumbSeparator />
                     <BreadcrumbItem><BreadcrumbPage>{directorData.name}</BreadcrumbPage></BreadcrumbItem>
                   </BreadcrumbList>
@@ -3125,8 +3124,7 @@ export function WorkforceReadinessDashboard({
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setView(singleDeptHrbp ? 'hrbp' : 'board'); if (!singleDeptHrbp) setHrbpName(null); setDirectorData(null); setSeniorMgrData(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(seniorMgrData.parentDirector.parentHrbp); setView('hrbp'); setDirectorData(null); setSeniorMgrData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{seniorMgrData.parentDirector.parentHrbp}</BreadcrumbLink></BreadcrumbItem>
+                    {!isHrbp && (<><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbLink onClick={() => { setHrbpName(seniorMgrData.parentDirector.parentHrbp); setView('hrbp'); setDirectorData(null); setSeniorMgrData(null) }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -3, marginRight: 4 }}>shield_person</span>{seniorMgrData.parentDirector.parentHrbp}</BreadcrumbLink></BreadcrumbItem></>)}
                     <BreadcrumbSeparator />
                     <BreadcrumbItem><BreadcrumbLink onClick={() => { setDirectorData(seniorMgrData.parentDirector); setView('director'); setSeniorMgrData(null) }}>{seniorMgrData.parentDirector.name}</BreadcrumbLink></BreadcrumbItem>
                     <BreadcrumbSeparator />
