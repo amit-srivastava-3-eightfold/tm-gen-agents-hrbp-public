@@ -1,7 +1,7 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
+import { formatDollar, getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
 import {
   deptManagerTeams,
   deptReadinessTrend,
@@ -17,7 +17,7 @@ export interface ReadinessTrendSheetProps {
   dept: Dept | null
   channelsLabel?: string
   /** When set, show employee-level readiness for this manager instead of dept collection data */
-  managerContext?: { manager: string; mgrIndex: number } | null
+  managerContext?: { manager: string; mgrIndex: number; readiness?: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
   roleContext?: { title: string; dept: string; measuredReadiness?: number; employeeName?: string } | null
   /** When set, frame the sheet as HRBP team data instead of department data */
@@ -26,9 +26,11 @@ export interface ReadinessTrendSheetProps {
   upskillingActive?: boolean
   /** Whether data collection is complete — controls whether trends/deltas are shown */
   collectionComplete?: boolean
+  /** Pre-computed direct report rows to show in the manager-context table (replaces employee list) */
+  directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
 }
 
-export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true }: ReadinessTrendSheetProps) {
+export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true, directReports }: ReadinessTrendSheetProps) {
   const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   // Reset filter when sheet closes or role changes
@@ -104,20 +106,23 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
     : roleContext
       ? `${roleContext.dept} — Task-level readiness`
       : managerContext
-        ? `${dept.name} — Employee readiness trend`
+        ? `${dept.name} — Direct report readiness`
         : hrbpContext
           ? `${hrbpContext.hrbpName}'s team — AI adoption change`
           : `${dept.name} — AI adoption change`
 
   // ── Unified card values ──────────────────────────────────────────────────
   const roleForCtx = roleContext ? getRolesForDept(roleContext.dept).find(r => r.title === roleContext.title) : null
-  const cardBase = roleContext ? (roleForCtx?.aiReadiness ?? estimated) : estimated
+  // When managerContext provides an explicit readiness, derive base by subtracting the trend delta
+  const mgrReadiness = managerContext?.readiness
+  const mgrBase = mgrReadiness != null && data.showTrends ? Math.max(0, mgrReadiness - trend.delta) : mgrReadiness
+  const cardBase = roleContext ? (roleForCtx?.aiReadiness ?? estimated) : mgrBase ?? estimated
   const cardMeasured = roleContext && data.showTrends
     ? (roleContext.measuredReadiness ?? (roleForCtx ? Math.max(0, Math.min(100, roleForCtx.aiReadiness + trend.delta + ((roleContext.title.length % 3) - 1))) : measured))
-    : roleContext ? cardBase : measured
+    : roleContext ? cardBase : (mgrReadiness ?? measured)
   const cardDelta = cardMeasured - cardBase
   const cardIsUp = cardDelta >= 0
-  const cardEmployees = roleContext ? (roleForCtx?.employees ?? 0) : managerContext ? (mgrEmployeeData?.length ?? 0) : hrbpContext ? Math.round(hrbpContext.headcount * data.responseRate / 100) : data.respondedCount
+  const cardEmployees = roleContext ? (roleForCtx?.employees ?? 0) : managerContext ? (directReports ? directReports.reduce((s, r) => s + r.employees, 0) : (mgrEmployeeData?.length ?? 0)) : hrbpContext ? Math.round(hrbpContext.headcount * data.responseRate / 100) : data.respondedCount
 
   // Gauge SVG helper
   const GaugeSVG = ({ pct, basePct, isPositive }: { pct: number; basePct: number; isPositive: boolean }) => {
@@ -230,7 +235,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
               </div>
               <div className="wfr-trend-sheet__stat">
-                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Team member' : managerContext ? 'Employees in team' : 'Employees interviewed'}</span>
+                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Team member' : managerContext ? (directReports ? 'Total employees' : 'Employees in team') : 'Employees interviewed'}</span>
                 <span className="wfr-trend-sheet__stat-value">{roleContext?.employeeName ? roleContext.employeeName : cardEmployees.toLocaleString()}</span>
               </div>
             </div>
@@ -343,26 +348,76 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 </>
               )
             })()
-          ) : managerContext && mgrEmployeeData ? (
-            // Manager context: employee readiness table
-            <div className="wfr-trend-sheet__emp-table">
-              <div className="wfr-trend-sheet__emp-header">
-                <span className="wfr-trend-sheet__emp-th" style={{ flex: 2 }}>Employee</span>
-                <span className="wfr-trend-sheet__emp-th">Previous</span>
-                <span className="wfr-trend-sheet__emp-th">Measured</span>
-                <span className="wfr-trend-sheet__emp-th">Change</span>
-              </div>
-              {mgrEmployeeData.map((emp) => (
-                <div key={emp.name} className="wfr-trend-sheet__emp-row">
-                  <span className="wfr-trend-sheet__emp-name" style={{ flex: 2 }}>{emp.name}</span>
-                  <span className="wfr-trend-sheet__emp-val wfr-trend-sheet__emp-val--muted">{emp.previous}%</span>
-                  <span className={`wfr-trend-sheet__emp-val ${emp.direction === 'up' ? 'wfr-trend-sheet__emp-val--up' : 'wfr-trend-sheet__emp-val--down'}`}>{emp.measured}%</span>
-                  <span className={`wfr-trend-sheet__emp-val ${emp.direction === 'up' ? 'wfr-trend-sheet__emp-val--up' : 'wfr-trend-sheet__emp-val--down'}`}>
-                    {emp.direction === 'up' ? '+' : ''}{emp.delta}pt
-                  </span>
+          ) : managerContext ? (
+            // Manager context: direct reports table (or employee fallback)
+            directReports && directReports.length > 0 ? (
+              <div className="wfr-trend-sheet__teams">
+                <h3 className="wfr-trend-sheet__teams-title">Direct reports</h3>
+                <div className="wfr-trend-sheet__teams-table">
+                  <div className="wfr-trend-sheet__teams-header">
+                    <span className="wfr-trend-sheet__teams-th wfr-trend-sheet__teams-th--name">Manager</span>
+                    <span className="wfr-trend-sheet__teams-th" style={{ width: 130, paddingLeft: 16 }}>Team AI adoption</span>
+                    <span className="wfr-trend-sheet__teams-th" style={{ width: 100, textAlign: 'right' }}>Unrealized value</span>
+                    <span className="wfr-trend-sheet__teams-th" style={{ width: 110, textAlign: 'right' }}>Gap</span>
+                  </div>
+                  {directReports.map((row) => {
+                    const gap = row.employees - row.readyCount
+                    const gapPct = row.employees > 0 ? Math.round((gap / row.employees) * 100) : 0
+                    const tDelta = data.showTrends ? trend.delta + ((row.name.length % 5) - 2) : 0
+                    return (
+                      <div key={row.name} className="wfr-trend-sheet__teams-row">
+                        <div className="wfr-trend-sheet__teams-td wfr-trend-sheet__teams-td--name">
+                          <div className="wfr-trend-sheet__team-manager">{row.name}</div>
+                          <div className="wfr-trend-sheet__team-title">{row.title} · {row.employees.toLocaleString()}</div>
+                        </div>
+                        <div className="wfr-trend-sheet__teams-td" style={{ width: 130, paddingLeft: 16 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div className="wfr-trend-sheet__team-bar" style={{ flex: 1, minWidth: 0 }}>
+                              <div className="wfr-trend-sheet__team-bar-track">
+                                <div className="wfr-trend-sheet__team-bar-fill" style={{ width: `${row.readiness}%`, background: '#22c55e' }} />
+                              </div>
+                              <span className="wfr-trend-sheet__team-bar-pct" style={{ color: '#15803d' }}>{row.readiness}%</span>
+                            </div>
+                            {data.showTrends && tDelta !== 0 && (
+                              <span style={{ fontSize: 11, fontWeight: 600, color: tDelta >= 0 ? '#15803d' : '#dc2626', whiteSpace: 'nowrap' }}>
+                                {tDelta >= 0 ? '↑' : '↓'}{Math.abs(tDelta)}pt
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ width: 100, textAlign: 'right', fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                          {formatDollar(row.unrealizedValue)}
+                        </div>
+                        <div style={{ width: 110, textAlign: 'right' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{gap.toLocaleString()} ({gapPct}%)</div>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {row.employees.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : mgrEmployeeData ? (
+              // Fallback: employee readiness table
+              <div className="wfr-trend-sheet__emp-table">
+                <div className="wfr-trend-sheet__emp-header">
+                  <span className="wfr-trend-sheet__emp-th" style={{ flex: 2 }}>Employee</span>
+                  <span className="wfr-trend-sheet__emp-th">Previous</span>
+                  <span className="wfr-trend-sheet__emp-th">Measured</span>
+                  <span className="wfr-trend-sheet__emp-th">Change</span>
+                </div>
+                {mgrEmployeeData.map((emp) => (
+                  <div key={emp.name} className="wfr-trend-sheet__emp-row">
+                    <span className="wfr-trend-sheet__emp-name" style={{ flex: 2 }}>{emp.name}</span>
+                    <span className="wfr-trend-sheet__emp-val wfr-trend-sheet__emp-val--muted">{emp.previous}%</span>
+                    <span className={`wfr-trend-sheet__emp-val ${emp.direction === 'up' ? 'wfr-trend-sheet__emp-val--up' : 'wfr-trend-sheet__emp-val--down'}`}>{emp.measured}%</span>
+                    <span className={`wfr-trend-sheet__emp-val ${emp.direction === 'up' ? 'wfr-trend-sheet__emp-val--up' : 'wfr-trend-sheet__emp-val--down'}`}>
+                      {emp.direction === 'up' ? '+' : ''}{emp.delta}pt
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null
           ) : (
             // Dept context: roles breakdown
             <div className="wfr-trend-sheet__teams">

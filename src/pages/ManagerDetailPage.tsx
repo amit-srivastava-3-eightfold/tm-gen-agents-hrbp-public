@@ -189,6 +189,8 @@ export function ManagerDetailPage() {
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
+  const [allPlansAssigned, setAllPlansAssigned] = useState(false)
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [editingCourses, setEditingCourses] = useState(false)
   const [editingSkills, setEditingSkills] = useState(false)
@@ -344,6 +346,28 @@ export function ManagerDetailPage() {
                 </Breadcrumb>
               )
             })()}
+            heroCard={upskillingInScope && !hrbpPlansCreated && !allPlansAssigned ? (
+              <div style={{ padding: '18px 24px', borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#dc2626', marginTop: 2, flexShrink: 0 }}>rocket_launch</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Development plans ready</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 3 }}>
+                      <strong>{displayEmployees.length}</strong> development plans have been created for your team.
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748b' }}>Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap' }}
+                  onClick={() => setAssignConfirmOpen(true)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment_turned_in</span>
+                  Assign plans
+                </button>
+              </div>
+            ) : undefined}
             name={mgr.manager}
             subtitle={`${mgr.title} · ${dept.name} · ${employees.length} employees`}
             readiness={{
@@ -403,27 +427,18 @@ export function ManagerDetailPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
                                 onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }); setEditingCourses(false); setRemovedCourses(new Set()) }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Dev plan
+                                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Development plan
                               </button>
-                              {(mgrDisplayPct === 0 && !assignedPlans.has(mgr.manager)) ? (
-                                <>
-                                  <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
-                                  <button
-                                    type="button"
-                                    style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                                    onClick={(e) => { e.stopPropagation(); setAssignedPlans(prev => new Set([...prev, mgr.manager])); setToast(`Development plan assigned to ${mgr.manager}`); setTimeout(() => setToast(null), 3000) }}
-                                  >Assign</button>
-                                </>
-                              ) : (() => {
-                                const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Not started'
-                                const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                                const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+                              {(mgrDisplayPct > 0 || allPlansAssigned || assignedPlans.has(mgr.manager)) && (() => {
+                                const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Assigned'
+                                const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#6366f1'
+                                const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#4338ca'
                                 return (
                                   <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
                                     <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
                                       <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrDisplayPct}%`, background: bColor }} />
                                     </div>
-                                    <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{mgrDisplayPct}%</span>
+                                    <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{dStatus}</span>
                                   </div>
                                 )
                               })()}
@@ -484,11 +499,10 @@ export function ManagerDetailPage() {
                       )}
                     </DataTableCell>
 
-                    {/* Upskilling status — dev plan chip + assign button (pre-assign) or progress bar (post-assign) */}
+                    {/* Upskilling status — dev plan chip; post-assign: progress bar */}
                     {upskillingInScope ? (
                       <DataTableCell metric className="!whitespace-normal">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          {/* Dev plan chip */}
                           <button
                             type="button"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
@@ -500,36 +514,19 @@ export function ManagerDetailPage() {
                             }}
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
-                            Dev plan
+                            Development plan
                           </button>
-                          {/* Pre-assign: Assign button; post-assign: progress bar */}
-                          {(planPct === 0 && !assignedPlans.has(emp.name)) ? (
-                            <>
-                              <span style={{ color: '#94a3b8', fontSize: 12 }}>→</span>
-                              <button
-                                type="button"
-                                style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6, background: '#3b5bdb', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setAssignedPlans(prev => new Set([...prev, emp.name]))
-                                  setToast(`Development plan assigned to ${emp.name}`)
-                                  setTimeout(() => setToast(null), 3000)
-                                }}
-                              >
-                                Assign
-                              </button>
-                            </>
-                          ) : (() => {
+                          {(planPct > 0 || allPlansAssigned || assignedPlans.has(emp.name)) && (() => {
                             const displayPct = planPct > 0 ? planPct : Math.min(85, 10 + (h % 55))
-                            const displayStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Not started'
-                            const bColor = displayStatus === 'Completed' ? '#22c55e' : displayStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                            const tColor = displayStatus === 'Completed' ? '#15803d' : displayStatus === 'In progress' ? '#6366f1' : '#94a3b8'
+                            const displayStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Assigned'
+                            const bColor = displayStatus === 'Completed' ? '#22c55e' : displayStatus === 'In progress' ? '#818cf8' : '#6366f1'
+                            const tColor = displayStatus === 'Completed' ? '#15803d' : displayStatus === 'In progress' ? '#6366f1' : '#4338ca'
                             return (
                               <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
                                 <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
                                   <div className="wfr-dash__plan-progress-fill" style={{ width: `${displayPct}%`, background: bColor }} />
                                 </div>
-                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayPct}%</span>
+                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayStatus}</span>
                               </div>
                             )
                           })()}
@@ -542,22 +539,6 @@ export function ManagerDetailPage() {
             </DataTableBody>
           </DataTable>
 
-          {/* Bulk actions */}
-          {!collectionComplete && (
-            <div className="mgr-detail-page__bulk-actions">
-              <Button
-                variant="primary"
-                onClick={() => {
-                  const allNames = employees.map(e => e.name)
-                  setAssignedPlans(new Set(allNames))
-                  setToast(`Development plans assigned to all ${employees.length} employees`)
-                  setTimeout(() => setToast(null), 3000)
-                }}
-              >
-                Assign plans to all ({employees.length})
-              </Button>
-            </div>
-          )}
           </PersonDetailLayout>
         </div>
       </main>
@@ -739,6 +720,39 @@ export function ManagerDetailPage() {
                   </Button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* Assign plans confirmation dialog */}
+      {assignConfirmOpen && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
+          onClick={() => setAssignConfirmOpen(false)}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
+            onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#dc2626' }}>assignment_turned_in</span>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Assign development plans</h3>
+            </div>
+            <p style={{ fontSize: 14, color: '#475569', marginBottom: 24, lineHeight: 1.6 }}>
+              This will assign development plans to all <strong>{displayEmployees.length} employees</strong> on your team. They'll receive a notification and can start their AI upskilling courses immediately.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <Button variant="secondary" onClick={() => setAssignConfirmOpen(false)}>Cancel</Button>
+              <button
+                type="button"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none' }}
+                onClick={() => {
+                  setAllPlansAssigned(true)
+                  setAssignConfirmOpen(false)
+                  setToast(`Development plans assigned to all ${displayEmployees.length} employees`)
+                  setTimeout(() => setToast(null), 4000)
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment_turned_in</span>
+                Assign all plans
+              </button>
             </div>
           </div>
         </div>,
