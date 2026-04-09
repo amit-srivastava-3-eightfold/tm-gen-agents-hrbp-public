@@ -3476,9 +3476,9 @@ export function WorkforceReadinessDashboard({
           const effDirPlansComplete = dirPlansComplete && dirInScope
           const dirHrbpCollecting = stateNum(dirEffState) >= 2 && !dirCollComplete
           const dirHrbpJustLaunched = hrbpJustLaunchedSet.has(directorData.parentHrbp)
-          const dirShowCollection = dirHrbpCollecting && dirInScope && !dirHrbpJustLaunched
-          const dirBaseResponseRate = dirShowCollection ? wfrDemoDeptResponseRate(d.name) : 0
-          const dirMgrResponseRate = (name: string) => Math.max(5, Math.min(95, dirBaseResponseRate + ((name.length * 7) % 30) - 15))
+          const dirShowCollection = dirHrbpCollecting && dirInScope
+          const dirBaseResponseRate = dirShowCollection && !dirHrbpJustLaunched ? wfrDemoDeptResponseRate(d.name) : 0
+          const dirMgrResponseRate = (name: string) => dirHrbpJustLaunched ? 0 : Math.max(5, Math.min(95, dirBaseResponseRate + ((name.length * 7) % 30) - 15))
           const dirTrend = deptReadinessTrend(d.name)
           const dirMeasuredReadiness = effDirCollComplete ? d.aiReadiness + dirTrend.delta : d.aiReadiness
 
@@ -3752,9 +3752,9 @@ export function WorkforceReadinessDashboard({
           const effSrPlansComplete = srPlansComplete && srDirInScope
           const srHrbpCollecting = stateNum(srEffState) >= 2 && !srCollComplete
           const srHrbpJustLaunched = hrbpJustLaunchedSet.has(seniorMgrData.parentDirector.parentHrbp)
-          const srShowCollection = srHrbpCollecting && srDirInScope && !srHrbpJustLaunched
-          const srBaseResponseRate = srShowCollection ? wfrDemoDeptResponseRate(d.name) : 0
-          const srMgrResponseRate = (name: string) => Math.max(5, Math.min(95, srBaseResponseRate + ((name.length * 7) % 30) - 15))
+          const srShowCollection = srHrbpCollecting && srDirInScope
+          const srBaseResponseRate = srShowCollection && !srHrbpJustLaunched ? wfrDemoDeptResponseRate(d.name) : 0
+          const srMgrResponseRate = (name: string) => srHrbpJustLaunched ? 0 : Math.max(5, Math.min(95, srBaseResponseRate + ((name.length * 7) % 30) - 15))
           const srTrend = deptReadinessTrend(d.name)
           const srMeasuredReadiness = effSrCollComplete ? d.aiReadiness + srTrend.delta : d.aiReadiness
           const nh2 = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
