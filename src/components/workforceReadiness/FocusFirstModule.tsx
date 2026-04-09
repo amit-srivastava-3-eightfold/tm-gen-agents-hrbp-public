@@ -72,8 +72,8 @@ export function FocusFirstCollectionCard({
   hrbpPlansCreated = false,
   gapPeopleOverride,
 }: FocusFirstCollectionCardProps) {
-  // Animation phases: idle → filling → bell → hold → done
-  const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'bell' | 'hold'>('idle')
+  // Animation phases: idle → filling → green → done
+  const [animPhase, setAnimPhase] = useState<'idle' | 'filling' | 'green'>('idle')
   const [animPct, setAnimPct] = useState(0)
   const handleProgressClick = useCallback(() => {
     if (animPhase !== 'idle' || collectionJustCompleted || collectionComplete) return
@@ -81,13 +81,12 @@ export function FocusFirstCollectionCard({
     setAnimPhase('filling')
     setAnimPct(startPct) // initialize at current value — prevents 0% flash before first rAF tick
     const startTime = performance.now()
-    const duration = 3000 // 3s — matches CSS animation on .wfr-ra-card__fill--animating
+    const duration = 3000 // 3s fill animation
 
     // Exact cubic-bezier(0.25, 0.1, 0.25, 1) solver to match the CSS animation
     const cubicBezier = (x1: number, y1: number, x2: number, y2: number) => {
-      // Newton-Raphson to find t for a given x, then evaluate y
       return (x: number) => {
-        let t = x // initial guess
+        let t = x
         for (let i = 0; i < 8; i++) {
           const ct = 1 - t
           const bx = 3 * ct * ct * t * x1 + 3 * ct * t * t * x2 + t * t * t - x
@@ -111,16 +110,16 @@ export function FocusFirstCollectionCard({
       }
     }
     requestAnimationFrame(tick)
-    // Phase 1: bar fills (3s)
+    // Phase 1: bar fills to 100% (3s)
     setTimeout(() => {
       setAnimPct(100)
-      setAnimPhase('bell')
-      // Phase 2: bell rings briefly (1.5s), then complete
+      setAnimPhase('green') // card turns green
+      // Phase 2: hold green briefly, then advance state
       setTimeout(() => {
         setAnimPhase('idle')
         setAnimPct(0)
         onCollectionComplete?.()
-      }, 1500)
+      }, 1200)
     }, duration)
   }, [animPhase, collectionJustCompleted, collectionComplete, onCollectionComplete, snapshot.orgResponseRate])
 
@@ -406,14 +405,14 @@ export function FocusFirstCollectionCard({
   }
 
   const isFilling = animPhase === 'filling'
-  const showBell = animPhase === 'bell' || animPhase === 'hold'
+  const showGreen = animPhase === 'green'
   const isAnimating = animPhase !== 'idle'
-  const cardClass = showBell ? 'wfr-ra-card wfr-ra-card--success wfr-ra-card--animate-in' : 'wfr-ra-card wfr-ra-card--warn'
+  const cardClass = showGreen ? 'wfr-ra-card wfr-ra-card--success wfr-ra-card--animate-in' : 'wfr-ra-card wfr-ra-card--warn'
 
   return (
     <div className={cardClass}>
       <div className="wfr-ra-card__header">
-        {showBell ? (
+        {showGreen ? (
           <span className="wfr-ra-card__eyebrow" style={{ color: '#15803d' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span> Collection complete
           </span>
@@ -436,7 +435,7 @@ export function FocusFirstCollectionCard({
         )}
       </div>
 
-      {!showBell && (
+      {!showGreen && (
         <p className="wfr-ra-card__cta-text" style={{ marginTop: 8 }}>
           {launchSummary?.delegated
             ? <><strong>{launchSummary.scopeLabel}</strong>'s collection is underway — survey responses are rolling in from their teams.</>
@@ -452,22 +451,17 @@ export function FocusFirstCollectionCard({
         style={{ marginTop: 10, marginLeft: 0, ...(onCollectionComplete && !isAnimating ? { cursor: 'pointer' } : {}) }}
         title={onCollectionComplete && !isAnimating ? 'Click to simulate collection complete' : undefined}
       >
-        <span className="wfr-ra-card__mini-pct tabular-nums" style={showBell ? { color: '#15803d' } : undefined}>
-          {showBell ? '100' : isFilling ? animPct : snapshot.orgResponseRate}%
+        <span className="wfr-ra-card__mini-pct tabular-nums" style={showGreen ? { color: '#15803d' } : undefined}>
+          {showGreen ? '100' : isFilling ? animPct : snapshot.orgResponseRate}%
         </span>
-        <div className="wfr-ra-card__mini-track" style={{ width: 200, height: 6, ...(showBell ? { position: 'relative', overflow: 'visible' } : {}) }}>
+        <div className="wfr-ra-card__mini-track" style={{ width: 200, height: 6 }}>
           <div
             className="wfr-ra-card__mini-fill"
             style={{ width: `${isAnimating ? animPct : snapshot.orgResponseRate}%`, transition: isAnimating ? 'none' : undefined }}
           />
-          {showBell ? (
-            <div className="wfr-ra-card__bell-wrap">
-              <span className="material-symbols-outlined wfr-ra-card__bell-icon">notifications_active</span>
-            </div>
-          ) : null}
         </div>
         <span className="wfr-ra-card__mini-label">
-          {showBell
+          {showGreen
             ? 'Sample threshold reached!'
             : isFilling
               ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
@@ -476,11 +470,11 @@ export function FocusFirstCollectionCard({
         </span>
       </div>
 
-      {showBell ? (
+      {showGreen && (
         <p className="wfr-ra-card__sub" style={{ color: '#15803d', animation: 'fadeIn 0.4s ease-out' }}>
           Enough responses are in for statistically accurate results. Preparing upskilling priorities…
         </p>
-      ) : null}
+      )}
     </div>
   )
 }
