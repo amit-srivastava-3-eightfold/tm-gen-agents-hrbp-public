@@ -3534,7 +3534,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%' }}>Unrealized value</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
                         {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3559,8 +3560,12 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} />}
                           </div>
                         </DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{dirGap.toLocaleString()} ({dirHeadcount > 0 ? Math.round((dirGap / dirHeadcount) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dirHeadcount.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {dirShowCollection && <DataCollectionProgressCell rate={dirBaseResponseRate} inScope />}
                         {effDirCollComplete && <DevPlanAssignCell planPct={effDirPlansComplete ? 100 : 0} plansComplete={effDirPlansComplete} />}
@@ -3799,7 +3804,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%' }}>Unrealized value</DataTableHead>
+                        <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
                         {srShowCollection && <DataCollectionHead />}
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3824,8 +3830,12 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />}
                           </div>
                         </DataTableCell>
+                        <DataTableCell align="right"><span className="wfr-type-h6 tabular-nums">{formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees)))}</span></DataTableCell>
                         <DataTableCell align="right">
-                          <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{srGap.toLocaleString()} ({srHeadcount > 0 ? Math.round((srGap / srHeadcount) * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {srHeadcount.toLocaleString()}</div>
+                          </div>
                         </DataTableCell>
                         {srShowCollection && <DataCollectionProgressCell rate={srBaseResponseRate} inScope />}
                         {effSrCollComplete && <DevPlanAssignCell planPct={effSrPlansComplete ? 100 : 0} plansComplete={effSrPlansComplete} />}
