@@ -3534,7 +3534,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '32%' }}>Readiness</DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%' }} />
+                        <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
                         {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3559,6 +3560,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={dirMeasuredReadiness} />}
                           </div>
                         </DataTableCell>
+                        <DataTableCell />
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
@@ -3799,7 +3801,8 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
-                        <DataTableHead numeric style={{ width: '32%' }}>Readiness</DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%' }} />
+                        <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
                         {srShowCollection && <DataCollectionHead />}
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3824,6 +3827,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={srMeasuredReadiness} />}
                           </div>
                         </DataTableCell>
+                        <DataTableCell />
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
