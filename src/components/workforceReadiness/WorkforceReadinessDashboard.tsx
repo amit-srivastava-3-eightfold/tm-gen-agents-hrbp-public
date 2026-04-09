@@ -1052,7 +1052,7 @@ function BoardView({
       label: 'Unrealized value',
       val: formatDollar(orgUnrealizedValue),
       icon: 'auto_awesome',
-      l1: <><span style={{ fontWeight: 700, color: '#4f46e5' }}>{aiPotentialPct}% AI potential</span> across {totalEmployeesHero.toLocaleString()} employees — the annual value of hours AI can augment, at BLS median wages</>,
+      l1: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{aiPotentialPct}% AI potential</span> across {totalEmployeesHero.toLocaleString()} employees — hours unlocked × BLS median wages</span></>,
       delta: null,
       deltaUp: true,
     },
@@ -1062,7 +1062,7 @@ function BoardView({
       badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
       val: `${aiReadinessPct}%`,
       icon: 'school',
-      l1: `${ready.toLocaleString()} AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles`,
+      l1: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{ready.toLocaleString()} AI-ready of {peopleInAugForCards.toLocaleString()} in augmentable roles</span></>,
       delta: readinessDelta !== 0 ? `${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt` : null,
       deltaUp: readinessDelta > 0,
     },
@@ -1071,7 +1071,7 @@ function BoardView({
       label: 'Transformation gap',
       val: gapPeople.toLocaleString(),
       icon: 'groups',
-      l1: `${gapPeople.toLocaleString()} not yet AI-ready of ${peopleInAugForCards.toLocaleString()} in augmentable roles—that's your prioritized development pool.`,
+      l1: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{gapPeople.toLocaleString()} of {peopleInAugForCards.toLocaleString()} in augmentable roles — your prioritized development pool</span></>,
       delta: gapDelta !== 0 ? `${gapDelta > 0 ? '+' : ''}${gapDelta}` : null,
       deltaUp: gapDelta < 0, // gap going down is good
     },
@@ -2367,9 +2367,9 @@ export function WorkforceReadinessDashboard({
           </div>
         ) : undefined}
         cards={[
-          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span style={{ fontWeight: 700, color: '#4f46e5' }}>{mgrDept.aiPotential}% AI potential</span> across {mgrData.employees} employees — the annual value of hours AI can augment, at BLS median wages</>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'readiness', icon: 'school', label: 'AI adoption', badge: readinessBadge, value: `${displayReadinessPct}%`, description: mgrCollComplete ? `Calibrated from data collection.` : `Estimated: ${managerTeamData.readyCount} of ${mgrData.employees} may be AI-ready based on skill profiles`, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${displayNotReady} not ready`, description: `out of ${mgrData.employees} employees`, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{mgrDept.aiPotential}% AI potential</span> across {mgrData.employees} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'readiness', icon: 'school', label: 'AI adoption', badge: readinessBadge, value: `${displayReadinessPct}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrCollComplete ? `Calibrated from data collection.` : `Estimated: ${managerTeamData.readyCount} of ${mgrData.employees} may be AI-ready based on skill profiles`}</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${displayNotReady} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
         ]}
       >
         <div>
@@ -2967,9 +2967,9 @@ export function WorkforceReadinessDashboard({
           )
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
-            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span style={{ fontWeight: 700, color: '#4f46e5' }}>{d.aiPotential}% AI potential</span> across {headcount.toLocaleString()} employees — the annual value of hours AI can augment, at BLS median wages</>, onLearnMore: () => setDashOpenMetric('potential') },
-            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${measuredReadiness}%`, description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`, onLearnMore: () => setDashOpenMetric('readiness') },
-            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, onLearnMore: () => setDashOpenMetric('gap') },
+            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{d.aiPotential}% AI potential</span> across {headcount.toLocaleString()} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setDashOpenMetric('potential') },
+            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${measuredReadiness}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`}</span></>, onLearnMore: () => setDashOpenMetric('readiness') },
+            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${totalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashOpenMetric('gap') },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {

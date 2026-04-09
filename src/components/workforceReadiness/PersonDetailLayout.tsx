@@ -37,6 +37,8 @@ export interface PersonDetailLayoutProps {
   sixColTable?: boolean
   /** Disable fixed table layout on the children table (for 7+ column tables that need auto layout) */
   wideTable?: boolean
+  /** Remove min-height constraint on metric cards (matches overview/dashboard card style) */
+  compactCards?: boolean
   children: ReactNode
 }
 
@@ -53,6 +55,7 @@ export function PersonDetailLayout({
   managerTable,
   sixColTable,
   wideTable,
+  compactCards,
   children,
 }: PersonDetailLayoutProps) {
   return (
@@ -74,7 +77,7 @@ export function PersonDetailLayout({
 
         {heroCard}
 
-        <div className="wfr-dash__cards-row person-detail__cards" style={{ margin: 0 }}>
+        <div className={`wfr-dash__cards-row${compactCards ? '' : ' person-detail__cards'}`} style={{ margin: 0 }}>
             <MetricCard
               variant="potential"
               icon="auto_awesome"

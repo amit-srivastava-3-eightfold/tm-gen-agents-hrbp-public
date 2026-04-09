@@ -23,7 +23,7 @@ import {
   DataTableHead,
   DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -226,6 +226,7 @@ export function ManagerDetailPage() {
     ? Math.round(employees.reduce((s, e) => s + e.readinessPct, 0) / employees.length)
     : 0
   const notReady = displayEmployees.length - readyCount
+  const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
   // Deltas for metric cards
   const readinessDelta = avgReadiness - rawAvgReadiness
 
@@ -281,6 +282,7 @@ export function ManagerDetailPage() {
       <main className="mgr-detail-page__main">
         <div className="mgr-detail-page__content">
           <PersonDetailLayout
+            compactCards
             breadcrumb={(() => {
               // Manager persona — simple breadcrumb, no drill-up navigation
               if (isManager) {
@@ -374,20 +376,16 @@ export function ManagerDetailPage() {
               value: readinessDelta !== 0 ? (
                 <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
               ) : `${avgReadiness}%`,
-              description: collectionComplete
-                ? `${readyCount} AI-ready of ${displayEmployees.length} in this team`
-                : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`,
-              hint: hrbpPlansCreated ? 'After upskilling plans completed.' : collectionComplete ? 'Calibrated from data collection.' : 'Estimated from skill profiles.',
+              description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{collectionComplete ? `${readyCount} AI-ready of ${displayEmployees.length} in this team` : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`}</span></>,
               badge: collectionComplete
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>,
               onLearnMore: () => setOpenMetric('readiness'),
             }}
-            potential={{ value: `${dept.aiPotential}%`, description: 'Tasks in the augmentation zone', hint: `Role-level potential for ${dept.name}`, onLearnMore: () => setOpenMetric('potential') }}
+            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{dept.aiPotential}% AI potential</span> across {employees.length.toLocaleString()} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setOpenMetric('potential') }}
             gap={{
               value: `${notReady.toLocaleString()} not ready`,
-              description: `out of ${displayEmployees.length} employees`,
-              hint: avgReadiness >= 50 ? `${avgReadiness}% adoption meets the 50% threshold.` : `${avgReadiness}% adoption is below the 50% threshold.`,
+              description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {displayEmployees.length} employees</span></>,
               onLearnMore: () => setOpenMetric('gap'),
             }}
             managerTable={{
