@@ -3467,6 +3467,11 @@ export function WorkforceReadinessDashboard({
           const dirInScope = !dirSelectedDirs || dirSelectedDirs.includes(directorData.name)
           const effDirCollComplete = dirCollComplete && dirInScope
           const effDirPlansComplete = dirPlansComplete && dirInScope
+          const dirHrbpCollecting = stateNum(dirEffState) >= 2 && !dirCollComplete
+          const dirHrbpJustLaunched = hrbpJustLaunchedSet.has(directorData.parentHrbp)
+          const dirShowCollection = dirHrbpCollecting && dirInScope && !dirHrbpJustLaunched
+          const dirBaseResponseRate = dirShowCollection ? wfrDemoDeptResponseRate(d.name) : 0
+          const dirMgrResponseRate = (name: string) => Math.max(5, Math.min(95, dirBaseResponseRate + ((name.length * 7) % 30) - 15))
           const dirTrend = deptReadinessTrend(d.name)
           const dirMeasuredReadiness = effDirCollComplete ? d.aiReadiness + dirTrend.delta : d.aiReadiness
 
@@ -3530,12 +3535,13 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
                         <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       <DataTableRow>
-                        <DataTableCell className="font-semibold">
+                        <DataTableCell className="font-semibold" style={dirShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : undefined}>
                           <div>
                             <div>{directorData.name}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{directorData.title} · {d.name}</div>
@@ -3556,6 +3562,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
+                        {dirShowCollection && <DataCollectionProgressCell rate={dirBaseResponseRate} inScope />}
                         {effDirCollComplete && <DevPlanAssignCell planPct={effDirPlansComplete ? 100 : 0} plansComplete={effDirPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
@@ -3594,6 +3601,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                        {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
@@ -3618,7 +3626,7 @@ export function WorkforceReadinessDashboard({
                               window.scrollTo(0, 0)
                             }}
                           >
-                            <DataTableCell className="font-semibold">
+                            <DataTableCell className="font-semibold" style={dirShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : undefined}>
                               <div>
                                 <div className="text-[#3b5bdb] hover:underline">{sr.name}</div>
                                 <div className="text-[#94a3b8] text-[11px] font-normal">{sr.title} · {sr.batchCount} teams</div>
@@ -3643,6 +3651,7 @@ export function WorkforceReadinessDashboard({
                                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
                               </div>
                             </DataTableCell>
+                            {dirShowCollection && <DataCollectionProgressCell rate={dirMgrResponseRate(sr.name)} inScope />}
                             {effDirCollComplete && <DevPlanAssignCell planPct={srPlanPct} plansComplete={effDirPlansComplete} />}
                           </DataTableRow>
                         )
@@ -3658,6 +3667,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                    {dirShowCollection && <DataCollectionHead />}
                     {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
@@ -3674,7 +3684,7 @@ export function WorkforceReadinessDashboard({
                         style={{ cursor: 'pointer' }}
                         onClick={() => navigate(`/workforce/manager/${encodeURIComponent(mgr.manager)}?dept=${encodeURIComponent(d.name)}&mgrIdx=${globalIdx}&director=${encodeURIComponent(directorData.name)}&parentHrbp=${encodeURIComponent(directorData.parentHrbp)}`)}
                       >
-                        <DataTableCell className="font-semibold">
+                        <DataTableCell className="font-semibold" style={dirShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : undefined}>
                           <div>
                             <div className="text-[#3b5bdb] hover:underline">{mgr.manager}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
@@ -3699,6 +3709,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
+                        {dirShowCollection && <DataCollectionProgressCell rate={dirMgrResponseRate(mgr.manager)} inScope />}
                         {effDirCollComplete && <DevPlanAssignCell planPct={mgrPlanPct} plansComplete={effDirPlansComplete} />}
                       </DataTableRow>
                     )
@@ -3723,6 +3734,11 @@ export function WorkforceReadinessDashboard({
           const srDirInScope = !srParentDirSelectedDirs || srParentDirSelectedDirs.includes(seniorMgrData.parentDirector.name)
           const effSrCollComplete = srCollComplete && srDirInScope
           const effSrPlansComplete = srPlansComplete && srDirInScope
+          const srHrbpCollecting = stateNum(srEffState) >= 2 && !srCollComplete
+          const srHrbpJustLaunched = hrbpJustLaunchedSet.has(seniorMgrData.parentDirector.parentHrbp)
+          const srShowCollection = srHrbpCollecting && srDirInScope && !srHrbpJustLaunched
+          const srBaseResponseRate = srShowCollection ? wfrDemoDeptResponseRate(d.name) : 0
+          const srMgrResponseRate = (name: string) => Math.max(5, Math.min(95, srBaseResponseRate + ((name.length * 7) % 30) - 15))
           const srTrend = deptReadinessTrend(d.name)
           const srMeasuredReadiness = effSrCollComplete ? d.aiReadiness + srTrend.delta : d.aiReadiness
           const nh2 = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
@@ -3784,12 +3800,13 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead style={{ width: '34%' }}>Manager</DataTableHead>
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
                         <DataTableHead numeric style={{ width: '32%' }}>Transformation gap</DataTableHead>
+                        {srShowCollection && <DataCollectionHead />}
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       <DataTableRow>
-                        <DataTableCell className="font-semibold">
+                        <DataTableCell className="font-semibold" style={srShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : undefined}>
                           <div>
                             <div>{seniorMgrData.name}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{seniorMgrData.title} · {d.name}</div>
@@ -3810,6 +3827,7 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
+                        {srShowCollection && <DataCollectionProgressCell rate={srBaseResponseRate} inScope />}
                         {effSrCollComplete && <DevPlanAssignCell planPct={effSrPlansComplete ? 100 : 0} plansComplete={effSrPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
@@ -3826,6 +3844,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                    {srShowCollection && <DataCollectionHead />}
                     {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
@@ -3842,7 +3861,7 @@ export function WorkforceReadinessDashboard({
                         style={{ cursor: 'pointer' }}
                         onClick={() => navigate(`/workforce/manager/${encodeURIComponent(mgr.manager)}?dept=${encodeURIComponent(d.name)}&mgrIdx=${globalIdx}&director=${encodeURIComponent(seniorMgrData.parentDirector.name)}&parentHrbp=${encodeURIComponent(seniorMgrData.parentDirector.parentHrbp)}&seniorMgr=${encodeURIComponent(seniorMgrData.name)}&srStart=${seniorMgrData.mgrIdxStart - seniorMgrData.parentDirector.mgrIdxStart}`)}
                       >
-                        <DataTableCell className="font-semibold">
+                        <DataTableCell className="font-semibold" style={srShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : undefined}>
                           <div>
                             <div className="text-[#3b5bdb] hover:underline">{mgr.manager}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
@@ -3867,6 +3886,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
+                        {srShowCollection && <DataCollectionProgressCell rate={srMgrResponseRate(mgr.manager)} inScope />}
                         {effSrCollComplete && <DevPlanAssignCell planPct={mgrPlanPct} plansComplete={effSrPlansComplete} />}
                       </DataTableRow>
                     )
