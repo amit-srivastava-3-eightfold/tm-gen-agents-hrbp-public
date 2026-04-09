@@ -623,20 +623,16 @@ export function UpskillingProgressCell({ total, pct, plansComplete, nameHash }: 
   const inProgressFrac = allComplete ? 0 : 0.65 + (nameHash % 15) / 100
   const inProgressCount = Math.min(remainder, Math.round(remainder * inProgressFrac))
   const assignedCount = Math.max(0, pool - completeCount - inProgressCount)
-  // Stacked bar segments (left to right: complete → in-progress → assigned → unassigned)
-  const segments = [
-    { count: completeCount,   pct: total > 0 ? (completeCount / total) * 100 : 0,   color: '#22c55e' },
-    { count: inProgressCount, pct: total > 0 ? (inProgressCount / total) * 100 : 0, color: '#818cf8' },
-    { count: assignedCount,   pct: total > 0 ? (assignedCount / total) * 100 : 0,   color: '#6366f1' },
-  ]
   const assignedTotal = pool
+  const totalBarPct = total > 0 ? (completeCount / total) * 100 : 0
+  const barColor = allComplete ? '#22c55e' : '#6366f1'
   const label = allComplete
     ? `${total.toLocaleString()} complete`
-    : plansComplete
-      ? `${assignedTotal.toLocaleString()} assigned`
+    : completeCount > 0
+      ? `${completeCount.toLocaleString()} of ${total.toLocaleString()} complete`
       : assignedTotal === 0
         ? `${total.toLocaleString()} unassigned`
-        : `${assignedTotal.toLocaleString()} of ${total.toLocaleString()} assigned`
+        : `${assignedTotal.toLocaleString()} assigned`
 
   const tooltipRows: { label: string; color: string; count: number }[] = [
     { label: 'Completed', color: '#22c55e', count: completeCount },
@@ -652,10 +648,8 @@ export function UpskillingProgressCell({ total, pct, plansComplete, nameHash }: 
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: '#e2e8f0', display: 'flex', minWidth: 80 }}>
-          {segments.map((seg, i) => seg.count > 0 && (
-            <div key={i} style={{ width: `${seg.pct}%`, background: seg.color, height: '100%' }} />
-          ))}
+        <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: '#e2e8f0', minWidth: 80 }}>
+          <div style={{ width: `${totalBarPct}%`, height: '100%', background: barColor, borderRadius: 3 }} />
         </div>
         <span style={{ fontSize: 11, color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
         {hovered && (
@@ -2280,7 +2274,7 @@ export function WorkforceReadinessDashboard({
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [mgrTaskSheetZoneFilter, setMgrTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
-  const [mgrAssignedPlans, setMgrAssignedPlans] = useState<Set<string>>(new Set())
+  const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
   const [mgrToast, setMgrToast] = useState<string | null>(null)
@@ -2714,11 +2708,6 @@ export function WorkforceReadinessDashboard({
               <span style={{ fontSize: 13, color: '#64748b' }}>4 courses · 5 skills</span>
               <div style={{ display: 'flex', gap: 10 }}>
                 <Button variant="secondary" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>Close</Button>
-                {mgrAssignedPlans.has(mgrDevPlanEmployee.name) ? (
-                  <Button variant="secondary" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>Done</Button>
-                ) : (
-                  <Button variant="primary" onClick={() => { const n = mgrDevPlanEmployee!.name; setMgrAssignedPlans(prev => new Set([...prev, n])); setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false); setMgrToast(`Development plan assigned to ${n}`); setTimeout(() => setMgrToast(null), 3000) }}>Assign plan →</Button>
-                )}
               </div>
             </div>
           </div>

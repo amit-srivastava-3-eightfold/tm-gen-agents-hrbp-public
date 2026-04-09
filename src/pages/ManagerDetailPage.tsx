@@ -188,7 +188,7 @@ export function ManagerDetailPage() {
   // Dev plan sheet state
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
-  const [assignedPlans, setAssignedPlans] = useState<Set<string>>(new Set())
+  const [assignedPlans, _setAssignedPlans] = useState<Set<string>>(new Set())
   const [allPlansAssigned, setAllPlansAssigned] = useState(false)
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -702,21 +702,6 @@ export function ManagerDetailPage() {
               <span style={{ fontSize: 13, color: '#64748b' }}>{devPlanCourses.filter((_, i) => !removedCourses.has(i)).length} courses · {devPlanSkills.filter(s => !removedSkills.has(s)).length} skills</span>
               <div style={{ display: 'flex', gap: 10 }}>
                 <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Close</Button>
-                {assignedPlans.has(devPlanEmployee.name) ? (
-                  <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Done</Button>
-                ) : (
-                  <Button variant="primary" onClick={() => {
-                    const n = devPlanEmployee!.name
-                    setAssignedPlans(prev => new Set([...prev, n]))
-                    setDevPlanEmployee(null)
-                    setEditingCourses(false)
-                    setEditingSkills(false)
-                    setToast(`Development plan assigned to ${n}`)
-                    setTimeout(() => setToast(null), 3000)
-                  }}>
-                    Assign plan →
-                  </Button>
-                )}
               </div>
             </div>
           </div>
