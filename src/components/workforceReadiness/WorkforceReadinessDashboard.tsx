@@ -1158,6 +1158,7 @@ function BoardView({
           chroDelegationActive={chroDelegationActive}
           chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
           gapPeopleOverride={chroDelegatedGap}
+          justLaunched={hrbpJustLaunchedSet.has('__chro__')}
         />
       }
     >
@@ -2183,6 +2184,7 @@ export function WorkforceReadinessDashboard({
       }
       setWfrState(prev => ({ ...prev, state: 1, collectionLaunchSummary: summary, hrbpStates }))
     } else {
+      hrbpJustLaunchedSet.add('__chro__')
       setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary, hrbpStates: undefined }))
     }
   }, [setWfrState])
@@ -2924,6 +2926,7 @@ export function WorkforceReadinessDashboard({
               chroDelegationScopeLabel={hrbpName ?? undefined}
               gapPeopleOverride={totalGap}
               suppressInternalDialog={isHrbp && hrbpDelegatedPending}
+              justLaunched={hrbpJustLaunched}
             />
           )
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))

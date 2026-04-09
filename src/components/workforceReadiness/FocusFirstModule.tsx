@@ -521,6 +521,8 @@ export type FocusFirstModuleBoardProps = {
   gapPeopleOverride?: number
   /** When true, the internal FocusFirstLaunchDialog is not rendered (parent handles the dialog) */
   suppressInternalDialog?: boolean
+  /** Collection was just launched this session — show 0% response rate */
+  justLaunched?: boolean
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -579,6 +581,7 @@ function FocusFirstModuleBoard({
   chroDelegationScopeLabel,
   gapPeopleOverride,
   suppressInternalDialog = false,
+  justLaunched = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'> & {
   hrbpDelegationPending?: boolean
   onHrbpCollectionLaunch?: (channelsLabel: string) => void
@@ -593,9 +596,11 @@ function FocusFirstModuleBoard({
     return wfrDemoCollectionSnapshot()
   }, [collectionLaunchSummary])
   const collectionSnap = useMemo(() => {
-    if (deptContext) return wfrDemoDeptCollectionSnapshot(deptContext)
-    return orgCollectionSnap
-  }, [deptContext, orgCollectionSnap])
+    const base = deptContext ? wfrDemoDeptCollectionSnapshot(deptContext) : orgCollectionSnap
+    // Collection just launched this session — show 0% until the page is refreshed
+    if (justLaunched) return { ...base, orgResponseRate: 0, respondedCount: 0 }
+    return base
+  }, [deptContext, orgCollectionSnap, justLaunched])
   const attentionScope: FocusFirstCollectionAttentionScope = deptContext ? 'dept' : 'org'
 
   // CHRO: hide entire RA module when upskilling is done (plans assigned org-wide)
@@ -770,6 +775,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     chroDelegationScopeLabel: propsChroDelegationScopeLabel,
     gapPeopleOverride: propsGapPeopleOverride,
     suppressInternalDialog: propsSuppressInternalDialog,
+    justLaunched: propsJustLaunched,
   } = props
 
   return (
@@ -799,6 +805,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       chroDelegationScopeLabel={propsChroDelegationScopeLabel}
       gapPeopleOverride={propsGapPeopleOverride}
       suppressInternalDialog={propsSuppressInternalDialog}
+      justLaunched={propsJustLaunched}
     />
   )
 }
