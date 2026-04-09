@@ -230,15 +230,17 @@ export function ManagerDetailPage() {
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
   // Table hint
-  const tableHint = hrbpPlansCreated
-    ? `${displayEmployees.length} employees · upskilling complete`
+  const tableHint = showCollection
+    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+        <span>Data collection in progress</span>
+      </span>
     : upskillingActive
-      ? `${displayEmployees.length} employees · upskilling in progress`
-      : collectionComplete
-        ? `${displayEmployees.length} employees · calibrated readiness`
-        : showCollection
-          ? `${displayEmployees.length} employees · data collection in progress`
-          : `${displayEmployees.length} employees · sorted by readiness`
+      ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+          <span>{hrbpPlansCreated ? 'Upskilling complete' : 'Upskilling in progress'}</span>
+        </span>
+      : null
 
   // Courses for the dev plan sheet
   const devPlanCourses = devPlanEmployee ? [
@@ -434,7 +436,7 @@ export function ManagerDetailPage() {
                 </DataTable>
               ),
             }}
-            tableTitle="Team members"
+            tableTitle={<>Team members <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{displayEmployees.length}</span></>}
             tableHint={tableHint}
           >
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>

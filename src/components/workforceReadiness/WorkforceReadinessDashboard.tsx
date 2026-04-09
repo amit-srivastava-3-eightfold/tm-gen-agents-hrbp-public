@@ -2375,8 +2375,22 @@ export function WorkforceReadinessDashboard({
             </div>
           )}
           <div className="wfr-dash__panel-head">
-            <span className="wfr-dash__panel-title">Team members</span>
-            <span className="wfr-dash__panel-hint">{mgrEmployees.length} employees · sorted by readiness</span>
+            <span className="wfr-dash__panel-title">Team members <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{mgrEmployees.length}</span></span>
+            <span className="wfr-dash__panel-hint">
+              {mgrCollComplete
+                ? mgrUpskillingActive
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                      <span>{mgrPlansCreated ? 'Upskilling complete' : 'Upskilling in progress'}</span>
+                    </span>
+                  : null
+                : stateNum(wfrState.state) >= 2
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                      <span>Data collection in progress</span>
+                    </span>
+                  : null}
+            </span>
           </div>
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
