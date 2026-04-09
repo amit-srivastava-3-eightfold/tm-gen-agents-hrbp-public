@@ -5,8 +5,8 @@ import './WorkforceReadinessDashboard.css'
 
 export interface MetricCardData {
   value: ReactNode
-  description: string
-  hint: string
+  description: ReactNode
+  hint?: string
   badge?: ReactNode
   onLearnMore?: () => void
 }
@@ -76,6 +76,15 @@ export function PersonDetailLayout({
 
         <div className="wfr-dash__cards-row person-detail__cards" style={{ margin: 0 }}>
             <MetricCard
+              variant="potential"
+              icon="auto_awesome"
+              label="Unrealized value"
+              value={potential.value}
+              description={potential.description}
+              hint={potential.hint}
+              onLearnMore={potential.onLearnMore}
+            />
+            <MetricCard
               variant="readiness"
               icon="school"
               label="AI adoption"
@@ -84,15 +93,6 @@ export function PersonDetailLayout({
               description={readiness.description}
               hint={readiness.hint}
               onLearnMore={readiness.onLearnMore}
-            />
-            <MetricCard
-              variant="potential"
-              icon="auto_awesome"
-              label="Unrealized value"
-              value={potential.value}
-              description={potential.description}
-              hint={potential.hint}
-              onLearnMore={potential.onLearnMore}
             />
             <MetricCard
               variant="gap"

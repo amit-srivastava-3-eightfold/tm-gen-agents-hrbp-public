@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatDollar, getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
+import type { UnrealizedValueSheetData } from './UnrealizedValueSheet'
 import {
   deptManagerTeams,
   deptReadinessTrend,
@@ -28,9 +29,11 @@ export interface ReadinessTrendSheetProps {
   collectionComplete?: boolean
   /** Pre-computed direct report rows to show in the manager-context table (replaces employee list) */
   directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
+  /** Called when a user clicks an unrealized value figure to open the breakdown sheet */
+  onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }
 
-export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true, directReports }: ReadinessTrendSheetProps) {
+export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true, directReports, onUnrealizedValueClick }: ReadinessTrendSheetProps) {
   const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   // Reset filter when sheet closes or role changes
@@ -385,8 +388,12 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                             )}
                           </div>
                         </div>
-                        <div style={{ width: 100, textAlign: 'right', fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
-                          {formatDollar(row.unrealizedValue)}
+                        <div style={{ width: 100, textAlign: 'right' }}>
+                          {onUnrealizedValueClick ? (
+                            <button type="button" onClick={() => onUnrealizedValueClick({ label: row.name, subtitle: `${dept.name} · Manager · ${row.employees.toLocaleString()} employees`, aiPotential: dept.aiPotential, headcount: row.employees, unrealizedValue: row.unrealizedValue })} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</button>
+                          ) : (
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</span>
+                          )}
                         </div>
                         <div style={{ width: 110, textAlign: 'right' }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{gap.toLocaleString()} ({gapPct}%)</div>

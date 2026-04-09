@@ -42,11 +42,12 @@ hrbpPlansCreated: state >= 5
   - <15% = Below threshold (human-only: trust, judgment, presence)
   - 15–75% = Augment (human leads, AI assists)
   - >75% = Above threshold (should be fully automated)
-- Task scores: **weighted composite of 8 research signals** (not a single source):
-  - LLM task analysis (18%), Real-world adoption/WorkBank (18%), 24-study lit review (14%), BLS gov data (12%), GPTs-are-GPTs (10%), Microsoft Copilot (10%), Anthropic Economic Index (10%), Frey-Osborne (8%)
+- Task scores: **weighted composite of 7 research signals** (not a single source) — Octave v3.1:
+  - GenAI Task Analysis (22%), WorkBank/Observed Exposure — Massenkoff & McCrory 2026 (22%), 24-Study Meta-Analysis (16%), Frey-Osborne (12%), GPTs-are-GPTs (12%), BLS Skills Framework (8%), BLS Employment Trend (8%)
+  - WorkBank combines real-world Anthropic/Claude observed exposure + company adoption norms + research papers
   - Real-world observations weighted higher than theoretical predictions
   - Signal weights configurable in Admin settings
-- Coverage: 541 O*NET knowledge worker occupations
+- Coverage: 1,016 O*NET occupations (5,099 tasks); ~541 knowledge worker occupations used in WFR demo
 
 #### 2. AI Readiness — "Of the people AI can help, how many are ready?"
 - Formula: `(People in Augmentable Roles Using AI Effectively / Total People in Augmentable Roles) × 100`

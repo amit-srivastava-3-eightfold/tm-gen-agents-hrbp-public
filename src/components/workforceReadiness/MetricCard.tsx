@@ -1,3 +1,4 @@
+import React from 'react'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import type { ReactNode } from 'react'
 
@@ -13,9 +14,9 @@ export interface MetricCardProps {
   /** Large metric value (e.g. "24%", "6,384"). */
   value: ReactNode
   /** Primary description below the value. */
-  description: string
+  description: React.ReactNode
   /** Secondary hint text in the footer. */
-  hint: string
+  hint?: string
   /** Called when "Learn more" is clicked. */
   onLearnMore?: () => void
   /** Override the footer action label. */
@@ -49,7 +50,7 @@ export function MetricCard({
       <p className="wfr-metric-card__value">{value}</p>
       <p className="wfr-metric-card__primary">{description}</p>
       <div className="wfr-metric-card__footer">
-        <p className="wfr-metric-card__hint">{hint}</p>
+        {hint ? <p className="wfr-metric-card__hint">{hint}</p> : null}
         {onLearnMore ? (
           <Button type="button" variant="secondary" size="sm" onClick={onLearnMore} className="shrink-0">
             {actionLabel}
