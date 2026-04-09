@@ -25,7 +25,7 @@ export interface PersonDetailLayoutProps {
   readiness: MetricCardData
   potential: MetricCardData
   gap: MetricCardData
-  tableTitle: string
+  tableTitle: ReactNode
   tableHint: React.ReactNode
   /** Optional breadcrumb content rendered in a sticky bar flush under the header */
   breadcrumb?: ReactNode

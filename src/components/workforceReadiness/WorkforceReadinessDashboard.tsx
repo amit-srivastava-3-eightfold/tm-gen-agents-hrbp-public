@@ -2934,20 +2934,17 @@ export function WorkforceReadinessDashboard({
               >
                 <div>
                   <div className="wfr-dash__panel-head">
-                    <span className="wfr-dash__panel-title">Client managers</span>
+                    <span className="wfr-dash__panel-title">Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></span>
                     <span className="wfr-dash__panel-hint">
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        <span>{directors.length} client manager{directors.length !== 1 ? 's' : ''} · click to view team</span>
                         {showHrbpCollection && directors.some(dir => hrbpDirInScope(dir.name)) && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
                             <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
                             <span>In data collection</span>
                           </span>
                         )}
                         {hrbpUpskillingActive && directors.some(dir => hrbpDirInUpskilling(dir.name)) && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
                             <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
                             <span>In upskilling</span>
                           </span>
@@ -3218,18 +3215,14 @@ export function WorkforceReadinessDashboard({
               }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', hint: `Unrealized value for ${hrbpName ?? d.name}'s team`, onLearnMore: () => setDashOpenMetric('potential') }}
               gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, hint: measuredReadiness >= 50 ? `${measuredReadiness}% adoption meets the 50% threshold.` : `${measuredReadiness}% adoption is below the 50% threshold.`, onLearnMore: () => setDashOpenMetric('gap') }}
-              tableTitle="Client managers"
+              tableTitle={<>Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></>}
               tableHint={
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                  <span>{directors.length} client manager{directors.length !== 1 ? 's' : ''} · click to view team</span>
-                  {(showHrbpCollection || hrbpCollectionComplete) && directors.some(dir => hrbpDirInScope(dir.name)) && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
+                (showHrbpCollection || hrbpCollectionComplete) && directors.some(dir => hrbpDirInScope(dir.name))
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
                       <span>{hrbpCollectionComplete ? 'In upskilling' : 'In data collection'}</span>
                     </span>
-                  )}
-                </span>
+                  : null
               }
             >
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
@@ -3571,13 +3564,20 @@ export function WorkforceReadinessDashboard({
                   </DataTable>
                 ),
               }}
-              tableTitle={teamMgrs.length > 4 ? 'Senior managers' : 'Team managers'}
-              tableHint={teamMgrs.length > 4
+              tableTitle={teamMgrs.length > 4
                 ? (() => {
                     const targetSr = Math.max(2, Math.min(5, Math.round(teamMgrs.length / 3)))
-                    return `${targetSr} senior manager${targetSr !== 1 ? 's' : ''} · click to view team`
+                    return <><span>Senior managers</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{targetSr}</span></>
                   })()
-                : `${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`
+                : <><span>Team managers</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{teamMgrs.length}</span></>
+              }
+              tableHint={
+                dirShowCollection
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                      <span>In data collection</span>
+                    </span>
+                  : null
               }
             >
               {teamMgrs.length > 4 ? (() => {
@@ -3838,8 +3838,15 @@ export function WorkforceReadinessDashboard({
                   </DataTable>
                 ),
               }}
-              tableTitle="Team managers"
-              tableHint={`${teamMgrs.length} manager${teamMgrs.length !== 1 ? 's' : ''} · click to view team`}
+              tableTitle={<><span>Team managers</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{teamMgrs.length}</span></>}
+              tableHint={
+                srShowCollection
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                      <span>In data collection</span>
+                    </span>
+                  : null
+              }
             >
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
