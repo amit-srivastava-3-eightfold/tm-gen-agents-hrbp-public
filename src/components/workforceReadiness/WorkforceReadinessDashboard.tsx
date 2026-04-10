@@ -1965,7 +1965,7 @@ export function WorkforceReadinessDashboard({
   }
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }> } | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
-  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; employeeName?: string } | null>(null)
+  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
   const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
   const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(() => {
     const p = new URLSearchParams(window.location.search)
@@ -2277,6 +2277,7 @@ export function WorkforceReadinessDashboard({
   const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
+  const [mgrAssignReviewed, setMgrAssignReviewed] = useState(false)
   const [mgrToast, setMgrToast] = useState<string | null>(null)
   const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [mgrEditingCourses, setMgrEditingCourses] = useState(false)
@@ -2338,20 +2339,20 @@ export function WorkforceReadinessDashboard({
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
         beforeCards={showUpskilling ? (
-          <div className="wfr-ra-card" style={{ background: '#fef2f2', border: '1px solid #fecaca', marginBottom: 0 }}>
+          <div className="wfr-ra-card" style={{ background: (mgrPlansCreated || mgrAllPlansAssigned) ? '#f0fdf4' : '#fef2f2', border: (mgrPlansCreated || mgrAllPlansAssigned) ? '1px solid #bbf7d0' : '1px solid #fecaca', marginBottom: 0 }}>
             <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow" style={{ color: '#b91c1c' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>rocket_launch</span> Upskilling started
+              <span className="wfr-ra-card__eyebrow" style={{ color: (mgrPlansCreated || mgrAllPlansAssigned) ? '#15803d' : '#b91c1c' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>{(mgrPlansCreated || mgrAllPlansAssigned) ? 'check_circle' : 'rocket_launch'}</span> {(mgrPlansCreated || mgrAllPlansAssigned) ? 'Plans assigned' : 'Upskilling started'}
               </span>
             </div>
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  <strong>{mgrAllPlansAssigned ? mgrEmployees.filter(e => Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)) < 50).length : displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
+                  <strong>{(mgrPlansCreated || mgrAllPlansAssigned) ? mgrEmployees.filter(e => Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)) < 50).length : displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
                 </p>
-                <p className="wfr-ra-card__hint">{mgrAllPlansAssigned ? 'All plans assigned. Adoption scores will update as employees complete their plans.' : 'Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.'}</p>
+                <p className="wfr-ra-card__hint">{(mgrPlansCreated || mgrAllPlansAssigned) ? 'All plans assigned. Adoption scores will update as employees complete their plans.' : 'Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.'}</p>
               </div>
-              {mgrAllPlansAssigned ? null : (
+              {(mgrPlansCreated || mgrAllPlansAssigned) ? null : (
                 <Button variant="primary" onClick={() => setMgrAssignConfirmOpen(true)}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment_turned_in</span>
                   Assign plans
@@ -2378,12 +2379,7 @@ export function WorkforceReadinessDashboard({
                       <span>{mgrPlansCreated ? 'Upskilling complete' : 'Upskilling in progress'}</span>
                     </span>
                   : null
-                : stateNum(wfrState.state) >= 2
-                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
-                      <span>Data collection in progress</span>
-                    </span>
-                  : null}
+                : null}
             </span>
           </div>
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
@@ -2405,6 +2401,11 @@ export function WorkforceReadinessDashboard({
                 const empTaskCount = emp.title ? getTasksForRole(emp.title).length : 0
                 const measuredReadiness = Math.max(0, Math.min(100, emp.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
                 const displayEmpReadiness = mgrCollComplete ? measuredReadiness : emp.displayReadiness
+                const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+                const planPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(h) % 55) + 20) : 0
+                const rawDisplayPct = planPct > 0 ? planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
+                const empDisplayPct = showUpskilling ? (emp.name === 'Skyler Petrov' && mgrPlansCreated ? 100 : rawDisplayPct) : 0
+                const upskillingComplete = showUpskilling && empDisplayPct === 100
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
@@ -2429,21 +2430,28 @@ export function WorkforceReadinessDashboard({
                       {mgrCollComplete && mgrTrendDelta !== 0 ? (
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />
-                          <button type="button" className={`wfr-dash__trend-badge ${mgrTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: emp.title ?? mgrDept.name, dept: mgrDept.name, measuredReadiness: displayEmpReadiness, employeeName: emp.name }); setTrendSheetHrbp(null); setTrendSheetDept(mgrDept) }} title="View readiness trend details">
+                          <button type="button" className={`wfr-dash__trend-badge ${mgrTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: emp.title ?? mgrDept.name, dept: mgrDept.name, measuredReadiness: displayEmpReadiness, employeeName: emp.name, upskillingComplete }); setTrendSheetHrbp(null); setTrendSheetDept(mgrDept) }} title="View readiness trend details">
                             <span className="wfr-dash__trend-badge-text">{mgrTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(mgrTrendDelta)}pt</span>
                             <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                           </button>
                         </div>
                       ) : <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />}
+                      {upskillingComplete && (
+                        <div style={{ fontSize: 10, color: '#15803d', marginTop: 7, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 11, verticalAlign: -1 }}>verified</span>
+                          Upskilling complete
+                        </div>
+                      )}
                     </div>
                   </DataTableCell>
                   <DataTableCell align="right">
-                    <span style={{ color: displayEmpReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{displayEmpReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                    <span style={{ color: upskillingComplete || displayEmpReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{upskillingComplete || displayEmpReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                   </DataTableCell>
                   {showUpskilling && (() => {
-                    const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
-                    const planPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(h) % 55) + 20) : 0
-                    const displayPct = planPct > 0 ? planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
+                    const effectivePct = empDisplayPct
+                    const dStatus = effectivePct === 100 ? 'Completed' : effectivePct > 20 ? 'In progress' : 'Not started'
+                    const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
+                    const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
                     return (
                       <DataTableCell metric className="!whitespace-normal bg-[#fafbfc] border-l border-[#e2e8f0]">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -2452,22 +2460,16 @@ export function WorkforceReadinessDashboard({
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
                             onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness }); setMgrEditingCourses(false); setMgrRemovedCourses(new Set()) }}
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!mgrAllPlansAssigned && 'Development plan'}
+                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!(mgrPlansCreated || mgrAllPlansAssigned) && 'Development plan'}
                           </button>
-                          {(displayPct > 0 || mgrAllPlansAssigned || mgrAssignedPlans.has(emp.name)) ? (() => {
-                            const effectivePct = displayPct
-                            const dStatus = effectivePct > 85 ? 'Completed' : effectivePct > 20 ? 'In progress' : 'Not started'
-                            const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#e2e8f0'
-                            const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#94a3b8'
-                            return (
-                              <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
-                                <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
-                                  <div className="wfr-dash__plan-progress-fill" style={{ width: `${effectivePct}%`, background: bColor }} />
-                                </div>
-                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{effectivePct}%</span>
+                          {(empDisplayPct > 0 || mgrPlansCreated || mgrAllPlansAssigned || mgrAssignedPlans.has(emp.name)) ? (
+                            <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
+                              <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
+                                <div className="wfr-dash__plan-progress-fill" style={{ width: `${effectivePct}%`, background: bColor }} />
                               </div>
-                            )
-                          })() : null}
+                              <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{effectivePct}%</span>
+                            </div>
+                          ) : null}
                         </div>
                       </DataTableCell>
                     )
@@ -2487,9 +2489,20 @@ export function WorkforceReadinessDashboard({
             <p style={{ margin: '0 0 20px', fontSize: 14, color: '#475569', lineHeight: 1.6 }}>
               This will assign development plans to all <strong>{displayNotReady}</strong> team members who are not yet AI-ready. Employees will be notified and can begin their plans immediately.
             </p>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={mgrAssignReviewed}
+                onChange={e => setMgrAssignReviewed(e.target.checked)}
+                style={{ marginTop: 2, width: 16, height: 16, accentColor: '#0ea5e9', flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, color: '#0f172a', lineHeight: 1.5 }}>
+                I've reviewed the development plans for my team and confirm they're ready to assign.
+              </span>
+            </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => setMgrAssignConfirmOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={() => { setMgrAssignConfirmOpen(false); setMgrAllPlansAssigned(true); setWfrState(prev => advanceAllHrbps(prev, null, 5)); setMgrToast(`Development plans assigned to ${displayNotReady} team members`); setTimeout(() => setMgrToast(null), 4000) }}>Assign plans</Button>
+              <Button variant="outline" onClick={() => { setMgrAssignConfirmOpen(false); setMgrAssignReviewed(false) }}>Cancel</Button>
+              <Button variant="primary" disabled={!mgrAssignReviewed} style={{ opacity: mgrAssignReviewed ? 1 : 0.4, cursor: mgrAssignReviewed ? 'pointer' : 'not-allowed' }} onClick={() => { if (!mgrAssignReviewed) return; setMgrAssignConfirmOpen(false); setMgrAssignReviewed(false); setMgrAllPlansAssigned(true); setWfrState(prev => advanceAllHrbps(prev, null, 5)); setMgrToast(`Development plans assigned to ${displayNotReady} team members`); setTimeout(() => setMgrToast(null), 4000) }}>Assign plans</Button>
             </div>
           </div>
         </div>,
@@ -2606,12 +2619,16 @@ export function WorkforceReadinessDashboard({
             </div>
             <div className="mgr-detail-page__plan-body">
               {(() => {
-                const isAssigned = mgrAssignedPlans.has(mgrDevPlanEmployee.name)
                 const planHash = mgrDevPlanEmployee.name.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-                const overallPct = isAssigned ? (Math.abs(planHash) % 100 > 85 ? 100 : Math.abs(planHash) % 100 > 20 ? (20 + Math.abs(planHash) % 60) : 0) : 0
+                const dialogPlanPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(planHash) % 55) + 20) : 0
+                const dialogRawPct = dialogPlanPct > 0 ? dialogPlanPct : mgrAssignedPlans.has(mgrDevPlanEmployee.name) ? Math.min(85, 10 + (Math.abs(planHash) % 55)) : 0
+                const devPlanComplete = mgrDevPlanEmployee.name === 'Skyler Petrov' || dialogRawPct === 100
+                const isAssigned = devPlanComplete || mgrPlansCreated || mgrAllPlansAssigned || mgrAssignedPlans.has(mgrDevPlanEmployee.name)
+                const overallPct = devPlanComplete ? 100 : isAssigned ? dialogRawPct : 0
                 const overallStatus = !isAssigned ? 'Not assigned' : overallPct === 100 ? 'Completed' : overallPct > 0 ? 'In progress' : 'Not started'
                 const statusColor = overallStatus === 'Completed' ? '#15803d' : overallStatus === 'In progress' ? '#6366f1' : overallStatus === 'Not assigned' ? '#d97706' : '#94a3b8'
                 const statusIcon = overallStatus === 'Completed' ? 'check_circle' : overallStatus === 'In progress' ? 'sync' : 'schedule'
+                const isAiReady = devPlanComplete || mgrDevPlanEmployee.displayReadiness >= 50
                 return (
                   <>
                     <div style={{ display: 'flex', gap: 24, marginBottom: isAssigned ? 12 : 20 }}>
@@ -2624,12 +2641,12 @@ export function WorkforceReadinessDashboard({
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>AI adoption</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: mgrDevPlanEmployee.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>{mgrDevPlanEmployee.displayReadiness}%</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: isAiReady ? '#15803d' : '#dc2626' }}>{mgrDevPlanEmployee.displayReadiness}%</span>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Gap status</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: mgrDevPlanEmployee.displayReadiness < 50 ? '#dc2626' : '#15803d' }}>
-                          {mgrDevPlanEmployee.displayReadiness < 50 ? 'Not AI-ready' : 'AI-ready'}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: isAiReady ? '#15803d' : '#dc2626' }}>
+                          {isAiReady ? 'AI-ready' : 'Not AI-ready'}
                         </span>
                       </div>
                     </div>
@@ -2911,7 +2928,7 @@ export function WorkforceReadinessDashboard({
           const hrbpUpskillingDirNames = wfrState.upskillingLaunchSummary?.selectedDirectorNames
           const hrbpDirInUpskilling = (dirName: string) => !!hrbpUpskillingDirNames && hrbpUpskillingDirNames.includes(dirName)
           // Build the CTA card for the heroCard slot
-          const hrbpShowFocusModule = hrbpDelegatedPending || hrbpCollecting || (hrbpCollectionComplete && !hrbpUpskillingActive) || (hrbpUpskillingActive && !hrbpPlansComplete)
+          const hrbpShowFocusModule = true || hrbpDelegatedPending || hrbpCollecting || (hrbpCollectionComplete && !hrbpUpskillingActive) || (hrbpUpskillingActive && !hrbpPlansComplete)
           const hrbpFocusFirstModule = !hrbpShowFocusModule ? undefined : (
             <FocusFirstModule
               collectionActive={hrbpCollecting}
@@ -3569,7 +3586,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
                         <DataTableHead numeric style={{ width: '16%' }} />
                         <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
-                        {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
@@ -3597,7 +3613,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: dirMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{dirMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
-                        {dirShowCollection && <DataCollectionProgressCell rate={dirBaseResponseRate} inScope />}
                         {effDirCollComplete && <DevPlanAssignCell planPct={effDirPlansComplete ? 100 : 0} plansComplete={effDirPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
@@ -3648,7 +3663,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                        {dirShowCollection && <DataCollectionHead />}
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
@@ -3698,7 +3712,6 @@ export function WorkforceReadinessDashboard({
                                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
                               </div>
                             </DataTableCell>
-                            {dirShowCollection && <DataCollectionProgressCell rate={dirMgrResponseRate(sr.name)} inScope />}
                             {effDirCollComplete && <UpskillingProgressCell total={sr.employees} pct={srPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(sr.name)} />}
                           </DataTableRow>
                         )
@@ -3714,7 +3727,6 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                    {dirShowCollection && <DataCollectionHead />}
                     {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
@@ -3756,7 +3768,6 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {dirShowCollection && <DataCollectionProgressCell rate={dirMgrResponseRate(mgr.manager)} inScope />}
                         {effDirCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(mgr.manager)} />}
                       </DataTableRow>
                     )
@@ -3847,7 +3858,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableHead metric style={{ width: '14%' }}>AI adoption</DataTableHead>
                         <DataTableHead numeric style={{ width: '16%' }} />
                         <DataTableHead numeric style={{ width: '18%' }}>Transformation gap</DataTableHead>
-                        {srShowCollection && <DataCollectionHead />}
                         {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
@@ -3875,7 +3885,6 @@ export function WorkforceReadinessDashboard({
                         <DataTableCell align="right">
                           <span style={{ color: srMeasuredReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{srMeasuredReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
                         </DataTableCell>
-                        {srShowCollection && <DataCollectionProgressCell rate={srBaseResponseRate} inScope />}
                         {effSrCollComplete && <DevPlanAssignCell planPct={effSrPlansComplete ? 100 : 0} plansComplete={effSrPlansComplete} />}
                       </DataTableRow>
                     </DataTableBody>
@@ -3904,7 +3913,6 @@ export function WorkforceReadinessDashboard({
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                    {srShowCollection && <DataCollectionHead />}
                     {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
@@ -3946,7 +3954,6 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {srShowCollection && <DataCollectionProgressCell rate={srMgrResponseRate(mgr.manager)} inScope />}
                         {effSrCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
                       </DataTableRow>
                     )

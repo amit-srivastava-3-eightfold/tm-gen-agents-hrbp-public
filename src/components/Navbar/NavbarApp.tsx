@@ -1,4 +1,4 @@
-import { useEffect, type ComponentProps } from 'react'
+import { useEffect, useRef, type ComponentProps } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import { MATEO, LAURA, CHRO, CSM } from '../../contexts/demoUsers'
@@ -112,6 +112,13 @@ const NAVBAR_PRODUCT = getNavbarProductConfig('career-hub', 'medium')
 const PRODUCT_ICON_SRC = '/career-hub-icon.svg' // app serves this; DS default path
 
 /** Returns the NavbarProps for the current user — use with CareerHubShell or standalone Navbar. */
+const PERSONA_HOME: Record<string, string> = {
+  mateo: '/',
+  'jaydon-torff': '/',
+  chro: '/',
+  csm: '/',
+}
+
 export function useNavbarProps() {
   const { currentUser, setCurrentUser } = useUser()
   const location = useLocation()
@@ -128,7 +135,13 @@ export function useNavbarProps() {
       avatarColor: currentUser.avatarColor,
     },
     switchOptions: SWITCH_OPTIONS,
-    onSwitchUser: (userId: string) => setCurrentUser(USER_MAP[userId] ?? MATEO),
+    onSwitchUser: (userId: string) => {
+      // setCurrentUser saves the user to localStorage; on WFR pages it also sets
+      // window.location.href to the current WFR path. We assign window.location.href
+      // AFTER so our assignment wins (browser uses the last synchronous assignment).
+      setCurrentUser(USER_MAP[userId] ?? MATEO)
+      window.location.href = PERSONA_HOME[userId] ?? '/'
+    },
     activePath: location.pathname.startsWith('/workforce') ? '/workforce' : location.pathname,
     LinkComponent: Link,
     NavLinkComponent: NavLink,

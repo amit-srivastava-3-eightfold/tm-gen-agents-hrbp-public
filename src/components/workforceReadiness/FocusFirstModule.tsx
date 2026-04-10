@@ -608,10 +608,22 @@ function FocusFirstModuleBoard({
     return null
   }
 
-  // HRBP: hide CTA in state 1 (no delegation pending) — they can't launch collection themselves
-  // But allow through when collection is complete (state 3 CTA) or upskilling active
+  // HRBP: state 1 without delegation — show a recommended action card
   if (isHrbp && !collectionActive && !hrbpDelegationPending && !collectionComplete) {
-    return null
+    return (
+      <div className="wfr-dash__focus-module">
+        <div className="wfr-ra-card" style={{ background: '#eff3ff', borderColor: '#c5d3f8' }}>
+          <div className="wfr-ra-card__header">
+            <span className="wfr-ra-card__eyebrow" style={{ color: '#3b5bdb' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>insights</span> Recommended action
+            </span>
+          </div>
+          <p className="wfr-ra-card__cta-text">
+            Review your team&apos;s estimated AI adoption scores and identify which roles have the biggest opportunity for augmentation — before data collection kicks off.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -642,15 +654,12 @@ function FocusFirstModuleBoard({
         ) : hrbpDelegationPending ? (
           <div className="wfr-ra-card">
             <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow" style={{ color: '#d97706' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>assignment_ind</span> Delegated to you</span>
+              <span className="wfr-ra-card__eyebrow" style={{ color: '#dc2626' }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>flag</span> First priority</span>
             </div>
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  {delegatorName ?? 'The CHRO'} has delegated AI data collection for <strong>{delegationDeptName ?? 'your department'}</strong> to you.
-                </p>
-                <p className="wfr-ra-card__hint">
-                  Select a collection method and get started — results will refine adoption scores and surface upskilling priorities.
+                  {delegatorName ?? 'The CHRO'} has kicked off AI data collection for your team. Launch collection to sharpen adoption scores and surface upskilling priorities for your people.
                 </p>
               </div>
               <Button
