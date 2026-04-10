@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useUser } from '../contexts/UserContext'
 import { NavbarApp } from '../components/Navbar'
@@ -23,7 +23,7 @@ import {
   DataTableHead,
   DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -40,6 +40,11 @@ function nameHash(s: string) {
   let h = 0
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
   return Math.abs(h)
+}
+
+function SortIcon({ sortDir }: { sortDir?: 'asc' | 'desc' | null }) {
+  if (sortDir) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
+  return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
 }
 
 /** Delta badge inline — matches BoardView pattern */
@@ -191,22 +196,17 @@ export function ManagerDetailPage() {
   const [assignedPlans, _setAssignedPlans] = useState<Set<string>>(new Set())
   const [allPlansAssigned, setAllPlansAssigned] = useState(false)
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false)
+  const [assignReviewed, setAssignReviewed] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [editingCourses, setEditingCourses] = useState(false)
   const [editingSkills, setEditingSkills] = useState(false)
   const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
   const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
+  const [empSort, setEmpSort] = useState<{ col: 'name' | 'readiness' | 'upskilling', dir: 'asc' | 'desc' }>({ col: 'readiness', dir: 'desc' })
+  const toggleEmpSort = (col: typeof empSort['col']) => setEmpSort(s => ({ col, dir: s.col === col && s.dir === 'desc' ? 'asc' : 'desc' }))
 
   if (!dept || !managerData) {
-    return (
-      <div className="mgr-detail-page">
-        <NavbarApp />
-        <div style={{ padding: '100px 24px', textAlign: 'center' }}>
-          <p>Manager not found.</p>
-          <Button variant="secondary" onClick={() => navigate('/workforce')}>Back to Workforce Readiness</Button>
-        </div>
-      </div>
-    )
+    return <Navigate to="/workforce" replace />
   }
 
   const { mgr, employees, parentManager, parentMgrIdx } = managerData
@@ -396,10 +396,10 @@ export function ManagerDetailPage() {
                 <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                   <DataTableHeader>
                     <DataTableRow>
-                      <DataTableHead style={{ width: '28%' }}>Manager</DataTableHead>
-                      <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
+                      <DataTableHead style={{ width: '42%' }}>Manager</DataTableHead>
+                      <DataTableHead metric style={{ width: '20%' }}>AI adoption</DataTableHead>
                       <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                      {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
+                      {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '16%' }}>Upskilling</DataTableHead>}
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
@@ -425,18 +425,17 @@ export function ManagerDetailPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
                                 onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }); setEditingCourses(false); setRemovedCourses(new Set()) }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Development plan
+                                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!(hrbpPlansCreated || allPlansAssigned) && 'Development plan'}
                               </button>
                               {(mgrDisplayPct > 0 || allPlansAssigned || assignedPlans.has(mgr.manager)) && (() => {
-                                const dStatus = mgrDisplayPct > 85 ? 'Completed' : mgrDisplayPct > 20 ? 'In progress' : 'Assigned'
-                                const bColor = dStatus === 'Completed' ? '#22c55e' : dStatus === 'In progress' ? '#818cf8' : '#6366f1'
-                                const tColor = dStatus === 'Completed' ? '#15803d' : dStatus === 'In progress' ? '#6366f1' : '#4338ca'
+                                const bColor = mgrDisplayPct === 100 ? '#22c55e' : '#818cf8'
+                                const tColor = mgrDisplayPct === 100 ? '#15803d' : '#6366f1'
                                 return (
                                   <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
                                     <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
                                       <div className="wfr-dash__plan-progress-fill" style={{ width: `${mgrDisplayPct}%`, background: bColor }} />
                                     </div>
-                                    <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{dStatus}</span>
+                                    <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{mgrDisplayPct}%</span>
                                   </div>
                                 )
                               })()}
@@ -455,15 +454,28 @@ export function ManagerDetailPage() {
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: '28%' }}>Employee</DataTableHead>
-                <DataTableHead metric style={{ width: '22%' }}>AI adoption</DataTableHead>
-                <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '20%' }}>Upskilling status</DataTableHead>}
+                <DataTableHead style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
+                <DataTableHead numeric style={{ width: '8%' }}>Tasks</DataTableHead>
+                <DataTableHead metric style={{ width: upskillingInScope ? '20%' : '26%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
+                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {[...displayEmployees].sort((a, b) => b.displayReadiness - a.displayReadiness).map((emp, i) => {
+              {[...displayEmployees].sort((a, b) => {
+                const mul = empSort.dir === 'asc' ? 1 : -1
+                if (empSort.col === 'name') return mul * a.name.localeCompare(b.name)
+                if (empSort.col === 'upskilling') {
+                  const ha = nameHash(a.name), hb = nameHash(b.name)
+                  const pa = hrbpPlansCreated ? Math.min(100, 25 + (ha % 55) + 20) : (allPlansAssigned || assignedPlans.has(a.name) ? Math.min(85, 10 + (ha % 55)) : 0)
+                  const pb = hrbpPlansCreated ? Math.min(100, 25 + (hb % 55) + 20) : (allPlansAssigned || assignedPlans.has(b.name) ? Math.min(85, 10 + (hb % 55)) : 0)
+                  return mul * (pa - pb)
+                }
+                return mul * (a.displayReadiness - b.displayReadiness)
+              }).map((emp, i) => {
                 const h = nameHash(emp.name)
+                const empTaskCount = emp.title ? getTasksForRole(emp.title).length : 0
 
                 // Plan progress: 0 until state 5 (hrbpPlansCreated); Assign button shows until then
                 const planPct = hrbpPlansCreated
@@ -474,27 +486,39 @@ export function ManagerDetailPage() {
 
                 return (
                   <DataTableRow key={`emp-${i}`}>
-                    <DataTableCell className="font-semibold">
+                    <DataTableCell className="font-semibold" style={
+                      (showCollection && dirInScope) ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } :
+                      upskillingInScope ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } :
+                      { borderLeft: '3px solid transparent', paddingLeft: 17 }
+                    }>
                       <div className="text-[13px] text-[#1a212e]">{emp.name}</div>
-                      <div className="text-[11px] text-[#94a3b8] font-normal">{emp.title ?? '—'}</div>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <div className="text-[13px] text-[#475569]">{emp.title ?? '—'}</div>
+                    </DataTableCell>
+                    <DataTableCell align="right">
+                      {empTaskCount > 0 && emp.title ? (
+                        <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}>
+                          {empTaskCount}
+                        </button>
+                      ) : <span style={{ color: '#cbd5e1' }}>—</span>}
                     </DataTableCell>
                     <DataTableCell metric>
-                      <div className="flex items-center gap-2">
-                        <DeptTableSoloBar variant="readiness" pct={emp.displayReadiness} />
-                        {collectionComplete && empDelta !== 0 && (
-                          <span className="text-[10px] font-semibold" style={{ color: empDelta > 0 ? '#15803d' : '#dc2626' }}>
-                            {empDelta > 0 ? '↑' : '↓'}{Math.abs(empDelta)}pt
-                          </span>
-                        )}
+                      <div>
+                        {collectionComplete && empDelta !== 0 ? (
+                          <div className="wfr-dash__readiness-with-trend">
+                            <DeptTableSoloBar variant="readiness" pct={emp.displayReadiness} />
+                            <span className={`wfr-dash__trend-badge ${empDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                              <span className="wfr-dash__trend-badge-text">{empDelta >= 0 ? '↑' : '↓'}{Math.abs(empDelta)}pt</span>
+                            </span>
+                          </div>
+                        ) : <DeptTableSoloBar variant="readiness" pct={emp.displayReadiness} />}
                       </div>
                     </DataTableCell>
                     <DataTableCell align="right">
                       <span style={{ color: emp.displayReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>
                         {emp.displayReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}
                       </span>
-                      {emp.displayReadiness >= 35 && emp.displayReadiness < 50 && (
-                        <div className="text-[10px] text-[#d97706] mt-0.5">Near threshold</div>
-                      )}
                     </DataTableCell>
 
                     {/* Upskilling status — dev plan chip; post-assign: progress bar */}
@@ -512,19 +536,18 @@ export function ManagerDetailPage() {
                             }}
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
-                            Development plan
+                            {!(hrbpPlansCreated || allPlansAssigned) && 'Development plan'}
                           </button>
                           {(planPct > 0 || allPlansAssigned || assignedPlans.has(emp.name)) && (() => {
                             const displayPct = planPct > 0 ? planPct : Math.min(85, 10 + (h % 55))
-                            const displayStatus = displayPct > 85 ? 'Completed' : displayPct > 20 ? 'In progress' : 'Assigned'
-                            const bColor = displayStatus === 'Completed' ? '#22c55e' : displayStatus === 'In progress' ? '#818cf8' : '#6366f1'
-                            const tColor = displayStatus === 'Completed' ? '#15803d' : displayStatus === 'In progress' ? '#6366f1' : '#4338ca'
+                            const bColor = displayPct === 100 ? '#22c55e' : '#818cf8'
+                            const tColor = displayPct === 100 ? '#15803d' : '#6366f1'
                             return (
                               <div className="wfr-dash__plan-progress" style={{ flex: '1 1 0', minWidth: 60 }}>
                                 <div className="wfr-dash__plan-progress-bar" style={{ background: 'rgba(99, 102, 241, 0.08)' }}>
                                   <div className="wfr-dash__plan-progress-fill" style={{ width: `${displayPct}%`, background: bColor }} />
                                 </div>
-                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayStatus}</span>
+                                <span className="wfr-dash__plan-progress-label" style={{ color: tColor }}>{displayPct}%</span>
                               </div>
                             )
                           })()}
@@ -721,14 +744,28 @@ export function ManagerDetailPage() {
             <p style={{ fontSize: 14, color: '#475569', marginBottom: 24, lineHeight: 1.6 }}>
               This will assign development plans to all <strong>{displayEmployees.length} employees</strong> on your team. They'll receive a notification and can start their AI upskilling courses immediately.
             </p>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={assignReviewed}
+                onChange={e => setAssignReviewed(e.target.checked)}
+                style={{ marginTop: 2, width: 16, height: 16, accentColor: '#0ea5e9', flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, color: '#0f172a', lineHeight: 1.5 }}>
+                I've reviewed the development plans for my team and confirm they're ready to assign.
+              </span>
+            </label>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <Button variant="secondary" onClick={() => setAssignConfirmOpen(false)}>Cancel</Button>
+              <Button variant="secondary" onClick={() => { setAssignConfirmOpen(false); setAssignReviewed(false) }}>Cancel</Button>
               <button
                 type="button"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none' }}
+                disabled={!assignReviewed}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: assignReviewed ? '#dc2626' : '#e2e8f0', color: assignReviewed ? '#fff' : '#94a3b8', fontSize: 14, fontWeight: 600, cursor: assignReviewed ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s, color 0.15s' }}
                 onClick={() => {
+                  if (!assignReviewed) return
                   setAllPlansAssigned(true)
                   setAssignConfirmOpen(false)
+                  setAssignReviewed(false)
                   setToast(`Development plans assigned to all ${displayEmployees.length} employees`)
                   setTimeout(() => setToast(null), 4000)
                 }}

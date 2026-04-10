@@ -20,7 +20,7 @@ export interface ReadinessTrendSheetProps {
   /** When set, show employee-level readiness for this manager instead of dept collection data */
   managerContext?: { manager: string; mgrIndex: number; readiness?: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
-  roleContext?: { title: string; dept: string; measuredReadiness?: number; employeeName?: string } | null
+  roleContext?: { title: string; dept: string; measuredReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null
   /** When set, frame the sheet as HRBP team data instead of department data */
   hrbpContext?: { hrbpName: string; headcount: number } | null
   /** When true, add upskilling boost to readiness deltas */
@@ -228,7 +228,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Development plans' : 'Channel'}</span>
                 <span className="wfr-trend-sheet__stat-value">
                   {upskillingActive
-                    ? <><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: -2, marginRight: 4 }}>school</span>Development plans</>
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, lineHeight: 1.4 }}><span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Development plan</span>
                     : <><img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />AI Interviews</>
                   }
                 </span>
@@ -238,8 +238,16 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
               </div>
               <div className="wfr-trend-sheet__stat">
-                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Team member' : managerContext ? (directReports ? 'Total employees' : 'Employees in team') : 'Employees interviewed'}</span>
-                <span className="wfr-trend-sheet__stat-value">{roleContext?.employeeName ? roleContext.employeeName : cardEmployees.toLocaleString()}</span>
+                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Status' : managerContext ? (directReports ? 'Total employees' : 'Employees in team') : 'Employees interviewed'}</span>
+                <span className="wfr-trend-sheet__stat-value">
+                  {roleContext?.employeeName
+                    ? (roleContext.upskillingComplete
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#15803d', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>verified</span>Upskilling complete</span>
+                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#6366f1', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>autorenew</span>In progress</span>
+                      )
+                    : cardEmployees.toLocaleString()
+                  }
+                </span>
               </div>
             </div>
           )}
@@ -382,8 +390,8 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                               <span className="wfr-trend-sheet__team-bar-pct" style={{ color: '#15803d' }}>{row.readiness}%</span>
                             </div>
                             {data.showTrends && tDelta !== 0 && (
-                              <span style={{ fontSize: 11, fontWeight: 600, color: tDelta >= 0 ? '#15803d' : '#dc2626', whiteSpace: 'nowrap' }}>
-                                {tDelta >= 0 ? '↑' : '↓'}{Math.abs(tDelta)}pt
+                              <span className={`wfr-dash__trend-badge ${tDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                                <span className="wfr-dash__trend-badge-text">{tDelta >= 0 ? '↑' : '↓'}{Math.abs(tDelta)}pt</span>
                               </span>
                             )}
                           </div>
@@ -464,8 +472,8 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                               </div>
                               <span className="wfr-trend-sheet__team-bar-pct" style={{ color: '#15803d' }}>{roleMeasured}%</span>
                             </div>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: roleIsUp ? '#15803d' : '#dc2626' }}>
-                              {roleIsUp ? '↑' : '↓'}{Math.abs(roleDelta)}pt
+                            <span className={`wfr-dash__trend-badge ${roleIsUp ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`}>
+                              <span className="wfr-dash__trend-badge-text">{roleIsUp ? '↑' : '↓'}{Math.abs(roleDelta)}pt</span>
                             </span>
                           </div>
                         </div>
