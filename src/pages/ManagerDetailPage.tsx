@@ -548,7 +548,6 @@ export function ManagerDetailPage() {
         employee={devPlanEmployee}
         open={!!devPlanEmployee}
         onClose={() => setDevPlanEmployee(null)}
-        collectionComplete={collectionComplete}
         isAssigned={assignedPlans.has(devPlanEmployee?.name ?? '') || allPlansAssigned}
       />
       {/* Assign plans confirmation dialog */}

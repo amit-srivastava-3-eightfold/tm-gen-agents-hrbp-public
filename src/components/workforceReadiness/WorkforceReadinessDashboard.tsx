@@ -2606,7 +2606,6 @@ export function WorkforceReadinessDashboard({
         employee={mgrDevPlanEmployee}
         open={!!mgrDevPlanEmployee}
         onClose={() => setMgrDevPlanEmployee(null)}
-        collectionComplete={mgrCollComplete}
         isAssigned={mgrAssignedPlans.has(mgrDevPlanEmployee?.name ?? '') || mgrAllPlansAssigned || mgrPlansCreated}
       />
       <ReadinessTrendSheet

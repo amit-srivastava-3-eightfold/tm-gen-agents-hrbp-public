@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import './DevPlanSheet.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LevelState = 'recognized' | 'current' | 'override' | 'locked'
+type LevelState = 'recognized' | 'current' | 'locked'
 
 interface Course {
   name: string
@@ -23,13 +23,13 @@ interface LevelDef {
   courses: Course[]
   tasks: string[]
   totalHours: number
+  adoptionPts: number
 }
 
 export interface DevPlanSheetProps {
   employee: { name: string; title?: string; readinessPct: number; displayReadiness: number } | null
   open: boolean
   onClose: () => void
-  collectionComplete: boolean
   isAssigned: boolean
 }
 
@@ -46,6 +46,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Shadow a colleague who uses AI tools daily and document one observation',
     ],
     totalHours: 20,
+    adoptionPts: 8,
   },
   {
     id: 2,
@@ -57,6 +58,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Complete the AI output review checklist for one deliverable',
     ],
     totalHours: 16,
+    adoptionPts: 14,
   },
   {
     id: 3,
@@ -68,6 +70,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Present one time-saving example to your manager or team',
     ],
     totalHours: 8,
+    adoptionPts: 10,
   },
   {
     id: 4,
@@ -79,6 +82,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Contribute at least one workflow to the team AI playbook',
     ],
     totalHours: 6,
+    adoptionPts: 8,
   },
 ]
 
@@ -96,12 +100,68 @@ const LEVEL_COURSES: Record<number, Course[]> = {
   ],
 }
 
+
+
+// ── Completion unlocks ─────────────────────────────────────────────────────────
+
+const CAREER_DOORS: Array<{ pattern: RegExp; roles: string[] }> = [
+  { pattern: /engineering manager/i,  roles: ['Director of Engineering', 'Principal Engineer', 'VP Engineering'] },
+  { pattern: /senior software/i,      roles: ['Staff Engineer', 'Tech Lead', 'Engineering Manager'] },
+  { pattern: /software engineer/i,    roles: ['Senior Software Engineer', 'Tech Lead', 'Platform Engineer'] },
+  { pattern: /frontend engineer/i,    roles: ['Senior Frontend Engineer', 'UI/UX Engineer', 'Tech Lead'] },
+  { pattern: /qa automation/i,        roles: ['Senior QA Engineer', 'SDET', 'QA Lead'] },
+  { pattern: /devops/i,               roles: ['Senior DevOps Engineer', 'Platform Engineer', 'SRE'] },
+  { pattern: /platform engineer/i,    roles: ['Staff Platform Engineer', 'Cloud Architect', 'Engineering Manager'] },
+  { pattern: /site reliability/i,     roles: ['Senior SRE', 'Platform Engineer', 'Infrastructure Lead'] },
+  { pattern: /mobile developer/i,     roles: ['Senior Mobile Engineer', 'Mobile Tech Lead', 'Full-Stack Engineer'] },
+  { pattern: /manager/i,              roles: ['Director', 'Senior Manager', 'VP'] },
+]
+
+const AI_SKILLS_BY_ROLE: Array<{ pattern: RegExp; skills: string[] }> = [
+  { pattern: /engineer|developer/i,   skills: ['writing better prompts', 'AI-assisted code review', 'debugging with LLMs', 'generating test cases with AI'] },
+  { pattern: /manager/i,              skills: ['AI-driven status reporting', 'writing better prompts', 'synthesizing team feedback with AI', 'AI-assisted decision memos'] },
+  { pattern: /analyst/i,              skills: ['AI-powered data summaries', 'writing better prompts', 'reviewing and editing AI outputs', 'structuring reports with AI'] },
+  { pattern: /qa/i,                   skills: ['AI-generated test plans', 'writing better prompts', 'automated defect triage', 'AI-assisted root cause analysis'] },
+]
+
+function getUnlocks(name: string, title: string | undefined, displayReadiness: number) {
+  const h = Math.abs(Array.from(name).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0))
+  const doorEntry = CAREER_DOORS.find(r => r.pattern.test(title ?? ''))
+  const doorRoles = doorEntry?.roles ?? ['Senior Specialist', 'Team Lead', 'Manager']
+  const doorCount = 3 + (h % 3) // 3–5
+  const topFit = 38 + (h % 20) // 38–57%
+  const currentRisk = 55 + (h % 20) // 55–74%
+  const pathsTo = 1 + (h % 4) // 1–4%
+  const riskDrop = currentRisk - pathsTo
+  const aiSkillEntry = AI_SKILLS_BY_ROLE.find(r => r.pattern.test(title ?? ''))
+  const aiSkills = aiSkillEntry?.skills ?? ['writing better prompts', 'reviewing and editing AI outputs', 'structuring presentations for impact']
+  return { doorCount, topRole: doorRoles[0], topFit, currentRisk, pathsTo, riskDrop, aiSkills: aiSkills.slice(0, 3), displayReadiness }
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function nameHash(s: string) {
   let h = 0
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
   return Math.abs(h)
+}
+
+// ── Tier system ────────────────────────────────────────────────────────────────
+
+const TIERS = [
+  { name: 'Novice',       color: 'var(--color-grey-60)',   glow: 'rgba(105,113,127,0.35)' },
+  { name: 'Practitioner', color: 'var(--color-orange-60)', glow: 'rgba(201,126,25,0.4)'   },
+  { name: 'Adept',        color: 'var(--color-green-60)',  glow: 'rgba(61,143,121,0.4)'   },
+  { name: 'Expert',       color: 'var(--color-blue-60)',   glow: 'rgba(44,140,201,0.4)'   },
+  { name: 'Master',       color: 'var(--color-violet-60)', glow: 'rgba(151,85,144,0.4)'   },
+]
+
+function getTier(pct: number) {
+  if (pct >= 90) return TIERS[4]
+  if (pct >= 75) return TIERS[3]
+  if (pct >= 50) return TIERS[2]
+  if (pct >= 25) return TIERS[1]
+  return TIERS[0]
 }
 
 function getRecognizedCount(readinessPct: number) {
@@ -141,10 +201,10 @@ function CourseItem({ course, recognized = false }: { course: Course; recognized
   )
 }
 
-function TaskItem({ text, override = false }: { text: string; override?: boolean }) {
+function TaskItem({ text }: { text: string }) {
   return (
     <div className="dev-plan-sheet__task">
-      <div className={`dev-plan-sheet__task-dot${override ? ' dev-plan-sheet__task-dot--override' : ''}`} />
+      <div className="dev-plan-sheet__task-dot" />
       {text}
     </div>
   )
@@ -159,7 +219,6 @@ function LevelCard({
   isAssigned,
   expanded,
   onToggle,
-  onRequestOverride,
 }: {
   level: LevelDef
   state: LevelState
@@ -167,44 +226,22 @@ function LevelCard({
   isAssigned: boolean
   expanded: boolean
   onToggle: () => void
-  onRequestOverride: (levelId: number) => void
 }) {
-  const isOverride = state === 'override'
-  const isCurrent = state === 'current' || isOverride
+  const isCurrent = state === 'current'
   const isRecognized = state === 'recognized'
   const isLocked = state === 'locked'
 
   const cardClass = isRecognized
     ? 'dev-plan-sheet__level--recognized'
-    : isOverride
-      ? 'dev-plan-sheet__level--current-override'
-      : isCurrent
-        ? 'dev-plan-sheet__level--current'
-        : 'dev-plan-sheet__level--locked'
+    : isCurrent
+      ? 'dev-plan-sheet__level--current'
+      : 'dev-plan-sheet__level--locked'
 
   const badgeClass = isRecognized
     ? 'dev-plan-sheet__level-badge--recognized'
-    : isOverride
-      ? 'dev-plan-sheet__level-badge--override'
-      : isCurrent
-        ? 'dev-plan-sheet__level-badge--current'
-        : 'dev-plan-sheet__level-badge--locked'
-
-  const pillClass = isRecognized
-    ? 'dev-plan-sheet__level-pill--recognized'
-    : isOverride
-      ? 'dev-plan-sheet__level-pill--override'
-      : isCurrent
-        ? 'dev-plan-sheet__level-pill--current'
-        : 'dev-plan-sheet__level-pill--locked'
-
-  const pillLabel = isRecognized
-    ? 'Recognized'
-    : isOverride
-      ? 'Override active'
-      : isCurrent
-        ? (isAssigned ? 'In progress' : 'Up next')
-        : 'Locked'
+    : isCurrent
+      ? 'dev-plan-sheet__level-badge--current'
+      : 'dev-plan-sheet__level-badge--locked'
 
   const badgeContent = isRecognized
     ? <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
@@ -229,14 +266,16 @@ function LevelCard({
 
         <div className="dev-plan-sheet__level-title-group">
           <div className={`dev-plan-sheet__level-name${isLocked ? ' dev-plan-sheet__level-name--locked' : ''}`}>
-            Level {level.id}: {level.name}
+            Step {level.id}: {level.name}
           </div>
           {isCurrent && !isAssigned && (
             <div className="dev-plan-sheet__level-sublabel">Assign plans to activate</div>
           )}
         </div>
 
-        <span className={`dev-plan-sheet__level-pill ${pillClass}`}>{pillLabel}</span>
+        <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${isRecognized ? 'credited' : isLocked ? 'locked' : 'current'}`}>
+          {isRecognized ? `+${level.adoptionPts} pts credited` : `+${level.adoptionPts} pts`}
+        </span>
 
         {(isRecognized || isLocked) && (
           <span className={`material-symbols-outlined dev-plan-sheet__level-chevron${expanded ? ' dev-plan-sheet__level-chevron--open' : ''}`}>
@@ -249,14 +288,14 @@ function LevelCard({
       {isCurrent && (
         <div className="dev-plan-sheet__xp">
           <div className="dev-plan-sheet__xp-header">
-            <span className="dev-plan-sheet__xp-label">{level.xpLabel}</span>
-            <span className={`dev-plan-sheet__xp-pct${isOverride ? ' !text-[#c2410c]' : ''}`}>
+            <span className="dev-plan-sheet__xp-label">Step progress</span>
+            <span className="dev-plan-sheet__xp-pct">
               {isAssigned ? `${xpPct}%` : '—'}
             </span>
           </div>
           <div className="dev-plan-sheet__xp-track">
             <div
-              className={`dev-plan-sheet__xp-fill${isOverride ? ' dev-plan-sheet__xp-fill--override' : ''}`}
+              className="dev-plan-sheet__xp-fill"
               style={{ width: isAssigned ? `${xpPct}%` : '0%' }}
             />
           </div>
@@ -272,13 +311,6 @@ function LevelCard({
       {(isCurrent || expanded) && (
         <div className="dev-plan-sheet__level-body">
           <hr className="dev-plan-sheet__level-divider" />
-
-          {isOverride && (
-            <div className="dev-plan-sheet__override-warning">
-              <span className="material-symbols-outlined" style={{ fontSize: 16, flexShrink: 0 }}>warning</span>
-              <span>Gate override active — manager approved early access before Level {level.id - 1} is complete.</span>
-            </div>
-          )}
 
           {/* Outcome */}
           <div className="dev-plan-sheet__section-heading">Outcome</div>
@@ -296,7 +328,7 @@ function LevelCard({
           <div className="dev-plan-sheet__section-heading">Practice tasks</div>
           <div className="dev-plan-sheet__tasks">
             {level.tasks.map((t, i) => (
-              <TaskItem key={i} text={t} override={isOverride} />
+              <TaskItem key={i} text={t} />
             ))}
           </div>
         </div>
@@ -307,16 +339,8 @@ function LevelCard({
         <div className="dev-plan-sheet__gate">
           <div className="dev-plan-sheet__gate-info">
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>
-            Complete Level {level.id - 1} to unlock
+            Complete Step {level.id - 1} to unlock
           </div>
-          <button
-            type="button"
-            className="dev-plan-sheet__gate-override-btn"
-            onClick={(e) => { e.stopPropagation(); onRequestOverride(level.id) }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>key</span>
-            Override gate
-          </button>
         </div>
       )}
     </div>
@@ -325,10 +349,25 @@ function LevelCard({
 
 // ── DevPlanSheet ──────────────────────────────────────────────────────────────
 
-export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAssigned }: DevPlanSheetProps) {
-  const [overriddenLevels, setOverriddenLevels] = useState<Set<number>>(new Set())
+export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanSheetProps) {
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
-  const [confirmOverride, setConfirmOverride] = useState<number | null>(null)
+  const [modified, setModified] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+
+  // Reset state when a different employee's plan is opened
+  useEffect(() => {
+    setModified(false)
+    setRegenerating(false)
+    setExpandedLevels(new Set())
+  }, [employee?.name])
+
+  function handleRegenerate() {
+    setRegenerating(true)
+    setTimeout(() => {
+      setRegenerating(false)
+      setModified(true)
+    }, 1500)
+  }
 
   if (!open || !employee) return null
 
@@ -344,7 +383,6 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
   function getLevelState(levelId: number): LevelState {
     if (levelId <= recognizedCount) return 'recognized'
     if (levelId === recognizedCount + 1) return 'current'
-    if (overriddenLevels.has(levelId)) return 'override'
     return 'locked'
   }
 
@@ -356,31 +394,28 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
     })
   }
 
-  function handleOverrideConfirm(levelId: number) {
-    setOverriddenLevels(prev => new Set([...prev, levelId]))
-    setExpandedLevels(prev => { const n = new Set(prev); n.delete(levelId); return n })
-    setConfirmOverride(null)
-  }
-
   // Placement banner text
   const placementRecognized = recognizedCount > 0
   const placementTitle = placementRecognized
-    ? `${recognizedCount === 1 ? '1 level' : `${recognizedCount} levels`} credited from existing knowledge`
-    : 'Placement: starting at Level 1 — AI Foundations'
+    ? `${recognizedCount === 1 ? '1 step' : `${recognizedCount} steps`} credited from existing knowledge`
+    : 'Placement: starting at Step 1 — AI Foundations'
   const placementBody = placementRecognized
-    ? `Based on ${employee.name.split(' ')[0]}'s career hub profile and baseline data collection, the AI identified pre-existing knowledge in ${recognizedCount === 1 ? 'AI Foundations' : 'AI Foundations and Augmentation-Ready'}. ${recognizedCount === 1 ? 'Level 1 has' : 'Levels 1–2 have'} been auto-credited — curriculum starts at Level ${recognizedCount + 1}.`
+    ? `Based on ${employee.name.split(' ')[0]}'s career hub profile and baseline data collection, the AI identified pre-existing knowledge in ${recognizedCount === 1 ? 'AI Foundations' : 'AI Foundations and Augmentation-Ready'}. ${recognizedCount === 1 ? 'Step 1 has' : 'Steps 1–2 have'} been auto-credited — curriculum starts at Step ${recognizedCount + 1}.`
     : `Placement was determined from ${employee.name.split(' ')[0]}'s career hub profile and role task data. No prior AI skill signals were detected — the full curriculum applies.`
 
   // Footer stats
   const remainingLevels = levels.filter(l => l.id > recognizedCount)
-  const remainingHours = remainingLevels.reduce((s, l) => s + l.totalHours, 0)
-  const weeksEstimate = remainingHours <= 12 ? '2–3 weeks' : remainingHours <= 24 ? '4–5 weeks' : remainingHours <= 36 ? '6–8 weeks' : '8–10 weeks'
 
-  // Status
-  const statusLabel = isAssigned ? 'In progress' : 'Not started'
-  const statusColor = isAssigned ? '#6366f1' : '#94a3b8'
-  const statusIcon = isAssigned ? 'sync' : 'schedule'
-  const gapColor = employee.displayReadiness >= 50 ? '#15803d' : '#dc2626'
+  // Journey / tier data
+  const remainingAdoptionPts = remainingLevels.reduce((s, l) => s + l.adoptionPts, 0)
+  const projectedScore = Math.min(100, employee.displayReadiness + remainingAdoptionPts)
+  const potentialPct = projectedScore - employee.displayReadiness
+  const currentTier = getTier(employee.displayReadiness)
+  const targetTier = getTier(projectedScore)
+
+  // Completion unlocks
+  const firstName = employee.name.split(' ')[0]
+  const unlocks = getUnlocks(employee.name, employee.title, employee.displayReadiness)
 
   return createPortal(
     <div className="dev-plan-sheet__root">
@@ -396,14 +431,6 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
               {employee.title && <span>{employee.title}</span>}
               {employee.title && <span style={{ color: '#e2e8f0' }}>·</span>}
               <span>Development plan</span>
-              <span
-                className={`dev-plan-sheet__source-badge ${collectionComplete ? 'dev-plan-sheet__source-badge--measured' : 'dev-plan-sheet__source-badge--estimated'}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
-                  {collectionComplete ? 'verified' : 'auto_awesome'}
-                </span>
-                {collectionComplete ? 'Measured' : 'Estimated'}
-              </span>
             </div>
           </div>
           <button type="button" className="dev-plan-sheet__close" onClick={onClose} aria-label="Close">
@@ -411,30 +438,61 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
           </button>
         </div>
 
-        {/* Status bar */}
-        <div className="dev-plan-sheet__status-bar">
-          <div className="dev-plan-sheet__status-item">
-            <div className="dev-plan-sheet__status-label">Status</div>
-            <div className="dev-plan-sheet__status-value" style={{ color: statusColor }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>{statusIcon}</span>
-              {statusLabel}
-            </div>
-          </div>
-          <div className="dev-plan-sheet__status-item">
-            <div className="dev-plan-sheet__status-label">AI Adoption</div>
-            <div className="dev-plan-sheet__status-value" style={{ color: employee.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
+        {/* AI Adoption Journey */}
+        <div className="dev-plan-sheet__journey">
+
+          {/* Current tier */}
+          <div className="dev-plan-sheet__journey-side">
+            <div
+              className="dev-plan-sheet__journey-gem"
+              style={{ background: currentTier.color, borderColor: currentTier.color, boxShadow: `0 0 10px ${currentTier.glow}` }}
+            >
               {employee.displayReadiness}%
             </div>
-          </div>
-          <div className="dev-plan-sheet__status-item">
-            <div className="dev-plan-sheet__status-label">Gap Status</div>
-            <div className="dev-plan-sheet__status-value" style={{ color: gapColor }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-                {employee.displayReadiness >= 50 ? 'check_circle' : 'warning'}
-              </span>
-              {employee.displayReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}
+            <div className="dev-plan-sheet__journey-tier" style={{ color: currentTier.color }}>
+              {currentTier.name}
+            </div>
+            <div className="dev-plan-sheet__journey-sublabel">
+              {isAssigned ? 'In progress' : 'Not started'}
             </div>
           </div>
+
+          {/* Bar track */}
+          <div className="dev-plan-sheet__journey-bar-area">
+            <div className="dev-plan-sheet__journey-track">
+              <div className="dev-plan-sheet__journey-fill" style={{ width: `${employee.displayReadiness}%` }} />
+              {potentialPct > 0 && (
+                <div className="dev-plan-sheet__journey-potential"
+                  style={{ left: `${employee.displayReadiness}%`, width: `${potentialPct}%` }}
+                />
+              )}
+              {employee.displayReadiness < 50 && (
+                <div className="dev-plan-sheet__journey-threshold" style={{ left: '50%' }} />
+              )}
+            </div>
+            {potentialPct > 0 && (
+              <div className="dev-plan-sheet__journey-pts">
+                +{remainingAdoptionPts} pts with this plan
+              </div>
+            )}
+          </div>
+
+          {/* Target tier */}
+          <div className="dev-plan-sheet__journey-side dev-plan-sheet__journey-side--target">
+            <div
+              className="dev-plan-sheet__journey-gem dev-plan-sheet__journey-gem--target"
+              style={{ background: targetTier.color, borderColor: targetTier.color, boxShadow: `0 0 16px ${targetTier.glow}` }}
+            >
+              {projectedScore}%
+            </div>
+            <div className="dev-plan-sheet__journey-tier" style={{ color: targetTier.color }}>
+              {targetTier.name}
+            </div>
+            <div className="dev-plan-sheet__journey-sublabel" style={{ color: projectedScore >= 50 ? '#10b981' : '#64748b' }}>
+              {projectedScore >= 50 ? '✓ AI-ready' : 'Not AI-ready'}
+            </div>
+          </div>
+
         </div>
 
         {/* Body */}
@@ -454,7 +512,7 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
           </div>
 
           {/* Curriculum */}
-          <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} levels</div>
+          <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
 
           {levels.map(level => {
             const state = getLevelState(level.id)
@@ -467,50 +525,60 @@ export function DevPlanSheet({ employee, open, onClose, collectionComplete, isAs
                 isAssigned={isAssigned}
                 expanded={expandedLevels.has(level.id)}
                 onToggle={() => toggleExpand(level.id)}
-                onRequestOverride={(id) => setConfirmOverride(id)}
               />
             )
           })}
+
+          {/* Completion unlocks */}
+          <div className="dev-plan-sheet__unlocks">
+            <div className="dev-plan-sheet__unlocks-heading">
+              What completing this plan unlocks for {firstName}
+            </div>
+            <div className="dev-plan-sheet__unlocks-stats">
+              <div className="dev-plan-sheet__unlock-stat">
+                <div className="dev-plan-sheet__unlock-value">{unlocks.doorCount}</div>
+                <div className="dev-plan-sheet__unlock-label">Career doors unlock</div>
+                <div className="dev-plan-sheet__unlock-detail">Top: {unlocks.topRole} ({unlocks.topFit}% fit)</div>
+              </div>
+              <div className="dev-plan-sheet__unlock-divider" />
+              <div className="dev-plan-sheet__unlock-stat">
+                <div className="dev-plan-sheet__unlock-value dev-plan-sheet__unlock-value--drop">−{unlocks.riskDrop}%</div>
+                <div className="dev-plan-sheet__unlock-label">Automation risk</div>
+                <div className="dev-plan-sheet__unlock-detail">{unlocks.currentRisk}% now → {unlocks.pathsTo}%</div>
+              </div>
+              <div className="dev-plan-sheet__unlock-divider" />
+              <div className="dev-plan-sheet__unlock-stat">
+                <div className="dev-plan-sheet__unlock-value">{unlocks.aiSkills.length}</div>
+                <div className="dev-plan-sheet__unlock-label">AI skills gained</div>
+                <div className="dev-plan-sheet__unlock-detail">{unlocks.aiSkills.join(', ')}</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
         <div className="dev-plan-sheet__footer">
-          <div className="dev-plan-sheet__footer-meta">
-            {levels.length} levels · ~{remainingHours} hrs · Est. {weeksEstimate}
-            {recognizedCount > 0 && (
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                {recognizedCount} level{recognizedCount > 1 ? 's' : ''} credited · adjusted from baseline
-              </div>
-            )}
+          <div className="dev-plan-sheet__footer-left">
+            <Button variant="secondary" aria-label="Share">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>share</span>
+            </Button>
+            <Button variant="secondary" aria-label="Download">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>
+            </Button>
           </div>
           <div className="dev-plan-sheet__footer-actions">
+            <Button variant="secondary" onClick={handleRegenerate} disabled={regenerating}>
+              <span className={`material-symbols-outlined dev-plan-sheet__regen-icon${regenerating ? ' dev-plan-sheet__regen-icon--spinning' : ''}`} style={{ fontSize: 15 }}>
+                {regenerating ? 'sync' : 'auto_awesome'}
+              </span>
+              {regenerating ? 'Regenerating…' : 'Regenerate plan'}
+            </Button>
             <Button variant="secondary" onClick={onClose}>Close</Button>
-            <Button variant="primary" onClick={onClose}>Save changes</Button>
+            {modified && <Button variant="primary" onClick={onClose}>Save changes</Button>}
           </div>
         </div>
       </div>
 
-      {/* Override confirmation dialog */}
-      {confirmOverride !== null && createPortal(
-        <div className="dev-plan-sheet__confirm-overlay" onClick={() => setConfirmOverride(null)}>
-          <div className="dev-plan-sheet__confirm-dialog" onClick={e => e.stopPropagation()}>
-            <h3 className="dev-plan-sheet__confirm-title">
-              <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#ea580c' }}>key</span>
-              Override Level {confirmOverride} gate?
-            </h3>
-            <p className="dev-plan-sheet__confirm-body">
-              This will give <strong>{employee.name}</strong> early access to <strong>Level {confirmOverride}: {levels.find(l => l.id === confirmOverride)?.name}</strong> before completing the previous level. An override note will be visible in the plan.
-            </p>
-            <div className="dev-plan-sheet__confirm-actions">
-              <Button variant="secondary" onClick={() => setConfirmOverride(null)}>Cancel</Button>
-              <Button variant="primary" onClick={() => handleOverrideConfirm(confirmOverride)}>
-                Override gate
-              </Button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>,
     document.body
   )
