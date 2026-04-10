@@ -534,24 +534,43 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             <div className="dev-plan-sheet__unlocks-heading">
               What completing this plan unlocks for {firstName}
             </div>
-            <div className="dev-plan-sheet__unlocks-stats">
-              <div className="dev-plan-sheet__unlock-stat">
-                <div className="dev-plan-sheet__unlock-value">{unlocks.doorCount}</div>
-                <div className="dev-plan-sheet__unlock-label">Career doors unlock</div>
-                <div className="dev-plan-sheet__unlock-detail">Top: {unlocks.topRole} ({unlocks.topFit}% fit)</div>
-              </div>
-              <div className="dev-plan-sheet__unlock-divider" />
-              <div className="dev-plan-sheet__unlock-stat">
-                <div className="dev-plan-sheet__unlock-value dev-plan-sheet__unlock-value--drop">−{unlocks.riskDrop}%</div>
-                <div className="dev-plan-sheet__unlock-label">Automation risk</div>
-                <div className="dev-plan-sheet__unlock-detail">{unlocks.currentRisk}% now → {unlocks.pathsTo}%</div>
-              </div>
-              <div className="dev-plan-sheet__unlock-divider" />
-              <div className="dev-plan-sheet__unlock-stat">
-                <div className="dev-plan-sheet__unlock-value">{unlocks.aiSkills.length}</div>
-                <div className="dev-plan-sheet__unlock-label">AI skills gained</div>
-                <div className="dev-plan-sheet__unlock-detail">{unlocks.aiSkills.join(', ')}</div>
-              </div>
+            <div className="dev-plan-sheet__unlocks-badges">
+              {([
+                { value: String(unlocks.doorCount), label: 'Career doors unlock', detail: `Top: ${unlocks.topRole} (${unlocks.topFit}% fit)`, color: 'var(--color-blue-60)', gid: 'udg-blue' },
+                { value: `−${unlocks.riskDrop}%`, label: 'Automation risk drop', detail: `${unlocks.currentRisk}% now → ${unlocks.pathsTo}%`, color: 'var(--color-green-60)', gid: 'udg-green' },
+                { value: String(unlocks.aiSkills.length), label: 'AI skills gained', detail: unlocks.aiSkills.join(', '), color: 'var(--color-violet-60)', gid: 'udg-violet' },
+              ] as const).map(({ value, label, detail, color, gid }) => (
+                <div key={gid} className="dev-plan-sheet__unlock-badge-item">
+                  <svg className="dev-plan-sheet__unlock-shield" viewBox="0 0 100 114" fill="none">
+                    <defs>
+                      <linearGradient id={gid} x1="0" y1="0" x2="100" y2="114" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.18 }} />
+                        <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.05 }} />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 50 5 L 95 22 L 95 68 C 95 91 75 106 50 111 C 25 106 5 91 5 68 L 5 22 Z"
+                      fill={`url(#${gid})`}
+                      stroke={color}
+                      strokeWidth="2.5"
+                    />
+                    <text
+                      x="50" y="62"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      style={{
+                        fontSize: value.length > 3 ? '18px' : '26px',
+                        fontWeight: 900,
+                        fill: color,
+                        letterSpacing: '-0.03em',
+                        fontFamily: 'inherit',
+                      }}
+                    >{value}</text>
+                  </svg>
+                  <div className="dev-plan-sheet__unlock-badge-label">{label}</div>
+                  <div className="dev-plan-sheet__unlock-badge-detail">{detail}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
