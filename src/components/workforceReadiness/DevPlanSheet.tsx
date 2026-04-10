@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, Tag } from '@tonyh-2-eightfold/ef-design-system'
 import './DevPlanSheet.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -135,7 +135,8 @@ function getUnlocks(name: string, title: string | undefined, displayReadiness: n
   const riskDrop = currentRisk - pathsTo
   const aiSkillEntry = AI_SKILLS_BY_ROLE.find(r => r.pattern.test(title ?? ''))
   const aiSkills = aiSkillEntry?.skills ?? ['writing better prompts', 'reviewing and editing AI outputs', 'structuring presentations for impact']
-  return { doorCount, topRole: doorRoles[0], topFit, currentRisk, pathsTo, riskDrop, aiSkills: aiSkills.slice(0, 3), displayReadiness }
+  const allFits = doorRoles.slice(0, doorCount).map((role, i) => ({ role, fit: Math.max(30, topFit - i * (5 + (h % 4))) }))
+  return { doorCount, topRole: doorRoles[0], topFit, currentRisk, pathsTo, riskDrop, aiSkills: aiSkills.slice(0, 4), displayReadiness, allRoles: allFits }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -353,12 +354,14 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
   const [modified, setModified] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [activeUnlock, setActiveUnlock] = useState<'doors' | 'risk' | 'skills' | null>(null)
 
   // Reset state when a different employee's plan is opened
   useEffect(() => {
     setModified(false)
     setRegenerating(false)
     setExpandedLevels(new Set())
+    setActiveUnlock(null)
   }, [employee?.name])
 
   function handleRegenerate() {
@@ -536,42 +539,106 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             </div>
             <div className="dev-plan-sheet__unlocks-badges">
               {([
-                { value: String(unlocks.doorCount), label: 'Career doors unlock', detail: `Top: ${unlocks.topRole} (${unlocks.topFit}% fit)`, color: 'var(--color-blue-60)', gid: 'udg-blue' },
-                { value: `−${unlocks.riskDrop}%`, label: 'Automation risk drop', detail: `${unlocks.currentRisk}% now → ${unlocks.pathsTo}%`, color: 'var(--color-green-60)', gid: 'udg-green' },
-                { value: String(unlocks.aiSkills.length), label: 'AI skills gained', detail: unlocks.aiSkills.join(', '), color: 'var(--color-violet-60)', gid: 'udg-violet' },
-              ] as const).map(({ value, label, detail, color, gid }) => (
-                <div key={gid} className="dev-plan-sheet__unlock-badge-item">
-                  <svg className="dev-plan-sheet__unlock-shield" viewBox="0 0 100 114" fill="none">
-                    <defs>
-                      <linearGradient id={gid} x1="0" y1="0" x2="100" y2="114" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.18 }} />
-                        <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.05 }} />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 50 5 L 95 22 L 95 68 C 95 91 75 106 50 111 C 25 106 5 91 5 68 L 5 22 Z"
-                      fill={`url(#${gid})`}
-                      stroke={color}
-                      strokeWidth="2.5"
-                    />
-                    <text
-                      x="50" y="62"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      style={{
-                        fontSize: value.length > 3 ? '18px' : '26px',
-                        fontWeight: 900,
-                        fill: color,
-                        letterSpacing: '-0.03em',
-                        fontFamily: 'inherit',
-                      }}
-                    >{value}</text>
-                  </svg>
-                  <div className="dev-plan-sheet__unlock-badge-label">{label}</div>
-                  <div className="dev-plan-sheet__unlock-badge-detail">{detail}</div>
-                </div>
-              ))}
+                { id: 'doors' as const, value: String(unlocks.doorCount), label: 'Career doors unlock', detail: `Top: ${unlocks.topRole} (${unlocks.topFit}% fit)`, color: 'var(--color-blue-60)', gid: 'udg-blue' },
+                { id: 'risk' as const,  value: `−${unlocks.riskDrop}%`,   label: 'Automation risk drop', detail: `${unlocks.currentRisk}% now → ${unlocks.pathsTo}%`, color: 'var(--color-green-60)', gid: 'udg-green' },
+                { id: 'skills' as const, value: String(unlocks.aiSkills.length), label: 'AI skills gained', detail: unlocks.aiSkills.join(', '), color: 'var(--color-violet-60)', gid: 'udg-violet' },
+              ]).map(({ id, value, label, detail, color, gid }) => {
+                const isActive = activeUnlock === id
+                return (
+                  <button
+                    key={gid}
+                    type="button"
+                    className={`dev-plan-sheet__unlock-badge-item${isActive ? ' dev-plan-sheet__unlock-badge-item--active' : ''}`}
+                    onClick={() => setActiveUnlock(isActive ? null : id)}
+                    style={{ '--unlock-color': color } as React.CSSProperties}
+                  >
+                    <svg className="dev-plan-sheet__unlock-shield" viewBox="0 0 100 114" fill="none">
+                      <defs>
+                        <linearGradient id={gid} x1="0" y1="0" x2="100" y2="114" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" style={{ stopColor: color, stopOpacity: isActive ? 0.35 : 0.18 }} />
+                          <stop offset="100%" style={{ stopColor: color, stopOpacity: isActive ? 0.12 : 0.05 }} />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M 50 5 L 95 22 L 95 68 C 95 91 75 106 50 111 C 25 106 5 91 5 68 L 5 22 Z"
+                        fill={`url(#${gid})`}
+                        stroke={color}
+                        strokeWidth={isActive ? 3 : 2.5}
+                      />
+                      <text
+                        x="50" y="62"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        style={{
+                          fontSize: value.length > 3 ? '18px' : '26px',
+                          fontWeight: 900,
+                          fill: color,
+                          letterSpacing: '-0.03em',
+                          fontFamily: 'inherit',
+                        }}
+                      >{value}</text>
+                    </svg>
+                    <div className="dev-plan-sheet__unlock-badge-label">{label}</div>
+                    <div className="dev-plan-sheet__unlock-badge-detail">{detail}</div>
+                  </button>
+                )
+              })}
             </div>
+
+            {/* Expanded detail panel */}
+            {activeUnlock === 'doors' && (
+              <div className="dev-plan-sheet__unlock-panel">
+                <div className="dev-plan-sheet__unlock-panel-heading">Potential new roles</div>
+                <div className="dev-plan-sheet__unlock-panel-roles">
+                  {unlocks.allRoles.map(({ role, fit }) => (
+                    <div key={role} className="dev-plan-sheet__unlock-role-row">
+                      <span className="dev-plan-sheet__unlock-role-name">{role}</span>
+                      <div className="dev-plan-sheet__unlock-role-bar-wrap">
+                        <div className="dev-plan-sheet__unlock-role-bar" style={{ width: `${fit}%` }} />
+                      </div>
+                      <span className="dev-plan-sheet__unlock-role-fit">{fit}% fit</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeUnlock === 'risk' && (
+              <div className="dev-plan-sheet__unlock-panel">
+                <div className="dev-plan-sheet__unlock-panel-heading">Automation risk summary</div>
+                <p className="dev-plan-sheet__unlock-panel-body">
+                  {firstName}'s current role has a <strong>{unlocks.currentRisk}% automation risk</strong> — meaning most routine tasks could be automated without AI fluency.
+                  Completing this plan develops the judgment, prompt skills, and oversight capabilities that place {firstName} firmly in the <em>augmentation zone</em>, dropping exposure to just {unlocks.pathsTo}%.
+                </p>
+                <div className="dev-plan-sheet__unlock-risk-bars">
+                  <div className="dev-plan-sheet__unlock-risk-row">
+                    <span>Current risk</span>
+                    <div className="dev-plan-sheet__unlock-role-bar-wrap">
+                      <div className="dev-plan-sheet__unlock-role-bar dev-plan-sheet__unlock-role-bar--risk" style={{ width: `${unlocks.currentRisk}%` }} />
+                    </div>
+                    <span>{unlocks.currentRisk}%</span>
+                  </div>
+                  <div className="dev-plan-sheet__unlock-risk-row">
+                    <span>After plan</span>
+                    <div className="dev-plan-sheet__unlock-role-bar-wrap">
+                      <div className="dev-plan-sheet__unlock-role-bar dev-plan-sheet__unlock-role-bar--safe" style={{ width: `${unlocks.pathsTo}%` }} />
+                    </div>
+                    <span>{unlocks.pathsTo}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeUnlock === 'skills' && (
+              <div className="dev-plan-sheet__unlock-panel">
+                <div className="dev-plan-sheet__unlock-panel-heading">Skills {firstName} will gain</div>
+                <div className="dev-plan-sheet__unlock-skills-cloud">
+                  {unlocks.aiSkills.map(skill => (
+                    <Tag key={skill} className="dev-plan-sheet__skill-tag">{skill}</Tag>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
