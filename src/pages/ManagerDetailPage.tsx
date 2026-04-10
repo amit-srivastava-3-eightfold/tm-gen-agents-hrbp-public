@@ -30,6 +30,7 @@ import { deptManagerTeams, deptReadinessTrend } from '../components/workforceRea
 import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffectiveState, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
+import { DevPlanSheet } from '../components/workforceReadiness/DevPlanSheet'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
 
@@ -198,10 +199,6 @@ export function ManagerDetailPage() {
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false)
   const [assignReviewed, setAssignReviewed] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const [editingCourses, setEditingCourses] = useState(false)
-  const [editingSkills, setEditingSkills] = useState(false)
-  const [removedCourses, setRemovedCourses] = useState<Set<number>>(new Set())
-  const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
   const [empSort, setEmpSort] = useState<{ col: 'name' | 'readiness' | 'upskilling', dir: 'asc' | 'desc' }>({ col: 'readiness', dir: 'desc' })
   const toggleEmpSort = (col: typeof empSort['col']) => setEmpSort(s => ({ col, dir: s.col === col && s.dir === 'desc' ? 'asc' : 'desc' }))
 
@@ -245,21 +242,6 @@ export function ManagerDetailPage() {
         </span>
       : null
 
-  // Courses for the dev plan sheet
-  const devPlanCourses = devPlanEmployee ? [
-    { course: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '4 weeks at 3 hours a week', level: 'Beginner', free: true },
-    { course: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hours to complete', level: 'Intermediate', free: true },
-    { course: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '18 hours to complete', level: 'Beginner', free: true },
-    { course: `AI-Powered ${(devPlanEmployee.title?.split(' ')[0] ?? 'Business')} Workflows`, provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Intermediate', free: false },
-  ] : []
-
-  const devPlanSkills = devPlanEmployee ? [
-    'Prompt engineering',
-    'AI tool fluency',
-    'Data interpretation with AI',
-    'Critical evaluation of AI output',
-    ...(devPlanEmployee.title ? [`AI for ${devPlanEmployee.title.split(' ')[0].toLowerCase()} tasks`] : []),
-  ] : []
 
   return (
     <div className="mgr-detail-page">
@@ -424,7 +406,7 @@ export function ManagerDetailPage() {
                           <DataTableCell className="bg-[#fafbfc] border-l border-[#e2e8f0]" style={{ verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                                onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }); setEditingCourses(false); setRemovedCourses(new Set()) }}>
+                                onClick={(e) => { e.stopPropagation(); setDevPlanEmployee({ name: mgr.manager, title: mgr.title, readinessPct: avgReadiness, displayReadiness: avgReadiness }) }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!(hrbpPlansCreated || allPlansAssigned) && 'Development plan'}
                               </button>
                               {(mgrDisplayPct > 0 || allPlansAssigned || assignedPlans.has(mgr.manager)) && (() => {
@@ -531,8 +513,6 @@ export function ManagerDetailPage() {
                             onClick={(e) => {
                               e.stopPropagation()
                               setDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.readinessPct, displayReadiness: emp.displayReadiness })
-                              setEditingCourses(false)
-                              setRemovedCourses(new Set())
                             }}
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>
@@ -564,173 +544,13 @@ export function ManagerDetailPage() {
         </div>
       </main>
 
-      {/* Dev plan sheet */}
-      {devPlanEmployee && createPortal(
-        <div className="mgr-detail-page__plan-overlay" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>
-          <div className="mgr-detail-page__plan-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="mgr-detail-page__plan-header">
-              <div>
-                <h3 className="mgr-detail-page__plan-name">{devPlanEmployee.name}</h3>
-                <p className="mgr-detail-page__plan-meta">{devPlanEmployee.title} · {dept.name} — Development plan</p>
-              </div>
-              <button type="button" className="mgr-detail-page__plan-close" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
-              </button>
-            </div>
-
-            <div className="mgr-detail-page__plan-body">
-              {/* Status row */}
-              {(() => {
-                const isAssigned = assignedPlans.has(devPlanEmployee.name)
-                const planHash = devPlanEmployee.name.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-                const overallPct = isAssigned ? (Math.abs(planHash) % 100 > 85 ? 100 : Math.abs(planHash) % 100 > 20 ? (20 + Math.abs(planHash) % 60) : 0) : 0
-                const overallStatus = !isAssigned ? 'Not assigned' : overallPct === 100 ? 'Completed' : overallPct > 0 ? 'In progress' : 'Not started'
-                const statusColor = overallStatus === 'Completed' ? '#15803d' : overallStatus === 'In progress' ? '#6366f1' : overallStatus === 'Not assigned' ? '#d97706' : '#94a3b8'
-                const statusIcon = overallStatus === 'Completed' ? 'check_circle' : overallStatus === 'In progress' ? 'sync' : 'schedule'
-                return (
-                  <>
-                    <div style={{ display: 'flex', gap: 24, marginBottom: isAssigned ? 12 : 20 }}>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Status</div>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: statusColor }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{statusIcon}</span>
-                          {overallStatus}
-                        </span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>AI adoption</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: devPlanEmployee.displayReadiness >= 50 ? '#15803d' : '#dc2626' }}>
-                          {devPlanEmployee.displayReadiness}%
-                        </span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Gap status</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: devPlanEmployee.displayReadiness < 50 ? '#dc2626' : '#15803d' }}>
-                          {devPlanEmployee.displayReadiness < 50 ? 'Not AI-ready' : 'AI-ready'}
-                        </span>
-                      </div>
-                    </div>
-                    {isAssigned && (
-                      <div style={{ marginBottom: 20, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a212e' }}>Plan progress</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor }}>{overallPct}%</span>
-                        </div>
-                        <div style={{ background: 'rgba(99, 102, 241, 0.08)', height: 6, borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ width: `${overallPct}%`, background: overallPct === 100 ? '#22c55e' : '#818cf8', height: 6, borderRadius: 3, transition: 'width 0.3s ease' }} />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
-
-              {/* Courses */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Courses</h4>
-                <button
-                  type="button"
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: editingCourses ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }}
-                  onClick={() => setEditingCourses(!editingCourses)}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{editingCourses ? 'check' : 'edit'}</span>
-                    {editingCourses ? 'Done' : 'Edit'}
-                  </span>
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {devPlanCourses.map((c, i) => {
-                  if (removedCourses.has(i)) return null
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                      <div style={{ flex: 1 }}>
-                        <div className="mgr-detail-page__plan-course-name">{c.course}</div>
-                        <div className="mgr-detail-page__plan-course-meta">{c.provider} · {c.duration} · {c.level}{c.free ? ' · Free to audit' : ''}</div>
-                      </div>
-                      {editingCourses && (
-                        <button
-                          type="button"
-                          className="material-symbols-outlined"
-                          style={{ fontSize: 18, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
-                          onClick={() => setRemovedCourses(prev => new Set([...prev, i]))}
-                        >
-                          remove_circle
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-                {editingCourses && (
-                  <button
-                    type="button"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', borderRadius: 8, border: '1px dashed #c7d2fe', background: '#fafbff', cursor: 'pointer', color: '#3b5bdb', fontSize: 13, fontWeight: 500 }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
-                    Add course
-                  </button>
-                )}
-              </div>
-
-              {/* Skills */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
-                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Skills to develop</h4>
-                <button
-                  type="button"
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: editingSkills ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }}
-                  onClick={() => setEditingSkills(!editingSkills)}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{editingSkills ? 'check' : 'edit'}</span>
-                    {editingSkills ? 'Done' : 'Edit'}
-                  </span>
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {devPlanSkills.filter(s => !removedSkills.has(s)).map((s) => (
-                  <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#eef2ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 500, color: '#4338ca' }}>
-                    {s}
-                    {editingSkills && (
-                      <button
-                        type="button"
-                        className="material-symbols-outlined"
-                        style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, lineHeight: 1 }}
-                        onClick={() => setRemovedSkills(prev => new Set([...prev, s]))}
-                      >
-                        close
-                      </button>
-                    )}
-                  </span>
-                ))}
-                {editingSkills && (
-                  <button
-                    type="button"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#fafbff', border: '1px dashed #c7d2fe', fontSize: 12, fontWeight: 500, color: '#3b5bdb', cursor: 'pointer' }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
-                    Add skill
-                  </button>
-                )}
-              </div>
-
-              {/* Estimated completion */}
-              <div style={{ marginTop: 20, padding: '12px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a' }}>
-                <div style={{ fontSize: 12, color: '#92400e' }}>
-                  <strong>Estimated completion:</strong> 6–8 weeks after assignment · ~46 hours of coursework
-                </div>
-              </div>
-            </div>
-
-            <div className="mgr-detail-page__plan-footer">
-              <span style={{ fontSize: 13, color: '#64748b' }}>{devPlanCourses.filter((_, i) => !removedCourses.has(i)).length} courses · {devPlanSkills.filter(s => !removedSkills.has(s)).length} skills</span>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <Button variant="secondary" onClick={() => { setDevPlanEmployee(null); setEditingCourses(false); setEditingSkills(false) }}>Close</Button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <DevPlanSheet
+        employee={devPlanEmployee}
+        open={!!devPlanEmployee}
+        onClose={() => setDevPlanEmployee(null)}
+        collectionComplete={collectionComplete}
+        isAssigned={assignedPlans.has(devPlanEmployee?.name ?? '') || allPlansAssigned}
+      />
       {/* Assign plans confirmation dialog */}
       {assignConfirmOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
@@ -796,3 +616,4 @@ export function ManagerDetailPage() {
     </div>
   )
 }
+
