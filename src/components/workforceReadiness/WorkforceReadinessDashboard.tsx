@@ -36,6 +36,7 @@ import { PersonDetailLayout } from './PersonDetailLayout'
 import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { UnrealizedValueSheet, type UnrealizedValueSheetData } from './UnrealizedValueSheet'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMetricSheet'
+import { DevPlanSheet } from './DevPlanSheet'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
@@ -2280,10 +2281,6 @@ export function WorkforceReadinessDashboard({
   const [mgrAssignReviewed, setMgrAssignReviewed] = useState(false)
   const [mgrToast, setMgrToast] = useState<string | null>(null)
   const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
-  const [mgrEditingCourses, setMgrEditingCourses] = useState(false)
-  const [mgrRemovedCourses, setMgrRemovedCourses] = useState<Set<number>>(new Set())
-  const [mgrEditingSkills, setMgrEditingSkills] = useState(false)
-  const [mgrRemovedSkills, setMgrRemovedSkills] = useState<Set<string>>(new Set())
 
   // ─── Manager persona: compute team data for Dana Tanaka ───
   const managerTeamData = useMemo(() => {
@@ -2458,7 +2455,7 @@ export function WorkforceReadinessDashboard({
                           <button
                             type="button"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                            onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness }); setMgrEditingCourses(false); setMgrRemovedCourses(new Set()) }}
+                            onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness }) }}
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!(mgrPlansCreated || mgrAllPlansAssigned) && 'Development plan'}
                           </button>
@@ -2605,132 +2602,12 @@ export function WorkforceReadinessDashboard({
         </div>,
         document.body,
       )}
-      {mgrDevPlanEmployee && createPortal(
-        <div className="mgr-detail-page__plan-overlay" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>
-          <div className="mgr-detail-page__plan-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="mgr-detail-page__plan-header">
-              <div>
-                <h3 className="mgr-detail-page__plan-name">{mgrDevPlanEmployee.name}</h3>
-                <p className="mgr-detail-page__plan-meta">{mgrDevPlanEmployee.title} · Engineering — Development plan</p>
-              </div>
-              <button type="button" className="mgr-detail-page__plan-close" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
-              </button>
-            </div>
-            <div className="mgr-detail-page__plan-body">
-              {(() => {
-                const planHash = mgrDevPlanEmployee.name.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-                const dialogPlanPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(planHash) % 55) + 20) : 0
-                const dialogRawPct = dialogPlanPct > 0 ? dialogPlanPct : mgrAssignedPlans.has(mgrDevPlanEmployee.name) ? Math.min(85, 10 + (Math.abs(planHash) % 55)) : 0
-                const devPlanComplete = mgrDevPlanEmployee.name === 'Skyler Petrov' || dialogRawPct === 100
-                const isAssigned = devPlanComplete || mgrPlansCreated || mgrAllPlansAssigned || mgrAssignedPlans.has(mgrDevPlanEmployee.name)
-                const overallPct = devPlanComplete ? 100 : isAssigned ? dialogRawPct : 0
-                const overallStatus = !isAssigned ? 'Not assigned' : overallPct === 100 ? 'Completed' : overallPct > 0 ? 'In progress' : 'Not started'
-                const statusColor = overallStatus === 'Completed' ? '#15803d' : overallStatus === 'In progress' ? '#6366f1' : overallStatus === 'Not assigned' ? '#d97706' : '#94a3b8'
-                const statusIcon = overallStatus === 'Completed' ? 'check_circle' : overallStatus === 'In progress' ? 'sync' : 'schedule'
-                const isAiReady = devPlanComplete || mgrDevPlanEmployee.displayReadiness >= 50
-                return (
-                  <>
-                    <div style={{ display: 'flex', gap: 24, marginBottom: isAssigned ? 12 : 20 }}>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Status</div>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: statusColor }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{statusIcon}</span>
-                          {overallStatus}
-                        </span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>AI adoption</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: isAiReady ? '#15803d' : '#dc2626' }}>{mgrDevPlanEmployee.displayReadiness}%</span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Gap status</div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: isAiReady ? '#15803d' : '#dc2626' }}>
-                          {isAiReady ? 'AI-ready' : 'Not AI-ready'}
-                        </span>
-                      </div>
-                    </div>
-                    {isAssigned && (
-                      <div style={{ marginBottom: 20, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a212e' }}>Plan progress</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor }}>{overallPct}%</span>
-                        </div>
-                        <div style={{ background: 'rgba(99, 102, 241, 0.08)', height: 6, borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ width: `${overallPct}%`, background: overallPct === 100 ? '#22c55e' : '#818cf8', height: 6, borderRadius: 3, transition: 'width 0.3s ease' }} />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
-              {/* Courses */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Courses</h4>
-                <button type="button" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: mgrEditingCourses ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }} onClick={() => setMgrEditingCourses(!mgrEditingCourses)}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{mgrEditingCourses ? 'check' : 'edit'}</span>
-                    {mgrEditingCourses ? 'Done' : 'Edit'}
-                  </span>
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { course: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '4 weeks at 3 hours a week', level: 'Beginner', free: true },
-                  { course: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hours to complete', level: 'Intermediate', free: true },
-                  { course: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '18 hours to complete', level: 'Beginner', free: true },
-                  { course: `AI-Powered ${(mgrDevPlanEmployee.title?.split(' ')[0] ?? 'Business')} Workflows`, provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Intermediate', free: false },
-                ].map((c, i) => {
-                  if (mgrRemovedCourses.has(i)) return null
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                      <div style={{ flex: 1 }}>
-                        <div className="mgr-detail-page__plan-course-name">{c.course}</div>
-                        <div className="mgr-detail-page__plan-course-meta">{c.provider} · {c.duration} · {c.level}{c.free ? ' · Free to audit' : ''}</div>
-                      </div>
-                      {mgrEditingCourses && (
-                        <button type="button" className="material-symbols-outlined" style={{ fontSize: 18, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }} onClick={() => setMgrRemovedCourses(prev => new Set([...prev, i]))}>remove_circle</button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              {/* Skills */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
-                <h4 className="mgr-detail-page__plan-section-title" style={{ margin: 0 }}>Skills to develop</h4>
-                <button type="button" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: mgrEditingSkills ? '#15803d' : '#3b5bdb', fontSize: 12, fontWeight: 500 }} onClick={() => setMgrEditingSkills(!mgrEditingSkills)}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{mgrEditingSkills ? 'check' : 'edit'}</span>
-                    {mgrEditingSkills ? 'Done' : 'Edit'}
-                  </span>
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {['Prompt engineering', 'AI tool fluency', 'Data interpretation with AI', 'Critical evaluation of AI output', ...(mgrDevPlanEmployee.title ? [`AI for ${mgrDevPlanEmployee.title.split(' ')[0].toLowerCase()} tasks`] : [])].filter(s => !mgrRemovedSkills.has(s)).map((s) => (
-                  <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#eef2ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 500, color: '#4338ca' }}>
-                    {s}
-                    {mgrEditingSkills && (
-                      <button type="button" className="material-symbols-outlined" style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, lineHeight: 1 }} onClick={() => setMgrRemovedSkills(prev => new Set([...prev, s]))}>close</button>
-                    )}
-                  </span>
-                ))}
-              </div>
-              <div style={{ marginTop: 20, padding: '12px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a' }}>
-                <div style={{ fontSize: 12, color: '#92400e' }}>
-                  <strong>Estimated completion:</strong> 6–8 weeks after assignment · ~46 hours of coursework
-                </div>
-              </div>
-            </div>
-            <div className="mgr-detail-page__plan-footer">
-              <span style={{ fontSize: 13, color: '#64748b' }}>4 courses · 5 skills</span>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <Button variant="secondary" onClick={() => { setMgrDevPlanEmployee(null); setMgrEditingCourses(false); setMgrEditingSkills(false) }}>Close</Button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <DevPlanSheet
+        employee={mgrDevPlanEmployee}
+        open={!!mgrDevPlanEmployee}
+        onClose={() => setMgrDevPlanEmployee(null)}
+        isAssigned={mgrAssignedPlans.has(mgrDevPlanEmployee?.name ?? '') || mgrAllPlansAssigned || mgrPlansCreated}
+      />
       <ReadinessTrendSheet
         open={trendSheetDept != null}
         onClose={() => { setTrendSheetDept(null); setTrendSheetRole(null); setTrendSheetHrbp(null) }}
