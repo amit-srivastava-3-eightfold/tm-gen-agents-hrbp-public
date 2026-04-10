@@ -706,6 +706,26 @@
   align-items: center;
   text-align: center;
   gap: 8px;
+  background: none;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 10px 4px;
+  border-radius: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.dev-plan-sheet__unlock-badge-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dev-plan-sheet__unlock-badge-item--active {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: var(--unlock-color);
+}
+
+.dev-plan-sheet__unlock-badge-item--active .dev-plan-sheet__unlock-shield {
+  filter: drop-shadow(0 4px 16px color-mix(in srgb, var(--unlock-color) 40%, transparent));
+  transform: scale(1.06);
 }
 
 .dev-plan-sheet__unlock-shield {
@@ -713,11 +733,8 @@
   height: auto;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
   animation: dev-plan-sheet-gem-pulse 3s ease-in-out infinite;
+  transition: filter 0.2s, transform 0.2s;
 }
-
-.dev-plan-sheet__unlock-shield:nth-child(1) { animation-delay: 0s; }
-.dev-plan-sheet__unlock-shield:nth-child(2) { animation-delay: 0.8s; }
-.dev-plan-sheet__unlock-shield:nth-child(3) { animation-delay: 1.6s; }
 
 .dev-plan-sheet__unlock-badge-label {
   font-size: 12px;
@@ -730,6 +747,108 @@
   font-size: 11px;
   color: var(--color-grey-50);
   line-height: 1.5;
+}
+
+/* Expanded panel */
+.dev-plan-sheet__unlock-panel {
+  margin-top: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.dev-plan-sheet__unlock-panel-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-grey-40);
+  margin-bottom: 12px;
+}
+
+.dev-plan-sheet__unlock-panel-body {
+  font-size: 13px;
+  color: var(--color-grey-50);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+.dev-plan-sheet__unlock-panel-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-plan-sheet__unlock-role-row,
+.dev-plan-sheet__unlock-risk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-foreground);
+}
+
+.dev-plan-sheet__unlock-role-row span:first-child,
+.dev-plan-sheet__unlock-risk-row span:first-child {
+  width: 160px;
+  flex-shrink: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dev-plan-sheet__unlock-risk-row span:first-child {
+  width: 90px;
+}
+
+.dev-plan-sheet__unlock-role-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dev-plan-sheet__unlock-role-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-blue-60);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dev-plan-sheet__unlock-role-bar--risk {
+  background: var(--color-orange-60);
+}
+
+.dev-plan-sheet__unlock-role-bar--safe {
+  background: var(--color-green-60);
+}
+
+.dev-plan-sheet__unlock-role-fit {
+  width: 48px;
+  text-align: right;
+  flex-shrink: 0;
+  color: var(--color-grey-50);
+}
+
+.dev-plan-sheet__unlock-risk-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-plan-sheet__unlock-skills-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev-plan-sheet__skill-tag {
+  background: var(--color-background1-violet) !important;
+  border-color: var(--color-violet-60) !important;
+  color: var(--color-violet-60) !important;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
