@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ComponentProps } from 'react'
+import { useEffect, type ComponentProps } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import { MATEO, LAURA, CHRO, CSM } from '../../contexts/demoUsers'

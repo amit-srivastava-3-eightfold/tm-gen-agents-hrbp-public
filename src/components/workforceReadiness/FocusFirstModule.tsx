@@ -576,7 +576,7 @@ function FocusFirstModuleBoard({
   hrbpDelegationPending = false,
   onHrbpCollectionLaunch,
   delegatorName,
-  delegationDeptName,
+  delegationDeptName: _delegationDeptName,
   chroDelegationActive = false,
   chroDelegationScopeLabel,
   gapPeopleOverride,
