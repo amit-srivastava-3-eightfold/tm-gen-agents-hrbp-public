@@ -187,20 +187,6 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, marginLeft: 52 }}>
                   from {cardBase}% {upskillingActive ? 'before upskilling' : 'estimated'}
                 </div>
-                <div style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: '1px solid #e5e7eb', marginTop: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>{upskillingActive ? 'Before upskilling' : 'Estimated'}</span>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{upskillingActive ? 'After upskilling' : 'Measured'}</span>
-                  </div>
-                  <div style={{ position: 'relative', height: 8, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${cardBase}%`, borderRadius: 4, background: '#cbd5e1' }} />
-                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${cardMeasured}%`, borderRadius: 4, background: cardIsUp ? '#22c55e' : '#ef4444', transition: 'width 0.6s ease' }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{cardBase}%</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: cardIsUp ? '#15803d' : '#dc2626' }}>{cardMeasured}%</span>
-                  </div>
-                </div>
               </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -247,7 +233,9 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                   {roleContext?.employeeName
                     ? (roleContext.upskillingComplete
                         ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#15803d', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>verified</span>Upskilling complete</span>
-                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#6366f1', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>autorenew</span>In progress</span>
+                        : collectionComplete
+                          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#15803d', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>check_circle</span>Collection complete</span>
+                          : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#6366f1', fontSize: 13, fontWeight: 600 }}><span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>autorenew</span>In progress</span>
                       )
                     : cardEmployees.toLocaleString()
                   }
@@ -367,7 +355,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
             // Manager context: direct reports table (or employee fallback)
             directReports && directReports.length > 0 ? (
               <div className="wfr-trend-sheet__teams">
-                <h3 className="wfr-trend-sheet__teams-title">Direct reports</h3>
+                <h3 className="wfr-trend-sheet__teams-title">Teams <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directReports.length}</span></h3>
                 <div className="wfr-trend-sheet__teams-table">
                   <div className="wfr-trend-sheet__teams-header">
                     <span className="wfr-trend-sheet__teams-th wfr-trend-sheet__teams-th--name">Manager</span>

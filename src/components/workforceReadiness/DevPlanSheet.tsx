@@ -264,8 +264,8 @@ function LevelCard({
         )}
       </div>
 
-      {/* XP bar — current level only */}
-      {isCurrent && (
+      {/* XP bar — current level only, hidden pre-assignment */}
+      {isCurrent && isAssigned && (
         <div className="dev-plan-sheet__xp">
           <div className="dev-plan-sheet__xp-header">
             <span className="dev-plan-sheet__xp-label">Step progress</span>
@@ -367,6 +367,8 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
   function getLevelState(levelId: number): LevelState {
     if (planComplete) return 'recognized'
     if (levelId <= recognizedCount) return 'recognized'
+    // Pre-assignment: all steps enabled for manager review
+    if (!isAssigned) return 'current'
     if (levelId === recognizedCount + 1) return 'current'
     return 'locked'
   }
@@ -413,11 +415,18 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
 
         {/* Completion banner */}
         {planComplete && (
-          <div style={{ margin: '16px 24px 0', padding: '14px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #86efac', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>celebration</span>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>Plan complete!</div>
-              <div style={{ fontSize: 12, color: '#166534' }}>AI adoption score increased by <strong>+{totalAdoptionPts} pts</strong> — {firstName} is now AI-ready.</div>
+          <div style={{ margin: '16px 24px 0', borderRadius: 14, overflow: 'hidden', background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+            <div style={{ position: 'relative', padding: '20px 20px 16px', display: 'flex', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#fbbf24' }}>emoji_events</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>Plan complete</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.5 }}>
+                  AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalAdoptionPts} pts</strong> — {firstName} is now AI-ready.
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -429,9 +438,9 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             <div style={{ fontSize: 36, fontWeight: 800, color: planComplete ? '#15803d' : '#0f172a', lineHeight: 1, minWidth: 60 }}>{employee.displayReadiness}<span style={{ fontSize: 18, fontWeight: 600, color: planComplete ? '#15803d' : '#64748b' }}>%</span></div>
             <div style={{ flex: 1, position: 'relative' }}>
               <div style={{ height: 12, borderRadius: 6, background: '#f1f5f9', position: 'relative', overflow: 'visible' }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${employee.displayReadiness}%`, borderRadius: 6, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : 'linear-gradient(90deg, #d97706, #f59e0b)' }} />
+                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${employee.displayReadiness}%`, borderRadius: 6, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : '#22c55e' }} />
                 {potentialPct > 0 && (
-                  <div style={{ position: 'absolute', left: `${employee.displayReadiness}%`, top: 0, height: '100%', width: `${potentialPct}%`, borderRadius: '0 6px 6px 0', background: 'linear-gradient(90deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1))' }} />
+                  <div style={{ position: 'absolute', left: `${employee.displayReadiness}%`, top: 0, height: '100%', width: `${potentialPct}%`, borderRadius: '0 6px 6px 0', background: '#6366f1', opacity: 0.5 }} />
                 )}
                 <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 2, background: '#22c55e', borderRadius: 1 }} />
               </div>
@@ -454,12 +463,12 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: '#d97706' }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>You are here · <strong style={{ color: '#0f172a' }}>{employee.displayReadiness}%</strong></span>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e' }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>Current · <strong style={{ color: '#0f172a' }}>{employee.displayReadiness}%</strong></span>
                 </div>
                 {potentialPct > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: '#6366f1', opacity: 0.35 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: '#6366f1', opacity: 0.5 }} />
                     <span style={{ fontSize: 11, color: '#64748b' }}>After plan · <strong style={{ color: '#0f172a' }}>{projectedScore}%</strong></span>
                     <span style={{ fontSize: 10, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 8, padding: '0px 5px' }}>+{remainingAdoptionPts}</span>
                   </div>
@@ -472,6 +481,29 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
         {/* Body */}
         <div className="dev-plan-sheet__body">
 
+
+          {/* Estimated time to completion */}
+          <div style={{ display: 'flex', margin: '0 0 24px', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <div style={{ flex: 1, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eff3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#3b5bdb' }}>schedule</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{levels.reduce((s, l) => s + l.totalHours, 0)}<span style={{ fontSize: 13, fontWeight: 500, color: '#64748b', marginLeft: 3 }}>hrs</span></div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Estimated effort</div>
+              </div>
+            </div>
+            <div style={{ width: 1, background: '#e2e8f0' }} />
+            <div style={{ flex: 1, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>event_available</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>6<span style={{ fontSize: 13, fontWeight: 500, color: '#64748b', marginLeft: 3 }}>weeks</span></div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Target duration</div>
+              </div>
+            </div>
+          </div>
 
           {/* Curriculum */}
           <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
