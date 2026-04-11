@@ -160,7 +160,7 @@ export const ORG = {
     Engineering: [
       { title: 'Software Engineer', employees: 2835, aiPotential: 66, aiReadiness: 18, medianHourlyWage: 62.00 },
       { title: 'Senior Software Engineer', employees: 2070, aiPotential: 58, aiReadiness: 24, medianHourlyWage: 75.00 },
-      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 32, medianHourlyWage: 90.00 },
+      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 30, medianHourlyWage: 90.00 },
       { title: 'QA Automation Engineer', employees: 1090, aiPotential: 72, aiReadiness: 16, medianHourlyWage: 50.00 },
       { title: 'DevOps Engineer', employees: 980, aiPotential: 58, aiReadiness: 28, medianHourlyWage: 58.00 },
       { title: 'Frontend Engineer', employees: 1305, aiPotential: 64, aiReadiness: 20, medianHourlyWage: 58.00 },

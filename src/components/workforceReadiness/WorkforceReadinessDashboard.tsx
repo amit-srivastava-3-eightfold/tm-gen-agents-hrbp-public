@@ -2359,10 +2359,11 @@ export function WorkforceReadinessDashboard({
     const calibratedAvgReadiness = mgrCollComplete
       ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
       : mgrReadiness
-    // Before plans are created, no one counts as AI-ready for the narrative (label condition matches)
-    const calibratedNotReady = mgrPlansCreated
-      ? enrichedMgrEmployees.filter(e => e._displayEmpReadiness < 50).length
-      : enrichedMgrEmployees.length
+    const calibratedNotReady = enrichedMgrEmployees.filter(e => {
+      const preR = e.displayReadiness + e._empTrendDelta
+      if (mgrPlansCreated) return preR >= 50 ? e._displayEmpReadiness < 50 : e._planPct !== 100
+      return e._displayEmpReadiness < 50
+    }).length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
     const readinessBadge = mgrCollComplete
@@ -2425,10 +2426,11 @@ export function WorkforceReadinessDashboard({
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: showUpskilling ? '30%' : '34%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '13%' : '16%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
-                <DataTableHead metric style={{ width: showUpskilling ? '24%' : '28%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={empSort.col === 'gap' ? empSort.dir : null} onSortClick={() => toggleEmpSort('gap')} /></DataTableHead>
+                <DataTableHead style={{ width: showUpskilling ? '18%' : '22%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
+                <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '10%' : '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
+                <DataTableHead metric style={{ width: showUpskilling ? '22%' : '24%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '16%' : '18%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={empSort.col === 'gap' ? empSort.dir : null} onSortClick={() => toggleEmpSort('gap')} /></DataTableHead>
                 {showUpskilling && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '15%', whiteSpace: 'nowrap' }}>Upskilling</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
@@ -2449,14 +2451,19 @@ export function WorkforceReadinessDashboard({
                 const rawDisplayPct = emp._planPct > 0 ? emp._planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
                 const empDisplayPct = showUpskilling ? rawDisplayPct : 0
                 const upskillingComplete = showUpskilling && emp._planPct === 100
+                // Pre-plan readiness (post-collection, before any upskilling boost)
+                const preUpskillingReadiness = emp.displayReadiness + empTrendDelta
+                const wasAlreadyReady = preUpskillingReadiness >= 50
+                // AI-ready: if already ready before plan → threshold; if not → needs 100% completion
+                const isAiReady = mgrPlansCreated
+                  ? (wasAlreadyReady ? displayEmpReadiness >= 50 : upskillingComplete)
+                  : displayEmpReadiness >= 50
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
-                    <div>
-                      <div className="text-[#1e293b]">{emp.name}</div>
-                      {emp.title && <div className="text-[#94a3b8] text-[11px] font-normal">{emp.title}</div>}
-                    </div>
+                    <span className="text-[#1e293b]">{emp.name}</span>
                   </DataTableCell>
+                  <DataTableCell className="text-[13px] text-[#475569] !max-w-[140px] truncate">{emp.title ?? '—'}</DataTableCell>
                   <DataTableCell align="right">
                     {empTaskCount > 0 && emp.title ? (
                       <button
@@ -2488,7 +2495,7 @@ export function WorkforceReadinessDashboard({
                     </div>
                   </DataTableCell>
                   <DataTableCell align="right">
-                    <span style={{ color: (upskillingComplete || (mgrPlansCreated && displayEmpReadiness >= 50)) ? '#15803d' : '#dc2626', fontWeight: 600 }}>{(upskillingComplete || (mgrPlansCreated && displayEmpReadiness >= 50)) ? 'AI-ready' : 'Not AI-ready'}</span>
+                    <span style={{ color: isAiReady ? '#15803d' : '#dc2626', fontWeight: 600 }}>{isAiReady ? 'AI-ready' : 'Not AI-ready'}</span>
                   </DataTableCell>
                   {showUpskilling && (() => {
                     const effectivePct = empDisplayPct
