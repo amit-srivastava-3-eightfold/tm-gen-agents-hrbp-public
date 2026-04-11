@@ -231,7 +231,15 @@ export function ProfilePage() {
                   <tbody>
                     {(currentUser.id === 'csm' ? [
                       // AI-generated plan appears at top when assigned by manager (WFR state >= 4)
-                      ...((() => { try { const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}'); return s.state >= 4 ? [{ name: 'AI Upskilling — Engineering Lead', status: 'Not started' as const, skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Workforce Readiness', role: 'Engineering Lead', assignDate: '4/10/2026', updatedOn: '4/10/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-engineering-lead', aiGenerated: true }] : [] } catch { return [] } })()),
+                      // Status derives from WFR state: state 5 + employee hash → Completed; state 4 → Not started
+                      ...((() => { try {
+                        const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}')
+                        if (s.state < 4) return []
+                        const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+                        const planDone = s.state >= 5 && Math.abs(h) % 4 === 0
+                        const status = planDone ? 'Completed' as const : s.state >= 5 ? 'In progress' as const : 'Not started' as const
+                        return [{ name: 'AI Upskilling — Engineering Lead', status, skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Workforce Readiness', role: 'Engineering Lead', assignDate: '4/10/2026', updatedOn: planDone ? '4/11/2026' : '4/10/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-engineering-lead', aiGenerated: true }]
+                      } catch { return [] } })()),
                       { name: 'Platform Reliability Fundamentals', status: 'Completed', skills: ['SRE', 'Monitoring'], moreSkills: 3, createdBy: 'Alex Nakamura', role: 'Engineering Lead', assignDate: '1/15/2026', updatedOn: '3/10/2026', duration: 8, href: '/my-activity/dev-plan-templates/platform-reliability-fundamentals' },
                       { name: 'Engineering Leadership Growth', status: 'Completed', skills: ['Leadership', 'Communication'], moreSkills: 2, createdBy: 'Alex Nakamura', role: 'Engineering Lead', assignDate: '11/1/2025', updatedOn: '1/20/2026', duration: 10, href: '/my-activity/dev-plan-templates/engineering-leadership-growth' },
                     ] : [
