@@ -77,8 +77,17 @@ const CAREER_HUB_CHRO_TABS: NavbarTabItem[] = [
   },
 ]
 
+const CAREER_HUB_EMPLOYEE_TABS: NavbarTabItem[] = [
+  { id: 'home', label: 'Home', path: '/' },
+  { id: 'my-career', label: 'My career', chevron: true },
+  { id: 'marketplace', label: 'Marketplace', chevron: true },
+  { id: 'my-activity', label: 'My activity', chevron: true },
+  { id: 'people', label: 'People', path: '/people' },
+]
+
 /** Navbar variant is driven solely by the account selected in the user menu. */
 const NAVBAR_TABS_BY_USER_ID: Record<string, NavbarTabItem[]> = {
+  csm: CAREER_HUB_EMPLOYEE_TABS,
   mateo: CAREER_HUB_TABS,
   'jaydon-torff': CAREER_HUB_HRBP_TABS,
   chro: CAREER_HUB_CHRO_TABS,
@@ -94,7 +103,7 @@ const AVATAR_MENU_ITEMS = [
 ]
 
 const SWITCH_OPTIONS = [
-  { label: 'csm@acme.com', userId: 'csm' },
+  { label: 'employee@acme.com', userId: 'csm' },
   { label: 'manager@acme.com', userId: 'mateo' },
   { label: 'hrbp@acme.com', userId: 'jaydon-torff' },
   { label: 'chro@acme.com', userId: 'chro' },

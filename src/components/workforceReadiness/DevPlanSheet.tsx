@@ -106,12 +106,12 @@ const LEVEL_COURSES: Record<number, Course[]> = {
 
 const CAREER_DOORS: Array<{ pattern: RegExp; roles: string[] }> = [
   { pattern: /engineering manager/i,  roles: ['Director of Engineering', 'Principal Engineer', 'VP Engineering'] },
-  { pattern: /senior software/i,      roles: ['Staff Engineer', 'Tech Lead', 'Engineering Manager'] },
+  { pattern: /senior software/i,      roles: ['Staff Engineer', 'Tech Lead', 'Engineering Lead'] },
   { pattern: /software engineer/i,    roles: ['Senior Software Engineer', 'Tech Lead', 'Platform Engineer'] },
   { pattern: /frontend engineer/i,    roles: ['Senior Frontend Engineer', 'UI/UX Engineer', 'Tech Lead'] },
   { pattern: /qa automation/i,        roles: ['Senior QA Engineer', 'SDET', 'QA Lead'] },
   { pattern: /devops/i,               roles: ['Senior DevOps Engineer', 'Platform Engineer', 'SRE'] },
-  { pattern: /platform engineer/i,    roles: ['Staff Platform Engineer', 'Cloud Architect', 'Engineering Manager'] },
+  { pattern: /platform engineer/i,    roles: ['Staff Platform Engineer', 'Cloud Architect', 'Engineering Lead'] },
   { pattern: /site reliability/i,     roles: ['Senior SRE', 'Platform Engineer', 'Infrastructure Lead'] },
   { pattern: /mobile developer/i,     roles: ['Senior Mobile Engineer', 'Mobile Tech Lead', 'Full-Stack Engineer'] },
   { pattern: /manager/i,              roles: ['Director', 'Senior Manager', 'VP'] },

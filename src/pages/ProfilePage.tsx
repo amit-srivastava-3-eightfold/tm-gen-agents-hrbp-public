@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { TabsWithLines } from '../components/ui/TabsWithLines'
@@ -39,6 +39,8 @@ const profileTabs = [
 ]
 
 export function ProfilePage() {
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') ?? 'experience'
   const [view, setView] = useState('own')
   const { currentUser } = useUser()
   const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
@@ -145,7 +147,7 @@ export function ProfilePage() {
           <div className="profile-page__divider" />
         </div>
         <div className="profile-page__content profile-page__content--tabs grid grid-cols-12 gap-6">
-          <TabsWithLines tabs={profileTabs} defaultValue="experience" className="col-span-12">
+          <TabsWithLines tabs={profileTabs} defaultValue={initialTab} className="col-span-12">
             <Tabs.Content value="experience" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
@@ -194,7 +196,7 @@ export function ProfilePage() {
                 <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
                   <div style={{ padding: '12px 20px', borderRadius: 10, background: 'var(--color-button-primary-bg, #3b5bdb)', color: 'var(--color-button-primary-text, #fff)' }}>
                     <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.8 }}>My plans</div>
-                    <div style={{ fontSize: 24, fontWeight: 700 }}>{currentUser.id === 'csm' ? 5 : 2}</div>
+                    <div style={{ fontSize: 24, fontWeight: 700 }}>{currentUser.id === 'csm' ? (() => { try { const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}'); return s.state >= 4 ? 3 : 2 } catch { return 2 } })() : 2}</div>
                   </div>
                   <div style={{ padding: '12px 20px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                     <div style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Supporting</div>
@@ -228,22 +230,24 @@ export function ProfilePage() {
                   </thead>
                   <tbody>
                     {(currentUser.id === 'csm' ? [
-                      { name: 'AI Upskilling — Customer Success Manager', status: 'Not started', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/24/2026', updatedOn: '3/24/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-customer-success-manager' },
-                      { name: 'AI-Powered Customer Success', status: 'Completed', skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/20/2026', duration: 6 },
-                      { name: 'Advanced Account Strategy', status: 'Completed', skills: ['Forecasting', 'Retention'], moreSkills: 3, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/18/2026', duration: 8 },
-                      { name: 'Data-Driven Customer Insights', status: 'Completed', skills: ['Analytics', 'AI Tools'], moreSkills: 2, createdBy: 'Jaydon Torff', role: 'Customer Success Manager', assignDate: '3/15/2026', updatedOn: '3/15/2026', duration: 4 },
-                      { name: 'AI for QBR Preparation', status: 'Completed', skills: ['AI Writing', 'Presentation'], moreSkills: 1, createdBy: 'Tom Nguyen', role: 'Customer Success Manager', assignDate: '2/1/2026', updatedOn: '3/10/2026', duration: 4 },
+                      // AI-generated plan appears at top when assigned by manager (WFR state >= 4)
+                      ...((() => { try { const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}'); return s.state >= 4 ? [{ name: 'AI Upskilling — Engineering Lead', status: 'Not started' as const, skills: ['AI Collaboration', 'Prompt Engineering'], moreSkills: 4, createdBy: 'Workforce Readiness', role: 'Engineering Lead', assignDate: '4/10/2026', updatedOn: '4/10/2026', duration: 6, href: '/my-activity/dev-plan-templates/ai-upskilling-engineering-lead', aiGenerated: true }] : [] } catch { return [] } })()),
+                      { name: 'Platform Reliability Fundamentals', status: 'Completed', skills: ['SRE', 'Monitoring'], moreSkills: 3, createdBy: 'Alex Nakamura', role: 'Engineering Lead', assignDate: '1/15/2026', updatedOn: '3/10/2026', duration: 8, href: '/my-activity/dev-plan-templates/platform-reliability-fundamentals' },
+                      { name: 'Engineering Leadership Growth', status: 'Completed', skills: ['Leadership', 'Communication'], moreSkills: 2, createdBy: 'Alex Nakamura', role: 'Engineering Lead', assignDate: '11/1/2025', updatedOn: '1/20/2026', duration: 10, href: '/my-activity/dev-plan-templates/engineering-leadership-growth' },
                     ] : [
                       { name: 'Technical Marketing Skills', status: 'In progress', skills: ['CRM', 'Writing'], moreSkills: 6, createdBy: 'Mateo Myer', role: 'Director of Product Marketing', assignDate: '2/25/2026', updatedOn: '2/25/2026', duration: 10 },
                       { name: 'Plan for Marketing Manager', status: 'In progress', skills: ['Forecasting', 'MBA'], moreSkills: 2, createdBy: 'Mateo Myer', role: 'Marketing Manager', assignDate: '2/25/2026', updatedOn: '2/25/2026', duration: 10 },
                     ]).map((plan, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: (plan as any).aiGenerated ? '#f0f4ff' : undefined }}>
                         <td style={{ padding: '14px 12px' }}>
-                          {(plan as any).href ? (
-                            <Link to={(plan as any).href} style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', textDecoration: 'none' }}>{plan.name}</Link>
-                          ) : (
-                            <div style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', cursor: 'pointer' }}>{plan.name}</div>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {(plan as any).href ? (
+                              <Link to={(plan as any).href} style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', textDecoration: 'none' }}>{plan.name}</Link>
+                            ) : (
+                              <div style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', cursor: 'pointer' }}>{plan.name}</div>
+                            )}
+                            {(plan as any).aiGenerated && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}><span className="material-symbols-outlined" style={{ fontSize: 11 }}>auto_awesome</span>AI generated</span>}
+                          </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
                             <span style={{ width: 8, height: 8, borderRadius: '50%', background: plan.status === 'Completed' ? '#22c55e' : plan.status === 'In progress' ? '#22c55e' : '#94a3b8' }} />
                             <span style={{ fontSize: 12, color: plan.status === 'Completed' ? '#15803d' : '#475569' }}>{plan.status}</span>
