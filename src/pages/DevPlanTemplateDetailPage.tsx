@@ -328,7 +328,12 @@ export function DevPlanTemplateDetailPage() {
                 {(isEmployee ? [
                   { label: 'Description', value: template.description },
                   { label: 'Relevant role', value: template.role },
-                  { label: 'Plan Duration (Weeks)', value: String(template.duration) },
+                  ...(templateId?.includes('ai-upskilling') ? [
+                    { label: 'Estimated effort', value: '50 hours' },
+                    { label: 'Target duration', value: '6 weeks' },
+                  ] : [
+                    { label: 'Plan Duration (Weeks)', value: String(template.duration) },
+                  ]),
                   { label: 'Business unit', value: template.businessUnit },
                   { label: 'Job function', value: template.jobFunction },
                 ] : [
@@ -414,11 +419,26 @@ export function DevPlanTemplateDetailPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                     {/* Completion banner */}
                     {planComplete && (
-                      <div style={{ padding: '14px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #86efac', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>celebration</span>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>Plan complete!</div>
-                          <div style={{ fontSize: 12, color: '#166534' }}>AI adoption score increased by <strong>+{totalPlanPts} pts</strong> — {firstName} is now AI-ready.</div>
+                      <div style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 20, background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative' }}>
+                        {/* Subtle pattern overlay */}
+                        <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                        <div style={{ position: 'relative', padding: '24px 24px 20px', display: 'flex', gap: 16 }}>
+                          {/* Trophy icon */}
+                          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 26, color: '#fbbf24' }}>emoji_events</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.01em' }}>Plan complete</div>
+                            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4, lineHeight: 1.5 }}>
+                              Your AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalPlanPts} pts</strong> — you're now AI-ready. Keep the momentum going.
+                            </div>
+                            <div style={{ marginTop: 14 }}>
+                              <Button variant="default" size="sm">
+                                <span className="material-symbols-outlined" style={{ fontSize: 15, marginRight: 4 }}>arrow_forward</span>
+                                Create next plan
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}

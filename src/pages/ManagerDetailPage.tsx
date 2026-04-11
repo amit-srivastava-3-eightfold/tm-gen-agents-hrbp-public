@@ -43,6 +43,35 @@ function nameHash(s: string) {
   return Math.abs(h)
 }
 
+// ~40% of employees get a photo, rest get initials — deterministic from name hash
+const AVATAR_PHOTOS = [
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=64&h=64&fit=crop&crop=face',
+]
+const AVATAR_COLORS = ['#1565C0','#00838F','#6A1B9A','#C62828','#2E7D32','#E65100','#4527A0','#AD1457','#0277BD','#558B2F']
+
+function EmpAvatar({ name, size = 28 }: { name: string; size?: number }) {
+  const h = nameHash(name)
+  const parts = name.split(' ')
+  const initials = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
+  // ~40% get photos
+  const hasPhoto = h % 5 < 2
+  if (hasPhoto) {
+    const src = AVATAR_PHOTOS[h % AVATAR_PHOTOS.length]
+    return <img src={src} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  }
+  const color = AVATAR_COLORS[h % AVATAR_COLORS.length]
+  return <div style={{ width: size, height: size, borderRadius: '50%', background: color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.36, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+}
+
 function SortIcon({ sortDir }: { sortDir?: 'asc' | 'desc' | null }) {
   if (sortDir) return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#64748b', verticalAlign: -1 }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
   return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
@@ -387,9 +416,12 @@ export function ManagerDetailPage() {
                   <DataTableBody>
                     <DataTableRow>
                       <DataTableCell className="font-semibold">
-                        <div>
-                          <div>{mgr.manager}</div>
-                          <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <img src="/dana-tanaka.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          <div>
+                            <div>{mgr.manager}</div>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>
+                          </div>
                         </div>
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
@@ -436,12 +468,12 @@ export function ManagerDetailPage() {
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead style={{ width: '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
                 <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
-                <DataTableHead numeric style={{ width: '8%' }}>Tasks</DataTableHead>
-                <DataTableHead metric style={{ width: upskillingInScope ? '20%' : '26%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: '6%' }}>Tasks</DataTableHead>
+                <DataTableHead metric style={{ width: '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
                 <DataTableHead numeric style={{ width: '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
-                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
+                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: upskillingInScope ? '26%' : undefined, cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -473,7 +505,10 @@ export function ManagerDetailPage() {
                       upskillingInScope ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } :
                       { borderLeft: '3px solid transparent', paddingLeft: 17 }
                     }>
-                      <div className="text-[13px] text-[#1a212e]">{emp.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <EmpAvatar name={emp.name} />
+                        <span className="text-[13px] text-[#1a212e]">{emp.name}</span>
+                      </div>
                     </DataTableCell>
                     <DataTableCell>
                       <div className="text-[13px] text-[#475569]">{emp.title ?? '—'}</div>

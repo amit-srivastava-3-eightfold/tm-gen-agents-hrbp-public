@@ -41,6 +41,34 @@ import { DevPlanSheet } from './DevPlanSheet'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
+/* ─── Avatars ─── */
+
+const AVATAR_PHOTOS = [
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=64&h=64&fit=crop&crop=face',
+]
+const AVATAR_COLORS = ['#1565C0','#00838F','#6A1B9A','#C62828','#2E7D32','#E65100','#4527A0','#AD1457','#0277BD','#558B2F']
+
+function nh(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+
+function PersonAvatar({ name, size = 28 }: { name: string; size?: number }) {
+  const h = nh(name)
+  const parts = name.split(' ')
+  const initials = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
+  if (h % 5 < 2) {
+    return <img src={AVATAR_PHOTOS[h % AVATAR_PHOTOS.length]} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  }
+  return <div style={{ width: size, height: size, borderRadius: '50%', background: AVATAR_COLORS[h % AVATAR_COLORS.length], color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.36, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+}
+
 /* ─── Priority Tooltip ─── */
 
 function PriorityTooltip({ tooltip, children }: { tooltip: string; children: React.ReactNode }) {
@@ -2490,6 +2518,12 @@ export function WorkforceReadinessDashboard({
                           </button>
                         </div>
                       ) : <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />}
+                      {mgrCollComplete && !upskillingComplete && (
+                        <div style={{ fontSize: 10, color: '#15803d', marginTop: 7, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 11, verticalAlign: -1 }}>verified</span>
+                          Updated from data collection
+                        </div>
+                      )}
                       {upskillingComplete && (
                         <div style={{ fontSize: 10, color: '#15803d', marginTop: 7, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 11, verticalAlign: -1 }}>verified</span>
@@ -2833,7 +2867,7 @@ export function WorkforceReadinessDashboard({
               return dirTeamMgrs.map((mgr, i) => {
                 const cal = mgrCalibrated[dir.firstMgrIdx + i] ?? []
                 const avgR = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
-                const ready = cal.filter(e => e.displayReadiness >= 50).length
+                const ready = Math.round(mgr.employees * avgR / 100)
                 return { name: mgr.manager, title: 'Team Manager', employees: mgr.employees, readiness: avgR, readyCount: ready, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }
               })
             } else {
@@ -2845,7 +2879,7 @@ export function WorkforceReadinessDashboard({
                 const empCount = batch.reduce((s, m) => s + m.employees, 0)
                 const batchCal = batch.flatMap((_, bi) => mgrCalibrated[dir.firstMgrIdx + si * perSr + bi] ?? [])
                 const avgR = batchCal.length > 0 ? Math.round(batchCal.reduce((s, e) => s + e.displayReadiness, 0) / batchCal.length) : d.aiReadiness
-                const ready = batchCal.filter(e => e.displayReadiness >= 50).length
+                const ready = Math.round(empCount * avgR / 100)
                 const srNameIdx = nameHash(dir.name) * 5 + si * 11 + dir.firstMgrIdx
                 return { name: demoManagerName(srNameIdx), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: Math.round(d.unrealizedValue * empCount / Math.max(1, d.employees)) }
               }).filter(Boolean) as Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
@@ -3531,9 +3565,12 @@ export function WorkforceReadinessDashboard({
                     <DataTableBody>
                       <DataTableRow>
                         <DataTableCell className="font-semibold" style={dirShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : (dirUpskillingActive && dirInScope) ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
-                          <div>
-                            <div>{directorData.name}</div>
-                            <div className="text-[#94a3b8] text-[11px] font-normal">{directorData.title} · {d.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <PersonAvatar name={directorData.name} size={32} />
+                            <div>
+                              <div>{directorData.name}</div>
+                              <div className="text-[#94a3b8] text-[11px] font-normal">{directorData.title} · {d.name}</div>
+                            </div>
                           </div>
                         </DataTableCell>
                         <DataTableCell metric>
@@ -3561,7 +3598,7 @@ export function WorkforceReadinessDashboard({
               tableTitle={teamMgrs.length > 4
                 ? (() => {
                     const targetSr = Math.max(2, Math.min(5, Math.round(teamMgrs.length / 3)))
-                    return <><span>Senior managers</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{targetSr}</span></>
+                    return <><span>Teams</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{targetSr}</span></>
                   })()
                 : <><span>Team managers</span> <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{teamMgrs.length}</span></>
               }
@@ -3803,9 +3840,12 @@ export function WorkforceReadinessDashboard({
                     <DataTableBody>
                       <DataTableRow>
                         <DataTableCell className="font-semibold" style={srShowCollection ? { borderLeft: '3px solid #3b5bdb', paddingLeft: 17 } : (srUpskillingActive && srDirInScope) ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
-                          <div>
-                            <div>{seniorMgrData.name}</div>
-                            <div className="text-[#94a3b8] text-[11px] font-normal">{seniorMgrData.title} · {d.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <PersonAvatar name={seniorMgrData.name} size={32} />
+                            <div>
+                              <div>{seniorMgrData.name}</div>
+                              <div className="text-[#94a3b8] text-[11px] font-normal">{seniorMgrData.title} · {d.name}</div>
+                            </div>
                           </div>
                         </DataTableCell>
                         <DataTableCell metric>
