@@ -2359,11 +2359,11 @@ export function WorkforceReadinessDashboard({
     const calibratedAvgReadiness = mgrCollComplete
       ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
       : mgrReadiness
-    const calibratedNotReady = enrichedMgrEmployees.filter(e => {
-      const preR = e.displayReadiness + e._empTrendDelta
-      if (mgrPlansCreated) return preR >= 50 ? e._displayEmpReadiness < 50 : e._planPct !== 100
-      return e._displayEmpReadiness < 50
-    }).length
+    const calibratedNotReady = mgrPlansCreated
+      ? enrichedMgrEmployees.filter(e => {
+          return e.displayReadiness >= 50 ? e._displayEmpReadiness < 50 : e._planPct !== 100
+        }).length
+      : enrichedMgrEmployees.length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
     const readinessBadge = mgrCollComplete
@@ -2451,13 +2451,13 @@ export function WorkforceReadinessDashboard({
                 const rawDisplayPct = emp._planPct > 0 ? emp._planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
                 const empDisplayPct = showUpskilling ? rawDisplayPct : 0
                 const upskillingComplete = showUpskilling && emp._planPct === 100
-                // Pre-plan readiness (post-collection, before any upskilling boost)
-                const preUpskillingReadiness = emp.displayReadiness + empTrendDelta
-                const wasAlreadyReady = preUpskillingReadiness >= 50
-                // AI-ready: if already ready before plan → threshold; if not → needs 100% completion
+                // Base readiness (pre-collection, pre-trend) determines if already AI-ready before any program
+                const wasAlreadyReady = emp.displayReadiness >= 50
+                // AI-ready: no one crosses threshold until plans are created (narrative)
+                // Once plans exist: already-ready employees keep threshold; others need 100% completion
                 const isAiReady = mgrPlansCreated
                   ? (wasAlreadyReady ? displayEmpReadiness >= 50 : upskillingComplete)
-                  : displayEmpReadiness >= 50
+                  : false
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>

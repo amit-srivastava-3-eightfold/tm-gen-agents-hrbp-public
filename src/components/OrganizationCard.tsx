@@ -31,44 +31,29 @@ export function OrganizationCard() {
           <Button variant="default">View org chart</Button>
         </div>
         <div className="org-card__section">
-          <h4 className="org-card__section-title">Manager</h4>
+          <h4 className="org-card__section-title">Reports to</h4>
           <div className="org-card__person">
-            <img src={tomNguyenAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
+            <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#1565C0' }}>AK</div>
             <div className="org-card__person-info">
-              <span className="org-card__person-name">Tom Nguyen</span>
-              <span className="org-card__person-title">VP, Customer Success</span>
+              <span className="org-card__person-name">Alex Nakamura</span>
+              <span className="org-card__person-title">Senior Manager, Engineering</span>
             </div>
           </div>
         </div>
         <div className="org-card__divider" />
         <div className="org-card__section">
           <div className="org-card__section-head">
-            <h4 className="org-card__section-title">Direct Reports</h4>
-            <span className="org-card__badge">6</span>
+            <h4 className="org-card__section-title">Peers</h4>
+            <span className="org-card__badge">5</span>
           </div>
           <div className="org-card__avatar-row org-card__avatar-row--with-badge">
             <img src={rachelKimAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
             <img src={anaMartinezAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-            <img src={karenLeeAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-            <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[0] }}>JP</div>
-            <span className="org-card__badge org-card__badge--plus">+2</span>
+            <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[0] }}>JO</div>
+            <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[1] }}>NP</div>
+            <span className="org-card__badge org-card__badge--plus">+1</span>
           </div>
-          <p className="org-card__names">Rachel, Ana, Karen, Jamie and others</p>
-        </div>
-        <div className="org-card__divider" />
-        <div className="org-card__section">
-          <div className="org-card__section-head">
-            <h4 className="org-card__section-title">Peers</h4>
-            <span className="org-card__badge">8</span>
-          </div>
-          <div className="org-card__avatar-row org-card__avatar-row--with-badge">
-            <img src={davidParkAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-            <img src={sarahChenAvatar} alt="" className="org-card__avatar org-card__avatar--photo" />
-            <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[1] }}>MK</div>
-            <div className="org-card__avatar org-card__avatar--initials" style={{ background: peerColors[2] }}>SL</div>
-            <span className="org-card__badge org-card__badge--plus">+4</span>
-          </div>
-          <p className="org-card__names">David, Sarah, Maya, Sam and others</p>
+          <p className="org-card__names">Riya, Zoe, Jordan, Nina and others</p>
         </div>
       </div>
     )

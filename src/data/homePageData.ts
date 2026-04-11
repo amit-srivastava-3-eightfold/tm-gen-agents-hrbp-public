@@ -80,18 +80,11 @@ const CHRO_TASKS: HomeTask[] = [
 
 const CSM_TASKS: HomeTask[] = [
   {
-    label: 'Complete quarterly business reviews',
+    label: 'Work on development plans',
     href: '#',
-    meta: '4 of 12 accounts done',
-    tag: 'Account management',
-    tagIcon: 'handshake',
-  },
-  {
-    label: 'Review at-risk account alerts',
-    href: '#',
-    meta: '3 accounts flagged',
-    tag: 'Retention',
-    tagIcon: 'warning',
+    meta: '0 of 2 plans',
+    tag: 'Build your skills',
+    tagIcon: 'school',
   },
 ]
 
@@ -132,9 +125,9 @@ const CHRO_ACTIVITY: HomeActivity = {
 }
 
 const CSM_ACTIVITY: HomeActivity = {
-  projectApplications: 0,
-  jobApplications: 1,
-  referrals: 2,
+  projectApplications: 1,
+  jobApplications: 0,
+  referrals: 0,
 }
 
 const LAURA_ACTIVITY: HomeActivity = {
@@ -163,7 +156,7 @@ const CSM_MENTOR: HomeMentor = {
   name: 'Jaydon Torff',
   role: 'HR Business Partner, Engineering',
   avatarSrc: '/jaydon-torff.png',
-  matchText: 'Your HRBP, strong in team development',
+  matchText: 'Your HRBP, strong in AI adoption',
   matchCount: 0,
 }
 
@@ -194,11 +187,11 @@ const CHRO_JOB: HomeRecommendedJob = {
 }
 
 const CSM_JOB: HomeRecommendedJob = {
-  title: 'Senior Customer Success Manager',
+  title: 'Staff Engineer',
   tags: [
-    { label: 'Account Strategy' },
-    { label: 'Retention', checked: true },
-    { label: 'Expansion Revenue' },
+    { label: 'Platform' },
+    { label: 'Infrastructure', checked: true },
+    { label: 'AI/ML Pipelines' },
   ],
 }
 
@@ -222,8 +215,8 @@ const CHRO_PROJECT: HomeRecommendedProject = {
 }
 
 const CSM_PROJECT: HomeRecommendedProject = {
-  title: 'Customer Health Score Automation',
-  tags: ['AI', 'Customer Success'],
+  title: 'AI-Assisted Code Review Pipeline',
+  tags: ['AI', 'Engineering'],
 }
 
 const LAURA_PROJECT: HomeRecommendedProject = {
