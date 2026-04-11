@@ -21,6 +21,7 @@ import {
   getHrbpDepts,
   hrbpAssignments,
   formatDollar,
+  WFR_FIRST_NAMES,
   type Dept,
   type RoleRowType,
 } from '../../data/wfrOrgData'
@@ -1076,10 +1077,7 @@ function BoardView({
   // Fallback to top 30% by gap if no rows exceed threshold (ensures at least some are flagged)
   const hrbpPrioritySet = (() => {
     if (hrbpRows.length === 0) return new Set<string>()
-    const withGap = hrbpRows.map(r => ({ ...r, gap: r.avgPotential - r.avgReadiness }))
-    const urgent = withGap.filter(r => r.gap >= 25)
-    if (urgent.length > 0) return new Set(urgent.map(r => r.hrbp))
-    const sorted = [...withGap].sort((a, b) => b.gap - a.gap)
+    const sorted = [...hrbpRows].sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
     const count = Math.max(1, Math.round(sorted.length * 0.3))
     return new Set(sorted.slice(0, count).map(r => r.hrbp))
   })()
@@ -1966,9 +1964,9 @@ export function WorkforceReadinessDashboard({
   }
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }> } | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
-  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
+  const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; baseReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
   const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
-  const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } } | null>(() => {
+  const [seniorMgrData, setSeniorMgrData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; readiness?: number; parentDirector: { name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string; readiness?: number } } | null>(() => {
     const p = new URLSearchParams(window.location.search)
     const srName = p.get('seniorMgr')
     const srStartStr = p.get('srStart')
@@ -2043,7 +2041,7 @@ export function WorkforceReadinessDashboard({
     }
     return null
   })
-  const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string } | null>(() => {
+  const [directorData, setDirectorData] = useState<{ name: string; title: string; deptName: string; mgrIdxStart: number; mgrCount: number; parentHrbp: string; readiness?: number } | null>(() => {
     const p = new URLSearchParams(window.location.search)
     const directorName = p.get('director')
     const hrbp = p.get('hrbp')
@@ -2272,6 +2270,10 @@ export function WorkforceReadinessDashboard({
     onViewChange?.(view)
   }, [view, onViewChange])
 
+  const [empSort, setEmpSort] = useState<{ col: 'name' | 'tasks' | 'readiness' | 'gap', dir: 'asc' | 'desc' }>({ col: 'readiness', dir: 'desc' })
+  const toggleEmpSort = (col: typeof empSort['col']) => {
+    setEmpSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
+  }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [mgrTaskSheetZoneFilter, setMgrTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
@@ -2296,9 +2298,26 @@ export function WorkforceReadinessDashboard({
     const allDeptEmps = rawEmps.map((e, i) => ({ ...e, title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined }))
     const cumStart = managers.slice(0, mgrIdx).reduce((s, m) => s + m.employees, 0)
     const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
-    const displayEmployees = mgrEmployees.map(e => {
-      const displayReadiness = Math.max(0, Math.min(100, e.readinessPct))
-      return { ...e, displayReadiness }
+    // Build a team-local shuffled first-name list so all 43 employees get unique first names
+    const fnMulberry = (s: number) => { let t = (s + 0x6d2b79f5) >>> 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+    const teamFirstNames = [...WFR_FIRST_NAMES] as string[]
+    let fnSeed = (mgrIdx * 2654435761) >>> 0
+    for (let i = teamFirstNames.length - 1; i > 0; i--) {
+      fnSeed = (fnSeed + 0x6d2b79f5) >>> 0
+      const j = Math.floor(fnMulberry(fnSeed) * (i + 1))
+      ;[teamFirstNames[i], teamFirstNames[j]] = [teamFirstNames[j]!, teamFirstNames[i]!]
+    }
+
+    const displayEmployees = mgrEmployees.map((e, i) => {
+      const roleData = deptRoles.find(r => r.title === e.title)
+      const roleBase = roleData?.aiReadiness ?? dept.aiReadiness
+      // Per-employee noise seeded from team position
+      const noise = Math.round(((i * 374761393 + mgrIdx * 2654435761) % 38) - 19)
+      const displayReadiness = Math.max(0, Math.min(100, roleBase + noise))
+      // Re-assign first name from team-local shuffled list to guarantee uniqueness
+      const lastName = e.name.split(' ').slice(1).join(' ')
+      const firstName = teamFirstNames[i % teamFirstNames.length]!
+      return { ...e, name: `${firstName} ${lastName}`, displayReadiness }
     })
     const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
@@ -2316,10 +2335,34 @@ export function WorkforceReadinessDashboard({
     const mgrUpskillingBoost = mgrPlansCreated ? 10 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
     const showUpskilling = mgrCollComplete && mgrUpskillingActive && engInScope
+    // Precompute per-employee display readiness (including per-employee trend noise) so
+    // sort order, card counts, and row labels all use the same values and stay consistent.
+    const enrichedMgrEmployees = mgrEmployees.map(emp => {
+      const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+      const empTrendNoise = mgrCollComplete && mgrTrendDelta !== 0 ? Math.round(((Math.abs(h) % 70) - 35) / 10) : 0
+      const empTrendDelta = mgrTrendDelta + empTrendNoise
+      // Plan completion %: ~25% of employees complete (100%), rest are 45–99% in progress.
+      // Only 100% completion changes readiness — partial progress doesn't move the number.
+      const planPct = mgrPlansCreated
+        ? (Math.abs(h) % 4 === 0 ? 100 : Math.min(99, 45 + (Math.abs(h) % 55)))
+        : 0
+      // Pre-upskilling readiness (trend applied, no plan boost)
+      const preUpskillingReadiness = emp.displayReadiness + empTrendDelta
+      // Boost is enough to reach AI-ready (52%) when plan is done; applies ONLY at 100% completion
+      const deficit = Math.max(0, 52 - preUpskillingReadiness)
+      const maxBoost = Math.max(deficit, mgrUpskillingBoost)
+      const empUpskillingBoost = (mgrPlansCreated && planPct === 100) ? maxBoost : 0
+      const measuredReadiness = Math.max(0, Math.min(100, preUpskillingReadiness + empUpskillingBoost))
+      const displayEmpReadiness = mgrCollComplete ? measuredReadiness : emp.displayReadiness
+      return { ...emp, _displayEmpReadiness: displayEmpReadiness, _empTrendDelta: empTrendDelta, _planPct: planPct }
+    })
     const calibratedAvgReadiness = mgrCollComplete
-      ? Math.min(100, Math.round(mgrEmployees.reduce((s, e) => s + Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)), 0) / Math.max(1, mgrEmployees.length)))
+      ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
       : mgrReadiness
-    const calibratedNotReady = mgrEmployees.filter(e => Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)) < 50).length
+    // Before plans are created, no one counts as AI-ready for the narrative (label condition matches)
+    const calibratedNotReady = mgrPlansCreated
+      ? enrichedMgrEmployees.filter(e => e._displayEmpReadiness < 50).length
+      : enrichedMgrEmployees.length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
     const readinessBadge = mgrCollComplete
@@ -2345,7 +2388,7 @@ export function WorkforceReadinessDashboard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  <strong>{(mgrPlansCreated || mgrAllPlansAssigned) ? mgrEmployees.filter(e => Math.max(0, Math.min(100, e.displayReadiness + mgrTrendDelta + mgrUpskillingBoost)) < 50).length : displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
+                  <strong>{(mgrPlansCreated || mgrAllPlansAssigned) ? enrichedMgrEmployees.filter(e => e._displayEmpReadiness < 50).length : displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
                 </p>
                 <p className="wfr-ra-card__hint">{(mgrPlansCreated || mgrAllPlansAssigned) ? 'All plans assigned. Adoption scores will update as employees complete their plans.' : 'Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.'}</p>
               </div>
@@ -2382,27 +2425,30 @@ export function WorkforceReadinessDashboard({
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: showUpskilling ? '30%' : '34%' }}>Employee</DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '13%' : '16%' }}>Tasks</DataTableHead>
-                <DataTableHead metric style={{ width: showUpskilling ? '24%' : '28%' }}>AI adoption</DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '22%' }}>Transformation gap</DataTableHead>
+                <DataTableHead style={{ width: showUpskilling ? '30%' : '34%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '13%' : '16%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
+                <DataTableHead metric style={{ width: showUpskilling ? '24%' : '28%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={empSort.col === 'gap' ? empSort.dir : null} onSortClick={() => toggleEmpSort('gap')} /></DataTableHead>
                 {showUpskilling && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '15%', whiteSpace: 'nowrap' }}>Upskilling</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {[...mgrEmployees].sort((a, b) => {
-                const ma = Math.max(0, Math.min(100, a.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
-                const mb = Math.max(0, Math.min(100, b.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
-                return mb - ma
+              {[...enrichedMgrEmployees].sort((a, b) => {
+                const mul = empSort.dir === 'asc' ? 1 : -1
+                switch (empSort.col) {
+                  case 'name': return mul * a.name.localeCompare(b.name)
+                  case 'tasks': return mul * ((a.title ? getTasksForRole(a.title).length : 0) - (b.title ? getTasksForRole(b.title).length : 0))
+                  case 'gap': return mul * (a._displayEmpReadiness - b._displayEmpReadiness) * -1
+                  default: return mul * (a._displayEmpReadiness - b._displayEmpReadiness)
+                }
               }).map((emp, idx) => {
                 const empTaskCount = emp.title ? getTasksForRole(emp.title).length : 0
-                const measuredReadiness = Math.max(0, Math.min(100, emp.displayReadiness + mgrTrendDelta + mgrUpskillingBoost))
-                const displayEmpReadiness = mgrCollComplete ? measuredReadiness : emp.displayReadiness
                 const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
-                const planPct = mgrPlansCreated ? Math.min(100, 25 + (Math.abs(h) % 55) + 20) : 0
-                const rawDisplayPct = planPct > 0 ? planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
-                const empDisplayPct = showUpskilling ? (emp.name === 'Skyler Petrov' && mgrPlansCreated ? 100 : rawDisplayPct) : 0
-                const upskillingComplete = showUpskilling && empDisplayPct === 100
+                const empTrendDelta = emp._empTrendDelta
+                const displayEmpReadiness = emp._displayEmpReadiness
+                const rawDisplayPct = emp._planPct > 0 ? emp._planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
+                const empDisplayPct = showUpskilling ? rawDisplayPct : 0
+                const upskillingComplete = showUpskilling && emp._planPct === 100
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
@@ -2424,11 +2470,11 @@ export function WorkforceReadinessDashboard({
                   </DataTableCell>
                   <DataTableCell metric>
                     <div>
-                      {mgrCollComplete && mgrTrendDelta !== 0 ? (
+                      {mgrCollComplete && empTrendDelta !== 0 ? (
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={displayEmpReadiness} />
-                          <button type="button" className={`wfr-dash__trend-badge ${mgrTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: emp.title ?? mgrDept.name, dept: mgrDept.name, measuredReadiness: displayEmpReadiness, employeeName: emp.name, upskillingComplete }); setTrendSheetHrbp(null); setTrendSheetDept(mgrDept) }} title="View readiness trend details">
-                            <span className="wfr-dash__trend-badge-text">{mgrTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(mgrTrendDelta)}pt</span>
+                          <button type="button" className={`wfr-dash__trend-badge ${empTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole({ title: emp.title ?? mgrDept.name, dept: mgrDept.name, measuredReadiness: displayEmpReadiness, baseReadiness: emp.displayReadiness, employeeName: emp.name, upskillingComplete }); setTrendSheetHrbp(null); setTrendSheetDept(mgrDept) }} title="View readiness trend details">
+                            <span className="wfr-dash__trend-badge-text">{empTrendDelta >= 0 ? '↑' : '↓'}{Math.abs(empTrendDelta)}pt</span>
                             <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
                           </button>
                         </div>
@@ -2442,7 +2488,7 @@ export function WorkforceReadinessDashboard({
                     </div>
                   </DataTableCell>
                   <DataTableCell align="right">
-                    <span style={{ color: upskillingComplete || displayEmpReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{upskillingComplete || displayEmpReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
+                    <span style={{ color: (upskillingComplete || (mgrPlansCreated && displayEmpReadiness >= 50)) ? '#15803d' : '#dc2626', fontWeight: 600 }}>{(upskillingComplete || (mgrPlansCreated && displayEmpReadiness >= 50)) ? 'AI-ready' : 'Not AI-ready'}</span>
                   </DataTableCell>
                   {showUpskilling && (() => {
                     const effectivePct = empDisplayPct
@@ -2676,11 +2722,6 @@ export function WorkforceReadinessDashboard({
           const hrbpEffState = getHrbpEffectiveState(wfrState, hrbpName)
           const { collectionComplete: hrbpCollectionComplete, upskillingActive: hrbpUpskillingActive, hrbpPlansCreated: hrbpPlansComplete } = deriveWfrFlags(hrbpEffState)
           const trend = deptReadinessTrend(d.name)
-          const measuredReadiness = hrbpCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
-          const deptGapTotal = hrbpCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
-          const share = d.employees > 0 ? headcount / d.employees : 0
-          const totalGap = Math.round(deptGapTotal * share)
-          const readyCount = headcount - totalGap
 
           // Build director-level direct reports (~8-12 per HRBP) by grouping team managers
           const allManagers = deptManagerTeams(d.name, d.employees)
@@ -2750,7 +2791,8 @@ export function WorkforceReadinessDashboard({
             const empCount = batch.reduce((s, m) => s + m.employees, 0)
             const allCalibrated = batch.flatMap((_, bi) => mgrCalibrated[batchGlobalIdxStart + bi] ?? [])
             const avgReadiness = allCalibrated.length > 0 ? Math.round(allCalibrated.reduce((s, e) => s + e.displayReadiness, 0) / allCalibrated.length) : d.aiReadiness
-            const ready = allCalibrated.filter(e => e.displayReadiness >= 50).length
+            // Use avg-readiness-based readyCount so gap % is consistent with the team adoption bar
+            const ready = Math.round(empCount * avgReadiness / 100)
             // Deterministic director name from the first manager in the batch
             const dirNameIdx = (nameHash(d.name) + di * 7) % DEMO_MANAGERS.length
             directors.push({
@@ -2763,6 +2805,14 @@ export function WorkforceReadinessDashboard({
               firstMgrIdx: batchGlobalIdxStart,
             })
           }
+
+          // Re-derive top-card metrics from actual director data so headline is consistent with the table
+          const dirTotalEmp = directors.reduce((s, dir) => s + dir.employees, 0)
+          const dirWeightedReadiness = dirTotalEmp > 0
+            ? Math.round(directors.reduce((s, dir) => s + dir.readiness * dir.employees, 0) / dirTotalEmp)
+            : (hrbpCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness)
+          const dirReadyCount = Math.round(headcount * dirWeightedReadiness / 100)
+          const dirTotalGap = headcount - dirReadyCount
 
           // Compute direct reports (senior mgrs or team mgrs) for a director — used by trend sheet
           const SR_TITLES_TS = ['Senior Manager', 'Principal Manager', 'Group Manager', 'Associate Director', 'Staff Manager']
@@ -2843,7 +2893,7 @@ export function WorkforceReadinessDashboard({
               delegationDeptName={d.name}
               chroDelegationActive={!isHrbp && hrbpDelegatedPending}
               chroDelegationScopeLabel={hrbpName ?? undefined}
-              gapPeopleOverride={totalGap}
+              gapPeopleOverride={dirTotalGap}
               suppressInternalDialog={isHrbp && hrbpDelegatedPending}
               justLaunched={hrbpJustLaunched}
             />
@@ -2851,8 +2901,8 @@ export function WorkforceReadinessDashboard({
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
             { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{d.aiPotential}% AI potential</span> across {headcount.toLocaleString()} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setDashOpenMetric('potential') },
-            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${measuredReadiness}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`}</span></>, onLearnMore: () => setDashOpenMetric('readiness') },
-            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${totalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashOpenMetric('gap') },
+            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${dirWeightedReadiness}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{hrbpCollectionComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`}</span></>, onLearnMore: () => setDashOpenMetric('readiness') },
+            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${dirTotalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashOpenMetric('gap') },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -2860,11 +2910,11 @@ export function WorkforceReadinessDashboard({
               <>
               <WfrOverviewLayout
                 aiPotentialPct={d.aiPotential}
-                aiReadinessPct={measuredReadiness}
+                aiReadinessPct={dirWeightedReadiness}
                 totalEmployees={headcount}
-                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{measuredReadiness}%</span> of your team is AI-ready.</span>}
+                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> of your team is AI-ready.</span>}
                 subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
-                pill={<>~<span className="font-bold text-[#b91c1c]">{totalGap.toLocaleString()}</span> of your {headcount.toLocaleString()} employees are not yet AI-ready.</>}
+                pill={<>~<span className="font-bold text-[#b91c1c]">{dirTotalGap.toLocaleString()}</span> of your {headcount.toLocaleString()} employees are not yet AI-ready.</>}
                 cards={hrbpOverviewCards}
                 beforeCards={hrbpFocusFirstModule}
               >
@@ -2932,7 +2982,7 @@ export function WorkforceReadinessDashboard({
                               key={dir.name}
                               style={{ cursor: 'pointer' }}
                               onClick={() => {
-                                setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName })
+                                setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName, readiness: dir.readiness })
                                 setView('director')
                                 window.scrollTo(0, 0)
                               }}
@@ -3143,13 +3193,13 @@ export function WorkforceReadinessDashboard({
               name={hrbpName ?? ''}
               subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
               readiness={{
-                value: `${measuredReadiness}%`,
-                description: hrbpCollectionComplete ? `${readyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${readyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
+                value: `${dirWeightedReadiness}%`,
+                description: hrbpCollectionComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
                 badge: collBadge,
                 onLearnMore: () => setDashOpenMetric('readiness'),
               }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashOpenMetric('potential') }}
-              gap={{ value: `${totalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, onLearnMore: () => setDashOpenMetric('gap') }}
+              gap={{ value: `${dirTotalGap.toLocaleString()} not ready`, description: `out of ${headcount.toLocaleString()} employees`, onLearnMore: () => setDashOpenMetric('gap') }}
               tableTitle={<>Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></>}
               tableHint={
                 (showHrbpCollection || hrbpCollectionComplete) && directors.some(dir => hrbpDirInScope(dir.name))
@@ -3205,7 +3255,7 @@ export function WorkforceReadinessDashboard({
                           key={dir.name}
                           style={{ cursor: 'pointer' }}
                           onClick={() => {
-                            setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName })
+                            setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName, readiness: dir.readiness })
                             setView('director')
                             window.scrollTo(0, 0)
                           }}
@@ -3399,7 +3449,9 @@ export function WorkforceReadinessDashboard({
           const dirShowCollection = dirHrbpCollecting && dirInScope
 
           const dirTrend = deptReadinessTrend(d.name)
-          const dirMeasuredReadiness = effDirCollComplete ? d.aiReadiness + dirTrend.delta : d.aiReadiness
+          // Use the director's actual weighted avg readiness (from the directors array) for consistency with the table
+          const dirBaseReadiness = directorData.readiness ?? d.aiReadiness
+          const dirMeasuredReadiness = effDirCollComplete ? Math.min(100, dirBaseReadiness + dirTrend.delta) : dirBaseReadiness
 
           // Calibrate per team manager
           const nh = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
@@ -3417,7 +3469,8 @@ export function WorkforceReadinessDashboard({
               return { ...e, displayReadiness: Math.max(0, Math.min(100, e.readinessPct + trendDelta + eb)) }
             })
             const readiness = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
-            const ready = cal.filter(e => e.displayReadiness >= 50).length
+            // Use avg-readiness-based readyCount for consistency with the table adoption bars
+            const ready = Math.round(mgr.employees * readiness / 100)
             return { mgr, readiness, readyCount: ready }
           })
 
@@ -3556,6 +3609,7 @@ export function WorkforceReadinessDashboard({
                                 deptName: d.name,
                                 mgrIdxStart: directorData.mgrIdxStart + sr.batchStart,
                                 mgrCount: sr.batchCount,
+                                readiness: sr.readiness,
                                 parentDirector: directorData,
                               })
                               setView('seniorMgr')
@@ -3671,7 +3725,8 @@ export function WorkforceReadinessDashboard({
           const srShowCollection = srHrbpCollecting && srDirInScope
 
           const srTrend = deptReadinessTrend(d.name)
-          const srMeasuredReadiness = effSrCollComplete ? d.aiReadiness + srTrend.delta : d.aiReadiness
+          const srBaseReadiness = seniorMgrData.readiness ?? d.aiReadiness
+          const srMeasuredReadiness = effSrCollComplete ? Math.min(100, srBaseReadiness + srTrend.delta) : srBaseReadiness
           const nh2 = (s: string) => { let hh = 0; for (let i = 0; i < s.length; i++) hh = ((hh << 5) - hh + s.charCodeAt(i)) | 0; return Math.abs(hh) }
           const tDelta = effSrCollComplete ? srTrend.delta : 0
           const bBase = effSrPlansComplete ? (isHrbp ? 10 : 8) : 0
@@ -3687,7 +3742,7 @@ export function WorkforceReadinessDashboard({
               return { ...e, displayReadiness: Math.max(0, Math.min(100, e.readinessPct + tDelta + eb)) }
             })
             const readiness = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
-            const ready = cal.filter(e => e.displayReadiness >= 50).length
+            const ready = Math.round(mgr.employees * readiness / 100)
             return { mgr, readiness, readyCount: ready }
           })
           const srReadyCount = teamMgrs.reduce((s, _, i) => s + (srMgrEnriched[seniorMgrData.mgrIdxStart + i]?.readyCount ?? 0), 0)

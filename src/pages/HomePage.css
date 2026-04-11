@@ -232,8 +232,8 @@
 .home-page__wfr-compact__rec {
   padding: 14px 16px;
   border-radius: 12px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: linear-gradient(180deg, #fee2e2 0%, #fff5f5 100%);
+  border: 1px solid #fca5a5;
 }
 
 .home-page__wfr-compact__rec-head {

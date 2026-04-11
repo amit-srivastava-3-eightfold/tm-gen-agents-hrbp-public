@@ -20,7 +20,7 @@ export interface ReadinessTrendSheetProps {
   /** When set, show employee-level readiness for this manager instead of dept collection data */
   managerContext?: { manager: string; mgrIndex: number; readiness?: number } | null
   /** When set, show task-level breakdown for this role instead of dept roles */
-  roleContext?: { title: string; dept: string; measuredReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null
+  roleContext?: { title: string; dept: string; measuredReadiness?: number; baseReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null
   /** When set, frame the sheet as HRBP team data instead of department data */
   hrbpContext?: { hrbpName: string; headcount: number } | null
   /** When true, add upskilling boost to readiness deltas */
@@ -119,7 +119,11 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
   // When managerContext provides an explicit readiness, derive base by subtracting the trend delta
   const mgrReadiness = managerContext?.readiness
   const mgrBase = mgrReadiness != null && data.showTrends ? Math.max(0, mgrReadiness - trend.delta) : mgrReadiness
-  const cardBase = roleContext ? (roleForCtx?.aiReadiness ?? estimated) : mgrBase ?? estimated
+  // For individual employee views, use the actual pre-boost readiness passed from the table
+  // so "before upskilling" matches the real employee baseline (not the role's static aiReadiness)
+  const cardBase = roleContext?.employeeName && roleContext.baseReadiness != null
+    ? roleContext.baseReadiness
+    : roleContext ? (roleForCtx?.aiReadiness ?? estimated) : mgrBase ?? estimated
   const cardMeasured = roleContext && data.showTrends
     ? (roleContext.measuredReadiness ?? (roleForCtx ? Math.max(0, Math.min(100, roleForCtx.aiReadiness + trend.delta + ((roleContext.title.length % 3) - 1))) : measured))
     : roleContext ? cardBase : (mgrReadiness ?? measured)
