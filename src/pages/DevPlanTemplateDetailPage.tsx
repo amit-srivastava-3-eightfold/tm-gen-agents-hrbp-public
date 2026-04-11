@@ -296,8 +296,8 @@ export function DevPlanTemplateDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 32 }}>
             {/* Left sidebar */}
             <div>
-              {/* Completion progress — employee only */}
-              {isEmployee && (() => {
+              {/* Completion progress — employee only, hidden for AI upskilling (score bar handles it) */}
+              {isEmployee && !templateId?.includes('ai-upskilling') && (() => {
                 const isComplete = template.status === 'Published'
                 const pct = isComplete ? 100 : 0
                 const done = isComplete ? template.courses.length : 0
@@ -359,8 +359,8 @@ export function DevPlanTemplateDetailPage() {
                 </div>
               )}
 
-              {/* Progress summary — employee only */}
-              {isEmployee && (
+              {/* Progress summary — employee only, hidden for AI upskilling */}
+              {isEmployee && !templateId?.includes('ai-upskilling') && (
                 <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {[
                     { label: 'Skills', count: template.skills.length, progress: 0, total: template.skills.length, unit: 'learned' },
@@ -388,17 +388,22 @@ export function DevPlanTemplateDetailPage() {
             {/* Right content — Section */}
             <div>{templateId?.includes('ai-upskilling') ? (() => {
                 const firstName = currentUser.name.split(' ')[0]
-                const currentPct = 48
-                const targetPct = 88
-                const potentialPct = targetPct - currentPct
-                const getTierColor = (pct: number) => pct >= 90 ? 'var(--color-violet-60)' : pct >= 75 ? 'var(--color-blue-60)' : pct >= 50 ? 'var(--color-green-60)' : pct >= 25 ? 'var(--color-orange-60)' : 'var(--color-grey-60)'
-                const getTierName = (pct: number) => pct >= 90 ? 'Level 5' : pct >= 75 ? 'Level 4' : pct >= 50 ? 'Level 3' : pct >= 25 ? 'Level 2' : 'Level 1'
-                const getTierGlow = (pct: number) => pct >= 90 ? 'rgba(151,85,144,0.4)' : pct >= 75 ? 'rgba(44,140,201,0.4)' : pct >= 50 ? 'rgba(61,143,121,0.4)' : pct >= 25 ? 'rgba(201,126,25,0.4)' : 'rgba(105,113,127,0.35)'
+                // Read WFR state to determine plan completion
+                let wfrState = 1
+                try { wfrState = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}').state ?? 1 } catch {}
+                // Employee's plan is complete when WFR state >= 5 and their hash gives 100%
+                // For Ryan Mitchell (the employee persona), use a fixed planPct based on state
+                const planComplete = wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })()
+                const basePct = 48
+                const totalPlanPts = 14
+                const currentPct = planComplete ? basePct + totalPlanPts : basePct
+                const targetPct = basePct + totalPlanPts
+                const potentialPct = planComplete ? 0 : targetPct - currentPct
                 const curriculum = [
-                  { id: 1, name: 'AI Foundations', pts: 8, outcome: 'Understand how AI works and where it applies to your daily work — so you can evaluate AI output with confidence, not just curiosity.', courses: [{ name: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '12 hrs', free: true }, { name: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '8 hrs', free: true }], tasks: ['Complete the AI readiness self-assessment', 'Shadow a colleague who uses AI tools daily and document one observation'] },
-                  { id: 2, name: 'Augmentation-Ready', pts: 14, outcome: 'Use AI confidently on routine tasks in your role — with human judgment at every handoff, every time.', courses: [{ name: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hrs', free: true }], tasks: ['Apply AI to 2 recurring weekly tasks in your workflow', 'Complete the AI output review checklist for one deliverable'] },
-                  { id: 3, name: 'Power User', pts: 10, outcome: 'Drive AI adoption within your immediate team — turning personal wins into repeatable, shared workflows.', courses: [{ name: 'AI-Assisted Engineering Workflows', provider: 'Eightfold Academy', duration: '~8 hrs', free: false }], tasks: ['Document 3 AI-assisted workflows your team can reuse', 'Present one time-saving example to your manager or team'] },
-                  { id: 4, name: 'AI Champion', pts: 8, outcome: 'Mentor peers, contribute to the team playbook, and help drive quarter-over-quarter readiness improvements.', courses: [{ name: 'AI Strategy & Governance', provider: 'Eightfold Academy', duration: '6 hrs', free: false }], tasks: ['Coach 2 peers through their AI onboarding journey', 'Contribute at least one workflow to the team AI playbook'] },
+                  { id: 1, name: 'AI Foundations', pts: 3, outcome: 'Understand how AI works and where it applies to your daily work — so you can evaluate AI output with confidence, not just curiosity.', courses: [{ name: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '12 hrs', free: true }, { name: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '8 hrs', free: true }], tasks: ['Complete the AI readiness self-assessment', 'Shadow a colleague who uses AI tools daily and document one observation'] },
+                  { id: 2, name: 'Augmentation-Ready', pts: 5, outcome: 'Use AI confidently on routine tasks in your role — with human judgment at every handoff, every time.', courses: [{ name: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hrs', free: true }], tasks: ['Apply AI to 2 recurring weekly tasks in your workflow', 'Complete the AI output review checklist for one deliverable'] },
+                  { id: 3, name: 'Power User', pts: 4, outcome: 'Drive AI adoption within your immediate team — turning personal wins into repeatable, shared workflows.', courses: [{ name: 'AI-Assisted Engineering Workflows', provider: 'Eightfold Academy', duration: '~8 hrs', free: false }], tasks: ['Document 3 AI-assisted workflows your team can reuse', 'Present one time-saving example to your manager or team'] },
+                  { id: 4, name: 'AI Champion', pts: 2, outcome: 'Mentor peers, contribute to the team playbook, and help drive quarter-over-quarter readiness improvements.', courses: [{ name: 'AI Strategy & Governance', provider: 'Eightfold Academy', duration: '6 hrs', free: false }], tasks: ['Coach 2 peers through their AI onboarding journey', 'Contribute at least one workflow to the team AI playbook'] },
                 ]
                 const unlocks = [
                   { id: 'doors' as const, value: '3', label: 'Career doors unlock', detail: `Top: Staff Engineer (87% fit)`, color: 'var(--color-blue-60)', gid: 'udg-blue-t' },
@@ -407,44 +412,84 @@ export function DevPlanTemplateDetailPage() {
                 ]
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                    {/* Journey bar — uses DevPlanSheet CSS classes */}
-                    <div className="dev-plan-sheet__journey" style={{ padding: '20px 0 12px', margin: 0 }}>
-                      <div className="dev-plan-sheet__journey-side">
-                        <div className="dev-plan-sheet__journey-gem" style={{ background: getTierColor(currentPct), borderColor: getTierColor(currentPct), boxShadow: `0 0 10px ${getTierGlow(currentPct)}` }}>{currentPct}%</div>
-                        <div className="dev-plan-sheet__journey-tier" style={{ color: getTierColor(currentPct) }}>{getTierName(currentPct)}</div>
-                        <div className="dev-plan-sheet__journey-sublabel">Not started</div>
-                      </div>
-                      <div className="dev-plan-sheet__journey-bar-area">
-                        <div className="dev-plan-sheet__journey-track">
-                          <div className="dev-plan-sheet__journey-fill" style={{ width: `${currentPct}%` }} />
-                          <div className="dev-plan-sheet__journey-potential" style={{ left: `${currentPct}%`, width: `${potentialPct}%` }} />
-                          {currentPct < 50 && <div className="dev-plan-sheet__journey-threshold" style={{ left: '50%' }} />}
-                          <div className="dev-plan-sheet__journey-pts" style={{ left: `${currentPct + potentialPct / 2}%` }}>+{potentialPct} pts with this plan</div>
+                    {/* Completion banner */}
+                    {planComplete && (
+                      <div style={{ padding: '14px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #86efac', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>celebration</span>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>Plan complete!</div>
+                          <div style={{ fontSize: 12, color: '#166534' }}>AI adoption score increased by <strong>+{totalPlanPts} pts</strong> — {firstName} is now AI-ready.</div>
                         </div>
                       </div>
-                      <div className="dev-plan-sheet__journey-side dev-plan-sheet__journey-side--target">
-                        <div className="dev-plan-sheet__journey-gem dev-plan-sheet__journey-gem--target" style={{ background: getTierColor(targetPct), borderColor: getTierColor(targetPct), boxShadow: `0 0 16px ${getTierGlow(targetPct)}` }}>{targetPct}%</div>
-                        <div className="dev-plan-sheet__journey-tier" style={{ color: getTierColor(targetPct) }}>{getTierName(targetPct)}</div>
-                        <div className="dev-plan-sheet__journey-sublabel" style={{ color: '#10b981' }}>✓ AI-ready</div>
+                    )}
+
+                    {/* AI Adoption Score — horizontal bar */}
+                    <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 16 }}>AI Adoption Score</div>
+                      {/* Score + bar row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 12 }}>
+                        <div style={{ fontSize: 40, fontWeight: 800, color: planComplete ? '#15803d' : '#0f172a', lineHeight: 1, minWidth: 70 }}>{currentPct}<span style={{ fontSize: 20, fontWeight: 600, color: planComplete ? '#15803d' : '#64748b' }}>%</span></div>
+                        <div style={{ flex: 1, position: 'relative' }}>
+                          {/* Track */}
+                          <div style={{ height: 14, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'visible' }}>
+                            {/* Current fill */}
+                            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${currentPct}%`, borderRadius: 7, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : 'linear-gradient(90deg, #d97706, #f59e0b)' }} />
+                            {/* Projected fill */}
+                            {potentialPct > 0 && (
+                              <div style={{ position: 'absolute', left: `${currentPct}%`, top: 0, height: '100%', width: `${potentialPct}%`, borderRadius: '0 7px 7px 0', background: 'linear-gradient(90deg, rgba(99,102,241,0.2), rgba(99,102,241,0.12))' }} />
+                            )}
+                            {/* 50% threshold */}
+                            <div style={{ position: 'absolute', left: '50%', top: -4, bottom: -4, width: 2, background: '#22c55e', borderRadius: 1 }} />
+                          </div>
+                          {/* Labels below bar */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, position: 'relative' }}>
+                            <span style={{ fontSize: 11, color: '#94a3b8' }}>0%</span>
+                            <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 10, fontWeight: 600, color: '#15803d', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 11 }}>verified</span>
+                              AI-Ready
+                            </span>
+                            <span style={{ fontSize: 11, color: '#94a3b8' }}>100%</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Legend row */}
+                      <div style={{ display: 'flex', gap: 24, paddingLeft: 90 }}>
+                        {planComplete ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#15803d' }}>check_circle</span>
+                            <span style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>All 4 steps completed · +{totalPlanPts} pts earned</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#d97706' }} />
+                              <span style={{ fontSize: 12, color: '#475569' }}>You are here · <strong>{currentPct}%</strong></span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#6366f1', opacity: 0.35 }} />
+                              <span style={{ fontSize: 12, color: '#475569' }}>After this plan · <strong>{targetPct}%</strong></span>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 8, padding: '1px 6px' }}>+{potentialPct}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     {/* Curriculum — uses DevPlanSheet CSS classes */}
                     <div className="dev-plan-sheet__curriculum-heading">Curriculum · {curriculum.length} steps</div>
                     {curriculum.map((step) => (
-                      <div key={step.id} className={`dev-plan-sheet__level ${step.id === 1 ? 'dev-plan-sheet__level--current' : 'dev-plan-sheet__level--locked'}`}>
-                        <div className={`dev-plan-sheet__level-header${step.id > 1 ? ' dev-plan-sheet__level-header--clickable' : ''}`} onClick={step.id > 1 ? () => { const d = document.getElementById(`tpl-step-${step.id}`); if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none' } : undefined}>
-                          <div className={`dev-plan-sheet__level-badge ${step.id === 1 ? 'dev-plan-sheet__level-badge--current' : 'dev-plan-sheet__level-badge--locked'}`}>
-                            {step.id === 1 ? step.id : <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>}
+                      <div key={step.id} className={`dev-plan-sheet__level ${planComplete ? 'dev-plan-sheet__level--recognized' : step.id === 1 ? 'dev-plan-sheet__level--current' : 'dev-plan-sheet__level--locked'}`}>
+                        <div className={`dev-plan-sheet__level-header${!planComplete && step.id > 1 ? ' dev-plan-sheet__level-header--clickable' : planComplete ? ' dev-plan-sheet__level-header--clickable' : ''}`} onClick={planComplete || step.id > 1 ? () => { const d = document.getElementById(`tpl-step-${step.id}`); if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none' } : undefined}>
+                          <div className={`dev-plan-sheet__level-badge ${planComplete ? 'dev-plan-sheet__level-badge--recognized' : step.id === 1 ? 'dev-plan-sheet__level-badge--current' : 'dev-plan-sheet__level-badge--locked'}`}>
+                            {planComplete ? <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span> : step.id === 1 ? step.id : <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>}
                           </div>
                           <div className="dev-plan-sheet__level-title-group">
-                            <div className={`dev-plan-sheet__level-name${step.id > 1 ? ' dev-plan-sheet__level-name--locked' : ''}`}>Step {step.id}: {step.name}</div>
-                            {step.id > 1 && <div className="dev-plan-sheet__level-sublabel" style={{ fontSize: 11, color: '#94a3b8' }}>Complete Step {step.id - 1} to unlock</div>}
+                            <div className="dev-plan-sheet__level-name">Step {step.id}: {step.name}</div>
                           </div>
-                          <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${step.id === 1 ? 'current' : 'locked'}`}>+{step.pts} pts</span>
-                          {step.id > 1 && <span className="material-symbols-outlined dev-plan-sheet__level-chevron">expand_more</span>}
+                          <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${planComplete ? 'credited' : step.id === 1 ? 'current' : 'locked'}`}>{planComplete ? `+${step.pts} pts credited` : `+${step.pts} pts`}</span>
+                          <span className="material-symbols-outlined dev-plan-sheet__level-chevron">expand_more</span>
                         </div>
-                        <div id={`tpl-step-${step.id}`} style={step.id > 1 ? { display: 'none' } : undefined}>
+                        <div id={`tpl-step-${step.id}`} style={!planComplete && step.id > 1 ? { display: 'none' } : planComplete && step.id > 1 ? { display: 'none' } : undefined}>
                           <div className="dev-plan-sheet__level-body">
                             <hr className="dev-plan-sheet__level-divider" />
                             <div className="dev-plan-sheet__section-heading">Outcome</div>
@@ -470,7 +515,7 @@ export function DevPlanTemplateDetailPage() {
                             </div>
                           </div>
                         </div>
-                        {step.id > 1 && (
+                        {!planComplete && step.id > 1 && (
                           <div className="dev-plan-sheet__gate">
                             <div className="dev-plan-sheet__gate-info">
                               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>

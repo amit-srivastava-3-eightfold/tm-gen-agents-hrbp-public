@@ -27,7 +27,7 @@ interface LevelDef {
 }
 
 export interface DevPlanSheetProps {
-  employee: { name: string; title?: string; readinessPct: number; displayReadiness: number } | null
+  employee: { name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null
   open: boolean
   onClose: () => void
   isAssigned: boolean
@@ -46,7 +46,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Shadow a colleague who uses AI tools daily and document one observation',
     ],
     totalHours: 20,
-    adoptionPts: 8,
+    adoptionPts: 3,
   },
   {
     id: 2,
@@ -58,7 +58,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Complete the AI output review checklist for one deliverable',
     ],
     totalHours: 16,
-    adoptionPts: 14,
+    adoptionPts: 5,
   },
   {
     id: 3,
@@ -70,7 +70,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Present one time-saving example to your manager or team',
     ],
     totalHours: 8,
-    adoptionPts: 10,
+    adoptionPts: 4,
   },
   {
     id: 4,
@@ -82,7 +82,7 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       'Contribute at least one workflow to the team AI playbook',
     ],
     totalHours: 6,
-    adoptionPts: 8,
+    adoptionPts: 2,
   },
 ]
 
@@ -147,23 +147,7 @@ function nameHash(s: string) {
   return Math.abs(h)
 }
 
-// ── Tier system ────────────────────────────────────────────────────────────────
 
-const TIERS = [
-  { name: 'Level 1', color: 'var(--color-grey-60)',   glow: 'rgba(105,113,127,0.35)' },
-  { name: 'Level 2', color: 'var(--color-orange-60)', glow: 'rgba(201,126,25,0.4)'   },
-  { name: 'Level 3', color: 'var(--color-green-60)',  glow: 'rgba(61,143,121,0.4)'   },
-  { name: 'Level 4', color: 'var(--color-blue-60)',   glow: 'rgba(44,140,201,0.4)'   },
-  { name: 'Level 5', color: 'var(--color-violet-60)', glow: 'rgba(151,85,144,0.4)'   },
-]
-
-function getTier(pct: number) {
-  if (pct >= 90) return TIERS[4]
-  if (pct >= 75) return TIERS[3]
-  if (pct >= 50) return TIERS[2]
-  if (pct >= 25) return TIERS[1]
-  return TIERS[0]
-}
 
 
 function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
@@ -369,16 +353,19 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
 
   if (!open || !employee) return null
 
-  const recognizedCount = 0
+  const planComplete = (employee.planPct ?? 0) === 100
+  const recognizedCount = planComplete ? 4 : 0
   const levels = buildLevels(employee)
 
   // Derive XP per level from name hash (only shown for current/override levels)
   function getXpPct(levelId: number) {
+    if (planComplete) return 100
     if (!isAssigned) return 0
     return Math.min(80, 10 + (nameHash(employee!.name + levelId) % 71))
   }
 
   function getLevelState(levelId: number): LevelState {
+    if (planComplete) return 'recognized'
     if (levelId <= recognizedCount) return 'recognized'
     if (levelId === recognizedCount + 1) return 'current'
     return 'locked'
@@ -393,14 +380,11 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
   }
 
   // Footer stats
-  const remainingLevels = levels.filter(l => l.id > recognizedCount)
-
-  // Journey / tier data
-  const remainingAdoptionPts = remainingLevels.reduce((s, l) => s + l.adoptionPts, 0)
-  const projectedScore = Math.min(100, employee.displayReadiness + remainingAdoptionPts)
-  const potentialPct = projectedScore - employee.displayReadiness
-  const currentTier = getTier(employee.displayReadiness)
-  const targetTier = getTier(projectedScore)
+  const totalAdoptionPts = levels.reduce((s, l) => s + l.adoptionPts, 0)
+  const remainingLevels = planComplete ? [] : levels.filter(l => l.id > recognizedCount)
+  const remainingAdoptionPts = planComplete ? 0 : remainingLevels.reduce((s, l) => s + l.adoptionPts, 0)
+  const projectedScore = Math.min(100, employee.readinessPct + totalAdoptionPts)
+  const potentialPct = planComplete ? 0 : projectedScore - employee.displayReadiness
 
   // Completion unlocks
   const firstName = employee.name.split(' ')[0]
@@ -427,63 +411,62 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
           </button>
         </div>
 
-        {/* AI Adoption Journey */}
-        <div className="dev-plan-sheet__journey">
-
-          {/* Current tier */}
-          <div className="dev-plan-sheet__journey-side">
-            <div
-              className="dev-plan-sheet__journey-gem"
-              style={{ background: currentTier.color, borderColor: currentTier.color, boxShadow: `0 0 10px ${currentTier.glow}` }}
-            >
-              {employee.displayReadiness}%
-            </div>
-            <div className="dev-plan-sheet__journey-tier" style={{ color: currentTier.color }}>
-              {currentTier.name}
-            </div>
-            <div className="dev-plan-sheet__journey-sublabel">
-              {isAssigned ? 'In progress' : 'Not started'}
+        {/* Completion banner */}
+        {planComplete && (
+          <div style={{ margin: '16px 24px 0', padding: '14px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #86efac', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>celebration</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>Plan complete!</div>
+              <div style={{ fontSize: 12, color: '#166534' }}>AI adoption score increased by <strong>+{totalAdoptionPts} pts</strong> — {firstName} is now AI-ready.</div>
             </div>
           </div>
+        )}
 
-          {/* Bar track */}
-          <div className="dev-plan-sheet__journey-bar-area">
-            <div className="dev-plan-sheet__journey-track">
-              <div className="dev-plan-sheet__journey-fill" style={{ width: `${employee.displayReadiness}%` }} />
-              {potentialPct > 0 && (
-                <div className="dev-plan-sheet__journey-potential"
-                  style={{ left: `${employee.displayReadiness}%`, width: `${potentialPct}%` }}
-                />
-              )}
-              {employee.displayReadiness < 50 && (
-                <div className="dev-plan-sheet__journey-threshold" style={{ left: '50%' }} />
-              )}
-              {potentialPct > 0 && (
-                <div className="dev-plan-sheet__journey-pts"
-                  style={{ left: `${employee.displayReadiness + potentialPct / 2}%` }}
-                >
-                  +{remainingAdoptionPts} pts with this plan
+        {/* AI Adoption Score — horizontal bar */}
+        <div style={{ padding: '20px 24px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 14 }}>AI Adoption Score</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
+            <div style={{ fontSize: 36, fontWeight: 800, color: planComplete ? '#15803d' : '#0f172a', lineHeight: 1, minWidth: 60 }}>{employee.displayReadiness}<span style={{ fontSize: 18, fontWeight: 600, color: planComplete ? '#15803d' : '#64748b' }}>%</span></div>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <div style={{ height: 12, borderRadius: 6, background: '#f1f5f9', position: 'relative', overflow: 'visible' }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${employee.displayReadiness}%`, borderRadius: 6, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : 'linear-gradient(90deg, #d97706, #f59e0b)' }} />
+                {potentialPct > 0 && (
+                  <div style={{ position: 'absolute', left: `${employee.displayReadiness}%`, top: 0, height: '100%', width: `${potentialPct}%`, borderRadius: '0 6px 6px 0', background: 'linear-gradient(90deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1))' }} />
+                )}
+                <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 2, background: '#22c55e', borderRadius: 1 }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, position: 'relative' }}>
+                <span style={{ fontSize: 10, color: '#cbd5e1' }}>0%</span>
+                <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 10, fontWeight: 600, color: '#15803d', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 10 }}>verified</span>
+                  AI-Ready
+                </span>
+                <span style={{ fontSize: 10, color: '#cbd5e1' }}>100%</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 20, paddingLeft: 76 }}>
+            {planComplete ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#15803d' }}>check_circle</span>
+                <span style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>All 4 steps completed · +{totalAdoptionPts} pts earned</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: '#d97706' }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>You are here · <strong style={{ color: '#0f172a' }}>{employee.displayReadiness}%</strong></span>
                 </div>
-              )}
-            </div>
+                {potentialPct > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: '#6366f1', opacity: 0.35 }} />
+                    <span style={{ fontSize: 11, color: '#64748b' }}>After plan · <strong style={{ color: '#0f172a' }}>{projectedScore}%</strong></span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 8, padding: '0px 5px' }}>+{remainingAdoptionPts}</span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-
-          {/* Target tier */}
-          <div className="dev-plan-sheet__journey-side dev-plan-sheet__journey-side--target">
-            <div
-              className="dev-plan-sheet__journey-gem dev-plan-sheet__journey-gem--target"
-              style={{ background: targetTier.color, borderColor: targetTier.color, boxShadow: `0 0 16px ${targetTier.glow}` }}
-            >
-              {projectedScore}%
-            </div>
-            <div className="dev-plan-sheet__journey-tier" style={{ color: targetTier.color }}>
-              {targetTier.name}
-            </div>
-            <div className="dev-plan-sheet__journey-sublabel" style={{ color: projectedScore >= 50 ? '#10b981' : '#64748b' }}>
-              {projectedScore >= 50 ? '✓ AI-ready' : 'Not AI-ready'}
-            </div>
-          </div>
-
         </div>
 
         {/* Body */}

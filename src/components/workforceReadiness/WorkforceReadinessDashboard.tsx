@@ -1007,7 +1007,7 @@ function BoardView({
 
   // Upskilling boost for hero metrics — HRBP sees 10pt for their dept, CHRO sees org-wide boost (all HRBPs assigned plans)
   const upskillingHeroBoost = hrbpPlansCreated
-    ? (isHrbp ? 10 : 8)
+    ? (isHrbp ? 4 : 3)
     : 0
   const basePeopleInAug = effectiveRollup ? effectiveRollup.peopleInAugRoles : ORG.peopleInAugRoles
   const rawReadinessPct = effectiveRollup ? effectiveRollup.aiReadiness : ORG.aiReadiness
@@ -2282,7 +2282,7 @@ export function WorkforceReadinessDashboard({
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
   const [mgrAssignReviewed, setMgrAssignReviewed] = useState(false)
   const [mgrToast, setMgrToast] = useState<string | null>(null)
-  const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
+  const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null>(null)
 
   // ─── Manager persona: compute team data for Dana Tanaka ───
   const managerTeamData = useMemo(() => {
@@ -2332,7 +2332,7 @@ export function WorkforceReadinessDashboard({
     const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
     const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated } = deriveWfrFlags(wfrState.state)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
-    const mgrUpskillingBoost = mgrPlansCreated ? 10 : 0
+    const mgrUpskillingBoost = mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
     const showUpskilling = mgrCollComplete && mgrUpskillingActive && engInScope
     // Precompute per-employee display readiness (including per-employee trend noise) so
@@ -2508,7 +2508,7 @@ export function WorkforceReadinessDashboard({
                           <button
                             type="button"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}
-                            onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness }) }}
+                            onClick={(e) => { e.stopPropagation(); setMgrDevPlanEmployee({ name: emp.name, title: emp.title, readinessPct: emp.displayReadiness, displayReadiness: displayEmpReadiness, planPct: emp._planPct }) }}
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>{!(mgrPlansCreated || mgrAllPlansAssigned) && 'Development plan'}
                           </button>
