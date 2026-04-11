@@ -49,7 +49,7 @@ function WfrReadinessArc({ readiness, color }: { readiness: number; color?: stri
   const dim = 120, r = 46, sw = 8
   const cx = dim / 2, cy = dim / 2
   const rad = (d: number) => (d * Math.PI) / 180
-  const arcColor = color ?? (readiness >= 50 ? '#22c55e' : readiness >= 30 ? '#f59e0b' : '#dc2626')
+  const arcColor = color ?? '#22c55e'
   // Upper semicircle: 180° to 360°
   const arcPath = (pct: number) => {
     const sweep = (pct / 100) * 180
@@ -127,12 +127,12 @@ function ChroWorkforceReadinessTeaser() {
 
   // ── State-based rec ──────────────────────────────────────────────────────
   type RecConfig = {
-    icon: string; iconColor: string; eyebrow: string; body: string; subtitle?: string; cta: string; href: string
+    icon: string; iconColor: string; eyebrow: string; body: React.ReactNode; subtitle?: React.ReactNode; cta: string; href: string
     cardBg?: string; cardBorder?: string; eyebrowColor?: string
     progressPct?: number; progressLabel?: string
   }
-  const AMBER_CARD = { cardBg: '#fffbeb', cardBorder: '#fde68a', eyebrowColor: '#d97706' }
-  const GREEN_CARD  = { cardBg: '#f0fdf4', cardBorder: '#bbf7d0', eyebrowColor: '#15803d' }
+  const AMBER_CARD = { cardBg: 'linear-gradient(180deg, #fef3c7 0%, #fffbeb 100%)', cardBorder: '#fcd34d', eyebrowColor: '#d97706' }
+  const GREEN_CARD  = { cardBg: 'linear-gradient(180deg, #dcfce7 0%, #f0fdf4 100%)', cardBorder: '#86efac', eyebrowColor: '#15803d' }
   const INDIGO_CARD = { cardBg: '#eff3ff', cardBorder: '#c5d3f8', eyebrowColor: '#3b5bdb' }
 
   const rec: RecConfig | null = (() => {
@@ -174,7 +174,8 @@ function ChroWorkforceReadinessTeaser() {
       }
       return {
         icon: 'flag', iconColor: '#dc2626', eyebrow: 'FIRST PRIORITY',
-        body: "Collect employee data to sharpen your adoption scores and surface upskilling priorities.",
+        body: "AI Adoption is estimated today. Collect real data to see what's actually happening.",
+        subtitle: "Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.",
         cta: 'Get started →', href: '/workforce?action=launch',
         // red — CSS default, no override needed
       }
@@ -202,12 +203,26 @@ function ChroWorkforceReadinessTeaser() {
       cta: isManager ? 'See results →' : 'Start upskilling →', href: '/workforce',
       ...GREEN_CARD,
     }
-    if (wfrState === 4) return {
-      icon: 'rocket_launch', iconColor: '#dc2626', eyebrow: 'UPSKILLING STARTED',
-      body: isManager
-        ? 'Development plans have been created for your team. Review and assign them so your people can start building AI skills.'
-        : 'Development plans are assigned and in progress.',
-      cta: isManager ? 'Review and assign plans →' : 'View progress →', href: '/workforce',
+    if (wfrState === 4) {
+      if (isManager) return {
+        icon: 'rocket_launch', iconColor: '#dc2626', eyebrow: 'UPSKILLING STARTED',
+        body: 'Development plans have been created for your team. Review and assign them so your people can start building AI skills.',
+        cta: 'Review and assign plans →', href: '/workforce',
+      }
+      const persisted = readWfrPersistedState()
+      const summary = persisted.upskillingLaunchSummary
+      const deptCount = summary?.departmentNames.length ?? 1
+      const empCount = summary?.totalEmployees ?? 0
+      const delegated = summary?.delegated ?? false
+      return {
+        icon: 'rocket_launch', iconColor: '#b45309', eyebrow: 'UPSKILLING STARTED',
+        body: delegated
+          ? <>HRBPs are creating development plans for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>
+          : <>Development plans are being created for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>,
+        subtitle: 'Once plans are assigned, adoption scores will update to reflect upskilling progress.',
+        cta: 'View progress →', href: '/workforce',
+        ...AMBER_CARD,
+      }
     }
     return null // state 5
   })()
@@ -227,7 +242,7 @@ function ChroWorkforceReadinessTeaser() {
             <span className="home-page__wfr-compact__headline-rest">
               {isManager
                 ? ' of your team is AI-ready.'
-                : ' of people in augmentable roles have the skills to start using AI today.'}
+                : ' of people in augmentable roles are AI-ready.'}
             </span>
           </h2>
           <span className="home-page__wfr-compact__gap-badge">

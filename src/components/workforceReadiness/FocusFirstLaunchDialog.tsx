@@ -55,8 +55,9 @@ const uniqueHrbps = (() => {
     const avgPotential = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiPotential * d.employees, 0) / totalHc) : 0
     const avgReadiness = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiReadiness * d.employees, 0) / totalHc) : 0
     const priorityScore = (avgPotential - avgReadiness) * (avgPotential - avgReadiness) / 100
-    return { ...row, avgPotential, avgReadiness, priorityScore }
-  }).sort((a, b) => b.priorityScore - a.priorityScore)
+    const totalUnrealizedValue = deptObjs.reduce((s, d) => s + d.unrealizedValue, 0)
+    return { ...row, avgPotential, avgReadiness, priorityScore, totalUnrealizedValue }
+  }).sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
 })()
 
 // Top ~30% of HRBPs by priority score get the Priority tag

@@ -27,7 +27,7 @@ export const ORG = {
     { name: 'Operations', employees: 4235, aiPotential: 45, aiReadiness: 17 },
     { name: 'HR', employees: 1600, aiPotential: 42, aiReadiness: 18 },
     { name: 'Sales', employees: 6200, aiPotential: 37, aiReadiness: 26 },
-    { name: 'Engineering', employees: 10500, aiPotential: 62, aiReadiness: 7 },
+    { name: 'Engineering', employees: 10500, aiPotential: 62, aiReadiness: 22 },
     { name: 'Legal', employees: 1450, aiPotential: 31, aiReadiness: 17 },
     { name: 'Customer Success', employees: 3900, aiPotential: 40, aiReadiness: 21 },
     { name: 'Product', employees: 2075, aiPotential: 36, aiReadiness: 33 },
@@ -158,15 +158,15 @@ export const ORG = {
       { title: 'Inside Sales Representative', employees: 660, aiPotential: 46, aiReadiness: 20, medianHourlyWage: 22.00 },
     ],
     Engineering: [
-      { title: 'Software Engineer', employees: 2835, aiPotential: 66, aiReadiness: 7, medianHourlyWage: 62.00 },
-      { title: 'Senior Software Engineer', employees: 2070, aiPotential: 58, aiReadiness: 7, medianHourlyWage: 75.00 },
-      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 9, medianHourlyWage: 90.00 },
-      { title: 'QA Automation Engineer', employees: 1090, aiPotential: 72, aiReadiness: 5, medianHourlyWage: 50.00 },
-      { title: 'DevOps Engineer', employees: 980, aiPotential: 58, aiReadiness: 7, medianHourlyWage: 58.00 },
-      { title: 'Frontend Engineer', employees: 1305, aiPotential: 64, aiReadiness: 7, medianHourlyWage: 58.00 },
-      { title: 'Platform Engineer', employees: 870, aiPotential: 55, aiReadiness: 7, medianHourlyWage: 62.00 },
-      { title: 'Mobile Developer', employees: 655, aiPotential: 60, aiReadiness: 8, medianHourlyWage: 60.00 },
-      { title: 'Site Reliability Engineer', employees: 545, aiPotential: 52, aiReadiness: 8, medianHourlyWage: 65.00 },
+      { title: 'Software Engineer', employees: 2835, aiPotential: 66, aiReadiness: 18, medianHourlyWage: 62.00 },
+      { title: 'Senior Software Engineer', employees: 2070, aiPotential: 58, aiReadiness: 24, medianHourlyWage: 75.00 },
+      { title: 'Engineering Manager', employees: 150, aiPotential: 48, aiReadiness: 32, medianHourlyWage: 90.00 },
+      { title: 'QA Automation Engineer', employees: 1090, aiPotential: 72, aiReadiness: 16, medianHourlyWage: 50.00 },
+      { title: 'DevOps Engineer', employees: 980, aiPotential: 58, aiReadiness: 28, medianHourlyWage: 58.00 },
+      { title: 'Frontend Engineer', employees: 1305, aiPotential: 64, aiReadiness: 20, medianHourlyWage: 58.00 },
+      { title: 'Platform Engineer', employees: 870, aiPotential: 55, aiReadiness: 22, medianHourlyWage: 62.00 },
+      { title: 'Mobile Developer', employees: 655, aiPotential: 60, aiReadiness: 26, medianHourlyWage: 60.00 },
+      { title: 'Site Reliability Engineer', employees: 545, aiPotential: 52, aiReadiness: 30, medianHourlyWage: 65.00 },
     ],
     Legal: [
       { title: 'Corporate Counsel', employees: 200, aiPotential: 36, aiReadiness: 22, medianHourlyWage: 85.00 },
@@ -1933,7 +1933,7 @@ export type RoleEmployee = {
   programStatus: 'Completed' | 'Enrolled' | 'Not enrolled'
 }
 
-const WFR_FIRST_NAMES = [
+export const WFR_FIRST_NAMES = [
   'Jordan',
   'Alex',
   'Taylor',
@@ -1972,6 +1972,23 @@ const WFR_FIRST_NAMES = [
   'Nina',
   'Victor',
   'Hannah',
+  'Rowan',
+  'Imani',
+  'Soren',
+  'Layla',
+  'Kai',
+  'Nadia',
+  'Tobias',
+  'Riya',
+  'Andre',
+  'Leila',
+  'Emre',
+  'Camille',
+  'Darius',
+  'Astrid',
+  'Nico',
+  'Zoe',
+  'Rafael',
 ] as const
 
 const WFR_LAST_NAMES = [
@@ -2053,16 +2070,27 @@ export function getEmployeesForRole(role: RoleRowType): RoleEmployee[] {
 
   const out: RoleEmployee[] = []
   const used = new Set<string>()
-  const first = WFR_FIRST_NAMES
   const last = WFR_LAST_NAMES
   const titleSeed = hashRoleSeed(role.title)
 
+  // Shuffle first names once per role so each first name appears at most once
+  // within any team that's smaller than the first-name list (avoids repeated first names)
+  const fnShuffleRng = mulberry32(titleSeed ^ 0xfeedface)
+  const shuffledFirsts = [...WFR_FIRST_NAMES] as string[]
+  for (let i = shuffledFirsts.length - 1; i > 0; i--) {
+    const j = Math.floor(fnShuffleRng() * (i + 1))
+    const a = shuffledFirsts[i]!
+    shuffledFirsts[i] = shuffledFirsts[j]!
+    shuffledFirsts[j] = a
+  }
+
   for (let i = 0; i < E; i++) {
     const r = mulberry32((titleSeed + i * 2654435761) >>> 0)
+    // Assign first names sequentially from the shuffled list (unique for teams ≤ list length)
+    const fn = shuffledFirsts[i % shuffledFirsts.length]!
     let name: string
     let tries = 0
     do {
-      const fn = first[Math.floor(r() * first.length)]!
       const ln = last[Math.floor(r() * last.length)]!
       name = `${fn} ${ln}`
       tries++

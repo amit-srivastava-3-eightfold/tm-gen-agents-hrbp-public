@@ -128,10 +128,10 @@ function getUnlocks(name: string, title: string | undefined, displayReadiness: n
   const h = Math.abs(Array.from(name).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0))
   const doorEntry = CAREER_DOORS.find(r => r.pattern.test(title ?? ''))
   const doorRoles = doorEntry?.roles ?? ['Senior Specialist', 'Team Lead', 'Manager']
-  const doorCount = 3 + (h % 3) // 3–5
+  const doorCount = Math.min(3 + (h % 3), doorRoles.length) // 3–5, capped to available roles
   const topFit = 38 + (h % 20) // 38–57%
   const currentRisk = 55 + (h % 20) // 55–74%
-  const pathsTo = 1 + (h % 4) // 1–4%
+  const pathsTo = Math.max(15, Math.round(currentRisk * 0.45) + (h % 8)) // 25–42% (realistic post-training residual)
   const riskDrop = currentRisk - pathsTo
   const aiSkillEntry = AI_SKILLS_BY_ROLE.find(r => r.pattern.test(title ?? ''))
   const aiSkills = aiSkillEntry?.skills ?? ['writing better prompts', 'reviewing and editing AI outputs', 'structuring presentations for impact']
@@ -150,11 +150,11 @@ function nameHash(s: string) {
 // ── Tier system ────────────────────────────────────────────────────────────────
 
 const TIERS = [
-  { name: 'Novice',       color: 'var(--color-grey-60)',   glow: 'rgba(105,113,127,0.35)' },
-  { name: 'Practitioner', color: 'var(--color-orange-60)', glow: 'rgba(201,126,25,0.4)'   },
-  { name: 'Adept',        color: 'var(--color-green-60)',  glow: 'rgba(61,143,121,0.4)'   },
-  { name: 'Expert',       color: 'var(--color-blue-60)',   glow: 'rgba(44,140,201,0.4)'   },
-  { name: 'Master',       color: 'var(--color-violet-60)', glow: 'rgba(151,85,144,0.4)'   },
+  { name: 'Level 1', color: 'var(--color-grey-60)',   glow: 'rgba(105,113,127,0.35)' },
+  { name: 'Level 2', color: 'var(--color-orange-60)', glow: 'rgba(201,126,25,0.4)'   },
+  { name: 'Level 3', color: 'var(--color-green-60)',  glow: 'rgba(61,143,121,0.4)'   },
+  { name: 'Level 4', color: 'var(--color-blue-60)',   glow: 'rgba(44,140,201,0.4)'   },
+  { name: 'Level 5', color: 'var(--color-violet-60)', glow: 'rgba(151,85,144,0.4)'   },
 ]
 
 function getTier(pct: number) {
@@ -165,11 +165,6 @@ function getTier(pct: number) {
   return TIERS[0]
 }
 
-function getRecognizedCount(readinessPct: number) {
-  if (readinessPct >= 60) return 2
-  if (readinessPct >= 40) return 1
-  return 0
-}
 
 function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
   const roleWord = employee?.title?.split(' ')[0] ?? 'Business'
@@ -374,7 +369,7 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
 
   if (!open || !employee) return null
 
-  const recognizedCount = getRecognizedCount(employee.readinessPct)
+  const recognizedCount = 0
   const levels = buildLevels(employee)
 
   // Derive XP per level from name hash (only shown for current/override levels)
@@ -396,15 +391,6 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
       return next
     })
   }
-
-  // Placement banner text
-  const placementRecognized = recognizedCount > 0
-  const placementTitle = placementRecognized
-    ? `${recognizedCount === 1 ? '1 step' : `${recognizedCount} steps`} credited from existing knowledge`
-    : 'Placement: starting at Step 1 — AI Foundations'
-  const placementBody = placementRecognized
-    ? `Based on ${employee.name.split(' ')[0]}'s career hub profile and baseline data collection, the AI identified pre-existing knowledge in ${recognizedCount === 1 ? 'AI Foundations' : 'AI Foundations and Augmentation-Ready'}. ${recognizedCount === 1 ? 'Step 1 has' : 'Steps 1–2 have'} been auto-credited — curriculum starts at Step ${recognizedCount + 1}.`
-    : `Placement was determined from ${employee.name.split(' ')[0]}'s career hub profile and role task data. No prior AI skill signals were detected — the full curriculum applies.`
 
   // Footer stats
   const remainingLevels = levels.filter(l => l.id > recognizedCount)
@@ -472,12 +458,14 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
               {employee.displayReadiness < 50 && (
                 <div className="dev-plan-sheet__journey-threshold" style={{ left: '50%' }} />
               )}
+              {potentialPct > 0 && (
+                <div className="dev-plan-sheet__journey-pts"
+                  style={{ left: `${employee.displayReadiness + potentialPct / 2}%` }}
+                >
+                  +{remainingAdoptionPts} pts with this plan
+                </div>
+              )}
             </div>
-            {potentialPct > 0 && (
-              <div className="dev-plan-sheet__journey-pts">
-                +{remainingAdoptionPts} pts with this plan
-              </div>
-            )}
           </div>
 
           {/* Target tier */}
@@ -501,18 +489,6 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
         {/* Body */}
         <div className="dev-plan-sheet__body">
 
-          {/* Placement banner */}
-          <div className={`dev-plan-sheet__placement ${placementRecognized ? 'dev-plan-sheet__placement--recognized' : 'dev-plan-sheet__placement--baseline'}`}>
-            <span
-              className={`material-symbols-outlined dev-plan-sheet__placement-icon ${placementRecognized ? 'dev-plan-sheet__placement-icon--recognized' : 'dev-plan-sheet__placement-icon--baseline'}`}
-            >
-              {placementRecognized ? 'workspace_premium' : 'my_location'}
-            </span>
-            <div>
-              <div className="dev-plan-sheet__placement-title">{placementTitle}</div>
-              <div className="dev-plan-sheet__placement-body">{placementBody}</div>
-            </div>
-          </div>
 
           {/* Curriculum */}
           <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
