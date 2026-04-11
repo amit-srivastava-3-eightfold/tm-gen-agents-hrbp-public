@@ -2353,8 +2353,12 @@ export function WorkforceReadinessDashboard({
       const maxBoost = Math.max(deficit, mgrUpskillingBoost)
       const empUpskillingBoost = (mgrPlansCreated && planPct === 100) ? maxBoost : 0
       const measuredReadiness = Math.max(0, Math.min(100, preUpskillingReadiness + empUpskillingBoost))
-      const displayEmpReadiness = mgrCollComplete ? measuredReadiness : emp.displayReadiness
-      return { ...emp, _displayEmpReadiness: displayEmpReadiness, _empTrendDelta: empTrendDelta, _planPct: planPct }
+      // Cap at 49 before plans are created so no one appears past the AI-ready threshold
+      const cappedReadiness = !mgrPlansCreated ? Math.min(49, measuredReadiness) : measuredReadiness
+      const displayEmpReadiness = mgrCollComplete ? cappedReadiness : emp.displayReadiness
+      // Cap displayed trend delta to match capped readiness
+      const displayTrendDelta = !mgrPlansCreated ? Math.min(empTrendDelta, 49 - emp.displayReadiness) : empTrendDelta
+      return { ...emp, _displayEmpReadiness: displayEmpReadiness, _empTrendDelta: displayTrendDelta, _planPct: planPct }
     })
     const calibratedAvgReadiness = mgrCollComplete
       ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
