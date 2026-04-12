@@ -27,7 +27,7 @@ import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, format
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffectiveState, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffectiveState, MetricInfoDialog, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import { DevPlanSheet } from '../components/workforceReadiness/DevPlanSheet'
@@ -222,6 +222,7 @@ export function ManagerDetailPage() {
 
   // Dev plan sheet state
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
+  const [metricInfoOpen, setMetricInfoOpen] = useState(false)
   const [devPlanEmployee, setDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number } | null>(null)
   const [assignedPlans, _setAssignedPlans] = useState<Set<string>>(new Set())
   const [allPlansAssigned, setAllPlansAssigned] = useState(false)
@@ -390,7 +391,7 @@ export function ManagerDetailPage() {
               explainer: `How much of this team's daily work AI is capable of supporting.`,
               description: <span style={{ color: '#94a3b8' }}>{dept.aiPotential}% AI potential across {employees.length} employees</span>,
               tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
-              onLearnMore: () => setOpenMetric('potential'),
+              onLearnMore: () => setMetricInfoOpen(true),
             }}
             readiness={{
               value: readinessDelta !== 0 ? (
@@ -401,14 +402,14 @@ export function ManagerDetailPage() {
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>,
               tag: avgReadiness < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined,
-              onLearnMore: () => setOpenMetric('readiness'),
+              onLearnMore: () => setMetricInfoOpen(true),
             }}
-            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setOpenMetric('potential') }}
+            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
             gap={{
               value: `${notReady.toLocaleString()} not ready`,
               description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {displayEmployees.length} employees</span></>,
               tag: upskillingInScope ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined,
-              onLearnMore: () => setOpenMetric('gap'),
+              onLearnMore: () => setMetricInfoOpen(true),
             }}
             managerTable={{
               title: 'Manager summary',
@@ -743,6 +744,7 @@ export function ManagerDetailPage() {
         hrsUnlocked={0}
         departmentGap={{ departmentName: dept.name, peopleInAugRoles: displayEmployees.length, ready: readyCount, gapPeople: notReady, hrsUnlocked: 0 }}
       />
+      <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} collectionComplete={collectionComplete} />
       {toast && createPortal(
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', borderRadius: 10, background: '#0f172a', color: '#fff', fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 8, zIndex: 10000, animation: 'fadeInUp 0.3s ease-out', whiteSpace: 'nowrap' }}>
           <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#4ade80' }}>check_circle</span>
