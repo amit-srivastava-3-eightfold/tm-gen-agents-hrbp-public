@@ -229,6 +229,8 @@ export function ManagerDetailPage() {
   const [assignReviewed, setAssignReviewed] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [empSort, setEmpSort] = useState<{ col: 'name' | 'readiness' | 'upskilling', dir: 'asc' | 'desc' }>({ col: 'readiness', dir: 'desc' })
+  const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
+  const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const toggleEmpSort = (col: typeof empSort['col']) => setEmpSort(s => ({ col, dir: s.col === col && s.dir === 'desc' ? 'asc' : 'desc' }))
 
   if (!dept || !managerData) {
@@ -383,6 +385,13 @@ export function ManagerDetailPage() {
             ) : undefined}
             name={mgr.manager}
             subtitle={`${mgr.title} · ${dept.name} · ${employees.length} employees`}
+            aiPotential={{
+              value: `${dept.aiPotential}%`,
+              explainer: `How much of this team's daily work AI is capable of supporting.`,
+              description: <span style={{ color: '#94a3b8' }}>{dept.aiPotential}% AI potential across {employees.length} employees</span>,
+              tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
+              onLearnMore: () => setOpenMetric('potential'),
+            }}
             readiness={{
               value: readinessDelta !== 0 ? (
                 <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
@@ -391,12 +400,14 @@ export function ManagerDetailPage() {
               badge: collectionComplete
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
                 : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>,
+              tag: avgReadiness < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined,
               onLearnMore: () => setOpenMetric('readiness'),
             }}
-            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{dept.aiPotential}% AI potential</span> across {employees.length.toLocaleString()} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setOpenMetric('potential') }}
+            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setOpenMetric('potential') }}
             gap={{
               value: `${notReady.toLocaleString()} not ready`,
               description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {displayEmployees.length} employees</span></>,
+              tag: upskillingInScope ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined,
               onLearnMore: () => setOpenMetric('gap'),
             }}
             managerTable={{
@@ -515,7 +526,7 @@ export function ManagerDetailPage() {
                     </DataTableCell>
                     <DataTableCell align="right">
                       {empTaskCount > 0 && emp.title ? (
-                        <button type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: emp.title!, dept: deptName, employeeName: emp.name }) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}>
                           {empTaskCount}
                         </button>
                       ) : <span style={{ color: '#cbd5e1' }}>—</span>}
@@ -579,6 +590,98 @@ export function ManagerDetailPage() {
         </div>
       </main>
 
+      {/* Task sheet */}
+      {taskSheetRole && createPortal(
+        <div className="wfr-trend-sheet__root">
+          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} />
+          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
+            <div className="wfr-trend-sheet__header">
+              <div>
+                <div className="wfr-trend-sheet__title-row">
+                  <h2 className="wfr-trend-sheet__title">{taskSheetRole.employeeName ?? taskSheetRole.title}</h2>
+                </div>
+                <p className="wfr-trend-sheet__sub">{taskSheetRole.employeeName ? `${taskSheetRole.title} — Task breakdown` : `${taskSheetRole.dept} — Task breakdown`}</p>
+              </div>
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} aria-label="Close">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="wfr-trend-sheet__body">
+              {(() => {
+                const tasks = getTasksForRole(taskSheetRole.title)
+                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
+                const aboveCount = tasks.filter(t => t.score > 75).length
+                const belowCount = tasks.filter(t => t.score < 15).length
+                const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; label: string; desc: string; color: string; bg: string; border: string; activeBorder: string }[] = [
+                  { zone: 'above', count: aboveCount, label: 'Automate', desc: 'AI runs autonomously', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
+                  { zone: 'augment', count: augCount, label: 'Augment', desc: 'Human leads, AI assists', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
+                  { zone: 'below', count: belowCount, label: 'Human', desc: 'Requires judgment or trust', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
+                ]
+                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
+                const automateSkills = ['Process automation', 'AI pipeline']
+                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'strateg': ['Vision', 'Business judgment'] }
+                function getSkillsForTask(task: string, zone: string): string[] {
+                  const lower = task.toLowerCase()
+                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
+                  if (zone === 'above') return automateSkills
+                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
+                  return ['Critical thinking', 'Human judgment']
+                }
+                const groups = [
+                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously', tasks: tasks.filter(t => t.score > 75) },
+                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
+                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human judgment or trust', tasks: tasks.filter(t => t.score < 15) },
+                ]
+                const visibleGroups = taskSheetZoneFilter ? groups.filter(g => g.zone === taskSheetZoneFilter && g.tasks.length > 0) : groups.filter(g => g.tasks.length > 0)
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      {zoneCards.map((zc) => {
+                        const isActive = taskSheetZoneFilter === zc.zone
+                        const isDimmed = taskSheetZoneFilter != null && !isActive
+                        return (
+                          <div key={zc.zone} onClick={() => setTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s' }}>
+                            <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
+                            <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {visibleGroups.map((group) => (
+                      <div key={group.label} style={{ marginBottom: 16 }}>
+                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
+                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
+                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
+                            const skills = getSkillsForTask(t.task, zone)
+                            return (
+                              <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                <div style={{ marginBottom: 4 }}><span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span></div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                  {skills.map((skill) => (
+                                    <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
       <DevPlanSheet
         employee={devPlanEmployee}
         open={!!devPlanEmployee}

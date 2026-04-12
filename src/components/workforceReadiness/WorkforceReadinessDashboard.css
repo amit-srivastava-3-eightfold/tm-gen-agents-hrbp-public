@@ -370,7 +370,7 @@
 
 @media (min-width: 1024px) {
   .wfr-dash__cards-row {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     align-items: stretch;
   }
 }
@@ -379,8 +379,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border: 1px solid #d9dce1;
+  background: #f9fafb;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -416,6 +416,15 @@
 .wfr-metric-card__icon {
   font-size: 22px;
   line-height: 1;
+}
+
+.wfr-metric-card--ai-potential .wfr-metric-card__icon-wrap {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #065f46;
+}
+
+.wfr-metric-card--ai-potential .wfr-metric-card__value {
+  color: #065f46;
 }
 
 .wfr-metric-card--potential .wfr-metric-card__icon-wrap {
@@ -486,7 +495,7 @@
   gap: 10px;
   padding-top: 12px;
   margin-top: auto;
-  border-top: 1px solid #eef0f3;
+  border-top: 1px solid #e5e7eb;
 }
 
 .wfr-metric-card__hint {
