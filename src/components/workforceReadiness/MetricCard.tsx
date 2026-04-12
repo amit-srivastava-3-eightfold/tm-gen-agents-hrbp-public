@@ -13,10 +13,14 @@ export interface MetricCardProps {
   badge?: ReactNode
   /** Large metric value (e.g. "24%", "6,384"). */
   value: ReactNode
+  /** Optional explainer rendered between label and value. */
+  explainer?: ReactNode
   /** Primary description below the value. */
   description: React.ReactNode
   /** Secondary hint text in the footer. */
   hint?: string
+  /** Quality tag rendered below description (e.g. "Above industry median"). */
+  tag?: ReactNode
   /** Called when "Learn more" is clicked. */
   onLearnMore?: () => void
   /** Override the footer action label. */
@@ -33,6 +37,8 @@ export function MetricCard({
   value,
   description,
   hint,
+  tag,
+  explainer,
   onLearnMore,
   actionLabel = 'Learn more',
   children,
@@ -48,11 +54,13 @@ export function MetricCard({
         </div>
       </div>
       <p className="wfr-metric-card__value">{value}</p>
-      <p className="wfr-metric-card__primary">{description}</p>
+      {explainer && <p className="wfr-metric-card__primary" style={{ flex: 'none' }}>{explainer}</p>}
+      <p className="wfr-metric-card__primary" style={tag ? { marginBottom: 6, flex: 'none' } : undefined}>{description}</p>
+      {tag && <div style={{ marginBottom: 12 }}>{tag}</div>}
       <div className="wfr-metric-card__footer">
         {hint ? <p className="wfr-metric-card__hint">{hint}</p> : null}
         {onLearnMore ? (
-          <Button type="button" variant="secondary" size="sm" onClick={onLearnMore} className="shrink-0">
+          <Button type="button" variant="outline" size="sm" onClick={onLearnMore} className="shrink-0">
             {actionLabel}
           </Button>
         ) : null}

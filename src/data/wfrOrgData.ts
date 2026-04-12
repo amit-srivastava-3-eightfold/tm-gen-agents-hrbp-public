@@ -1496,23 +1496,6 @@ export const ORG = {
       { task: 'Strategic planning input', score: 5 },
       { task: 'Cross-functional collaboration', score: 11 }
     ],
-    'Onboarding Manager': [
-{ task: 'Implementation planning', score: 55 },
-      { task: 'Milestone tracking', score: 86 },
-      { task: 'Training delivery', score: 48 },
-      { task: 'Stakeholder updates', score: 62 },
-      { task: 'Risk assessment', score: 12 },
-      { task: 'Relationship building', score: 10 },
-      { task: 'Schedule management', score: 72 },
-      { task: 'Email triage and response', score: 85 },
-      { task: 'Report generation', score: 83 },
-      { task: 'Data entry and updates', score: 86 },
-      { task: 'Meeting coordination', score: 59 },
-      { task: 'Document formatting', score: 75 },
-      { task: 'Stakeholder communication', score: 30 },
-      { task: 'Process documentation', score: 63 },
-      { task: 'Compliance tracking', score: 61 }
-    ],
     'Renewals Specialist': [
 { task: 'Renewal forecasting', score: 78 },
       { task: 'Usage analysis', score: 72 },

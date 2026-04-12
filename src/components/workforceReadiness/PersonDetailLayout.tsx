@@ -8,6 +8,8 @@ export interface MetricCardData {
   description: ReactNode
   hint?: string
   badge?: ReactNode
+  tag?: ReactNode
+  explainer?: ReactNode
   onLearnMore?: () => void
 }
 
@@ -22,6 +24,7 @@ export interface TableSectionProps {
 export interface PersonDetailLayoutProps {
   name: string
   subtitle: string
+  aiPotential?: MetricCardData
   readiness: MetricCardData
   potential: MetricCardData
   gap: MetricCardData
@@ -45,6 +48,7 @@ export interface PersonDetailLayoutProps {
 export function PersonDetailLayout({
   name,
   subtitle,
+  aiPotential,
   readiness,
   potential,
   gap,
@@ -78,6 +82,18 @@ export function PersonDetailLayout({
         {heroCard}
 
         <div className={`wfr-dash__cards-row${compactCards ? '' : ' person-detail__cards'}`} style={{ margin: 0 }}>
+            {aiPotential && (
+              <MetricCard
+                variant="ai-potential"
+                icon="bolt"
+                label="AI potential"
+                value={aiPotential.value}
+                explainer={aiPotential.explainer}
+                description={aiPotential.description}
+                tag={aiPotential.tag}
+                onLearnMore={aiPotential.onLearnMore}
+              />
+            )}
             <MetricCard
               variant="potential"
               icon="auto_awesome"
@@ -85,6 +101,7 @@ export function PersonDetailLayout({
               value={potential.value}
               description={potential.description}
               hint={potential.hint}
+              tag={potential.tag}
               onLearnMore={potential.onLearnMore}
             />
             <MetricCard
@@ -95,6 +112,7 @@ export function PersonDetailLayout({
               value={readiness.value}
               description={readiness.description}
               hint={readiness.hint}
+              tag={readiness.tag}
               onLearnMore={readiness.onLearnMore}
             />
             <MetricCard
@@ -104,6 +122,7 @@ export function PersonDetailLayout({
               value={gap.value}
               description={gap.description}
               hint={gap.hint}
+              tag={gap.tag}
               onLearnMore={gap.onLearnMore}
             />
           </div>

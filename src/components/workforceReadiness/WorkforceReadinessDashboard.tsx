@@ -408,17 +408,41 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(2px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', width: 'min(820px, calc(100vw - 48px))', maxHeight: 'calc(100vh - 48px)', overflow: 'auto', background: '#ffffff', borderRadius: 16, padding: '40px 44px', color: '#1a212e', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
+      <div style={{ position: 'relative', width: 'min(1060px, calc(100vw - 48px))', maxHeight: 'calc(100vh - 48px)', overflow: 'auto', background: '#ffffff', borderRadius: 16, padding: '40px 44px', color: '#1a212e', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
         <button type="button" onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 20 }}>
           <span className="material-symbols-outlined">close</span>
         </button>
 
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 8px' }}>Understanding your three core metrics</h2>
-        <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 28px' }}>Three numbers that tell you where your workforce stands — and exactly where to act.</p>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 8px' }}>Understanding your four core metrics</h2>
+        <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 28px' }}>Four numbers that tell you where your workforce stands — and exactly where to act.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          {/* AI Potential card */}
+          <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '20px 16px', background: '#f0fdf4' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#065f46', background: 'rgba(5,150,105,0.12)', borderRadius: 8, padding: 5 }}>bolt</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#065f46' }}>AI Potential</span>
+            </div>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 8px' }}>How much of your work AI is capable of supporting.</h3>
+            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 14px' }}>Scored across every role's tasks using 7 research sources. This is the ceiling — the maximum AI could help with today's technology.</p>
+            <div style={{ borderTop: '1px solid rgba(5,150,105,0.15)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#0f172a' }}>Task scoring</strong> — weighted composite of 7 signals including GenAI analysis and real-world exposure data.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#0f172a' }}>Augmentation zone</strong> — tasks scoring 15–75% where humans lead and AI assists.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', marginTop: 6, flexShrink: 0 }} />
+                <span><strong style={{ color: '#0f172a' }}>Coverage</strong> — 1,016 O*NET occupations, ~5,000 tasks scored.</span>
+              </div>
+            </div>
+          </div>
+
           {/* Unrealized Value card */}
-          <div style={{ border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '20px 18px', background: '#eef2ff' }}>
+          <div style={{ border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '20px 16px', background: '#eef2ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#6366f1', background: 'rgba(99,102,241,0.12)', borderRadius: 8, padding: 5 }}>auto_awesome</span>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>Unrealized Value</span>
@@ -442,7 +466,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           </div>
 
           {/* AI Adoption card */}
-          <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '20px 18px', background: '#f0fdf4' }}>
+          <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '20px 16px', background: '#f0fdf4' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#15803d', background: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: 5 }}>school</span>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#15803d' }}>AI Adoption</span>
@@ -475,7 +499,7 @@ function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open:
           </div>
 
           {/* Transformation Gap card */}
-          <div style={{ border: '1.5px solid #fecaca', borderRadius: 12, padding: '20px 18px', background: '#fef2f2' }}>
+          <div style={{ border: '1.5px solid #fecaca', borderRadius: 12, padding: '20px 16px', background: '#fef2f2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#dc2626', background: 'rgba(220,38,38,0.10)', borderRadius: 8, padding: 5 }}>groups</span>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#dc2626' }}>Transformation Gap</span>
@@ -514,7 +538,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
   headline: React.ReactNode
   subtitle?: React.ReactNode
   pill: React.ReactNode
-  cards: { id: 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; onLearnMore?: () => void }[]
+  cards: { id: 'ai-potential' | 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; tag?: React.ReactNode; explainer?: React.ReactNode; onLearnMore?: () => void }[]
   /** Content rendered between hero and cards (e.g. FocusFirst module) */
   beforeCards?: React.ReactNode
   hideHero?: boolean
@@ -544,7 +568,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
 
       <div className="wfr-dash__cards-row">
         {cards.map((c) => (
-          <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} description={c.description} hint={c.hint} onLearnMore={c.onLearnMore} />
+          <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} explainer={c.explainer} description={c.description} hint={c.hint} tag={c.tag} onLearnMore={c.onLearnMore} />
         ))}
       </div>
 
@@ -1072,11 +1096,22 @@ function BoardView({
 
   const cards = [
     {
+      id: 'ai-potential' as const,
+      label: 'AI potential',
+      val: `${aiPotentialPct}%`,
+      icon: 'bolt',
+      explainer: `How much of your organization's daily work AI is capable of supporting.`,
+      l1: <span style={{ color: '#94a3b8' }}>{aiPotentialPct}% AI potential across {totalEmployeesHero.toLocaleString()} employees</span>,
+      tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
+      delta: null,
+      deltaUp: true,
+    },
+    {
       id: 'potential' as const,
       label: 'Unrealized value',
       val: formatDollar(orgUnrealizedValue),
       icon: 'auto_awesome',
-      l1: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{aiPotentialPct}% AI potential</span> across {totalEmployeesHero.toLocaleString()} employees — hours unlocked × BLS median wages</span></>,
+      l1: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{aiPotentialPct}% AI potential across {totalEmployeesHero.toLocaleString()} employees</span></>,
       delta: null,
       deltaUp: true,
     },
@@ -1087,6 +1122,7 @@ function BoardView({
       val: `${aiReadinessPct}%`,
       icon: 'school',
       l1: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{ready.toLocaleString()} AI-ready of {peopleInAugForCards.toLocaleString()} in augmentable roles</span></>,
+      tag: aiReadinessPct < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined,
       delta: readinessDelta !== 0 ? `${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt` : null,
       deltaUp: readinessDelta > 0,
     },
@@ -1095,7 +1131,8 @@ function BoardView({
       label: 'Transformation gap',
       val: gapPeople.toLocaleString(),
       icon: 'groups',
-      l1: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{gapPeople.toLocaleString()} of {peopleInAugForCards.toLocaleString()} in augmentable roles — your prioritized development pool</span></>,
+      l1: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{gapPeople.toLocaleString()} of {peopleInAugForCards.toLocaleString()} in augmentable roles</span></>,
+      tag: upskillingActive ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined,
       delta: gapDelta !== 0 ? `${gapDelta > 0 ? '+' : ''}${gapDelta}` : null,
       deltaUp: gapDelta < 0, // gap going down is good
     },
@@ -1138,6 +1175,8 @@ function BoardView({
           <>{c.val} <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: c.deltaUp ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: c.deltaUp ? '#f0fdf4' : '#fef2f2', border: `1px solid ${c.deltaUp ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>{c.deltaUp ? '↑' : '↓'} {c.delta}</span></>
         ) : c.val,
         description: c.l1,
+        tag: (c as any).tag,
+        explainer: (c as any).explainer,
         onLearnMore: () => setMetricInfoOpen(true),
       }))}
       beforeCards={
@@ -2303,7 +2342,7 @@ export function WorkforceReadinessDashboard({
     setEmpSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
-  const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
   const [mgrTaskSheetZoneFilter, setMgrTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
@@ -2435,9 +2474,10 @@ export function WorkforceReadinessDashboard({
           </div>
         ) : undefined}
         cards={[
-          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{mgrDept.aiPotential}% AI potential</span> across {mgrData.employees} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'readiness', icon: 'school', label: 'AI adoption', badge: readinessBadge, value: `${displayReadinessPct}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrCollComplete ? `Calibrated from data collection.` : `Estimated: ${managerTeamData.readyCount} of ${mgrData.employees} may be AI-ready based on skill profiles`}</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${displayNotReady} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'ai-potential' as const, icon: 'bolt', label: 'AI potential', value: `${mgrDept.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'readiness', icon: 'school', label: 'AI adoption', badge: readinessBadge, value: `${displayReadinessPct}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrCollComplete ? `Calibrated from data collection.` : `Estimated: 0 of ${mgrData.employees} may be AI-ready`}</span></>, tag: mgrCollComplete ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${displayNotReady} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {mgrData.employees} employees</span></>, tag: showUpskilling ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined, onLearnMore: () => setMgrMetricInfoOpen(true) },
         ]}
       >
         <div>
@@ -2500,7 +2540,7 @@ export function WorkforceReadinessDashboard({
                     {empTaskCount > 0 && emp.title ? (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name }) }}
+                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }) }}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}
                       >
                         {empTaskCount}
@@ -2599,13 +2639,13 @@ export function WorkforceReadinessDashboard({
       {mgrTaskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
           <div className="wfr-trend-sheet__backdrop" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} />
-          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.title}`}>
+          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
               <div>
                 <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetRole.title}</h2>
+                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}</h2>
                 </div>
-                <p className="wfr-trend-sheet__sub">{mgrTaskSheetRole.dept} — Task breakdown</p>
+                <p className="wfr-trend-sheet__sub">{mgrTaskSheetRole.employeeName ? `${mgrTaskSheetRole.title} — Task breakdown` : `${mgrTaskSheetRole.dept} — Task breakdown`}</p>
               </div>
               <button type="button" className="wfr-trend-sheet__close" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
@@ -2945,9 +2985,10 @@ export function WorkforceReadinessDashboard({
           )
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
-            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#6366f1' }}>{d.aiPotential}% AI potential</span> across {headcount.toLocaleString()} employees — hours unlocked × BLS median wages</span></>, onLearnMore: () => setDashOpenMetric('potential') },
-            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${dirWeightedReadiness}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{hrbpCollectionComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`}</span></>, onLearnMore: () => setDashOpenMetric('readiness') },
-            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${dirTotalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashOpenMetric('gap') },
+            { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashOpenMetric('potential') },
+            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashOpenMetric('potential') },
+            { id: 'readiness', icon: 'school', label: 'AI adoption', badge: collBadge, value: `${dirWeightedReadiness}%`, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{hrbpCollectionComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`}</span></>, tag: dirWeightedReadiness < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined, onLearnMore: () => setDashOpenMetric('readiness') },
+            { id: 'gap', icon: 'groups', label: 'Transformation gap', value: `${dirTotalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {headcount.toLocaleString()} employees</span></>, tag: hrbpUpskillingActive ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined, onLearnMore: () => setDashOpenMetric('gap') },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -3237,6 +3278,7 @@ export function WorkforceReadinessDashboard({
               )}
               name={hrbpName ?? ''}
               subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
+              aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashOpenMetric('potential') }}
               readiness={{
                 value: `${dirWeightedReadiness}%`,
                 description: hrbpCollectionComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${headcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${headcount.toLocaleString()} may be AI-ready`,
@@ -3539,6 +3581,7 @@ export function WorkforceReadinessDashboard({
               }
               name={directorData.name}
               subtitle={`${directorData.title} · ${d.name} · ${dirHeadcount.toLocaleString()} employees`}
+              aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashOpenMetric('potential') }}
               readiness={{
                 value: `${dirMeasuredReadiness}%`,
                 description: effDirCollComplete ? `${dirReadyCount.toLocaleString()} AI-ready of ${dirHeadcount.toLocaleString()}` : `Estimated: ${dirReadyCount.toLocaleString()} of ${dirHeadcount.toLocaleString()} may be AI-ready`,
@@ -3814,6 +3857,7 @@ export function WorkforceReadinessDashboard({
               }
               name={seniorMgrData.name}
               subtitle={`${seniorMgrData.title} · ${d.name} · ${srHeadcount.toLocaleString()} employees`}
+              aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashOpenMetric('potential') }}
               readiness={{
                 value: `${srMeasuredReadiness}%`,
                 description: effSrCollComplete ? `${srReadyCount.toLocaleString()} AI-ready of ${srHeadcount.toLocaleString()}` : `Estimated: ${srReadyCount.toLocaleString()} of ${srHeadcount.toLocaleString()} may be AI-ready`,
