@@ -214,14 +214,14 @@ function advanceAllHrbps(prev: WfrPersistedState, from: WfrProgramState | null, 
 
 const READINESS_SEMICIRCLE = {
   hero: {
-    dim: 260,
-    r: 98,
-    sw: 18,
-    cy: 178,
-    vbY: 52,
-    vbH: 128,
-    labelGroupY: 188,
-    pctDy: -16,
+    dim: 180,
+    r: 68,
+    sw: 14,
+    cy: 124,
+    vbY: 40,
+    vbH: 88,
+    labelGroupY: 130,
+    pctDy: -12,
     svgClass: 'wfr-metric-arc--lg wfr-metric-arc--readiness-hero wfr-metric-arc--semicircle',
   },
   compact: {
@@ -274,13 +274,14 @@ function MetricArcReadinessSemicircle({
         overflow="visible"
         aria-hidden
       >
-        <path d={arc(100)} fill="none" stroke="#f1f5f9" strokeWidth={sw} strokeLinecap="round" />
+        <path d={arc(100)} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} strokeLinecap="round" />
         <path
           d={arc(readiness)}
           fill="none"
-          stroke="var(--wfr-readiness)"
+          stroke="#22c55e"
           strokeWidth={sw}
           strokeLinecap="round"
+          style={{ filter: 'drop-shadow(0 0 6px rgba(34,197,94,0.5))' }}
         />
         <g transform={`translate(${cx}, ${labelGroupY})`} className="wfr-metric-arc__semicircle-labels">
           <text
@@ -547,7 +548,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
   return (
     <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {!hideHero && <div className="wfr-dash__hero">
-        <div className="shrink-0">
+        <div className="shrink-0" style={{ marginTop: -15 }}>
           <MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />
         </div>
         <div className="wfr-dash__hero-copy">
@@ -555,12 +556,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
             {totalEmployees.toLocaleString()} employees {EM} Q1 2026
           </p>
           <h2 className="wfr-dash__headline">{headline}</h2>
-          {subtitle && <p style={{ fontSize: 15, color: '#475569', margin: '2px 0 10px', lineHeight: 1.5 }}>{subtitle}</p>}
-          <div className="wfr-dash__capture-tag-wrap">
-            <Pill variant="neutral" size="small" className="wfr-dash__capture-tag !h-auto !max-w-none !py-2 !px-3.5">
-              <span className="wfr-type-body2 text-[#1a212e]">{pill}</span>
-            </Pill>
-          </div>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', margin: '6px 0 0', lineHeight: 1.5 }}>{pill}</p>
         </div>
       </div>}
 
