@@ -3,8 +3,6 @@ import { useUser } from '../contexts/UserContext'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import './SkillAssessmentsTab.css'
 
-// Learner(0) → Developing(1) → Proficient(2) → Advanced(3) → Worldclass(4)
-const LEVELS = ['Learner', 'Developing', 'Proficient', 'Advanced', 'Worldclass']
 
 interface SkillEntry {
   name: string

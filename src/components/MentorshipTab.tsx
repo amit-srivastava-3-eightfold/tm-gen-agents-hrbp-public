@@ -1,11 +1,7 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useUser } from '../contexts/UserContext'
 import './MentorshipTab.css'
 
 export function MentorshipTab() {
-  const { currentUser } = useUser()
-  const firstName = currentUser.name.split(' ')[0]
-
   return (
     <div className="mentorship-tab">
       {/* Left column */}
