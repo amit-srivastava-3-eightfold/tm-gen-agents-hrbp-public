@@ -28,7 +28,7 @@ import {
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
 import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
 import './CollectionProgressPanel.css'
-import { FocusFirstModule, type FocusCollectionLaunchSummary } from './FocusFirstModule'
+import { FocusFirstModule, WfrHeroCard, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { FocusFirstLaunchDialog } from './FocusFirstLaunchDialog'
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
@@ -547,18 +547,14 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
 }) {
   return (
     <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {!hideHero && <div className="wfr-dash__hero">
-        <div className="shrink-0" style={{ marginTop: -15 }}>
-          <MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />
-        </div>
-        <div className="wfr-dash__hero-copy">
-          <p className="wfr-dash__eyebrow">
-            {totalEmployees.toLocaleString()} employees {EM} Q1 2026
-          </p>
-          <h2 className="wfr-dash__headline">{headline}</h2>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', margin: '6px 0 0', lineHeight: 1.5 }}>{pill}</p>
-        </div>
-      </div>}
+      {!hideHero && (
+        <WfrHeroCard
+          gauge={<div style={{ marginTop: -15 }}><MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" /></div>}
+          eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
+          headline={<span className="wfr-dash__headline">{headline}</span>}
+          supportingText={pill}
+        />
+      )}
 
       {beforeCards}
 
@@ -1368,10 +1364,10 @@ function BoardView({
                 const isPriority = priorityRank !== undefined
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                      <DataTableCell className="font-semibold">
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                      <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                         <div className="flex items-center gap-2">
-                          {d.name}
+                          <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
                           {isPriority ? (
                             <PriorityTooltip tooltip={priorityRank === 0 ? 'Largest transformation gap — highest AI potential with lowest current adoption' : 'Top 3 by transformation gap — among the widest adoption gaps in your org'}>
                               <Badge variant="outline" size="24" className="ml-1 shrink-0 font-semibold" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
@@ -1381,7 +1377,11 @@ function BoardView({
                           ) : null}
                         </div>
                       </DataTableCell>
-                      <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
+                      <DataTableCell className="text-[#475569]">
+                        {deptHrbps.length > 1
+                          ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
+                          : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
+                      </DataTableCell>
                       <DataTableCell metric>
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
@@ -1421,9 +1421,15 @@ function BoardView({
                 const gapCount = deptGapHeadcount(d)
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                      <DataTableCell className="font-semibold">{d.name}</DataTableCell>
-                      <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                      <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
+                        <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
+                      </DataTableCell>
+                      <DataTableCell className="text-[#475569]">
+                        {deptHrbps.length > 1
+                          ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
+                          : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
+                      </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
                       <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}</button></DataTableCell>
                       <DataTableCell align="right">
@@ -1455,9 +1461,15 @@ function BoardView({
                 const gapCount = deptGapHeadcount(d)
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} onClick={() => onDeptClick(d)}>
-                      <DataTableCell className="font-semibold">{d.name}</DataTableCell>
-                      <DataTableCell className="text-[#475569]">{deptHrbps.length > 1 ? `${deptHrbps[0].hrbp} +${deptHrbps.length - 1}` : deptHrbps[0]?.hrbp ?? '—'}</DataTableCell>
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                      <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
+                        <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
+                      </DataTableCell>
+                      <DataTableCell className="text-[#475569]">
+                        {deptHrbps.length > 1
+                          ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
+                          : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
+                      </DataTableCell>
                       <DataTableCell metric>
                         <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
                       </DataTableCell>
@@ -1998,7 +2010,7 @@ export function WorkforceReadinessDashboard({
   const singleDeptHrbp = isHrbp && scopedDepartments?.length === 1
 
   // Auto-select view from query params (e.g. navigating back from Manager Detail breadcrumbs)
-  const [view, setView] = useState<'board' | 'hrbp' | 'director' | 'seniorMgr'>(() => {
+  const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>(() => {
     const p = new URLSearchParams(window.location.search)
     // URL params take precedence over singleDeptHrbp default (e.g. breadcrumb back-nav)
     if (p.get('seniorMgr') && p.get('director')) return 'seniorMgr'
@@ -2012,6 +2024,7 @@ export function WorkforceReadinessDashboard({
     const p = new URLSearchParams(window.location.search)
     return p.get('hrbp') ?? null
   })
+  const [deptViewName, setDeptViewName] = useState<string | null>(null)
 
   // Reset view when persona changes (e.g. HRBP → CHRO via avatar dropdown)
   // Force full reload when persona changes — useState initializers don't re-run on prop changes
@@ -2765,12 +2778,8 @@ export function WorkforceReadinessDashboard({
         {view === 'board' && (
           <BoardView
             onDeptClick={(d) => {
-              // Dept view removed — navigate to the first HRBP for this dept
-              const deptHrbps = getDeptHrbps(d.name)
-              if (deptHrbps.length > 0) {
-                setHrbpName(deptHrbps[0].hrbp)
-                setView('hrbp')
-              }
+              setDeptViewName(d.name)
+              setView('dept')
               window.scrollTo(0, 0)
             }}
             onHrbpClick={(name) => {
@@ -2793,6 +2802,154 @@ export function WorkforceReadinessDashboard({
             onUnrealizedValueClick={setUvSheetData}
           />
         )}
+        {view === 'dept' && deptViewName && (() => {
+          const d = departments.find(x => x.name === deptViewName)
+          if (!d) return null
+          const deptHrbpList = getDeptHrbps(d.name)
+          const trend = deptReadinessTrend(d.name)
+          const { collectionComplete: deptCollComplete, hrbpPlansCreated: deptPlansCreated } = deriveWfrFlags(wfrState.state)
+          const deptTrendDelta = deptCollComplete ? trend.delta : 0
+          const deptBoostBase = deptPlansCreated ? 10 : 0
+          const nhDept = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+
+          // Allocate employees globally across all managers (same pattern as HRBP view)
+          const allDeptManagers = deptManagerTeams(d.name, d.employees)
+          const deptRawEmps = getEmployeesForRole({ title: d.name, employees: d.employees, aiReadiness: d.aiReadiness, aiPotential: d.aiPotential } as RoleRowType)
+          let deptRunIdx = 0
+          const deptMgrCalibrated = allDeptManagers.map((mgr) => {
+            const emps = deptRawEmps.slice(deptRunIdx, Math.min(deptRunIdx + mgr.employees, deptRawEmps.length))
+            deptRunIdx += mgr.employees
+            return emps.map(e => {
+              const empBoost = deptPlansCreated ? Math.round(deptBoostBase * (0.5 + (nhDept(e.name) % 10) / 10)) : 0
+              return Math.max(0, Math.min(100, e.readinessPct + deptTrendDelta + empBoost))
+            })
+          })
+
+          // Compute per-HRBP metrics via manager slicing
+          type DeptHrbpRow = { hrbp: string; headcount: number; readiness: number; gap: number; unrealizedValue: number; mgrStartIdx: number; mgrCount: number }
+          const deptHrbpRows: DeptHrbpRow[] = []
+          let deptMgrStart = 0
+          for (const { hrbp, headcount } of deptHrbpList) {
+            const slicedIdxs: number[] = []
+            let covered = 0
+            for (let m = deptMgrStart; m < allDeptManagers.length && covered < headcount; m++) {
+              slicedIdxs.push(m)
+              covered += allDeptManagers[m].employees
+            }
+            const calibrated = slicedIdxs.flatMap(i => deptMgrCalibrated[i] ?? [])
+            const readiness = calibrated.length > 0
+              ? Math.round(calibrated.reduce((s, v) => s + v, 0) / calibrated.length)
+              : (deptCollComplete ? d.aiReadiness + deptTrendDelta : d.aiReadiness)
+            const gap = Math.max(0, headcount - Math.round(headcount * readiness / 100))
+            const unrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
+            deptHrbpRows.push({ hrbp, headcount, readiness, gap, unrealizedValue, mgrStartIdx: deptMgrStart, mgrCount: slicedIdxs.length })
+            deptMgrStart += slicedIdxs.length
+          }
+
+          const deptTotalEmp = deptHrbpRows.reduce((s, r) => s + r.headcount, 0)
+          const deptAvgReadiness = deptTotalEmp > 0 ? Math.round(deptHrbpRows.reduce((s, r) => s + r.readiness * r.headcount, 0) / deptTotalEmp) : d.aiReadiness
+          const deptTotalGap = deptHrbpRows.reduce((s, r) => s + r.gap, 0)
+          const multiHrbp = deptHrbpList.length > 1
+          const deptCollBadge = deptCollComplete
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
+            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
+
+          const deptBreadcrumb = (
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem><BreadcrumbLink onClick={() => { setView('board'); setDeptViewName(null) }}>Overview</BreadcrumbLink></BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem><BreadcrumbPage>{d.name}</BreadcrumbPage></BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          )
+
+          return (
+            <PersonDetailLayout
+              breadcrumb={deptBreadcrumb}
+              name={d.name}
+              subtitle={`Department · ${d.employees.toLocaleString()} employees`}
+              readiness={{ value: `${deptAvgReadiness}%`, badge: deptCollBadge, description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{deptCollComplete ? `${(deptTotalEmp - deptTotalGap).toLocaleString()} AI-ready of ${deptTotalEmp.toLocaleString()}` : `Estimated: ${(deptTotalEmp - deptTotalGap).toLocaleString()} of ${deptTotalEmp.toLocaleString()} may be AI-ready`}</span></>, tag: deptAvgReadiness < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatDollar(d.unrealizedValue), description: <>The annual productivity value waiting to be captured.</>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={{ value: `${deptTotalGap.toLocaleString()} not ready`, description: <><span>Employees in augmentable roles who aren&apos;t yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {deptTotalEmp.toLocaleString()} employees</span></> }}
+              tableTitle={multiHrbp ? `${deptHrbpList.length} HR Business Partners` : 'Team managers'}
+              tableHint={multiHrbp ? 'Click an HRBP to see their team' : `${deptHrbpRows[0]?.hrbp ?? ''} · ${(deptHrbpRows[0]?.headcount ?? 0).toLocaleString()} employees`}
+              compactCards
+            >
+              {multiHrbp ? (
+                <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead style={{ width: '28%' }}>HRBP</DataTableHead>
+                      <DataTableHead metric style={{ width: '22%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '28%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {deptHrbpRows.map(row => (
+                      <DataTableRow key={row.hrbp} style={{ cursor: 'pointer' }} onClick={() => { setHrbpName(row.hrbp); setView('hrbp'); window.scrollTo(0, 0) }}>
+                        <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
+                          <div>
+                            <span className="text-[#3b5bdb] hover:underline">{row.hrbp}</span>
+                            <div className="text-[#94a3b8] text-[11px] font-normal">{row.headcount.toLocaleString()} employees</div>
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={row.readiness} /></DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, unrealizedValue: row.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</button></DataTableCell>
+                        <DataTableCell align="right">
+                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                            <span className="wfr-type-h6">{row.gap.toLocaleString()} ({row.headcount > 0 ? Math.round(row.gap / row.headcount * 100) : 0}%)</span>
+                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {row.headcount.toLocaleString()}</div>
+                          </div>
+                        </DataTableCell>
+                      </DataTableRow>
+                    ))}
+                  </DataTableBody>
+                </DataTable>
+              ) : (
+                // Single HRBP: show team managers
+                <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead style={{ width: '32%' }}>Manager</DataTableHead>
+                      <DataTableHead metric style={{ width: '24%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {allDeptManagers.slice(deptHrbpRows[0]?.mgrStartIdx ?? 0, (deptHrbpRows[0]?.mgrStartIdx ?? 0) + (deptHrbpRows[0]?.mgrCount ?? 0)).map((mgr, localIdx) => {
+                      const globalIdx = (deptHrbpRows[0]?.mgrStartIdx ?? 0) + localIdx
+                      const cal = deptMgrCalibrated[globalIdx] ?? []
+                      const mgrReadiness = cal.length > 0 ? Math.round(cal.reduce((s, v) => s + v, 0) / cal.length) : d.aiReadiness
+                      const mgrGap = Math.max(0, mgr.employees - Math.round(mgr.employees * mgrReadiness / 100))
+                      const mgrUnrealizedValue = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
+                      return (
+                        <DataTableRow key={mgr.manager}>
+                          <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
+                            <div>
+                              <span>{mgr.manager}</span>
+                              <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {mgr.employees.toLocaleString()} employees</div>
+                            </div>
+                          </DataTableCell>
+                          <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={mgrReadiness} /></DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: mgrUnrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(mgrUnrealizedValue)}</button></DataTableCell>
+                          <DataTableCell align="right">
+                            <div className="tabular-nums" style={{ textAlign: 'right' }}>
+                              <span className="wfr-type-h6">{mgrGap.toLocaleString()} ({mgr.employees > 0 ? Math.round(mgrGap / mgr.employees * 100) : 0}%)</span>
+                              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
+                            </div>
+                          </DataTableCell>
+                        </DataTableRow>
+                      )
+                    })}
+                  </DataTableBody>
+                </DataTable>
+              )}
+            </PersonDetailLayout>
+          )
+        })()}
         {view === 'hrbp' && hrbpName && (() => {
           const coverage = getHrbpDepts(hrbpName)
           // Since each HRBP is dedicated to one dept, take the first

@@ -150,58 +150,17 @@
   text-decoration: underline;
 }
 
-/* Hero: arc left, text right */
-.home-page__wfr-compact__hero {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.home-page__wfr-compact .wfr-hero-card {
   margin-bottom: 16px;
 }
 
-.home-page__wfr-compact__hero-text {
-  flex: 1;
-  min-width: 0;
+.home-page__wfr-compact a .wfr-hero-card {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.home-page__wfr-compact__eyebrow {
-  margin: 0 0 4px;
-  font: var(--typography-caption-semibold);
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-size: 11px;
-}
-
-.home-page__wfr-compact__headline {
-  margin: 0 0 8px;
-  font: var(--typography-body2);
-  color: #1A212E;
-  line-height: 1.4;
-}
-
-.home-page__wfr-compact__headline-pct {
-  font-weight: 700;
-  color: #15803d;
-}
-
-.home-page__wfr-compact__headline-rest {
-  font-weight: 400;
-}
-
-.home-page__wfr-compact__gap-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  font-size: 12px;
-  font-weight: 500;
-  color: #1a212e;
-}
-
-.home-page__wfr-compact__gap-badge strong {
-  font-weight: 700;
-  color: #b91c1c;
+.home-page__wfr-compact a:hover .wfr-hero-card {
+  opacity: 0.9;
 }
 
 /* Arc component */
@@ -213,59 +172,21 @@
 }
 
 .home-wfr-arc__pct {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
-  fill: #15803d;
+  fill: #fff;
   font-family: var(--font-family);
 }
 
 .home-wfr-arc__label {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 600;
-  fill: #64748b;
+  fill: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-family: var(--font-family);
 }
 
-/* RA section below hero */
-.home-page__wfr-compact__rec {
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #fee2e2 0%, #fff5f5 100%);
-  border: 1px solid #fca5a5;
-}
-
-.home-page__wfr-compact__rec-head {
-  margin-bottom: 6px;
-}
-
-.home-page__wfr-compact__rec-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #dc2626;
-}
-
-.home-page__wfr-compact__rec-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.home-page__wfr-compact__rec-body {
-  flex: 1;
-  margin: 0;
-  font: var(--typography-body3);
-  color: #4F5666;
-  line-height: 1.4;
-}
-
-.home-page__wfr-compact__rec-row a {
-  text-decoration: none;
-  flex-shrink: 0;
-}
 
 @media (max-width: 640px) {
   .home-page__wfr-compact__hero {

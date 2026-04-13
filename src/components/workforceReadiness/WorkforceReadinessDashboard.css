@@ -266,9 +266,9 @@
   margin-bottom: 8px;
 }
 
-.wfr-dash__hero {
-  background: var(--color-blue-90, #002a47);
-  border: none;
+/* ── Shared hero card (home page + WFR dashboard) ── */
+.wfr-hero-card {
+  background: linear-gradient(135deg, #001829 0%, #004070 100%);
   border-radius: 16px;
   padding: 28px 32px;
   display: flex;
@@ -276,16 +276,34 @@
   align-items: center;
 }
 
-.wfr-dash__hero-copy {
+.wfr-hero-card__gauge {
+  flex-shrink: 0;
+}
+
+.wfr-hero-card__copy {
   flex: 1;
 }
 
-.wfr-dash__eyebrow {
+.wfr-hero-card__eyebrow {
   font: var(--typography-caption-semibold);
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin: 0 0 6px;
+}
+
+.wfr-hero-card__headline {
+  color: #fff;
+  margin: 0 0 4px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.wfr-hero-card__supporting {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
 .wfr-dash__headline {
@@ -1318,8 +1336,9 @@
 /* ─── RA Card v2 — clean, compact layout ─── */
 
 .wfr-ra-card {
-  background: linear-gradient(180deg, #fee2e2 0%, #fff5f5 100%);
-  border: 1px solid #fca5a5;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #ef4444;
   border-radius: 12px;
   padding: 20px 24px;
   display: flex;
@@ -1328,8 +1347,9 @@
 }
 
 .wfr-ra-card--warn {
-  background: linear-gradient(180deg, #fef3c7 0%, #fffbeb 100%);
-  border-color: #fcd34d;
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #f59e0b;
 }
 .wfr-ra-card--warn .wfr-ra-card__fill {
   background: #d97706;
@@ -1339,14 +1359,33 @@
 }
 
 .wfr-ra-card--success {
-  background: linear-gradient(180deg, #dcfce7 0%, #f0fdf4 100%);
-  border-color: #86efac;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  border-left-color: #22c55e;
 }
 .wfr-ra-card--success .wfr-ra-card__fill {
   background: #15803d;
 }
 .wfr-ra-card--success .wfr-ra-card__track {
   background: rgba(21, 128, 61, 0.15);
+}
+
+.wfr-ra-card--info {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  border-left-color: #6366f1;
+}
+.wfr-ra-card--info .wfr-ra-card__eyebrow {
+  color: #3b5bdb;
+}
+
+.wfr-ra-card--priority {
+  background: #fff5f5;
+  border-color: #fecaca;
+  border-left-color: #ef4444;
+}
+.wfr-ra-card--priority .wfr-ra-card__eyebrow {
+  color: #dc2626;
 }
 
 /* Animate card transition from warn to success */

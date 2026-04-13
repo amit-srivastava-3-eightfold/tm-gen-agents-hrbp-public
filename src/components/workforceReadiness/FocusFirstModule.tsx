@@ -1,5 +1,5 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useCallback, useMemo, useState, type MouseEvent } from 'react'
+import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import {
   departments,
   ORG,
@@ -18,6 +18,68 @@ import type { UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 export type { FocusCollectionLaunchSummary }
 
 export type FocusFirstCollectionAttentionScope = 'org' | 'dept'
+
+// ── Shared hero card chrome ──────────────────────────────────────────────────
+
+interface WfrHeroCardProps {
+  gauge: ReactNode
+  eyebrow: ReactNode
+  headline: ReactNode
+  supportingText?: ReactNode
+}
+
+export function WfrHeroCard({ gauge, eyebrow, headline, supportingText }: WfrHeroCardProps) {
+  return (
+    <div className="wfr-hero-card">
+      <div className="wfr-hero-card__gauge">{gauge}</div>
+      <div className="wfr-hero-card__copy">
+        <p className="wfr-hero-card__eyebrow">{eyebrow}</p>
+        <h2 className="wfr-hero-card__headline">{headline}</h2>
+        {supportingText && <p className="wfr-hero-card__supporting">{supportingText}</p>}
+      </div>
+    </div>
+  )
+}
+
+// ── Shared presentational rec card used by both the WFR dashboard and home page ──
+
+interface WfrRecCardProps {
+  variant: 'warn' | 'success' | 'info' | 'priority'
+  icon: string
+  eyebrow: string
+  body: ReactNode
+  subtitle?: ReactNode
+  cta?: ReactNode
+  progress?: { pct: number; label: string }
+}
+
+export function WfrRecCard({ variant, icon, eyebrow, body, subtitle, cta, progress }: WfrRecCardProps) {
+  return (
+    <div className={`wfr-ra-card wfr-ra-card--${variant}`}>
+      <div className="wfr-ra-card__header">
+        <span className="wfr-ra-card__eyebrow">
+          <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>{icon}</span>{' '}{eyebrow}
+        </span>
+      </div>
+      <div className="wfr-ra-card__cta-row">
+        <div style={{ flex: 1 }}>
+          <p className="wfr-ra-card__cta-text" style={subtitle ? { fontWeight: 600, marginBottom: 4 } : undefined}>{body}</p>
+          {subtitle && <p className="wfr-ra-card__hint">{subtitle}</p>}
+          {progress && (
+            <div className="wfr-ra-card__mini-progress" style={{ marginTop: 8 }}>
+              <span className="wfr-ra-card__mini-pct tabular-nums">{progress.pct}%</span>
+              <div className="wfr-ra-card__mini-track">
+                <div className="wfr-ra-card__mini-fill" style={{ width: `${progress.pct}%` }} />
+              </div>
+              <span className="wfr-ra-card__mini-label">{progress.label}</span>
+            </div>
+          )}
+        </div>
+        {cta}
+      </div>
+    </div>
+  )
+}
 
 export interface FocusFirstCollectionCardProps {
   snapshot: WfrDemoCollectionSnapshot
@@ -619,7 +681,7 @@ function FocusFirstModuleBoard({
             </span>
           </div>
           <p className="wfr-ra-card__cta-text">
-            Review your team&apos;s estimated AI adoption scores and identify which roles have the biggest opportunity for augmentation — before data collection kicks off.
+            Review estimated AI adoption across your team.
           </p>
         </div>
       </div>
