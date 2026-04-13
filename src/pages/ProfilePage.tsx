@@ -50,7 +50,7 @@ export function ProfilePage() {
   return (
     <div className="profile-page">
       <NavbarApp />
-      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
+      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : currentUser.id === 'csm' ? { wavesVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
         <header className="profile-page__header" />
       </ProductBackground>
       <main className="profile-page__main">

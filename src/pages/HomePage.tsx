@@ -312,7 +312,7 @@ export function HomePage() {
   return (
     <div className="home-page">
       <NavbarApp />
-      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
+      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : currentUser.id === 'csm' ? { wavesVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
       <header className="home-page__header">
         <div className="home-page__hero">
           <div className="home-page__avatar-wrap">
