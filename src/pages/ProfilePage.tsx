@@ -22,6 +22,7 @@ import { WorkExperienceCard } from '../components/WorkExperienceCard'
 import { CoursesCard } from '../components/CoursesCard'
 import { EducationCard } from '../components/EducationCard'
 import { EmptySectionCard } from '../components/EmptySectionCard'
+import { SkillAssessmentsTab } from '../components/SkillAssessmentsTab'
 import { SkillGoalsCard } from '../components/SkillGoalsCard'
 import { PreferencesCard } from '../components/PreferencesCard'
 import '../components/AboutCard.css'
@@ -191,10 +192,7 @@ export function ProfilePage() {
               </div>
             </Tabs.Content>
             <Tabs.Content value="skills" className="tabs-with-lines__content">
-              <div className="profile-section">
-                <h2 className="profile-section__title">Skills and performance</h2>
-                <p className="profile-section__text">Skills content goes here.</p>
-              </div>
+              <SkillAssessmentsTab />
             </Tabs.Content>
             <Tabs.Content value="development" className="tabs-with-lines__content">
               <div className="profile-section">
