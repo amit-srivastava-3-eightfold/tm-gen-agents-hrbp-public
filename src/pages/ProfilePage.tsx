@@ -156,8 +156,6 @@ export function ProfilePage() {
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
                   <AboutCard key={currentUser.id} />
-                  <WorkExperienceCard />
-                  <CoursesCard />
                   <SkillsCard />
                   <LanguagesCard />
                   <MobilityCard
@@ -165,6 +163,8 @@ export function ProfilePage() {
                     travelValue={currentUser.flexibilityToTravel}
                   />
                   <ProjectsCard />
+                  <CoursesCard />
+                  <WorkExperienceCard />
                 </div>
                 <div className="col-span-4 flex flex-col gap-6">
                   <OrganizationCard />
