@@ -160,17 +160,17 @@ export function SkillAssessmentsTab() {
         <div className="skill-assessments-tab__promo skill-assessments-tab__promo--teal">
           <h3 className="skill-assessments-tab__promo-title">Courses</h3>
           <p className="skill-assessments-tab__promo-text">Check out recommendations and see what's available now</p>
-          <button type="button" className="skill-assessments-tab__promo-btn">Explore Courses</button>
+          <Button variant="outline" size="sm" style={{ width: '100%', background: '#fff', marginTop: 4 }}>Explore Courses</Button>
         </div>
         <div className="skill-assessments-tab__promo skill-assessments-tab__promo--purple">
           <h3 className="skill-assessments-tab__promo-title">Projects</h3>
           <p className="skill-assessments-tab__promo-text">Check out recommendations and see what's available now</p>
-          <button type="button" className="skill-assessments-tab__promo-btn">Explore Projects</button>
+          <Button variant="outline" size="sm" style={{ width: '100%', background: '#fff', marginTop: 4 }}>Explore Projects</Button>
         </div>
         <div className="skill-assessments-tab__promo skill-assessments-tab__promo--pink">
           <h3 className="skill-assessments-tab__promo-title">Hi {currentUser.name.split(' ')[0]}, create a development plan for your role!</h3>
           <p className="skill-assessments-tab__promo-text">We found some templates that can help you get started</p>
-          <button type="button" className="skill-assessments-tab__promo-btn skill-assessments-tab__promo-btn--pink">Create Development Plan</button>
+          <Button variant="outline" size="sm" style={{ width: '100%', background: '#fff', color: '#7E3A77', borderColor: '#D8B1D4', marginTop: 4 }}>Create Development Plan</Button>
         </div>
       </aside>
     </div>

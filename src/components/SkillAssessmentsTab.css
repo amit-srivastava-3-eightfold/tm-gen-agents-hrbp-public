@@ -285,26 +285,3 @@
   line-height: 1.5;
 }
 
-.skill-assessments-tab__promo-btn {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  background: #fff;
-  border: none;
-  border-radius: 10px;
-  font: var(--typography-body3);
-  font-weight: 600;
-  color: #054D7B;
-  cursor: pointer;
-  text-align: center;
-  transition: background 0.15s;
-  margin-top: 4px;
-}
-
-.skill-assessments-tab__promo-btn:hover {
-  background: #f0f0f0;
-}
-
-.skill-assessments-tab__promo-btn--pink {
-  color: #7E3A77;
-}
