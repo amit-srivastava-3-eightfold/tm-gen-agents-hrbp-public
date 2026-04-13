@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
-  Badge, Button, Pill,
+  Badge, Button,
   Tabs, TabsList, TabsTrigger, TabsContent,
   DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell,
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
@@ -532,7 +532,7 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
 type MgrSortCol = 'name' | 'readiness' | 'potential' | 'gap'
 
 /** Shared overview layout: hero section (MetricArc + headline + pill) + 3 metric cards row. */
-function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, subtitle, pill, cards, beforeCards, hideHero, children }: {
+function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, pill, cards, beforeCards, hideHero, children }: {
   aiPotentialPct: number
   aiReadinessPct: number
   totalEmployees: number
@@ -1991,7 +1991,7 @@ export function WorkforceReadinessDashboard({
   isManager = false,
   personaHrbpNames,
 }: {
-  onViewChange?: (view: 'board' | 'hrbp' | 'director' | 'seniorMgr') => void
+  onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr') => void
   autoLaunchCollection?: boolean
   /** When set, only show these departments (HRBP scoped view) */
   scopedDepartments?: string[]
@@ -2881,8 +2881,8 @@ export function WorkforceReadinessDashboard({
                   <DataTableHeader>
                     <DataTableRow>
                       <DataTableHead style={{ width: '28%' }}>HRBP</DataTableHead>
-                      <DataTableHead metric style={{ width: '22%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric style={{ width: '22%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '28%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
@@ -2913,8 +2913,8 @@ export function WorkforceReadinessDashboard({
                   <DataTableHeader>
                     <DataTableRow>
                       <DataTableHead style={{ width: '32%' }}>Manager</DataTableHead>
-                      <DataTableHead metric style={{ width: '24%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead metric style={{ width: '24%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
