@@ -1,0 +1,89 @@
+.languages-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.languages-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.languages-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.languages-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.languages-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 8px;
+  background: #E8E9EB;
+  color: #4F5666;
+  font: var(--typography-caption-semibold);
+  border-radius: 10px;
+}
+
+.languages-card__edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.languages-card__edit-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.languages-card__edit-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+.languages-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.languages-card__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.languages-card__name {
+  font: var(--typography-body2);
+  font-weight: 600;
+  color: #1A212E;
+}
+
+.languages-card__proficiency {
+  font: var(--typography-body3);
+  color: #4F5666;
+}
