@@ -1,4 +1,4 @@
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, InsightCard } from '@tonyh-2-eightfold/ef-design-system'
 import './MentorshipTab.css'
 
 export function MentorshipTab() {
@@ -80,13 +80,16 @@ export function MentorshipTab() {
       <aside className="mentorship-tab__sidebar">
 
         {/* Mentorships card */}
-        <div className="mentorship-tab__sidebar-card mentorship-tab__sidebar-card--amber">
-          <div className="mentorship-tab__sidebar-header">
-            <h3 className="mentorship-tab__sidebar-title">Mentorships</h3>
-            <div className="mentorship-tab__sidebar-icon-wrap">
-              <span className="material-symbols-outlined mentorship-tab__sidebar-icon">supervisor_account</span>
-            </div>
-          </div>
+        <InsightCard
+          title="Mentorships"
+          icon="supervisor_account"
+          bgColor="#FFF0D6"
+          iconBgColor="#FFE8C2"
+          iconColor="#7D4F07"
+          textColor="#3B2600"
+          buttonLabel="Find a mentor"
+          fixedSize={false}
+        >
           <div className="mentorship-tab__mentorship-section">
             <button type="button" className="mentorship-tab__mentorship-link">
               Mentees <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
@@ -100,7 +103,7 @@ export function MentorshipTab() {
             </button>
             <p className="mentorship-tab__mentorship-empty">No current mentors</p>
           </div>
-        </div>
+        </InsightCard>
 
         {/* Mentorship preferences card */}
         <div className="mentorship-tab__sidebar-card mentorship-tab__sidebar-card--grey">
