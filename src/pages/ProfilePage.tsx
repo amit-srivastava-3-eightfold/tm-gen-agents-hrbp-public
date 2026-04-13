@@ -17,6 +17,7 @@ import { ContactLinksCard } from '../components/ContactLinksCard'
 import { ResumesCard } from '../components/ResumesCard'
 import { MobilityCard } from '../components/MobilityCard'
 import { LanguagesCard } from '../components/LanguagesCard'
+import { ProjectsCard } from '../components/ProjectsCard'
 import { SkillGoalsCard } from '../components/SkillGoalsCard'
 import { PreferencesCard } from '../components/PreferencesCard'
 import '../components/AboutCard.css'
@@ -159,6 +160,7 @@ export function ProfilePage() {
                     relocateValue={currentUser.mobilityPreference}
                     travelValue={currentUser.flexibilityToTravel}
                   />
+                  <ProjectsCard />
                 </div>
                 <div className="col-span-4 flex flex-col gap-6">
                   <OrganizationCard />
