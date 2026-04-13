@@ -3,6 +3,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import { useSearchParams } from 'react-router-dom'
 import { NavbarApp } from '../components/Navbar'
 import { PageHeader } from '../components/PageHeader'
+import { useUser } from '../contexts/UserContext'
 import { PeopleProfileCard } from '../components/PeopleProfileCard'
 import { SEARCH_PEOPLE_CARDS, OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
 import type { PeopleProfileCardData } from '../components/PeopleProfileCard'
@@ -27,6 +28,9 @@ function filterByRole(cards: PeopleProfileCardData[], roleLabel: string): People
 }
 
 export function PeoplePage() {
+  const { currentUser } = useUser()
+  const isEmployee = currentUser.id === 'csm'
+  const isHrbp = currentUser.id === 'jaydon-torff'
   const [searchParams, setSearchParams] = useSearchParams()
   const tabFromUrl = searchParams.get('tab') || 'search'
   const roleFromUrl = searchParams.get('role') ?? ''
@@ -66,7 +70,7 @@ export function PeoplePage() {
   return (
     <div className="people-page">
       <NavbarApp />
-      <PageHeader title="People" />
+      <PageHeader title="People" {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })} />
       <main className="people-page__main">
         <div className="people-page__content">
           <Tabs.Root value={validTab} onValueChange={handleTabChange} className="people-page__tabs">
