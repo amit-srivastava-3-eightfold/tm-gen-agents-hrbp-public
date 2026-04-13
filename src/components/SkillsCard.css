@@ -120,6 +120,104 @@
   color: #4F5666;
 }
 
+/* ── Header right side (assessments btn + edit) ── */
+.skills-card__header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-card__assessments-btn {
+  padding: 6px 14px;
+  border: 1px solid #D9DCE1;
+  border-radius: 20px;
+  background: #F6F7F8;
+  font: var(--typography-body3);
+  color: #1A212E;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.skills-card__assessments-btn:hover {
+  background: #E8E9EB;
+}
+
+/* ── 3-column featured skills section ── */
+.skills-card__featured {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #D9DCE1;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.skills-card__featured-col {
+  background: #fff;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skills-card__featured-skill {
+  margin: 0;
+  font: var(--typography-body2);
+  font-weight: 600;
+  color: #1A212E;
+}
+
+.skills-card__featured-endorser {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+  font-size: 12px;
+}
+
+.skills-card__featured-expert-list {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.skills-card__featured-avatars {
+  display: flex;
+  gap: -4px;
+  margin-top: 2px;
+}
+
+.skills-card__featured-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  object-fit: cover;
+  margin-right: -6px;
+  flex-shrink: 0;
+}
+
+.skills-card__featured-avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-caption-semibold);
+  color: #fff;
+  font-size: 10px;
+}
+
+/* ── "All Skills" section label ── */
+.skills-card__section-label {
+  font: var(--typography-body2);
+  font-weight: 600;
+  color: #1A212E;
+  margin-bottom: 12px;
+}
+
 .skills-card__tags {
   display: flex;
   flex-wrap: wrap;
