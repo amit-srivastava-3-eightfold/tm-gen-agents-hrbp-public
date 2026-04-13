@@ -6,10 +6,41 @@
   font-family: var(--font-family);
 }
 
+.mobility-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
 .mobility-card__title {
-  margin: 0 0 20px;
+  margin: 0;
   font: var(--typography-button1);
   color: #1A212E;
+}
+
+.mobility-card__edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mobility-card__edit-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.mobility-card__edit-btn .material-symbols-outlined {
+  font-size: 20px !important;
 }
 
 .mobility-card__items {
