@@ -1,0 +1,233 @@
+.projects-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.projects-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.projects-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projects-card__title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.projects-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 8px;
+  background: #E8E9EB;
+  color: #4F5666;
+  font: var(--typography-caption-semibold);
+  border-radius: 10px;
+}
+
+.projects-card__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #D9DCE1;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.projects-card__add-btn:hover {
+  background: #E8E9EB;
+  color: #1A212E;
+}
+
+.projects-card__add-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+/* List */
+.projects-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.projects-card__item {
+  padding: 0;
+}
+
+.projects-card__item--divider {
+  border-top: 1px solid #F1F3F5;
+  margin-top: 20px;
+  padding-top: 20px;
+}
+
+.projects-card__item-main {
+  display: flex;
+  gap: 16px;
+}
+
+/* Icon */
+.projects-card__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #1A212E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.projects-card__icon {
+  font-size: 22px !important;
+  color: #fff;
+}
+
+/* Body */
+.projects-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.projects-card__name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.projects-card__name {
+  margin: 0;
+  font: var(--typography-body2);
+  font-weight: 600;
+  color: #1A212E;
+}
+
+.projects-card__date {
+  margin: 2px 0 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.projects-card__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.projects-card__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.projects-card__action-btn:hover {
+  background: #F6F7F8;
+  color: #1A212E;
+}
+
+.projects-card__action-btn .material-symbols-outlined {
+  font-size: 18px !important;
+}
+
+.projects-card__description {
+  margin: 0 0 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  line-height: 1.5;
+}
+
+.projects-card__role {
+  margin: 0 0 10px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  line-height: 1.5;
+}
+
+.projects-card__role strong {
+  font-weight: 600;
+}
+
+/* People rows */
+.projects-card__people-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.projects-card__people-label {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #1A212E;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.projects-card__people {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+}
+
+.projects-card__people--wrap {
+  flex-wrap: wrap;
+}
+
+.projects-card__person {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.projects-card__person-name {
+  font: var(--typography-body3);
+  color: #1A212E;
+  white-space: nowrap;
+}
+
+/* Avatars */
+.projects-card__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.projects-card__avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+}
