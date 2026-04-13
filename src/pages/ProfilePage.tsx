@@ -20,6 +20,8 @@ import { LanguagesCard } from '../components/LanguagesCard'
 import { ProjectsCard } from '../components/ProjectsCard'
 import { WorkExperienceCard } from '../components/WorkExperienceCard'
 import { CoursesCard } from '../components/CoursesCard'
+import { EducationCard } from '../components/EducationCard'
+import { EmptySectionCard } from '../components/EmptySectionCard'
 import { SkillGoalsCard } from '../components/SkillGoalsCard'
 import { PreferencesCard } from '../components/PreferencesCard'
 import '../components/AboutCard.css'
@@ -165,6 +167,10 @@ export function ProfilePage() {
                   <ProjectsCard />
                   <CoursesCard />
                   <WorkExperienceCard />
+                  <EducationCard />
+                  <EmptySectionCard title="Awards" />
+                  <EmptySectionCard title="Patents" />
+                  <EmptySectionCard title="Publications" titleIcon="visibility_off" />
                 </div>
                 <div className="col-span-4 flex flex-col gap-6">
                   <OrganizationCard />
