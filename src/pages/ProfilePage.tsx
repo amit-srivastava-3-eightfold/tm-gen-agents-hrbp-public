@@ -18,6 +18,8 @@ import { ResumesCard } from '../components/ResumesCard'
 import { MobilityCard } from '../components/MobilityCard'
 import { LanguagesCard } from '../components/LanguagesCard'
 import { ProjectsCard } from '../components/ProjectsCard'
+import { WorkExperienceCard } from '../components/WorkExperienceCard'
+import { CoursesCard } from '../components/CoursesCard'
 import { SkillGoalsCard } from '../components/SkillGoalsCard'
 import { PreferencesCard } from '../components/PreferencesCard'
 import '../components/AboutCard.css'
@@ -154,6 +156,8 @@ export function ProfilePage() {
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
                   <AboutCard key={currentUser.id} />
+                  <WorkExperienceCard />
+                  <CoursesCard />
                   <SkillsCard />
                   <LanguagesCard />
                   <MobilityCard
