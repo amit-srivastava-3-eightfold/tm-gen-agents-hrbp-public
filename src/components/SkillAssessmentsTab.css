@@ -45,41 +45,6 @@
   gap: 8px;
 }
 
-.skill-assessments-tab__btn-group {
-  display: flex;
-  align-items: center;
-}
-
-.skill-assessments-tab__btn {
-  padding: 8px 16px;
-  font: var(--typography-body3);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.skill-assessments-tab__btn--outline {
-  background: #fff;
-  border: 1px solid #D9DCE1;
-  border-radius: 8px;
-  color: #1A212E;
-}
-
-.skill-assessments-tab__btn--outline:hover {
-  background: #F6F7F8;
-}
-
-.skill-assessments-tab__btn-group .skill-assessments-tab__btn:first-child {
-  border-radius: 8px 0 0 8px;
-  border-right: none;
-}
-
-.skill-assessments-tab__btn--icon {
-  border-radius: 0 8px 8px 0 !important;
-  padding: 8px 10px;
-  border-left: 1px solid #D9DCE1 !important;
-}
 
 .skill-assessments-tab__description {
   font: var(--typography-body3);
