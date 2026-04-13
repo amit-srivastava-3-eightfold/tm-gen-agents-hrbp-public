@@ -10,6 +10,7 @@ import { Button as DsButton, ProductBackground } from '@tonyh-2-eightfold/ef-des
 import { OpenTo } from '../components/OpenTo'
 import { AboutCard } from '../components/AboutCard'
 import { MentorshipCard } from '../components/MentorshipCard'
+import { MentorshipTab } from '../components/MentorshipTab'
 import { SkillsCard } from '../components/SkillsCard'
 import { OrganizationCard } from '../components/OrganizationCard'
 import { EmployeeInformationCard } from '../components/EmployeeInformationCard'
@@ -288,11 +289,7 @@ export function ProfilePage() {
               </div>
             </Tabs.Content>
             <Tabs.Content value="mentorship" className="tabs-with-lines__content">
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-8">
-                  <MentorshipCard />
-                </div>
-              </div>
+              <MentorshipTab />
             </Tabs.Content>
           </TabsWithLines>
         </div>

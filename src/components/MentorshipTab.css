@@ -1,0 +1,340 @@
+/* ── Layout ── */
+.mentorship-tab {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mentorship-tab__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Cards ── */
+.mentorship-tab__card {
+  background: #fff;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+}
+
+/* Onboarding card */
+.mentorship-tab__card--onboard {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.mentorship-tab__onboard-content {
+  flex: 1;
+}
+
+.mentorship-tab__onboard-title {
+  margin: 0 0 8px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.mentorship-tab__onboard-desc {
+  margin: 0 0 20px;
+  font: var(--typography-body3);
+  color: #4F5666;
+  line-height: 1.5;
+}
+
+.mentorship-tab__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mentorship-tab__step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #F6F7F8;
+  border-radius: 12px;
+}
+
+.mentorship-tab__step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D9DCE1;
+  flex-shrink: 0;
+}
+
+.mentorship-tab__step-label {
+  font: var(--typography-body3);
+  color: #1A212E;
+  flex: 1;
+}
+
+/* Illustration */
+.mentorship-tab__illustration {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mentorship-tab__illustration-blob {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 40% 55% 45%;
+  background: linear-gradient(135deg, #CCEFF5 0%, #B8E8F0 100%);
+  opacity: 0.8;
+}
+
+.mentorship-tab__illustration-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  width: 130px;
+}
+
+.mentorship-tab__illustration-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2DB3C7, #1E8FA0);
+  flex-shrink: 0;
+}
+
+.mentorship-tab__illustration-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 3px;
+}
+
+.mentorship-tab__illustration-line {
+  height: 6px;
+  border-radius: 3px;
+  background: #E8E9EB;
+}
+
+.mentorship-tab__illustration-line--long {
+  width: 100%;
+}
+
+.mentorship-tab__illustration-line--med {
+  width: 75%;
+}
+
+.mentorship-tab__illustration-line--short {
+  width: 50%;
+}
+
+.mentorship-tab__illustration-line--accent {
+  width: 60%;
+  background: #2DB3C7;
+  opacity: 0.5;
+}
+
+/* About card */
+.mentorship-tab__about-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mentorship-tab__section-title {
+  margin: 0 0 4px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.mentorship-tab__visibility {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--typography-body3);
+  color: #4F5666;
+  font-size: 12px;
+}
+
+.mentorship-tab__visibility-icon {
+  font-size: 14px !important;
+  color: #4F5666;
+}
+
+.mentorship-tab__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #D9DCE1;
+  border-radius: 50%;
+  background: #F6F7F8;
+  color: #4F5666;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.mentorship-tab__icon-btn:hover {
+  background: #E8E9EB;
+}
+
+.mentorship-tab__icon-btn .material-symbols-outlined {
+  font-size: 18px !important;
+}
+
+.mentorship-tab__divider {
+  height: 1px;
+  background: #D9DCE1;
+  margin: 16px 0;
+}
+
+.mentorship-tab__divider--amber {
+  background: #F5D89A;
+}
+
+.mentorship-tab__empty-text {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #A1A6B1;
+}
+
+/* ── Sidebar ── */
+.mentorship-tab__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mentorship-tab__sidebar-card {
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.mentorship-tab__sidebar-card--amber {
+  background: #FEF3C7;
+  border: 1px solid #F5D89A;
+}
+
+.mentorship-tab__sidebar-card--grey {
+  background: #fff;
+  border: 1px solid #D9DCE1;
+}
+
+.mentorship-tab__sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.mentorship-tab__sidebar-title {
+  margin: 0;
+  font: var(--typography-button1);
+  color: #92400E;
+}
+
+.mentorship-tab__sidebar-title--dark {
+  color: #1A212E;
+}
+
+.mentorship-tab__sidebar-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(180, 120, 20, 0.12);
+}
+
+.mentorship-tab__sidebar-icon {
+  font-size: 20px !important;
+  color: #B45309;
+}
+
+.mentorship-tab__mentorship-section {
+  margin-top: 4px;
+}
+
+.mentorship-tab__mentorship-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #92400E;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.mentorship-tab__mentorship-empty {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #A1A6B1;
+  font-size: 12px;
+}
+
+/* Preferences */
+.mentorship-tab__pref-desc {
+  margin: 4px 0 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+  font-size: 13px;
+}
+
+.mentorship-tab__pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mentorship-tab__pref-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  font-size: 13px;
+}
+
+.mentorship-tab__pref-info {
+  font-size: 14px !important;
+  color: #A1A6B1;
+  cursor: help;
+}
+
+.mentorship-tab__pref-input {
+  width: 72px;
+  padding: 6px 10px;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  text-align: center;
+  background: #fff;
+  outline: none;
+}
+
+.mentorship-tab__pref-input:focus {
+  border-color: #2DB3C7;
+}
