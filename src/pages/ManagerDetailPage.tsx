@@ -101,6 +101,7 @@ export function ManagerDetailPage() {
   const managerName = decodeURIComponent(managerId ?? '')
   const isHrbp = currentUser.id === 'jaydon-torff'
   const isManager = currentUser.id === 'mateo'
+  const isEmployee = currentUser.id === 'csm'
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
@@ -282,7 +283,7 @@ export function ManagerDetailPage() {
       <ProductBackground
         className="mgr-detail-page__bg"
         variant="career-hub"
-        {...(isHrbp || isManager ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp || isManager ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize="child" overlayBackground>
           <HeaderToolbar>
