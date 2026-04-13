@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useUser } from '../contexts/UserContext'
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import './SkillAssessmentsTab.css'
 
 // Learner(0) → Developing(1) → Proficient(2) → Advanced(3) → Worldclass(4)
@@ -74,17 +75,16 @@ export function SkillAssessmentsTab() {
             <span className="material-symbols-outlined skill-assessments-tab__title-icon">visibility_off</span>
           </div>
           <div className="skill-assessments-tab__actions">
-            <div className="skill-assessments-tab__btn-group">
-              <button type="button" className="skill-assessments-tab__btn skill-assessments-tab__btn--outline">
-                Request assessment
-              </button>
-              <button type="button" className="skill-assessments-tab__btn skill-assessments-tab__btn--outline skill-assessments-tab__btn--icon">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
-              </button>
-            </div>
-            <button type="button" className="skill-assessments-tab__btn skill-assessments-tab__btn--outline">
+            <Button
+              variant="outline"
+              size="sm"
+              trailingIcon={<span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>}
+            >
+              Request assessment
+            </Button>
+            <Button variant="outline" size="sm">
               Edit assessments
-            </button>
+            </Button>
           </div>
         </div>
 
