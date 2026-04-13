@@ -4,6 +4,23 @@ export interface ProfileSkill {
   endorsed?: boolean
 }
 
+export interface FeaturedSkillEndorser {
+  initials: string
+  color: string
+  photoSrc?: string
+}
+
+export interface FeaturedSkill {
+  name: string
+  endorserSummary: string  // e.g. "Alex Nakamura and 2 others at Acme"
+  endorsers: FeaturedSkillEndorser[]
+}
+
+export interface ExpertBlock {
+  count: number
+  skills: string[]
+}
+
 const SALES_ENGINEERING_SKILLS: ProfileSkill[] = [
   { name: 'Product Demos', endorsementCount: 12, endorsed: true },
   { name: 'Technical Sales', endorsementCount: 8 },
@@ -79,8 +96,51 @@ const PROFESSIONAL_SERVICES_SKILLS: ProfileSkill[] = [
   { name: 'Problem Solving', endorsementCount: undefined },
 ]
 
+const ENGINEERING_LEAD_SKILLS: ProfileSkill[] = [
+  { name: 'Platform Reliability', endorsementCount: 11, endorsed: true },
+  { name: 'Engineering Leadership', endorsementCount: 9, endorsed: true },
+  { name: 'System Design', endorsementCount: 8 },
+  { name: 'Infrastructure', endorsementCount: 7 },
+  { name: 'Incident Management', endorsementCount: 6 },
+  { name: 'Observability', endorsementCount: undefined },
+  { name: 'AI/ML Pipelines', endorsementCount: 5 },
+  { name: 'Python', endorsementCount: 9 },
+  { name: 'Kubernetes', endorsementCount: 7 },
+  { name: 'CI/CD', endorsementCount: 4 },
+  { name: 'Technical Mentorship', endorsementCount: undefined },
+  { name: 'Cross-functional Collaboration', endorsementCount: 6 },
+  { name: 'Stakeholder Communication', endorsementCount: undefined },
+  { name: 'Road-mapping', endorsementCount: 3 },
+]
+
+const CSM_FEATURED_SKILLS: FeaturedSkill[] = [
+  {
+    name: 'Platform Reliability',
+    endorserSummary: 'Alex Nakamura and 2 others at Acme',
+    endorsers: [
+      { initials: 'AN', color: '#1565C0', photoSrc: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
+      { initials: 'CW', color: '#2E7D32', photoSrc: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=40&h=40&fit=crop&crop=face' },
+      { initials: 'RK', color: '#6A1B9A', photoSrc: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=40&h=40&fit=crop&crop=face' },
+    ],
+  },
+  {
+    name: 'Engineering Leadership',
+    endorserSummary: 'Cong Wang and 1 other at Acme',
+    endorsers: [
+      { initials: 'CW', color: '#2E7D32', photoSrc: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=40&h=40&fit=crop&crop=face' },
+      { initials: 'JT', color: '#AD1457', photoSrc: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=40&h=40&fit=crop&crop=face' },
+    ],
+  },
+]
+
+const CSM_EXPERT_BLOCK: ExpertBlock = {
+  count: 3,
+  skills: ['Platform Reliability', 'Engineering Leadership', 'System Design'],
+}
+
 /** Skills by profile person ID. Uses mateo/jaydon-torff for current user; 1,2,3,l1-l12 for team profiles. */
-export const PROFILE_SKILLS: Record<string, { skills: ProfileSkill[]; endorserInitials: string; endorserName: string; endorserColor: string }> = {
+export const PROFILE_SKILLS: Record<string, { skills: ProfileSkill[]; endorserInitials: string; endorserName: string; endorserColor: string; featuredSkills?: FeaturedSkill[]; expertBlock?: ExpertBlock }> = {
+  csm: { skills: ENGINEERING_LEAD_SKILLS, endorserInitials: 'AN', endorserName: 'Alex Nakamura at Acme', endorserColor: '#1565C0', featuredSkills: CSM_FEATURED_SKILLS, expertBlock: CSM_EXPERT_BLOCK },
   mateo: { skills: SALES_ENGINEERING_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },
   'jaydon-torff': { skills: HR_SKILLS, endorserInitials: 'S', endorserName: 'Sarah Chen at Acme', endorserColor: '#5C6BC0' },
   '1': { skills: SALES_ENGINEERING_SKILLS, endorserInitials: 'M', endorserName: 'Mateo Myer at Acme', endorserColor: '#E07C24' },
