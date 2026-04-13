@@ -21,6 +21,7 @@ import {
   deriveWfrFlags,
 } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
+import { WfrRecCard, WfrHeroCard } from '../components/workforceReadiness/FocusFirstModule'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
@@ -46,7 +47,7 @@ function readEffectiveWfrState(personaId: string): WfrProgramState {
 
 /* Inline compact semicircle — readiness only, matches WFR overview hero */
 function WfrReadinessArc({ readiness, color }: { readiness: number; color?: string }) {
-  const dim = 120, r = 46, sw = 8
+  const dim = 140, r = 54, sw = 8
   const cx = dim / 2, cy = dim / 2
   const rad = (d: number) => (d * Math.PI) / 180
   const arcColor = color ?? '#22c55e'
@@ -63,8 +64,9 @@ function WfrReadinessArc({ readiness, color }: { readiness: number; color?: stri
   return (
     <div className="home-wfr-arc">
       <svg width={dim} height={dim / 2 + 16} viewBox={`0 0 ${dim} ${dim / 2 + 16}`} overflow="visible" aria-hidden>
-        <path d={arcPath(100)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
+        <path d={arcPath(100)} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={sw} strokeLinecap="round" />
         <path d={arcPath(readiness)} fill="none" stroke={arcColor} strokeWidth={sw} strokeLinecap="round" />
+
         <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
         <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">{'AI ADOPTION'}</text>
       </svg>
@@ -103,18 +105,56 @@ function ChroWorkforceReadinessTeaser() {
     heroEyebrow = `Your team · ${displayEmployees} employees`
   } else if (isHrbp) {
     const hrbpNames = getPersonaHrbpNames(currentUser.id)
-    // Use this HRBP's assigned headcount — subset of the full dept total
+    const hrbpName = hrbpNames[0] ?? ''
     const hrbpHeadcount = hrbpNames.reduce((s, n) => s + getHrbpDepts(n).reduce((ss, d) => ss + d.headcount, 0), 0)
     const deptNames = getPersonaDepartments(currentUser.id)
-    const rollup = wfrRollupDepartmentsByName(deptNames)
-    const trendDelta = collectionComplete && deptNames.length === 1 ? deptReadinessTrend(deptNames[0]).delta : 0
-    const boost = hrbpPlansCreated ? 10 : 0
-    displayReadiness = rollup ? Math.min(100, rollup.aiReadiness + trendDelta + boost) : ORG.aiReadiness
-    // Scale aug roles and gap to this HRBP's headcount, not the full dept
-    const scaleFactor = rollup && rollup.totalEmployees > 0 ? hrbpHeadcount / rollup.totalEmployees : 1
-    const scaledAugRoles = rollup ? Math.round(rollup.peopleInAugRoles * scaleFactor) : 0
-    const calibratedReady = Math.round(scaledAugRoles * displayReadiness / 100)
-    displayGap = Math.max(0, scaledAugRoles - calibratedReady)
+    const dept = deptNames.length === 1 ? departments.find(d => d.name === deptNames[0]) : undefined
+    const trendDelta = collectionComplete && dept ? deptReadinessTrend(dept.name).delta : 0
+    const upskillingBoostBase = hrbpPlansCreated ? 10 : 0
+    const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+
+    if (dept) {
+      // Replicate dashboard's manager-slicing logic exactly so numbers match
+      const allManagers = deptManagerTeams(dept.name, dept.employees)
+      const deptHrbpList = getDeptHrbps(dept.name)
+      const hrbpIdx = deptHrbpList.findIndex(h => h.hrbp === hrbpName)
+      // Skip managers allocated to previous HRBPs
+      let mgrStart = 0
+      for (let i = 0; i < hrbpIdx; i++) {
+        let covered = 0
+        for (let m = mgrStart; m < allManagers.length; m++) {
+          if (covered + allManagers[m].employees > deptHrbpList[i].headcount && covered > 0) break
+          covered += allManagers[m].employees
+          mgrStart = m + 1
+        }
+      }
+      // Collect sliced managers for this HRBP
+      const slicedMgrIndices: number[] = []
+      let coveredHeadcount = 0
+      for (let m = mgrStart; m < allManagers.length && coveredHeadcount < hrbpHeadcount; m++) {
+        slicedMgrIndices.push(m)
+        coveredHeadcount += allManagers[m].employees
+      }
+      // Allocate employees globally across all managers (same as dashboard)
+      const rawEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as RoleRowType)
+      let runIdx = 0
+      const mgrCalibrated = allManagers.map((mgr) => {
+        const emps = rawEmps.slice(runIdx, Math.min(runIdx + mgr.employees, rawEmps.length))
+        runIdx += mgr.employees
+        return emps.map(e => {
+          const empBoost = hrbpPlansCreated ? Math.round(upskillingBoostBase * (0.5 + (nameHash(e.name) % 10) / 10)) : 0
+          return Math.max(0, Math.min(100, e.readinessPct + trendDelta + empBoost))
+        })
+      })
+      const slicedCalibrated = slicedMgrIndices.flatMap(i => mgrCalibrated[i] ?? [])
+      displayReadiness = slicedCalibrated.length > 0
+        ? Math.round(slicedCalibrated.reduce((s, v) => s + v, 0) / slicedCalibrated.length)
+        : (collectionComplete ? dept.aiReadiness + trendDelta : dept.aiReadiness)
+    } else {
+      const rollup = wfrRollupDepartmentsByName(deptNames)
+      displayReadiness = rollup ? Math.min(100, rollup.aiReadiness + trendDelta) : ORG.aiReadiness
+    }
+    displayGap = Math.max(0, hrbpHeadcount - Math.round(hrbpHeadcount * displayReadiness / 100))
     displayEmployees = hrbpHeadcount
     heroEyebrow = `Your team · ${hrbpHeadcount.toLocaleString()} employees`
   } else {
@@ -127,38 +167,36 @@ function ChroWorkforceReadinessTeaser() {
 
   // ── State-based rec ──────────────────────────────────────────────────────
   type RecConfig = {
-    icon: string; iconColor: string; eyebrow: string; body: React.ReactNode; subtitle?: React.ReactNode; cta: string; href: string
-    cardBg?: string; cardBorder?: string; eyebrowColor?: string
+    variant: 'warn' | 'success' | 'info' | 'priority'
+    icon: string; eyebrow: string; body: React.ReactNode; subtitle?: React.ReactNode; cta: string; href: string
     progressPct?: number; progressLabel?: string
   }
-  const AMBER_CARD = { cardBg: 'linear-gradient(180deg, #fef3c7 0%, #fffbeb 100%)', cardBorder: '#fcd34d', eyebrowColor: '#d97706' }
-  const GREEN_CARD  = { cardBg: 'linear-gradient(180deg, #dcfce7 0%, #f0fdf4 100%)', cardBorder: '#86efac', eyebrowColor: '#15803d' }
-  const INDIGO_CARD = { cardBg: '#eff3ff', cardBorder: '#c5d3f8', eyebrowColor: '#3b5bdb' }
 
   const rec: RecConfig | null = (() => {
     if (wfrState === 1) {
       if (isManager) {
         const hrbpName = getDeptHrbps('Engineering')[0]?.hrbp ?? 'your HR Business Partner'
         return {
-          icon: 'people', iconColor: '#3b5bdb', eyebrow: 'RECOMMENDED ACTION',
+          variant: 'info' as const,
+          icon: 'people', eyebrow: 'RECOMMENDED ACTION',
           body: `Your HR Business Partner, ${hrbpName}, will initiate data collection for Engineering. Reach out to align on timing and scope.`,
           cta: 'View your team →', href: '/workforce',
-          ...INDIGO_CARD,
         }
       }
       if (isHrbp) {
         const persisted = readWfrPersistedState()
         const names = getPersonaHrbpNames(currentUser.id)
         if (hasPersonaPendingDelegation(persisted, names)) return {
-          icon: 'flag', iconColor: '#dc2626', eyebrow: 'FIRST PRIORITY',
+          variant: 'priority' as const,
+          icon: 'flag', eyebrow: 'FIRST PRIORITY',
           body: 'The CHRO has kicked off AI data collection for your team. Launch collection to sharpen adoption scores and surface upskilling priorities for your people.',
           cta: 'Get started →', href: '/workforce?action=launch',
         }
         return {
-          icon: 'insights', iconColor: '#3b5bdb', eyebrow: 'RECOMMENDED ACTION',
-          body: "Review your team's estimated AI adoption scores and identify which roles have the biggest opportunity for augmentation — before collection kicks off.",
+          variant: 'info' as const,
+          icon: 'insights', eyebrow: 'RECOMMENDED ACTION',
+          body: "Review estimated AI adoption across your team.",
           cta: 'Review team data →', href: '/workforce',
-          ...INDIGO_CARD,
         }
       }
       // CHRO
@@ -166,18 +204,18 @@ function ChroWorkforceReadinessTeaser() {
       if (persisted.hrbpStates && Object.values(persisted.hrbpStates).some(h => h.delegated)) {
         const scopeLabel = persisted.collectionLaunchSummary?.scopeLabel ?? 'HRBPs'
         return {
-          icon: 'sync', iconColor: '#d97706', eyebrow: 'DELEGATION SENT',
+          variant: 'warn' as const,
+          icon: 'sync', eyebrow: 'DELEGATION SENT',
           body: `Data collection has been delegated to ${scopeLabel}. Waiting for them to launch.`,
           cta: 'View dashboard →', href: '/workforce',
-          ...AMBER_CARD,
         }
       }
       return {
-        icon: 'flag', iconColor: '#dc2626', eyebrow: 'FIRST PRIORITY',
+        variant: 'priority' as const,
+        icon: 'flag', eyebrow: 'FIRST PRIORITY',
         body: "AI Adoption is estimated today. Collect real data to see what's actually happening.",
         subtitle: "Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.",
         cta: 'Get started →', href: '/workforce?action=launch',
-        // red — CSS default, no override needed
       }
     }
     if (wfrState === 2 || wfrState === '2b') {
@@ -185,27 +223,28 @@ function ChroWorkforceReadinessTeaser() {
         ? wfrDemoCollectionSnapshotForDeptNames(getPersonaDepartments(currentUser.id))
         : wfrDemoCollectionSnapshot()
       return {
-        icon: 'sync', iconColor: '#d97706', eyebrow: 'COLLECTION IN PROGRESS',
+        variant: 'warn' as const,
+        icon: 'sync', eyebrow: 'COLLECTION IN PROGRESS',
         body: isManager || isHrbp
           ? 'Data collection is underway for your team. Check the dashboard for live response rates.'
           : 'Data collection is underway. Check the dashboard for live response rates.',
         cta: 'View details →', href: '/workforce',
         progressPct: snap.orgResponseRate,
         progressLabel: `${snap.respondedCount.toLocaleString()} of ${snap.sampleTarget.toLocaleString()} sampled`,
-        ...AMBER_CARD,
       }
     }
     if (wfrState === 3) return {
-      icon: 'check_circle', iconColor: '#15803d', eyebrow: 'COLLECTION COMPLETE',
+      variant: 'success' as const,
+      icon: 'check_circle', eyebrow: 'COLLECTION COMPLETE',
       body: isManager || isHrbp
         ? 'Results are in for your team. Review updated adoption scores and start upskilling.'
         : 'Results are in. Review updated adoption scores and start upskilling planning.',
       cta: isManager ? 'See results →' : 'Start upskilling →', href: '/workforce',
-      ...GREEN_CARD,
     }
     if (wfrState === 4) {
       if (isManager) return {
-        icon: 'rocket_launch', iconColor: '#dc2626', eyebrow: 'UPSKILLING STARTED',
+        variant: 'priority' as const,
+        icon: 'rocket_launch', eyebrow: 'UPSKILLING STARTED',
         body: 'Development plans have been created for your team. Review and assign them so your people can start building AI skills.',
         cta: 'Review and assign plans →', href: '/workforce',
       }
@@ -215,13 +254,13 @@ function ChroWorkforceReadinessTeaser() {
       const empCount = summary?.totalEmployees ?? 0
       const delegated = summary?.delegated ?? false
       return {
-        icon: 'rocket_launch', iconColor: '#b45309', eyebrow: 'UPSKILLING STARTED',
+        variant: 'warn' as const,
+        icon: 'rocket_launch', eyebrow: 'UPSKILLING STARTED',
         body: delegated
           ? <>HRBPs are creating development plans for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>
           : <>Development plans are being created for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>,
         subtitle: 'Once plans are assigned, adoption scores will update to reflect upskilling progress.',
         cta: 'View progress →', href: '/workforce',
-        ...AMBER_CARD,
       }
     }
     return null // state 5
@@ -233,49 +272,31 @@ function ChroWorkforceReadinessTeaser() {
         <h3 className="home-page__wfr-compact__title">Workforce Readiness</h3>
         <Link to="/workforce" className="home-page__wfr-compact__view-link">View dashboard&nbsp;→</Link>
       </div>
-      <header className="home-page__wfr-compact__hero">
-        <WfrReadinessArc readiness={displayReadiness} />
-        <div className="home-page__wfr-compact__hero-text">
-          <p className="home-page__wfr-compact__eyebrow">{heroEyebrow}</p>
-          <h2 className="home-page__wfr-compact__headline">
-            <span className="home-page__wfr-compact__headline-pct">{displayReadiness}%</span>
-            <span className="home-page__wfr-compact__headline-rest">
-              {isManager
-                ? ' of your team is AI-ready.'
-                : ' of people in augmentable roles are AI-ready.'}
+      <Link to="/workforce" style={{ textDecoration: 'none', display: 'block' }}>
+        <WfrHeroCard
+          gauge={<WfrReadinessArc readiness={displayReadiness} />}
+          eyebrow={heroEyebrow}
+          headline={
+            <span style={{ font: 'var(--typography-header3)', letterSpacing: '-0.01em' }}>
+              <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
+              <span style={{ fontWeight: 500 }}>
+                {isManager || isHrbp ? ' of your team is AI-ready.' : ' of people in augmentable roles are AI-ready.'}
+              </span>
             </span>
-          </h2>
-          <span className="home-page__wfr-compact__gap-badge">
-            ~<strong>{displayGap.toLocaleString()}</strong> not yet AI-ready
-          </span>
-        </div>
-      </header>
+          }
+          supportingText={<>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> not yet AI-ready</>}
+        />
+      </Link>
       {rec && (
-        <div className="home-page__wfr-compact__rec" style={rec.cardBg ? { background: rec.cardBg, borderColor: rec.cardBorder } : undefined}>
-          <div className="home-page__wfr-compact__rec-head">
-            <span className="home-page__wfr-compact__rec-eyebrow" style={rec.eyebrowColor ? { color: rec.eyebrowColor } : undefined}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, color: rec.iconColor }}>{rec.icon}</span>{' '}{rec.eyebrow}
-            </span>
-          </div>
-          <div className="home-page__wfr-compact__rec-row">
-            <div style={{ flex: 1 }}>
-              <p className="home-page__wfr-compact__rec-body" style={rec.subtitle ? { fontWeight: 600, color: '#1a212e', marginBottom: 4 } : undefined}>{rec.body}</p>
-              {rec.subtitle && <p className="home-page__wfr-compact__rec-body" style={{ marginTop: 0 }}>{rec.subtitle}</p>}
-              {rec.progressPct !== undefined && (
-                <div className="wfr-ra-card__mini-progress" style={{ marginTop: 8, marginLeft: 0 }}>
-                  <span className="wfr-ra-card__mini-pct tabular-nums" style={{ color: '#d97706' }}>{rec.progressPct}%</span>
-                  <div className="wfr-ra-card__mini-track" style={{ background: '#e2e8f0' }}>
-                    <div className="wfr-ra-card__mini-fill" style={{ width: `${rec.progressPct}%`, background: '#d97706' }} />
-                  </div>
-                  <span className="wfr-ra-card__mini-label" style={{ color: '#92400e' }}>{rec.progressLabel}</span>
-                </div>
-              )}
-            </div>
-            <Link to={rec.href} style={{ flexShrink: 0 }}>
-              <Button variant="primary" size="sm">{rec.cta}</Button>
-            </Link>
-          </div>
-        </div>
+        <WfrRecCard
+          variant={rec.variant}
+          icon={rec.icon}
+          eyebrow={rec.eyebrow}
+          body={rec.body}
+          subtitle={rec.subtitle}
+          progress={rec.progressPct !== undefined ? { pct: rec.progressPct, label: rec.progressLabel ?? '' } : undefined}
+          cta={<Link to={rec.href} style={{ flexShrink: 0 }}><Button variant="primary" size="sm">{rec.cta}</Button></Link>}
+        />
       )}
     </article>
   )
