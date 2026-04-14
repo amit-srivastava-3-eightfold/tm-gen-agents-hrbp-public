@@ -1,33 +1,30 @@
-import React from 'react'
-import { Button } from '@tonyh-2-eightfold/ef-design-system'
+import React, { useMemo } from 'react'
+import { InsightCard } from '@tonyh-2-eightfold/ef-design-system'
 import type { ReactNode } from 'react'
 
 export interface MetricCardProps {
-  /** Card variant — maps to CSS modifier for accent color. */
   variant?: string
-  /** Material Symbols icon name. */
   icon: string
-  /** Short label above the value (e.g. "AI readiness"). */
   label: string
-  /** Optional badge rendered inline after the label (e.g. "Estimated", "Measured"). */
   badge?: ReactNode
-  /** Large metric value (e.g. "24%", "6,384"). */
   value: ReactNode
-  /** Optional explainer rendered between label and value. */
   explainer?: ReactNode
-  /** Primary description below the value. */
   description: React.ReactNode
-  /** Secondary hint text in the footer. */
   hint?: string
-  /** Quality tag rendered below description (e.g. "Above industry median"). */
   tag?: ReactNode
-  /** Called when "Learn more" is clicked. */
   onLearnMore?: () => void
-  /** Override the footer action label. */
   actionLabel?: string
-  /** Optional children rendered after the hint (e.g. custom footer content). */
   children?: ReactNode
 }
+
+const VARIANT_THEME: Record<string, { bgColor: string; iconBgColor: string; iconColor: string; textColor: string }> = {
+  'ai-potential': { bgColor: '#eef2ff', iconBgColor: '#e0e7ff', iconColor: '#4338ca', textColor: '#1e1b4b' },
+  'potential':    { bgColor: '#eef2ff', iconBgColor: '#e0e7ff', iconColor: '#7c3aed', textColor: '#1e1b4b' },
+  'readiness':    { bgColor: '#eef2ff', iconBgColor: '#e0e7ff', iconColor: '#2563eb', textColor: '#1e3a8a' },
+  'gap':          { bgColor: '#fff7ed', iconBgColor: '#ffedd5', iconColor: '#ea580c', textColor: '#7c2d12' },
+}
+
+const DEFAULT_THEME = { bgColor: '#f4f5f7', iconBgColor: '#e2e8f0', iconColor: '#475569', textColor: '#1a212e' }
 
 export function MetricCard({
   variant,
@@ -43,29 +40,48 @@ export function MetricCard({
   actionLabel = 'Learn more',
   children,
 }: MetricCardProps) {
+  const theme = (variant ? VARIANT_THEME[variant] : undefined) ?? DEFAULT_THEME
+
+  // Wrap onLearnMore in a button-based LinkComponent so InsightCard's link slot fires the callback
+  const LearnMoreLink = useMemo(() => {
+    if (!onLearnMore) return undefined
+    return function ClickLink({ children: linkChildren, className }: { to: string; children: React.ReactNode; className?: string }) {
+      return (
+        <button type="button" onClick={onLearnMore} className={className}>
+          {linkChildren}
+        </button>
+      )
+    }
+  }, [onLearnMore])
+
+  const cardChildren = (
+    <>
+      <p style={{ font: 'var(--typography-header2)', letterSpacing: '-0.01em', lineHeight: 1.12, margin: '0 0 10px', color: theme.textColor }}>
+        {value}
+      </p>
+      {explainer && <p style={{ font: 'var(--typography-body3)', color: '#1a212e', margin: '0 0 4px' }}>{explainer}</p>}
+      <div style={{ font: 'var(--typography-body3)', color: '#4f5666', margin: '0 0 6px' }}>{description}</div>
+      {hint && <p style={{ font: 'var(--typography-body3)', color: '#94a3b8', margin: '0 0 6px' }}>{hint}</p>}
+      {tag && <div style={{ marginTop: 6 }}>{tag}</div>}
+      {children}
+    </>
+  )
+
   return (
-    <article className={`wfr-metric-card${variant ? ` wfr-metric-card--${variant}` : ''}`}>
-      <div className="wfr-metric-card__top">
-        <div className="wfr-metric-card__icon-wrap" aria-hidden>
-          <span className="material-symbols-outlined wfr-metric-card__icon">{icon}</span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="wfr-metric-card__label">{label}{badge ? <> {badge}</> : null}</p>
-        </div>
-      </div>
-      <p className="wfr-metric-card__value">{value}</p>
-      {explainer && <p className="wfr-metric-card__primary" style={{ flex: 'none' }}>{explainer}</p>}
-      <p className="wfr-metric-card__primary" style={tag ? { marginBottom: 6, flex: 'none' } : undefined}>{description}</p>
-      {tag && <div style={{ marginBottom: 12 }}>{tag}</div>}
-      <div className="wfr-metric-card__footer">
-        {hint ? <p className="wfr-metric-card__hint">{hint}</p> : null}
-        {onLearnMore ? (
-          <Button type="button" variant="outline" size="sm" onClick={onLearnMore} className="shrink-0">
-            {actionLabel}
-          </Button>
-        ) : null}
-        {children}
-      </div>
-    </article>
+    <InsightCard
+      title={label}
+      badge={badge}
+      description=""
+      icon={icon}
+      bgColor={theme.bgColor}
+      iconBgColor={theme.iconBgColor}
+      iconColor={theme.iconColor}
+      textColor={theme.textColor}
+      buttonLabel={actionLabel}
+      fixedSize={false}
+      {...(LearnMoreLink ? { LinkComponent: LearnMoreLink } : {})}
+    >
+      {cardChildren}
+    </InsightCard>
   )
 }

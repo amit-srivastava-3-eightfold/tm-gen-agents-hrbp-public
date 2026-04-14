@@ -1242,7 +1242,8 @@ function BoardView({
         )}
 
         <TabsContent value="hrbps">
-          <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
+          <div className="wfr-dash__table-scroll">
+          <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead style={{ width: '22%', cursor: 'pointer' }} onClick={() => toggleHrbpSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={hrbpSort.col === 'hrbp' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('hrbp')} /></span></DataTableHead>
@@ -1339,13 +1340,14 @@ function BoardView({
               )})}
             </DataTableBody>
           </DataTable>
+          </div>
         </TabsContent>
 
         <TabsContent value="departments">
 
       {focusCollectionComplete ? (
-        <div>
-          <DataTable bordered>
+        <div className="wfr-dash__table-scroll">
+          <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
@@ -1493,7 +1495,8 @@ function BoardView({
         </TabsContent>
 
         <TabsContent value="roles">
-          <DataTable bordered>
+          <div className="wfr-dash__table-scroll">
+          <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('name')}><span className="inline-flex items-center gap-1">Role <SortIcon sortDir={roleSort.col === 'name' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('name')} /></span></DataTableHead>
@@ -1599,6 +1602,7 @@ function BoardView({
               })}
             </DataTableBody>
           </DataTable>
+          </div>
         </TabsContent>
 
       </Tabs>

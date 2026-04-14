@@ -99,19 +99,19 @@
   color: var(--wfr-readiness-text);
 }
 
-.wfr-dash__hero .wfr-text-potential {
+.wfr-hero-card .wfr-text-potential {
   color: #818cf8;
 }
 
-.wfr-dash__hero .wfr-text-readiness {
+.wfr-hero-card .wfr-text-readiness {
   color: #4ade80;
 }
 
-.wfr-dash__hero .text-\[\#b91c1c\] {
-  color: #f87171 !important;
+.wfr-hero-card .text-\[\#b91c1c\] {
+  color: #fca5a5 !important;
 }
 
-.wfr-dash__hero .text-\[\#15803d\] {
+.wfr-hero-card .text-\[\#15803d\] {
   color: #4ade80 !important;
 }
 
@@ -286,7 +286,7 @@
 
 .wfr-hero-card__eyebrow {
   font: var(--typography-caption-semibold);
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin: 0 0 6px;
@@ -301,9 +301,17 @@
 
 .wfr-hero-card__supporting {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.72);
   margin: 6px 0 0;
   line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .wfr-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 }
 
 .wfr-dash__headline {
