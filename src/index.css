@@ -83,3 +83,10 @@ body[data-wfr-metric-sheet-open] #root {
 [data-highlighted] {
   background: #f1f5f9;
 }
+
+/* Separator above last switch option (Components) in CHRO avatar menu */
+.navbar__avatar-menu-option:last-child {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 4px;
+  padding-top: 8px;
+}

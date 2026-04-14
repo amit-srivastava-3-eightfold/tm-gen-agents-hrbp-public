@@ -109,6 +109,11 @@ const SWITCH_OPTIONS = [
   { label: 'chro@acme.com', userId: 'chro' },
 ]
 
+const SWITCH_OPTIONS_CHRO = [
+  ...SWITCH_OPTIONS,
+  { label: 'Components', userId: '__components__' },
+]
+
 const USER_MAP: Record<string, typeof MATEO | typeof LAURA | typeof CHRO | typeof CSM> = {
   mateo: MATEO,
   'jaydon-torff': LAURA,
@@ -143,8 +148,12 @@ export function useNavbarProps() {
       avatarInitials: currentUser.avatarInitials,
       avatarColor: currentUser.avatarColor,
     },
-    switchOptions: SWITCH_OPTIONS,
+    switchOptions: currentUser.id === 'chro' ? SWITCH_OPTIONS_CHRO : SWITCH_OPTIONS,
     onSwitchUser: (userId: string) => {
+      if (userId === '__components__') {
+        window.location.href = '/components/wfr-hero-options'
+        return
+      }
       // setCurrentUser saves the user to localStorage; on WFR pages it also sets
       // window.location.href to the current WFR path. We assign window.location.href
       // AFTER so our assignment wins (browser uses the last synchronous assignment).

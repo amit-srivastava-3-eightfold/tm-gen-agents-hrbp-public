@@ -276,12 +276,35 @@
   align-items: center;
 }
 
+.wfr-hero-card--with-cta {
+  padding: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wfr-hero-card__main {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+
+.wfr-hero-card--with-cta .wfr-hero-card__main {
+  padding: 28px 32px 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .wfr-hero-card__gauge {
   flex-shrink: 0;
 }
 
 .wfr-hero-card__copy {
   flex: 1;
+}
+
+.wfr-hero-card__cta-bar {
+  width: 100%;
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .wfr-hero-card__eyebrow {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Button, ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
+import { ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
 import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
@@ -9,7 +9,6 @@ import { useUser } from '../contexts/UserContext'
 import {
   EM, ORG, getPersonaHrbpNames, getPersonaDepartments,
   wfrRollupDepartmentsByName, departments, getEmployeesForRole, getDeptHrbps, getHrbpDepts,
-  wfrDemoCollectionSnapshot, wfrDemoCollectionSnapshotForDeptNames,
   type RoleRowType,
 } from '../data/wfrOrgData'
 import {
@@ -21,7 +20,7 @@ import {
   deriveWfrFlags,
 } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
-import { WfrRecCard, WfrHeroCard } from '../components/workforceReadiness/FocusFirstModule'
+import { WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona } from '../components/workforceReadiness/FocusFirstModule'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import '../components/HomeSidebar.css'
 import './HomePage.css'
@@ -165,106 +164,17 @@ function ChroWorkforceReadinessTeaser() {
     heroEyebrow = `${ORG.totalEmployees.toLocaleString()} employees ${EM} Q1 2026`
   }
 
-  // ── State-based rec ──────────────────────────────────────────────────────
-  type RecConfig = {
-    variant: 'warn' | 'success' | 'info' | 'priority'
-    icon: string; eyebrow: string; body: React.ReactNode; subtitle?: React.ReactNode; cta: string; href: string
-    progressPct?: number; progressLabel?: string
-  }
-
-  const rec: RecConfig | null = (() => {
-    if (wfrState === 1) {
-      if (isManager) {
-        const hrbpName = getDeptHrbps('Engineering')[0]?.hrbp ?? 'your HR Business Partner'
-        return {
-          variant: 'info' as const,
-          icon: 'people', eyebrow: 'RECOMMENDED ACTION',
-          body: `Your HR Business Partner, ${hrbpName}, will initiate data collection for Engineering. Reach out to align on timing and scope.`,
-          cta: 'View your team →', href: '/workforce',
-        }
-      }
-      if (isHrbp) {
-        const persisted = readWfrPersistedState()
-        const names = getPersonaHrbpNames(currentUser.id)
-        if (hasPersonaPendingDelegation(persisted, names)) return {
-          variant: 'priority' as const,
-          icon: 'flag', eyebrow: 'FIRST PRIORITY',
-          body: 'The CHRO has kicked off AI data collection for your team. Launch collection to sharpen adoption scores and surface upskilling priorities for your people.',
-          cta: 'Get started →', href: '/workforce?action=launch',
-        }
-        return {
-          variant: 'info' as const,
-          icon: 'insights', eyebrow: 'RECOMMENDED ACTION',
-          body: "Review estimated AI adoption across your team.",
-          cta: 'Review team data →', href: '/workforce',
-        }
-      }
-      // CHRO
-      const persisted = readWfrPersistedState()
-      if (persisted.hrbpStates && Object.values(persisted.hrbpStates).some(h => h.delegated)) {
-        const scopeLabel = persisted.collectionLaunchSummary?.scopeLabel ?? 'HRBPs'
-        return {
-          variant: 'warn' as const,
-          icon: 'sync', eyebrow: 'DELEGATION SENT',
-          body: `Data collection has been delegated to ${scopeLabel}. Waiting for them to launch.`,
-          cta: 'View dashboard →', href: '/workforce',
-        }
-      }
-      return {
-        variant: 'priority' as const,
-        icon: 'flag', eyebrow: 'FIRST PRIORITY',
-        body: "AI Adoption is estimated today. Collect real data to see what's actually happening.",
-        subtitle: "Choose departments and a collection method — results refine your adoption scores and surface upskilling priorities.",
-        cta: 'Get started →', href: '/workforce?action=launch',
-      }
-    }
-    if (wfrState === 2 || wfrState === '2b') {
-      const snap = isHrbp
-        ? wfrDemoCollectionSnapshotForDeptNames(getPersonaDepartments(currentUser.id))
-        : wfrDemoCollectionSnapshot()
-      return {
-        variant: 'warn' as const,
-        icon: 'sync', eyebrow: 'COLLECTION IN PROGRESS',
-        body: isManager || isHrbp
-          ? 'Data collection is underway for your team. Check the dashboard for live response rates.'
-          : 'Data collection is underway. Check the dashboard for live response rates.',
-        cta: 'View details →', href: '/workforce',
-        progressPct: snap.orgResponseRate,
-        progressLabel: `${snap.respondedCount.toLocaleString()} of ${snap.sampleTarget.toLocaleString()} sampled`,
-      }
-    }
-    if (wfrState === 3) return {
-      variant: 'success' as const,
-      icon: 'check_circle', eyebrow: 'COLLECTION COMPLETE',
-      body: isManager || isHrbp
-        ? 'Results are in for your team. Review updated adoption scores and start upskilling.'
-        : 'Results are in. Review updated adoption scores and start upskilling planning.',
-      cta: isManager ? 'See results →' : 'Start upskilling →', href: '/workforce',
-    }
-    if (wfrState === 4) {
-      if (isManager) return {
-        variant: 'priority' as const,
-        icon: 'rocket_launch', eyebrow: 'UPSKILLING STARTED',
-        body: 'Development plans have been created for your team. Review and assign them so your people can start building AI skills.',
-        cta: 'Review and assign plans →', href: '/workforce',
-      }
-      const persisted = readWfrPersistedState()
-      const summary = persisted.upskillingLaunchSummary
-      const deptCount = summary?.departmentNames.length ?? 1
-      const empCount = summary?.totalEmployees ?? 0
-      const delegated = summary?.delegated ?? false
-      return {
-        variant: 'warn' as const,
-        icon: 'rocket_launch', eyebrow: 'UPSKILLING STARTED',
-        body: delegated
-          ? <>HRBPs are creating development plans for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>
-          : <>Development plans are being created for <strong>{empCount.toLocaleString()}</strong> employees across <strong>{deptCount}</strong> department{deptCount === 1 ? '' : 's'}.</>,
-        subtitle: 'Once plans are assigned, adoption scores will update to reflect upskilling progress.',
-        cta: 'View progress →', href: '/workforce',
-      }
-    }
-    return null // state 5
+  // ── CTA bar ──────────────────────────────────────────────────────────────
+  const ctaDemoState: WfrDemoState | null = (() => {
+    const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
+    if (hrbpPlansCreated) return null
+    if (upskillingActive) return 4
+    if (collectionComplete) return 3
+    if (collectionActive) return 2
+    return 1
   })()
+  const ctaPersona: WfrPersona = isManager ? 'manager' : isHrbp ? 'hrbp' : 'chro'
+  const ctaButtonHref = ctaDemoState === 1 && !isHrbp && !isManager ? '/workforce?action=launch' : '/workforce'
 
   return (
     <article className="home-page__wfr-compact" aria-label="Workforce Readiness">
@@ -285,19 +195,9 @@ function ChroWorkforceReadinessTeaser() {
             </span>
           }
           supportingText={<>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> not yet AI-ready</>}
+          ctaBar={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
         />
       </Link>
-      {rec && (
-        <WfrRecCard
-          variant={rec.variant}
-          icon={rec.icon}
-          eyebrow={rec.eyebrow}
-          body={rec.body}
-          subtitle={rec.subtitle}
-          progress={rec.progressPct !== undefined ? { pct: rec.progressPct, label: rec.progressLabel ?? '' } : undefined}
-          cta={<Link to={rec.href} style={{ flexShrink: 0 }}><Button variant="primary" size="sm">{rec.cta}</Button></Link>}
-        />
-      )}
     </article>
   )
 }

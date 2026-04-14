@@ -16,6 +16,8 @@ import { WorkforceReadinessPage } from './pages/WorkforceReadinessPage'
 import { DevPlanTemplatesPage } from './pages/DevPlanTemplatesPage'
 import { DevPlanTemplateDetailPage } from './pages/DevPlanTemplateDetailPage'
 import { ManagerDetailPage } from './pages/ManagerDetailPage'
+import WfrHeroOptionsPage from './pages/WfrHeroOptionsPage'
+import { ComponentsLayout } from './pages/ComponentsLayout'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -34,7 +36,10 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/my-activity/dev-plan-templates" element={<DevPlanTemplatesPage />} />
             <Route path="/my-activity/dev-plan-templates/:templateId" element={<DevPlanTemplateDetailPage />} />
             <Route path="/positions/:id" element={<PositionPage />} />
-            <Route path="/components/skill-tag" element={<SkillTagPage />} />
+            <Route path="/components" element={<ComponentsLayout />}>
+              <Route path="skill-tag" element={<SkillTagPage />} />
+              <Route path="wfr-hero-options" element={<WfrHeroOptionsPage />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </UserProvider>

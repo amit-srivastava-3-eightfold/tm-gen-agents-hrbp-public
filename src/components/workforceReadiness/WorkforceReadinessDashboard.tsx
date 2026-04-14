@@ -28,7 +28,7 @@ import {
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
 import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
 import './CollectionProgressPanel.css'
-import { FocusFirstModule, WfrHeroCard, type FocusCollectionLaunchSummary } from './FocusFirstModule'
+import { FocusFirstModule, WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { FocusFirstLaunchDialog } from './FocusFirstLaunchDialog'
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
@@ -532,7 +532,7 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
 type MgrSortCol = 'name' | 'readiness' | 'potential' | 'gap'
 
 /** Shared overview layout: hero section (MetricArc + headline + pill) + 3 metric cards row. */
-function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, pill, cards, beforeCards, hideHero, children }: {
+function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, pill, cards, beforeCards, heroCta, hideHero, children }: {
   aiPotentialPct: number
   aiReadinessPct: number
   totalEmployees: number
@@ -542,6 +542,8 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
   cards: { id: 'ai-potential' | 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; tag?: React.ReactNode; explainer?: React.ReactNode; onLearnMore?: () => void }[]
   /** Content rendered between hero and cards (e.g. FocusFirst module) */
   beforeCards?: React.ReactNode
+  /** CTA bar rendered inside the hero card's ctaBar slot */
+  heroCta?: React.ReactNode
   hideHero?: boolean
   children?: React.ReactNode
 }) {
@@ -553,6 +555,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
           eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
           headline={<span className="wfr-dash__headline">{headline}</span>}
           supportingText={pill}
+          ctaBar={heroCta}
         />
       )}
 
@@ -856,6 +859,8 @@ function BoardView({
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
+  const ctaDemoState: WfrDemoState | null = hrbpPlansCreated ? null : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : 1
+  const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
   // CHRO has delegated but HRBPs haven't all started yet
   const chroDelegationActive = !isHrbp && !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated)
   // Any HRBP has been delegated (for showing Data Collection column)
@@ -1139,7 +1144,16 @@ function BoardView({
     return new Set(sorted.slice(0, count).map(r => r.hrbp))
   })()
 
+  const ctaButtonClick = ctaDemoState === 1 && !isHrbp
+    ? () => { setOpenMetric(null); setFocusLaunchOpen(true) }
+    : ctaDemoState === 3 && !isHrbp
+      ? () => setChroUpskillingInfoOpen(true)
+      : ctaDemoState === 3 && isHrbp
+        ? () => { setHrbpDevPlanScope('all'); setHrbpSelectedRoles({}); setHrbpDevPlanDialogOpen(true) }
+        : undefined
+
   return (
+    <>
     <WfrOverviewLayout
       aiPotentialPct={aiPotentialPct}
       aiReadinessPct={aiReadinessPct}
@@ -1171,38 +1185,7 @@ function BoardView({
         explainer: (c as any).explainer,
         onLearnMore: () => setMetricInfoOpen(true),
       }))}
-      beforeCards={
-        <FocusFirstModule
-          collectionActive={focusCollectionActive}
-          collectionComplete={focusCollectionComplete}
-          collectionJustCompleted={collectionJustCompleted}
-          onCollectionActiveChange={onCollectionActiveChange}
-          onCollectionComplete={onCompleteCollection}
-          onViewResults={onViewCollectionResults}
-          launchOpen={focusLaunchOpen}
-          onLaunchOpenChange={setFocusLaunchOpen}
-          onRequestCloseMetricSheet={() => setOpenMetric(null)}
-          collectionLaunchSummary={collectionLaunchSummary}
-          onScrollToTable={() => document.getElementById('board-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          onStartUpskilling={() => {
-            if (isHrbp) {
-              setHrbpDevPlanScope('all')
-              setHrbpSelectedRoles({})
-              setHrbpDevPlanDialogOpen(true)
-            } else {
-              setChroUpskillingInfoOpen(true)
-            }
-          }}
-          upskillingActive={upskillingActive}
-          upskillingLaunchSummary={upskillingLaunchSummary}
-          isHrbp={isHrbp}
-          hrbpPlansCreated={hrbpPlansCreated}
-          chroDelegationActive={chroDelegationActive}
-          chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
-          gapPeopleOverride={chroDelegatedGap}
-          justLaunched={hrbpJustLaunchedSet.has('__chro__')}
-        />
-      }
+      heroCta={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={ctaButtonClick} /> : undefined}
     >
         <WorkforceMetricSheet
           metric={openMetric}
@@ -1984,6 +1967,38 @@ function BoardView({
 
       <MetricInfoDialog open={metricInfoOpen} onClose={() => setMetricInfoOpen(false)} collectionComplete={focusCollectionComplete} />
     </WfrOverviewLayout>
+    <FocusFirstModule
+      suppressCard={true}
+      collectionActive={focusCollectionActive}
+      collectionComplete={focusCollectionComplete}
+      collectionJustCompleted={collectionJustCompleted}
+      onCollectionActiveChange={onCollectionActiveChange}
+      onCollectionComplete={onCompleteCollection}
+      onViewResults={onViewCollectionResults}
+      launchOpen={focusLaunchOpen}
+      onLaunchOpenChange={setFocusLaunchOpen}
+      onRequestCloseMetricSheet={() => setOpenMetric(null)}
+      collectionLaunchSummary={collectionLaunchSummary}
+      onScrollToTable={() => document.getElementById('board-collection-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+      onStartUpskilling={() => {
+        if (isHrbp) {
+          setHrbpDevPlanScope('all')
+          setHrbpSelectedRoles({})
+          setHrbpDevPlanDialogOpen(true)
+        } else {
+          setChroUpskillingInfoOpen(true)
+        }
+      }}
+      upskillingActive={upskillingActive}
+      upskillingLaunchSummary={upskillingLaunchSummary}
+      isHrbp={isHrbp}
+      hrbpPlansCreated={hrbpPlansCreated}
+      chroDelegationActive={chroDelegationActive}
+      chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
+      gapPeopleOverride={chroDelegatedGap}
+      justLaunched={hrbpJustLaunchedSet.has('__chro__')}
+    />
+    </>
   )
 }
 
@@ -2464,29 +2479,10 @@ export function WorkforceReadinessDashboard({
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
-        beforeCards={showUpskilling ? (
-          <div className="wfr-ra-card" style={{ background: (mgrPlansCreated || mgrAllPlansAssigned) ? '#f0fdf4' : '#fef2f2', border: (mgrPlansCreated || mgrAllPlansAssigned) ? '1px solid #bbf7d0' : '1px solid #fecaca', marginBottom: 0 }}>
-            <div className="wfr-ra-card__header">
-              <span className="wfr-ra-card__eyebrow" style={{ color: (mgrPlansCreated || mgrAllPlansAssigned) ? '#15803d' : '#b91c1c' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2 }}>{(mgrPlansCreated || mgrAllPlansAssigned) ? 'check_circle' : 'rocket_launch'}</span> {(mgrPlansCreated || mgrAllPlansAssigned) ? 'Plans assigned' : 'Upskilling started'}
-              </span>
-            </div>
-            <div className="wfr-ra-card__cta-row">
-              <div>
-                <p className="wfr-ra-card__cta-text">
-                  <strong>{(mgrPlansCreated || mgrAllPlansAssigned) ? enrichedMgrEmployees.filter(e => e._displayEmpReadiness < 50).length : displayNotReady}</strong> development plan{displayNotReady === 1 ? '' : 's'} have been created for AI upskilling across your team.
-                </p>
-                <p className="wfr-ra-card__hint">{(mgrPlansCreated || mgrAllPlansAssigned) ? 'All plans assigned. Adoption scores will update as employees complete their plans.' : 'Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.'}</p>
-              </div>
-              {(mgrPlansCreated || mgrAllPlansAssigned) ? null : (
-                <Button variant="primary" onClick={() => setMgrAssignConfirmOpen(true)}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>assignment_turned_in</span>
-                  Assign plans
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : undefined}
+        heroCta={showUpskilling && !(mgrPlansCreated || mgrAllPlansAssigned)
+          ? <WfrCtaBar content={WFR_CTA_CONTENT[4]['manager']} onButtonClick={() => setMgrAssignConfirmOpen(true)} />
+          : undefined
+        }
         cards={[
           { id: 'ai-potential' as const, icon: 'bolt', label: 'AI potential', value: `${mgrDept.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
           { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
@@ -3101,6 +3097,7 @@ export function WorkforceReadinessDashboard({
           const hrbpShowFocusModule = true || hrbpDelegatedPending || hrbpCollecting || (hrbpCollectionComplete && !hrbpUpskillingActive) || (hrbpUpskillingActive && !hrbpPlansComplete)
           const hrbpFocusFirstModule = !hrbpShowFocusModule ? undefined : (
             <FocusFirstModule
+              suppressCard={true}
               collectionActive={hrbpCollecting}
               collectionComplete={hrbpCollectionComplete}
               collectionJustCompleted={String(hrbpEffState) === '2b'}
@@ -3160,7 +3157,17 @@ export function WorkforceReadinessDashboard({
                 subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
                 pill={<>~<span className="font-bold text-[#b91c1c]">{dirTotalGap.toLocaleString()}</span> of your {headcount.toLocaleString()} employees are not yet AI-ready.</>}
                 cards={hrbpOverviewCards}
-                beforeCards={hrbpFocusFirstModule}
+                heroCta={(() => {
+                  if (hrbpPlansComplete) return undefined
+                  const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : 1
+                  const hrbpCtaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
+                  const hrbpCtaClick = hrbpCtaState === 1
+                    ? () => setFocusLaunchOpen(true)
+                    : hrbpCtaState === 3 && isHrbp
+                      ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
+                      : undefined
+                  return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState][hrbpCtaPersona]} onButtonClick={hrbpCtaClick} />
+                })()}
               >
                 <div>
                   <div className="wfr-dash__panel-head">
@@ -3391,6 +3398,7 @@ export function WorkforceReadinessDashboard({
                   )
                 })()}
               </WfrOverviewLayout>
+              {hrbpFocusFirstModule}
               {hrbpDelegatedPending && (
                 <FocusFirstLaunchDialog
                   open={focusLaunchOpen}
@@ -3424,7 +3432,14 @@ export function WorkforceReadinessDashboard({
           return (
             <>
             <PersonDetailLayout
-              heroCard={hrbpFocusFirstModule}
+              heroCard={(() => {
+                if (hrbpPlansComplete) return undefined
+                const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : 1
+                const hrbpCtaClick = hrbpCtaState === 3
+                  ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
+                  : undefined
+                return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState]['chro']} onButtonClick={hrbpCtaClick} />
+              })()}
               breadcrumb={(
                 <Breadcrumb>
                   <BreadcrumbList>
@@ -3565,6 +3580,7 @@ export function WorkforceReadinessDashboard({
                 </DataTableBody>
               </DataTable>
             </PersonDetailLayout>
+            {hrbpFocusFirstModule}
             {hrbpUpskillingDialogOpen && (() => {
               // Only directors who participated in data collection are eligible for upskilling
               const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))

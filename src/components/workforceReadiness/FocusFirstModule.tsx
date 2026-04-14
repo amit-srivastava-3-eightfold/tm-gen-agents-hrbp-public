@@ -26,17 +26,22 @@ interface WfrHeroCardProps {
   eyebrow: ReactNode
   headline: ReactNode
   supportingText?: ReactNode
+  /** Optional CTA bar rendered as a bottom strip inside the card */
+  ctaBar?: ReactNode
 }
 
-export function WfrHeroCard({ gauge, eyebrow, headline, supportingText }: WfrHeroCardProps) {
+export function WfrHeroCard({ gauge, eyebrow, headline, supportingText, ctaBar }: WfrHeroCardProps) {
   return (
-    <div className="wfr-hero-card">
-      <div className="wfr-hero-card__gauge">{gauge}</div>
-      <div className="wfr-hero-card__copy">
-        <p className="wfr-hero-card__eyebrow">{eyebrow}</p>
-        <h2 className="wfr-hero-card__headline">{headline}</h2>
-        {supportingText && <p className="wfr-hero-card__supporting">{supportingText}</p>}
+    <div className={ctaBar ? 'wfr-hero-card wfr-hero-card--with-cta' : 'wfr-hero-card'}>
+      <div className="wfr-hero-card__main">
+        <div className="wfr-hero-card__gauge">{gauge}</div>
+        <div className="wfr-hero-card__copy">
+          <p className="wfr-hero-card__eyebrow">{eyebrow}</p>
+          <h2 className="wfr-hero-card__headline">{headline}</h2>
+          {supportingText && <p className="wfr-hero-card__supporting">{supportingText}</p>}
+        </div>
       </div>
+      {ctaBar && <div className="wfr-hero-card__cta-bar">{ctaBar}</div>}
     </div>
   )
 }
@@ -585,6 +590,8 @@ export type FocusFirstModuleBoardProps = {
   suppressInternalDialog?: boolean
   /** Collection was just launched this session — show 0% response rate */
   justLaunched?: boolean
+  /** When true, renders only the launch dialog (no visible card). Use when ctaBar is shown in the hero. */
+  suppressCard?: boolean
 }
 
 /** Dept / role drill-down: only the collecting card (same module shell as overview). */
@@ -644,6 +651,7 @@ function FocusFirstModuleBoard({
   gapPeopleOverride,
   suppressInternalDialog = false,
   justLaunched = false,
+  suppressCard = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'> & {
   hrbpDelegationPending?: boolean
   onHrbpCollectionLaunch?: (channelsLabel: string) => void
@@ -664,6 +672,26 @@ function FocusFirstModuleBoard({
     return base
   }, [deptContext, orgCollectionSnap, justLaunched])
   const attentionScope: FocusFirstCollectionAttentionScope = deptContext ? 'dept' : 'org'
+
+  if (suppressCard) {
+    if (suppressInternalDialog) return null
+    return (
+      <FocusFirstLaunchDialog
+        open={launchOpen}
+        onOpenChange={(next) => {
+          onLaunchOpenChange(next)
+          if (next) onRequestCloseMetricSheet?.()
+        }}
+        onLaunch={(summary) => onCollectionActiveChange(true, summary)}
+        defaultScopeDepartmentName={deptContext?.name}
+        hrbpMode={hrbpDelegationPending}
+        onHrbpLaunch={(channelsLabel) => {
+          onHrbpCollectionLaunch?.(channelsLabel)
+          onLaunchOpenChange(false)
+        }}
+      />
+    )
+  }
 
   // CHRO: hide entire RA module when upskilling is done (plans assigned org-wide)
   if (!isHrbp && hrbpPlansCreated) {
@@ -847,6 +875,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
     gapPeopleOverride: propsGapPeopleOverride,
     suppressInternalDialog: propsSuppressInternalDialog,
     justLaunched: propsJustLaunched,
+    suppressCard: propsSuppressCard,
   } = props
 
   return (
@@ -877,6 +906,175 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
       gapPeopleOverride={propsGapPeopleOverride}
       suppressInternalDialog={propsSuppressInternalDialog}
       justLaunched={propsJustLaunched}
+      suppressCard={propsSuppressCard}
     />
+  )
+}
+
+// ── Hero CTA bar — shared between WfrHeroOptionsPage and the live dashboard ───
+
+export type WfrDemoState = 1 | 2 | 3 | 4
+export type WfrPersona = 'chro' | 'hrbp' | 'manager'
+
+export interface WfrCtaBarContent {
+  icon: string
+  label: string
+  hint: string
+  buttonLabel: string | null
+  buttonVariant: 'primary' | 'secondary'
+  accent: string
+  progress?: number
+}
+
+const RED    = 'rgba(185,28,28,0.55)'
+const YELLOW = 'rgba(234,179,8,0.4)'
+const GREEN  = 'rgba(21,128,61,0.35)'
+const BLUE   = 'rgba(59,91,219,0.35)'
+
+export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarContent>> = {
+  1: {
+    chro: {
+      icon: 'flag',
+      label: 'AI adoption is estimated today — collect real data to see what\'s actually happening.',
+      hint: 'Choose departments to refine adoption scores and surface upskilling priorities.',
+      buttonLabel: 'Get started →',
+      buttonVariant: 'primary',
+      accent: RED,
+    },
+    hrbp: {
+      icon: 'insights',
+      label: 'Review estimated AI adoption across your team.',
+      hint: 'Your CHRO has visibility into org-wide scores — explore your team\'s data below.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: BLUE,
+    },
+    manager: {
+      icon: 'insights',
+      label: 'AI adoption scores for your team are based on estimates.',
+      hint: 'Scores will improve once data collection runs across your organization.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: BLUE,
+    },
+  },
+  2: {
+    chro: {
+      icon: 'sync',
+      label: 'Jaydon Torff\'s collection is underway — survey responses are rolling in.',
+      hint: '34 of 96 sampled · 35% response rate',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+      progress: 35,
+    },
+    hrbp: {
+      icon: 'sync',
+      label: 'Your collection is underway — survey responses are rolling in.',
+      hint: '34 of 96 sampled · 35% response rate',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+      progress: 35,
+    },
+    manager: {
+      icon: 'sync',
+      label: 'Your team is being surveyed — responses are rolling in.',
+      hint: '12 of 28 sampled · 43% response rate',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+      progress: 43,
+    },
+  },
+  3: {
+    chro: {
+      icon: 'check_circle',
+      label: 'Collection complete — ready to upskill 5,749 employees across 17 departments.',
+      hint: 'Create role-specific development plans to close adoption gaps.',
+      buttonLabel: 'What\'s next?',
+      buttonVariant: 'primary',
+      accent: GREEN,
+      progress: 100,
+    },
+    hrbp: {
+      icon: 'check_circle',
+      label: 'Collection complete — ready to upskill 1,985 employees across your teams.',
+      hint: 'Assign development plans to your client managers so they can enroll their teams.',
+      buttonLabel: 'Start upskilling →',
+      buttonVariant: 'primary',
+      accent: GREEN,
+      progress: 100,
+    },
+    manager: {
+      icon: 'check_circle',
+      label: 'Collection complete — development plans are being prepared for your team.',
+      hint: 'Your HRBP will assign plans to you shortly. You\'ll be notified when they\'re ready.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+    },
+  },
+  4: {
+    chro: {
+      icon: 'rocket_launch',
+      label: 'HRBPs are creating development plans for 5,749 employees across 17 departments.',
+      hint: 'Adoption scores will update as employees complete their plans.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+    },
+    hrbp: {
+      icon: 'rocket_launch',
+      label: 'You\'ve created development plans for 1,985 employees across 3 client managers.',
+      hint: 'Waiting for client managers to review and assign plans to their teams.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+    },
+    manager: {
+      icon: 'assignment_turned_in',
+      label: '18 development plans have been created for AI upskilling across your team.',
+      hint: 'Review each plan and assign to employees to get started. Adoption scores will update as employees complete their plans.',
+      buttonLabel: 'Assign plans',
+      buttonVariant: 'primary',
+      accent: RED,
+    },
+  },
+}
+
+export function WfrCtaBar({ content, onButtonClick }: { content: WfrCtaBarContent; onButtonClick?: () => void }) {
+  return (
+    <div style={{
+      background: content.accent,
+      padding: '18px 32px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      flexWrap: 'wrap',
+    }}>
+      <div style={{
+        flexShrink: 0, width: 40, height: 40, borderRadius: 10,
+        background: 'rgba(255,255,255,0.15)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#fff' }}>{content.icon}</span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>{content.label}</p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>{content.hint}</p>
+        {content.progress !== undefined && (
+          <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', overflow: 'hidden', maxWidth: 220 }}>
+            <div style={{ height: '100%', width: `${content.progress}%`, background: content.progress === 100 ? '#22c55e' : '#fbbf24', borderRadius: 2, transition: 'width 0.4s ease' }} />
+          </div>
+        )}
+      </div>
+      {content.buttonLabel && (
+        <Button type="button" variant={content.buttonVariant} style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
+          {content.buttonLabel}
+        </Button>
+      )}
+    </div>
   )
 }
