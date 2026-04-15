@@ -77,14 +77,6 @@ function SortIcon({ sortDir }: { sortDir?: 'asc' | 'desc' | null }) {
   return <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#cbd5e1', verticalAlign: -1 }}>unfold_more</span>
 }
 
-/** Delta badge inline — matches BoardView pattern */
-function DeltaBadge({ delta, up }: { delta: string; up: boolean }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: up ? '#15803d' : '#dc2626', padding: '2px 8px', borderRadius: 12, background: up ? '#f0fdf4' : '#fef2f2', border: `1px solid ${up ? '#bbf7d0' : '#fecaca'}`, verticalAlign: 'middle' }}>
-      {up ? '↑' : '↓'} {delta}
-    </span>
-  )
-}
 
 export function ManagerDetailPage() {
   const { currentUser } = useUser()
@@ -257,9 +249,6 @@ export function ManagerDetailPage() {
     : 0
   const notReady = displayEmployees.length - readyCount
   const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
-  // Deltas for metric cards
-  const readinessDelta = avgReadiness - rawAvgReadiness
-
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
   // Table hint

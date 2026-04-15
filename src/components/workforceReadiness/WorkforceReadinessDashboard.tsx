@@ -2439,9 +2439,6 @@ export function WorkforceReadinessDashboard({
       : enrichedMgrEmployees.length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
-    const readinessBadge = mgrCollComplete
-      ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#166534', padding: '1px 7px', borderRadius: 10, background: '#dcfce7', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-      : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
     return (
       <>
       <WfrOverviewLayout
@@ -2818,12 +2815,7 @@ export function WorkforceReadinessDashboard({
           }
 
           const deptTotalEmp = deptHrbpRows.reduce((s, r) => s + r.headcount, 0)
-          const deptAvgReadiness = deptTotalEmp > 0 ? Math.round(deptHrbpRows.reduce((s, r) => s + r.readiness * r.headcount, 0) / deptTotalEmp) : d.aiReadiness
-          const deptTotalGap = deptHrbpRows.reduce((s, r) => s + r.gap, 0)
           const multiHrbp = deptHrbpList.length > 1
-          const deptCollBadge = deptCollComplete
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
 
           const deptBreadcrumb = (
             <Breadcrumb>
@@ -3049,9 +3041,6 @@ export function WorkforceReadinessDashboard({
             }
           }
 
-          const collBadge = hrbpCollectionComplete
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
           // Data collection status for this HRBP (covers both delegation and non-delegation flows)
           const hrbpDelegatedPending = hasHrbpPendingDelegation(wfrState, hrbpName)
           const hrbpCollecting = stateNum(hrbpEffState) >= 2 && !hrbpCollectionComplete
@@ -3695,12 +3684,6 @@ export function WorkforceReadinessDashboard({
             return { mgr, readiness, readyCount: ready }
           })
 
-          const dirReadyCount = teamMgrs.reduce((s, _, i) => s + (mgrEnriched[directorData.mgrIdxStart + i]?.readyCount ?? 0), 0)
-          const dirGap = dirHeadcount - dirReadyCount
-
-          const dirBadge = effDirCollComplete
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
           return (
             <PersonDetailLayout
               breadcrumb={
@@ -3963,11 +3946,6 @@ export function WorkforceReadinessDashboard({
             const ready = Math.round(mgr.employees * readiness / 100)
             return { mgr, readiness, readyCount: ready }
           })
-          const srReadyCount = teamMgrs.reduce((s, _, i) => s + (srMgrEnriched[seniorMgrData.mgrIdxStart + i]?.readyCount ?? 0), 0)
-          const srGap = srHeadcount - srReadyCount
-          const srBadge = effSrCollComplete
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
           return (
             <PersonDetailLayout
               breadcrumb={
