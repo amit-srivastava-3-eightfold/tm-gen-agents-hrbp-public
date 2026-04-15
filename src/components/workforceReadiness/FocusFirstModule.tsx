@@ -935,6 +935,10 @@ export interface WfrCtaBarContent {
   stats?: { label: string; value: string }[]
   /** Extra outline buttons rendered before the primary button */
   outlineButtons?: string[]
+  /** For the What's next dialog: how many steps are already complete (0–4) */
+  whatsNextCompletedSteps?: number
+  /** For the What's next dialog: is the current active step in progress (vs just upcoming) */
+  whatsNextInProgress?: boolean
 }
 
 const RED    = 'rgba(185,28,28,0.55)'
@@ -978,6 +982,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonVariant: 'secondary',
       accent: YELLOW,
       outlineButtons: ['What\'s next'],
+      whatsNextCompletedSteps: 0,
+      whatsNextInProgress: false,
     },
     hrbp: {
       icon: 'flag',
@@ -1006,6 +1012,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       accent: YELLOW,
       progress: 35,
       outlineButtons: ['What\'s next'],
+      whatsNextCompletedSteps: 0,
+      whatsNextInProgress: true,
     },
     hrbp: {
       icon: 'sync',
@@ -1194,7 +1202,12 @@ const WHATS_NEXT_STEPS = [
   },
 ]
 
-function WfrWhatsNextDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function WfrWhatsNextDialog({ open, onOpenChange, completedSteps = 0, inProgress = false }: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  completedSteps?: number
+  inProgress?: boolean
+}) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -1222,29 +1235,46 @@ function WfrWhatsNextDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           </div>
 
           {/* Steps */}
-          <div style={{ padding: '20px 28px 8px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {WHATS_NEXT_STEPS.map((step, i) => (
-              <div key={i} style={{ display: 'flex', gap: 16, paddingBottom: i < WHATS_NEXT_STEPS.length - 1 ? 0 : 0 }}>
-                {/* Icon + connector */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 40 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                    background: `${step.color}18`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: step.color }}>{step.icon}</span>
+          <div style={{ padding: '20px 28px 8px', display: 'flex', flexDirection: 'column' }}>
+            {WHATS_NEXT_STEPS.map((step, i) => {
+              const isDone = i < completedSteps
+              const isActive = i === completedSteps
+              const isUpcoming = i > completedSteps
+              const connectorDone = i < completedSteps - 1 || (i === completedSteps - 1 && !isActive)
+              return (
+                <div key={i} style={{ display: 'flex', gap: 16, opacity: isUpcoming && completedSteps > 0 ? 0.45 : 1 }}>
+                  {/* Icon + connector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 40 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: isDone ? '#f0fdf4' : isActive ? `${step.color}18` : '#f8fafc',
+                      border: isActive ? `2px solid ${step.color}40` : '2px solid transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {isDone
+                        ? <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#22c55e', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                        : <span className="material-symbols-outlined" style={{ fontSize: 20, color: isUpcoming ? '#94a3b8' : step.color }}>{step.icon}</span>
+                      }
+                    </div>
+                    {i < WHATS_NEXT_STEPS.length - 1 && (
+                      <div style={{ width: 2, flex: 1, minHeight: 20, background: connectorDone ? '#22c55e' : '#e2e8f0', margin: '4px 0' }} />
+                    )}
                   </div>
-                  {i < WHATS_NEXT_STEPS.length - 1 && (
-                    <div style={{ width: 2, flex: 1, minHeight: 20, background: '#e2e8f0', margin: '4px 0' }} />
-                  )}
+                  {/* Text */}
+                  <div style={{ paddingBottom: i < WHATS_NEXT_STEPS.length - 1 ? 20 : 0, paddingTop: 8, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: isDone ? '#64748b' : '#0f172a', lineHeight: 1.4, textDecoration: isDone ? 'line-through' : 'none' }}>{step.title}</p>
+                      {isActive && (
+                        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 20, background: inProgress ? `${step.color}18` : '#f1f5f9', color: inProgress ? step.color : '#64748b' }}>
+                          {inProgress ? 'In progress' : 'Up next'}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{step.body}</p>
+                  </div>
                 </div>
-                {/* Text */}
-                <div style={{ paddingBottom: i < WHATS_NEXT_STEPS.length - 1 ? 20 : 0, paddingTop: 8 }}>
-                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: '#0f172a', lineHeight: 1.4 }}>{step.title}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{step.body}</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Footer */}
@@ -1320,11 +1350,11 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
         )}
       </div>
       {content.outlineButtons && content.outlineButtons.map((label, i) => (
-        <button key={i} type="button" onClick={() => setWhatsNextOpen(true)} style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+        <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setWhatsNextOpen(true) }} style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
           {label}
         </button>
       ))}
-      <WfrWhatsNextDialog open={whatsNextOpen} onOpenChange={setWhatsNextOpen} />
+      <WfrWhatsNextDialog open={whatsNextOpen} onOpenChange={setWhatsNextOpen} completedSteps={content.whatsNextCompletedSteps} inProgress={content.whatsNextInProgress} />
       {content.buttonLabel && (
         content.buttonVariant === 'primary' ? (
           <Button type="button" variant="primary" style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
