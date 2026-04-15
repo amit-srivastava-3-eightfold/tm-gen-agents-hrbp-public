@@ -919,7 +919,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
 
 // ── Hero CTA bar — shared between WfrHeroOptionsPage and the live dashboard ───
 
-export type WfrDemoState = 1 | '1b' | 2 | 3 | 4 | 5
+export type WfrDemoState = 1 | '1b' | 2 | 3 | 4 | 5 | 6
 export type WfrPersona = 'chro' | 'hrbp' | 'manager'
 
 export interface WfrCtaBarContent {
@@ -1116,6 +1116,47 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       stats: [
         { label: 'Plans assigned', value: '18 of 18' },
         { label: 'In progress', value: '9 of 18' },
+      ],
+    },
+  },
+  6: {
+    chro: {
+      icon: 'check_circle',
+      label: 'Upskilling complete — AI adoption scores are up across all 17 departments.',
+      hint: 'Q2 readiness cycle begins automatically. Re-survey to track continued improvement.',
+      buttonLabel: 'View results →',
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'Plans completed', value: '5,749 of 5,749' },
+        { label: 'Adoption lift', value: '+12pt' },
+      ],
+    },
+    hrbp: {
+      icon: 'check_circle',
+      label: 'Upskilling complete — your teams have finished their development plans.',
+      hint: 'Q2 readiness cycle begins automatically. Re-survey to track continued improvement.',
+      buttonLabel: 'View results →',
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'Plans completed', value: '1,985 of 1,985' },
+        { label: 'Adoption lift', value: '+14pt' },
+      ],
+    },
+    manager: {
+      icon: 'check_circle',
+      label: 'Upskilling complete — your team has finished their development plans.',
+      hint: 'Q2 readiness cycle begins automatically. Adoption scores will update next quarter.',
+      buttonLabel: 'View results →',
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'Plans completed', value: '18 of 18' },
+        { label: 'Adoption lift', value: '+16pt' },
       ],
     },
   },

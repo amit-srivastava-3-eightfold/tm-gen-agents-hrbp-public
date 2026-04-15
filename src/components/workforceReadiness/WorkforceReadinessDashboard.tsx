@@ -111,7 +111,7 @@ function PriorityTooltip({ tooltip, children }: { tooltip: string; children: Rea
 
 /* ─── WFR Universal Program State ─── */
 
-export type WfrProgramState = 1 | 2 | '2b' | 3 | 4 | 5
+export type WfrProgramState = 1 | 2 | '2b' | 3 | 4 | 5 | 6
 
 /** Per-HRBP independent state — only created for HRBPs selected during delegation. */
 export type HrbpState = {
@@ -152,6 +152,7 @@ export function deriveWfrFlags(state: WfrProgramState) {
     collectionComplete: n >= 3,
     upskillingActive: n >= 4,
     hrbpPlansCreated: n >= 5,
+    upskillingComplete: n >= 6,
   }
 }
 
@@ -860,13 +861,13 @@ function BoardView({
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }) {
   // Derive convenience flags from universal state
-  const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
+  const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   // Delegation is pending (some HRBP has been assigned but hasn't launched yet)
   const delegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
   const chroDelegationActive = !isHrbp && delegationPending
-  const ctaDemoState: WfrDemoState | null = hrbpPlansCreated ? null : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
+  const ctaDemoState: WfrDemoState | null = upskillingComplete ? 6 : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
   // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
   const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
@@ -1101,8 +1102,10 @@ function BoardView({
     return totalWeight > 0 ? Math.round(weightedDelta / totalWeight) : 0
   }, [focusCollectionComplete, hrbpPlansCreated, scopedDepartments])
 
-  // Upskilling boost for hero metrics — HRBP sees 10pt for their dept, CHRO sees org-wide boost (all HRBPs assigned plans)
-  const upskillingHeroBoost = hrbpPlansCreated
+  // Upskilling boost for hero metrics — grows from state 5 (in progress) to state 6 (complete)
+  const upskillingHeroBoost = upskillingComplete
+    ? (isHrbp ? 14 : 12)
+    : hrbpPlansCreated
     ? (isHrbp ? 4 : 3)
     : 0
   const basePeopleInAug = effectiveRollup ? effectiveRollup.peopleInAugRoles : ORG.peopleInAugRoles
@@ -2254,7 +2257,7 @@ export function WorkforceReadinessDashboard({
       const stored = localStorage.getItem(WFR_STATE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as WfrPersistedState
-        if (parsed.state === 5) return parsed
+        if (parsed.state === 5 || parsed.state === 6) return parsed
         // Preserve delegation state (hrbpStates) so HRBPs see the delegation CTA across navigation
         if (parsed.hrbpStates && Object.keys(parsed.hrbpStates).length > 0) return parsed
       }
@@ -2450,10 +2453,10 @@ export function WorkforceReadinessDashboard({
 
   if (isManager && managerTeamData) {
     const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
-    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated } = deriveWfrFlags(wfrState.state)
+    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(wfrState.state)
     const mgrDelegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
-    const mgrUpskillingBoost = mgrPlansCreated ? 6 : 0
+    const mgrUpskillingBoost = mgrUpskillingComplete ? 16 : mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
     const showUpskilling = mgrCollComplete && mgrUpskillingActive && engInScope
     // Precompute per-employee display readiness (including per-employee trend noise) so
@@ -2462,9 +2465,10 @@ export function WorkforceReadinessDashboard({
       const h = emp.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
       const empTrendNoise = mgrCollComplete && mgrTrendDelta !== 0 ? Math.round(((Math.abs(h) % 70) - 35) / 10) : 0
       const empTrendDelta = mgrTrendDelta + empTrendNoise
-      // Plan completion %: ~25% of employees complete (100%), rest are 45–99% in progress.
-      // Only 100% completion changes readiness — partial progress doesn't move the number.
-      const planPct = mgrPlansCreated
+      // Plan completion %: all done at state 6; ~25% done at state 5; 0% before plans created.
+      const planPct = mgrUpskillingComplete
+        ? 100
+        : mgrPlansCreated
         ? (Math.abs(h) % 4 === 0 ? 100 : Math.min(99, 45 + (Math.abs(h) % 55)))
         : 0
       // Pre-upskilling readiness (trend applied, no plan boost)
@@ -2500,7 +2504,9 @@ export function WorkforceReadinessDashboard({
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
-        heroCta={mgrPlansCreated
+        heroCta={mgrUpskillingComplete
+          ? <WfrCtaBar content={WFR_CTA_CONTENT[6]['manager']} />
+          : mgrPlansCreated
           ? <WfrCtaBar content={WFR_CTA_CONTENT[5]['manager']} />
           : showUpskilling && !mgrAllPlansAssigned
           ? <WfrCtaBar content={WFR_CTA_CONTENT[4]['manager']} onButtonClick={() => setMgrAssignConfirmOpen(true)} />
@@ -2526,7 +2532,7 @@ export function WorkforceReadinessDashboard({
                 ? mgrUpskillingActive
                   ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                      <span>{mgrPlansCreated ? 'Upskilling complete' : 'Upskilling in progress'}</span>
+                      <span>{mgrUpskillingComplete ? 'Upskilling complete' : 'Upskilling in progress'}</span>
                     </span>
                   : null
                 : null}

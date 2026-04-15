@@ -79,7 +79,7 @@ function ChroWorkforceReadinessTeaser() {
   const isManager = currentUser.id === 'mateo'
   const persistedState = readWfrPersistedState()
   const wfrState = readEffectiveWfrState(currentUser.id)
-  const { collectionComplete, hrbpPlansCreated } = deriveWfrFlags(wfrState)
+  const { collectionComplete, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(wfrState)
 
   // ── Persona-scoped metrics ───────────────────────────────────────────────
   let displayReadiness: number
@@ -115,8 +115,8 @@ function ChroWorkforceReadinessTeaser() {
       // Hero teaser uses simplified enrichment to match dashboard:
       // - base displayReadiness (with role noise) already accounts for the pre-collection baseline
       // - trend noise via name hash diverges from dashboard (which uses shuffled names), so skip it
-      // - upskilling flat boost at state 5 approximates the ~25%-completion model in the dashboard
-      const upskillingBoost = hrbpPlansCreated ? 10 : 0
+      // - upskilling flat boost: +10pt at state 5 (in progress), +16pt at state 6 (complete)
+      const upskillingBoost = upskillingComplete ? 16 : hrbpPlansCreated ? 10 : 0
       const enriched = mgrEmps.map(emp => Math.max(0, Math.min(100, emp.displayReadiness + upskillingBoost)))
       displayReadiness = enriched.length > 0 ? Math.round(enriched.reduce((s, v) => s + v, 0) / enriched.length) : dept.aiReadiness
       displayGap = enriched.filter(v => v < 50).length
@@ -133,7 +133,7 @@ function ChroWorkforceReadinessTeaser() {
     const deptNames = getPersonaDepartments(currentUser.id)
     const dept = deptNames.length === 1 ? departments.find(d => d.name === deptNames[0]) : undefined
     const trendDelta = collectionComplete && dept ? deptReadinessTrend(dept.name).delta : 0
-    const upskillingBoostBase = hrbpPlansCreated ? 10 : 0
+    const upskillingBoostBase = upskillingComplete ? 14 : hrbpPlansCreated ? 10 : 0
     const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
 
     if (dept) {
@@ -188,7 +188,7 @@ function ChroWorkforceReadinessTeaser() {
           departments.reduce((s, d) => s + d.employees, 0)
         )
       : 0
-    const upskillingBoost = hrbpPlansCreated ? 3 : 0
+    const upskillingBoost = upskillingComplete ? 12 : hrbpPlansCreated ? 3 : 0
     displayReadiness = Math.min(100, ORG.aiReadiness + collectionDelta + upskillingBoost)
     displayGap = ORG.peopleInAugRoles - Math.round(ORG.peopleInAugRoles * displayReadiness / 100)
     displayEmployees = ORG.totalEmployees
@@ -198,7 +198,8 @@ function ChroWorkforceReadinessTeaser() {
   // ── CTA bar ──────────────────────────────────────────────────────────────
   const delegationPending = !!persistedState.hrbpStates && Object.values(persistedState.hrbpStates).some(h => h.delegated && h.state === 1)
   const ctaDemoState: WfrDemoState | null = (() => {
-    const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
+    const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
+    if (upskillingComplete) return 6
     if (hrbpPlansCreated) return 5
     if (upskillingActive) return 4
     if (collectionComplete) return 3
