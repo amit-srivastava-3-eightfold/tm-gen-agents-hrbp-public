@@ -976,6 +976,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
+      outlineButtons: ['What\'s next'],
     },
     hrbp: {
       icon: 'flag',
@@ -1003,7 +1004,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonVariant: 'secondary',
       accent: YELLOW,
       progress: 35,
-      outlineButtons: ['What to expect'],
+      outlineButtons: ['What\'s next'],
     },
     hrbp: {
       icon: 'sync',
