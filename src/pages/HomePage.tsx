@@ -244,6 +244,7 @@ function ChroWorkforceReadinessTeaser() {
                 </>
               ) : (
                 <>
+                  <span style={{ fontWeight: 500 }}>{'Only '}</span>
                   <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
                   <span style={{ fontWeight: 500 }}>
                     {isManager || isHrbp ? ' of your team is AI-ready.' : ' of people in augmentable roles are AI-ready.'}
@@ -254,7 +255,7 @@ function ChroWorkforceReadinessTeaser() {
           }
           supportingText={hrbpPlansCreated && !isManager
             ? <><strong style={{ fontWeight: 700, color: '#15803d' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> remaining</>
-            : <>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> not yet AI-ready</>
+            : <>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong>{isManager || isHrbp ? ' of your team are' : ' employees in augmentable roles are'} not yet AI-ready.</>
           }
           ctaBar={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
         />
