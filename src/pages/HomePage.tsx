@@ -16,7 +16,7 @@ import {
   type WfrProgramState,
   computeOrgAggregateState,
   getPersonaEffectiveState,
-  hasPersonaPendingDelegation,
+
   deriveWfrFlags,
 } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'

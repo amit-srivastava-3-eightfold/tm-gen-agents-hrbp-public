@@ -1067,7 +1067,7 @@ function BoardView({
   const aiReadinessPct = hrbpPlansCreated ? boostedReadinessPct : calibratedReadinessPct
   const ready = Math.round((basePeopleInAug * aiReadinessPct) / 100)
   const gapPeople = basePeopleInAug - ready
-  const peopleInAugForCards = basePeopleInAug
+
   const aiPotentialPct = effectiveRollup ? effectiveRollup.aiPotential : ORG.aiPotential
   const orgUnrealizedValue = effectiveRollup ? effectiveRollup.unrealizedValue : departments.reduce((s, d) => s + d.unrealizedValue, 0)
   const totalEmployeesHero = effectiveRollup ? effectiveRollup.totalEmployees : ORG.totalEmployees
