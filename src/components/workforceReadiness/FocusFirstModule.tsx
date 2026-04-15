@@ -1,3 +1,4 @@
+import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import {
@@ -1166,10 +1167,103 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   },
 }
 
+const WHATS_NEXT_STEPS = [
+  {
+    icon: 'sensors',
+    color: '#6366f1',
+    title: 'Measure real adoption',
+    body: 'AI agents run short 3-minute surveys with a statistical sample of employees in augmentable roles. Results come in over 3–5 business days.',
+  },
+  {
+    icon: 'analytics',
+    color: '#0ea5e9',
+    title: 'Replace estimates with data',
+    body: 'Measured adoption scores replace skill-profile estimates. You\'ll see which roles, teams, and departments are ahead — and which need support.',
+  },
+  {
+    icon: 'school',
+    color: '#f59e0b',
+    title: 'Assign development plans',
+    body: 'HRBPs assign role-specific learning paths from the Degreed catalog. Each employee gets a plan mapped to the AI tasks in their role.',
+  },
+  {
+    icon: 'trending_up',
+    color: '#22c55e',
+    title: 'Track improvement each quarter',
+    body: 'Readiness scores update every quarter as employees complete training and adopt AI in their workflows. The gap closes over time.',
+  },
+]
+
+function WfrWhatsNextDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay style={{
+          position: 'fixed', inset: 0, zIndex: 110000,
+          background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)',
+        }} />
+        <Dialog.Content style={{
+          position: 'fixed', left: '50%', top: '50%', zIndex: 110001,
+          transform: 'translate(-50%,-50%)',
+          width: 'min(560px, calc(100vw - 32px))',
+          borderRadius: 16, background: '#fff', padding: 0,
+          boxShadow: '0 24px 48px rgba(15,23,42,0.12), 0 0 0 1px rgba(15,23,42,0.06)',
+          fontFamily: 'var(--font-family)',
+          outline: 'none',
+        }}>
+          {/* Header */}
+          <div style={{ padding: '24px 28px 16px', borderBottom: '1px solid #f1f5f9' }}>
+            <Dialog.Title style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
+              What happens next
+            </Dialog.Title>
+            <Dialog.Description style={{ margin: '4px 0 0', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+              From data collection to a fully upskilled workforce — here's the full process.
+            </Dialog.Description>
+          </div>
+
+          {/* Steps */}
+          <div style={{ padding: '20px 28px 8px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {WHATS_NEXT_STEPS.map((step, i) => (
+              <div key={i} style={{ display: 'flex', gap: 16, paddingBottom: i < WHATS_NEXT_STEPS.length - 1 ? 0 : 0 }}>
+                {/* Icon + connector */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 40 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    background: `${step.color}18`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: step.color }}>{step.icon}</span>
+                  </div>
+                  {i < WHATS_NEXT_STEPS.length - 1 && (
+                    <div style={{ width: 2, flex: 1, minHeight: 20, background: '#e2e8f0', margin: '4px 0' }} />
+                  )}
+                </div>
+                {/* Text */}
+                <div style={{ paddingBottom: i < WHATS_NEXT_STEPS.length - 1 ? 20 : 0, paddingTop: 8 }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: '#0f172a', lineHeight: 1.4 }}>{step.title}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{step.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: '16px 28px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+            <Dialog.Close asChild>
+              <Button type="button" variant="primary">Got it</Button>
+            </Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
 export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: WfrCtaBarContent; onButtonClick?: () => void; onBarClick?: () => void }) {
   // displayedProgress drives the bar width. Starts at 0 on each content change,
   // then animates to the target value (or 100 when the user clicks to simulate completion).
   const [displayedProgress, setDisplayedProgress] = useState<number | undefined>(undefined)
+  const [whatsNextOpen, setWhatsNextOpen] = useState(false)
 
   useEffect(() => {
     if (content.progress === undefined) { setDisplayedProgress(undefined); return }
@@ -1226,10 +1320,11 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
         )}
       </div>
       {content.outlineButtons && content.outlineButtons.map((label, i) => (
-        <button key={i} type="button" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+        <button key={i} type="button" onClick={() => setWhatsNextOpen(true)} style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
           {label}
         </button>
       ))}
+      <WfrWhatsNextDialog open={whatsNextOpen} onOpenChange={setWhatsNextOpen} />
       {content.buttonLabel && (
         content.buttonVariant === 'primary' ? (
           <Button type="button" variant="primary" style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
