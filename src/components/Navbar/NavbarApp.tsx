@@ -23,19 +23,6 @@ const CAREER_HUB_TABS: NavbarTabItem[] = [
  */
 const CAREER_HUB_HRBP_TABS: NavbarTabItem[] = [
   { id: 'home', label: 'Home', path: '/' },
-  { id: 'my-goals', label: 'My goals', path: '/goals' },
-  { id: 'career-navigator', label: 'Career navigator', path: '/career-navigator' },
-  {
-    id: 'marketplace',
-    label: 'Marketplace',
-    path: '/marketplace',
-    chevron: true,
-    subItems: [
-      { label: 'Learning', path: '/marketplace/learning' },
-      { label: 'Projects', path: '/marketplace/projects' },
-      { label: 'Mentorship', path: '/marketplace/mentorship' },
-    ],
-  },
   {
     id: 'my-activity',
     label: 'My activity',
@@ -54,6 +41,18 @@ const CAREER_HUB_HRBP_TABS: NavbarTabItem[] = [
   { id: 'people', label: 'People', path: '/people' },
   { id: 'my-team', label: 'My team', path: '/my-team' },
   { id: 'workforce', label: 'Workforce Readiness', path: '/workforce' },
+  {
+    id: 'more',
+    label: 'More',
+    path: '/more',
+    chevron: true,
+    hideViewAll: true,
+    subItems: [
+      { label: 'My goals', path: '/goals' },
+      { label: 'Career navigator', path: '/career-navigator' },
+      { label: 'Marketplace', path: '/marketplace' },
+    ],
+  },
 ]
 
 const CAREER_HUB_CHRO_TABS: NavbarTabItem[] = [

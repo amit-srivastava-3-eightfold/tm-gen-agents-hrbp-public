@@ -2497,11 +2497,12 @@ export function WorkforceReadinessDashboard({
         aiPotentialPct={mgrDept.aiPotential}
         aiReadinessPct={displayReadinessPct}
         totalEmployees={mgrData.employees}
-        hideHero
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
-        heroCta={showUpskilling && !(mgrPlansCreated || mgrAllPlansAssigned)
+        heroCta={mgrPlansCreated
+          ? <WfrCtaBar content={WFR_CTA_CONTENT[5]['manager']} />
+          : showUpskilling && !mgrAllPlansAssigned
           ? <WfrCtaBar content={WFR_CTA_CONTENT[4]['manager']} onButtonClick={() => setMgrAssignConfirmOpen(true)} />
           : mgrCollComplete && !mgrUpskillingActive
           ? <WfrCtaBar content={WFR_CTA_CONTENT[3]['manager']} />

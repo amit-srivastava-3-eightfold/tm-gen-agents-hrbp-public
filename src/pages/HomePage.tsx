@@ -8,7 +8,7 @@ import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
 import {
   EM, ORG, getPersonaHrbpNames, getPersonaDepartments,
-  wfrRollupDepartmentsByName, departments, getEmployeesForRole, getDeptHrbps, getHrbpDepts,
+  wfrRollupDepartmentsByName, departments, getEmployeesForRole, getRolesForDept, getDeptHrbps, getHrbpDepts,
   type RoleRowType,
 } from '../data/wfrOrgData'
 import {
@@ -89,18 +89,41 @@ function ChroWorkforceReadinessTeaser() {
 
   if (isManager) {
     const dept = departments.find(d => d.name === 'Engineering')
+    const mgrIdx = 36
     const managers = dept ? deptManagerTeams(dept.name, dept.employees) : []
-    const mgr = managers[36]
-    const rawEmps = dept && mgr
-      ? getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as unknown as RoleRowType)
-      : []
-    const cumStart = managers.slice(0, 36).reduce((s, m) => s + m.employees, 0)
-    const mgrEmps = rawEmps.slice(cumStart, cumStart + (mgr?.employees ?? 0))
-    const trendDelta = collectionComplete && dept ? deptReadinessTrend(dept.name).delta : 0
-    const boost = hrbpPlansCreated ? 10 : 0
-    const adjusted = mgrEmps.map(e => Math.max(0, Math.min(100, e.readinessPct + trendDelta + boost)))
-    displayReadiness = adjusted.length > 0 ? Math.round(adjusted.reduce((s, v) => s + v, 0) / adjusted.length) : (dept?.aiReadiness ?? 0)
-    displayGap = adjusted.filter(v => v < 50).length
+    const mgr = managers[mgrIdx]
+    if (dept && mgr) {
+      // Mirror dashboard's managerTeamData computation exactly:
+      // 1) assign role titles by global index, 2) slice, 3) apply local-index noise
+      const deptRoles = getRolesForDept(dept.name)
+      const rawEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as unknown as RoleRowType)
+      const cumStart = managers.slice(0, mgrIdx).reduce((s, m) => s + m.employees, 0)
+      // Step 1: assign titles by global position (same as dashboard's allDeptEmps)
+      const allDeptEmpsWithTitles = rawEmps.map((e, i) => ({
+        ...e,
+        title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length]?.title : undefined,
+      }))
+      // Step 2: slice to this manager's team
+      const mgrEmpsSliced = allDeptEmpsWithTitles.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmpsWithTitles.length))
+      // Step 3: compute displayReadiness with LOCAL index noise (same as dashboard's displayEmployees)
+      const mgrEmps = mgrEmpsSliced.map((e, localIdx) => {
+        const roleData = deptRoles.find(r => r.title === e.title)
+        const roleBase = roleData?.aiReadiness ?? dept.aiReadiness
+        const noise = Math.round(((localIdx * 374761393 + mgrIdx * 2654435761) % 38) - 19)
+        return { ...e, displayReadiness: Math.max(0, Math.min(100, roleBase + noise)) }
+      })
+      // Hero teaser uses simplified enrichment to match dashboard:
+      // - base displayReadiness (with role noise) already accounts for the pre-collection baseline
+      // - trend noise via name hash diverges from dashboard (which uses shuffled names), so skip it
+      // - upskilling flat boost at state 5 approximates the ~25%-completion model in the dashboard
+      const upskillingBoost = hrbpPlansCreated ? 10 : 0
+      const enriched = mgrEmps.map(emp => Math.max(0, Math.min(100, emp.displayReadiness + upskillingBoost)))
+      displayReadiness = enriched.length > 0 ? Math.round(enriched.reduce((s, v) => s + v, 0) / enriched.length) : dept.aiReadiness
+      displayGap = enriched.filter(v => v < 50).length
+    } else {
+      displayReadiness = dept?.aiReadiness ?? 0
+      displayGap = 0
+    }
     displayEmployees = mgr?.employees ?? 43
     heroEyebrow = `Your team · ${displayEmployees} employees`
   } else if (isHrbp) {
@@ -158,9 +181,16 @@ function ChroWorkforceReadinessTeaser() {
     displayEmployees = hrbpHeadcount
     heroEyebrow = `Your team · ${hrbpHeadcount.toLocaleString()} employees`
   } else {
-    // CHRO: org-level
-    displayReadiness = ORG.aiReadiness
-    displayGap = ORG.peopleInAugRoles - Math.round(ORG.peopleInAugRoles * ORG.aiReadiness / 100)
+    // CHRO: org-level — apply same collection delta + upskilling boost as dashboard
+    const collectionDelta = collectionComplete
+      ? Math.round(
+          departments.reduce((s, d) => s + deptReadinessTrend(d.name).delta * d.employees, 0) /
+          departments.reduce((s, d) => s + d.employees, 0)
+        )
+      : 0
+    const upskillingBoost = hrbpPlansCreated ? 3 : 0
+    displayReadiness = Math.min(100, ORG.aiReadiness + collectionDelta + upskillingBoost)
+    displayGap = ORG.peopleInAugRoles - Math.round(ORG.peopleInAugRoles * displayReadiness / 100)
     displayEmployees = ORG.totalEmployees
     heroEyebrow = `${ORG.totalEmployees.toLocaleString()} employees ${EM} Q1 2026`
   }
@@ -169,7 +199,7 @@ function ChroWorkforceReadinessTeaser() {
   const delegationPending = !!persistedState.hrbpStates && Object.values(persistedState.hrbpStates).some(h => h.delegated && h.state === 1)
   const ctaDemoState: WfrDemoState | null = (() => {
     const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
-    if (hrbpPlansCreated) return null
+    if (hrbpPlansCreated) return 5
     if (upskillingActive) return 4
     if (collectionComplete) return 3
     if (collectionActive) return 2

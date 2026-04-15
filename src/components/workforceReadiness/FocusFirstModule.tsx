@@ -1024,8 +1024,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   3: {
     chro: {
       icon: 'check_circle',
-      label: 'Collection complete — ready to upskill 5,749 employees across 17 departments.',
-      hint: 'Create role-specific development plans to close adoption gaps.',
+      label: 'Collection complete — HRBPs will now build AI-powered dev plans for 5,749 employees.',
+      hint: 'Each HRBP uses AI to generate role-specific development plans tailored to their team\'s gaps.',
       buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: GREEN,
@@ -1080,62 +1080,64 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   },
   5: {
     chro: {
-      icon: 'trending_up',
-      label: 'Upskilling complete — AI readiness improved from 24% to 32% across the org.',
-      hint: '5,749 development plans assigned · all 3 HRBPs complete',
+      icon: 'rocket_launch',
+      label: 'Upskilling is underway — 5,749 employees are working through their development plans.',
+      hint: 'Adoption scores will update each quarter as employees complete their plans.',
       buttonLabel: null,
       buttonVariant: 'secondary',
-      accent: GREEN,
-      progress: 100,
+      accent: YELLOW,
+      progress: 42,
       stats: [
-        { label: 'AI readiness', value: '24% → 32%' },
-        { label: 'Newly AI-ready', value: '+3,360' },
-        { label: 'Transformation gap', value: '31,920 → 28,560' },
+        { label: 'Plans assigned', value: '5,749 of 5,749' },
+        { label: 'HRBPs active', value: '3 of 3' },
       ],
     },
     hrbp: {
-      icon: 'trending_up',
-      label: 'Upskilling complete — AI readiness improved across all 3 client managers.',
-      hint: '1,985 development plans assigned · all managers complete',
+      icon: 'rocket_launch',
+      label: 'Upskilling is underway — your employees are working through their development plans.',
+      hint: 'Adoption scores will update each quarter as employees complete their plans.',
       buttonLabel: null,
       buttonVariant: 'secondary',
-      accent: GREEN,
-      progress: 100,
+      accent: YELLOW,
+      progress: 45,
       stats: [
-        { label: 'AI readiness', value: '+10pt improvement' },
         { label: 'Plans assigned', value: '1,985 of 1,985' },
-        { label: 'Managers complete', value: '3 of 3' },
+        { label: 'Managers active', value: '3 of 3' },
       ],
     },
     manager: {
-      icon: 'trending_up',
-      label: 'Upskilling complete — your team\'s plans are assigned and employees are enrolled.',
-      hint: 'All 18 development plans assigned · team is getting started',
+      icon: 'rocket_launch',
+      label: 'Upskilling is underway — your team is working through their development plans.',
+      hint: 'Adoption scores will update each quarter as employees complete their plans.',
       buttonLabel: null,
       buttonVariant: 'secondary',
-      accent: GREEN,
-      progress: 100,
+      accent: YELLOW,
+      progress: 50,
       stats: [
         { label: 'Plans assigned', value: '18 of 18' },
-        { label: 'Team readiness', value: '+12pt improvement' },
+        { label: 'In progress', value: '9 of 18' },
       ],
     },
   },
 }
 
 export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: WfrCtaBarContent; onButtonClick?: () => void; onBarClick?: () => void }) {
-  const [animating, setAnimating] = useState(false)
-  // Reset animation state when the CTA content changes (e.g. state 2→3 animation shouldn't bleed into state 4)
-  useEffect(() => { setAnimating(false) }, [content])
+  // displayedProgress drives the bar width. Starts at 0 on each content change,
+  // then animates to the target value (or 100 when the user clicks to simulate completion).
+  const [displayedProgress, setDisplayedProgress] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    if (content.progress === undefined) { setDisplayedProgress(undefined); return }
+    setDisplayedProgress(0)
+    const t = setTimeout(() => setDisplayedProgress(content.progress), 50)
+    return () => clearTimeout(t)
+  }, [content])
 
   const handleBarClick = onBarClick ? () => {
-    if (animating) return
-    setAnimating(true)
-    // After the progress bar fills to 100%, trigger the callback
+    if (displayedProgress === 100) return
+    setDisplayedProgress(100)
     setTimeout(() => onBarClick(), 1200)
   } : undefined
-
-  const progressPct = animating ? 100 : content.progress
 
   return (
     <div
@@ -1162,13 +1164,13 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>{content.label}</p>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>{content.hint}</p>
-        {progressPct !== undefined && (
+        {displayedProgress !== undefined && (
           <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', overflow: 'hidden', maxWidth: 220 }}>
-            <div style={{ height: '100%', width: `${progressPct}%`, background: progressPct === 100 ? '#22c55e' : '#fbbf24', borderRadius: 2, transition: animating ? 'width 1s ease-in-out' : 'width 0.4s ease' }} />
+            <div style={{ height: '100%', width: `${displayedProgress}%`, background: displayedProgress === 100 ? '#22c55e' : '#fbbf24', borderRadius: 2, transition: 'width 0.9s ease' }} />
           </div>
         )}
         {content.stats && content.stats.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
             {content.stats.map((stat, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 6, padding: '4px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{stat.label}</span>
