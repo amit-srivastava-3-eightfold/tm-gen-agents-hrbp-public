@@ -932,6 +932,8 @@ export interface WfrCtaBarContent {
   progress?: number
   /** Small result chips shown below the progress bar */
   stats?: { label: string; value: string }[]
+  /** Extra outline buttons rendered before the primary button */
+  outlineButtons?: string[]
 }
 
 const RED    = 'rgba(185,28,28,0.55)'
@@ -948,6 +950,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonLabel: 'Get started →',
       buttonVariant: 'primary',
       accent: RED,
+      outlineButtons: ['What to expect'],
     },
     hrbp: {
       icon: 'insights',
@@ -1221,6 +1224,11 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
           </div>
         )}
       </div>
+      {content.outlineButtons && content.outlineButtons.map((label, i) => (
+        <button key={i} type="button" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+          {label}
+        </button>
+      ))}
       {content.buttonLabel && (
         content.buttonVariant === 'primary' ? (
           <Button type="button" variant="primary" style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
