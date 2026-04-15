@@ -1084,13 +1084,6 @@ function BoardView({
   const preCollectionReadiness = rawReadinessPct
   const preCollectionReady = Math.round((basePeopleInAug * preCollectionReadiness) / 100)
   const preCollectionGap = basePeopleInAug - preCollectionReady
-  // Delta shown on cards: calibration delta when collection complete, plus upskilling boost when upskilled
-  const readinessDelta = (focusCollectionComplete ? collectionCalibrationDelta : 0) + (hrbpPlansCreated ? upskillingHeroBoost : 0)
-  const gapDelta = focusCollectionComplete || hrbpPlansCreated ? gapPeople - preCollectionGap : 0
-
-  const estimatedBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>
-  const measuredBadge = <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-
   const cards = [
     {
       id: 'ai-potential' as const,
@@ -1111,27 +1104,6 @@ function BoardView({
       l1: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{aiPotentialPct}% AI potential across {totalEmployeesHero.toLocaleString()} employees</span></>,
       delta: null,
       deltaUp: true,
-    },
-    {
-      id: 'readiness' as const,
-      label: 'AI adoption',
-      badge: focusCollectionComplete ? measuredBadge : estimatedBadge,
-      val: `${aiReadinessPct}%`,
-      icon: 'school',
-      l1: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{ready.toLocaleString()} AI-ready of {peopleInAugForCards.toLocaleString()} in augmentable roles</span></>,
-      tag: aiReadinessPct < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined,
-      delta: readinessDelta !== 0 ? `${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt` : null,
-      deltaUp: readinessDelta > 0,
-    },
-    {
-      id: 'gap' as const,
-      label: 'Transformation gap',
-      val: gapPeople.toLocaleString(),
-      icon: 'groups',
-      l1: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{gapPeople.toLocaleString()} of {peopleInAugForCards.toLocaleString()} in augmentable roles</span></>,
-      tag: upskillingActive ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined,
-      delta: gapDelta !== 0 ? `${gapDelta > 0 ? '+' : ''}${gapDelta}` : null,
-      deltaUp: gapDelta < 0, // gap going down is good
     },
   ]
 
