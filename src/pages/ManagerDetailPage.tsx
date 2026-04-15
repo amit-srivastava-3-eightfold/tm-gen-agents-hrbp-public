@@ -394,24 +394,7 @@ export function ManagerDetailPage() {
               tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
               onLearnMore: () => setMetricInfoOpen(true),
             }}
-            readiness={{
-              value: readinessDelta !== 0 ? (
-                <>{avgReadiness}% <DeltaBadge delta={`${readinessDelta > 0 ? '+' : ''}${readinessDelta}pt`} up={readinessDelta > 0} /></>
-              ) : `${avgReadiness}%`,
-              description: <><span>Of the people AI can help — how many are using it today?</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{collectionComplete ? `${readyCount} AI-ready of ${displayEmployees.length} in this team` : `Estimated: ${readyCount} of ${displayEmployees.length} may be AI-ready based on skill profiles`}</span></>,
-              badge: collectionComplete
-                ? <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#15803d', padding: '1px 7px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Measured</span>
-                : <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#92400e', padding: '1px 7px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a', verticalAlign: 'middle', letterSpacing: '0.02em' }}>Estimated</span>,
-              tag: avgReadiness < 50 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />Below target (50%)</span> : undefined,
-              onLearnMore: () => setMetricInfoOpen(true),
-            }}
             potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
-            gap={{
-              value: `${notReady.toLocaleString()} not ready`,
-              description: <><span>Employees in augmentable roles who aren't yet AI-ready.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>out of {displayEmployees.length} employees</span></>,
-              tag: upskillingInScope ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />Prioritized for upskilling</span> : undefined,
-              onLearnMore: () => setMetricInfoOpen(true),
-            }}
             managerTable={{
               title: 'Manager summary',
               hint: dept.name,

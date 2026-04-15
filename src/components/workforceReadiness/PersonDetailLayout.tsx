@@ -25,9 +25,9 @@ export interface PersonDetailLayoutProps {
   name: string
   subtitle: string
   aiPotential?: MetricCardData
-  readiness: MetricCardData
+  readiness?: MetricCardData
   potential: MetricCardData
-  gap: MetricCardData
+  gap?: MetricCardData
   tableTitle: ReactNode
   tableHint: React.ReactNode
   /** Optional breadcrumb content rendered in a sticky bar flush under the header */
@@ -49,9 +49,7 @@ export function PersonDetailLayout({
   name,
   subtitle,
   aiPotential,
-  readiness,
   potential,
-  gap,
   tableTitle,
   tableHint,
   breadcrumb,
@@ -103,27 +101,6 @@ export function PersonDetailLayout({
               hint={potential.hint}
               tag={potential.tag}
               onLearnMore={potential.onLearnMore}
-            />
-            <MetricCard
-              variant="readiness"
-              icon="school"
-              label="AI adoption"
-              badge={readiness.badge}
-              value={readiness.value}
-              description={readiness.description}
-              hint={readiness.hint}
-              tag={readiness.tag}
-              onLearnMore={readiness.onLearnMore}
-            />
-            <MetricCard
-              variant="gap"
-              icon="groups"
-              label="Transformation gap"
-              value={gap.value}
-              description={gap.description}
-              hint={gap.hint}
-              tag={gap.tag}
-              onLearnMore={gap.onLearnMore}
             />
           </div>
 
