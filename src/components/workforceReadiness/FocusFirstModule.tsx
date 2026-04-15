@@ -950,7 +950,6 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonLabel: 'Get started →',
       buttonVariant: 'primary',
       accent: RED,
-      outlineButtons: ['What to expect'],
     },
     hrbp: {
       icon: 'insights',
@@ -1004,6 +1003,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       buttonVariant: 'secondary',
       accent: YELLOW,
       progress: 35,
+      outlineButtons: ['What to expect'],
     },
     hrbp: {
       icon: 'sync',
