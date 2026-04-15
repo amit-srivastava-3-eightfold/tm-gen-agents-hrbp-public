@@ -1,5 +1,5 @@
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import {
   departments,
   ORG,
@@ -586,6 +586,8 @@ export type FocusFirstModuleBoardProps = {
   chroDelegationScopeLabel?: string
   /** Override the gap people count in the collection-complete card (e.g. scoped to HRBP's depts) */
   gapPeopleOverride?: number
+  /** Directors list passed to the HRBP launch dialog when hrbpDelegationPending */
+  hrbpDirectors?: import('./FocusFirstLaunchDialog').HrbpDirector[]
   /** When true, the internal FocusFirstLaunchDialog is not rendered (parent handles the dialog) */
   suppressInternalDialog?: boolean
   /** Collection was just launched this session — show 0% response rate */
@@ -649,12 +651,14 @@ function FocusFirstModuleBoard({
   chroDelegationActive = false,
   chroDelegationScopeLabel,
   gapPeopleOverride,
+  hrbpDirectors,
   suppressInternalDialog = false,
   justLaunched = false,
   suppressCard = false,
 }: Omit<FocusFirstModuleBoardProps, 'mode'> & {
   hrbpDelegationPending?: boolean
   onHrbpCollectionLaunch?: (channelsLabel: string) => void
+  hrbpDirectors?: import('./FocusFirstLaunchDialog').HrbpDirector[]
   delegatorName?: string
   delegationDeptName?: string
   chroDelegationActive?: boolean
@@ -685,6 +689,7 @@ function FocusFirstModuleBoard({
         onLaunch={(summary) => onCollectionActiveChange(true, summary)}
         defaultScopeDepartmentName={deptContext?.name}
         hrbpMode={hrbpDelegationPending}
+        hrbpDirectors={hrbpDirectors}
         onHrbpLaunch={(channelsLabel) => {
           onHrbpCollectionLaunch?.(channelsLabel)
           onLaunchOpenChange(false)
@@ -825,6 +830,7 @@ function FocusFirstModuleBoard({
           onLaunch={(summary) => onCollectionActiveChange(true, summary)}
           defaultScopeDepartmentName={deptContext?.name}
           hrbpMode={hrbpDelegationPending}
+          hrbpDirectors={hrbpDirectors}
           onHrbpLaunch={(channelsLabel) => {
             onHrbpCollectionLaunch?.(channelsLabel)
             onLaunchOpenChange(false)
@@ -913,7 +919,7 @@ export function FocusFirstModule(props: FocusFirstModuleProps) {
 
 // ── Hero CTA bar — shared between WfrHeroOptionsPage and the live dashboard ───
 
-export type WfrDemoState = 1 | 2 | 3 | 4
+export type WfrDemoState = 1 | '1b' | 2 | 3 | 4 | 5
 export type WfrPersona = 'chro' | 'hrbp' | 'manager'
 
 export interface WfrCtaBarContent {
@@ -924,6 +930,8 @@ export interface WfrCtaBarContent {
   buttonVariant: 'primary' | 'secondary'
   accent: string
   progress?: number
+  /** Small result chips shown below the progress bar */
+  stats?: { label: string; value: string }[]
 }
 
 const RED    = 'rgba(185,28,28,0.55)'
@@ -953,6 +961,32 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       icon: 'insights',
       label: 'AI adoption scores for your team are based on estimates.',
       hint: 'Scores will improve once data collection runs across your organization.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: BLUE,
+    },
+  },
+  '1b': {
+    chro: {
+      icon: 'send',
+      label: 'Data collection delegated to HRBPs — waiting for them to launch.',
+      hint: 'Jaydon Torff and 2 other HRBPs have been assigned. Track their progress below.',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: YELLOW,
+    },
+    hrbp: {
+      icon: 'flag',
+      label: 'Your CHRO has kicked off AI data collection for your team.',
+      hint: 'Launch collection to sharpen adoption scores and surface upskilling priorities for your people.',
+      buttonLabel: 'Launch collection →',
+      buttonVariant: 'primary',
+      accent: RED,
+    },
+    manager: {
+      icon: 'insights',
+      label: 'AI adoption scores for your team are based on estimates.',
+      hint: 'Your HRBP will be running data collection soon to refine these scores.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: BLUE,
@@ -993,7 +1027,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       label: 'Collection complete — ready to upskill 5,749 employees across 17 departments.',
       hint: 'Create role-specific development plans to close adoption gaps.',
       buttonLabel: 'What\'s next?',
-      buttonVariant: 'primary',
+      buttonVariant: 'secondary',
       accent: GREEN,
       progress: 100,
     },
@@ -1010,7 +1044,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       icon: 'check_circle',
       label: 'Collection complete — development plans are being prepared for your team.',
       hint: 'Your HRBP will assign plans to you shortly. You\'ll be notified when they\'re ready.',
-      buttonLabel: null,
+      buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: GREEN,
       progress: 100,
@@ -1020,18 +1054,20 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     chro: {
       icon: 'rocket_launch',
       label: 'HRBPs are creating development plans for 5,749 employees across 17 departments.',
-      hint: 'Adoption scores will update as employees complete their plans.',
+      hint: '0 of 3 HRBPs have created development plans.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
+      progress: 0,
     },
     hrbp: {
       icon: 'rocket_launch',
       label: 'You\'ve created development plans for 1,985 employees across 3 client managers.',
-      hint: 'Waiting for client managers to review and assign plans to their teams.',
+      hint: '0 of 3 client managers have reviewed and assigned plans to their teams.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
+      progress: 0,
     },
     manager: {
       icon: 'assignment_turned_in',
@@ -1042,18 +1078,80 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       accent: RED,
     },
   },
+  5: {
+    chro: {
+      icon: 'trending_up',
+      label: 'Upskilling complete — AI readiness improved from 24% to 32% across the org.',
+      hint: '5,749 development plans assigned · all 3 HRBPs complete',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'AI readiness', value: '24% → 32%' },
+        { label: 'Newly AI-ready', value: '+3,360' },
+        { label: 'Transformation gap', value: '31,920 → 28,560' },
+      ],
+    },
+    hrbp: {
+      icon: 'trending_up',
+      label: 'Upskilling complete — AI readiness improved across all 3 client managers.',
+      hint: '1,985 development plans assigned · all managers complete',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'AI readiness', value: '+10pt improvement' },
+        { label: 'Plans assigned', value: '1,985 of 1,985' },
+        { label: 'Managers complete', value: '3 of 3' },
+      ],
+    },
+    manager: {
+      icon: 'trending_up',
+      label: 'Upskilling complete — your team\'s plans are assigned and employees are enrolled.',
+      hint: 'All 18 development plans assigned · team is getting started',
+      buttonLabel: null,
+      buttonVariant: 'secondary',
+      accent: GREEN,
+      progress: 100,
+      stats: [
+        { label: 'Plans assigned', value: '18 of 18' },
+        { label: 'Team readiness', value: '+12pt improvement' },
+      ],
+    },
+  },
 }
 
-export function WfrCtaBar({ content, onButtonClick }: { content: WfrCtaBarContent; onButtonClick?: () => void }) {
+export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: WfrCtaBarContent; onButtonClick?: () => void; onBarClick?: () => void }) {
+  const [animating, setAnimating] = useState(false)
+  // Reset animation state when the CTA content changes (e.g. state 2→3 animation shouldn't bleed into state 4)
+  useEffect(() => { setAnimating(false) }, [content])
+
+  const handleBarClick = onBarClick ? () => {
+    if (animating) return
+    setAnimating(true)
+    // After the progress bar fills to 100%, trigger the callback
+    setTimeout(() => onBarClick(), 1200)
+  } : undefined
+
+  const progressPct = animating ? 100 : content.progress
+
   return (
-    <div style={{
-      background: content.accent,
-      padding: '18px 32px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 16,
-      flexWrap: 'wrap',
-    }}>
+    <div
+      role={handleBarClick ? 'button' : undefined}
+      tabIndex={handleBarClick ? 0 : undefined}
+      onClick={handleBarClick}
+      style={{
+        background: content.accent,
+        padding: '18px 32px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        flexWrap: 'wrap',
+        cursor: handleBarClick ? 'pointer' : undefined,
+      }}
+    >
       <div style={{
         flexShrink: 0, width: 40, height: 40, borderRadius: 10,
         background: 'rgba(255,255,255,0.15)',
@@ -1064,16 +1162,32 @@ export function WfrCtaBar({ content, onButtonClick }: { content: WfrCtaBarConten
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>{content.label}</p>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>{content.hint}</p>
-        {content.progress !== undefined && (
+        {progressPct !== undefined && (
           <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', overflow: 'hidden', maxWidth: 220 }}>
-            <div style={{ height: '100%', width: `${content.progress}%`, background: content.progress === 100 ? '#22c55e' : '#fbbf24', borderRadius: 2, transition: 'width 0.4s ease' }} />
+            <div style={{ height: '100%', width: `${progressPct}%`, background: progressPct === 100 ? '#22c55e' : '#fbbf24', borderRadius: 2, transition: animating ? 'width 1s ease-in-out' : 'width 0.4s ease' }} />
+          </div>
+        )}
+        {content.stats && content.stats.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            {content.stats.map((stat, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 6, padding: '4px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{stat.label}</span>
+                <span style={{ fontSize: 12, color: '#fff', fontWeight: 700 }}>{stat.value}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
       {content.buttonLabel && (
-        <Button type="button" variant={content.buttonVariant} style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
-          {content.buttonLabel}
-        </Button>
+        content.buttonVariant === 'primary' ? (
+          <Button type="button" variant="primary" style={{ flexShrink: 0, background: '#fff', color: '#0f172a', borderColor: 'transparent' }} onClick={onButtonClick}>
+            {content.buttonLabel}
+          </Button>
+        ) : (
+          <button type="button" onClick={onButtonClick} style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+            {content.buttonLabel}
+          </button>
+        )
       )}
     </div>
   )

@@ -77,6 +77,7 @@ function ChroWorkforceReadinessTeaser() {
   const { currentUser } = useUser()
   const isHrbp = currentUser.id === 'jaydon-torff'
   const isManager = currentUser.id === 'mateo'
+  const persistedState = readWfrPersistedState()
   const wfrState = readEffectiveWfrState(currentUser.id)
   const { collectionComplete, hrbpPlansCreated } = deriveWfrFlags(wfrState)
 
@@ -165,12 +166,14 @@ function ChroWorkforceReadinessTeaser() {
   }
 
   // ── CTA bar ──────────────────────────────────────────────────────────────
+  const delegationPending = !!persistedState.hrbpStates && Object.values(persistedState.hrbpStates).some(h => h.delegated && h.state === 1)
   const ctaDemoState: WfrDemoState | null = (() => {
     const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
     if (hrbpPlansCreated) return null
     if (upskillingActive) return 4
     if (collectionComplete) return 3
     if (collectionActive) return 2
+    if (delegationPending) return '1b'
     return 1
   })()
   const ctaPersona: WfrPersona = isManager ? 'manager' : isHrbp ? 'hrbp' : 'chro'

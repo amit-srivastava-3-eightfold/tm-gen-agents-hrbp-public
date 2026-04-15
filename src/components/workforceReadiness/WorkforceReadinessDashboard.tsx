@@ -29,7 +29,7 @@ import {
 import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona, type FocusCollectionLaunchSummary } from './FocusFirstModule'
-import { FocusFirstLaunchDialog } from './FocusFirstLaunchDialog'
+import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDialog'
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
 import { MetricCard } from './MetricCard'
@@ -837,6 +837,8 @@ function BoardView({
   setUpskillingLaunchOpen,
   scopedDepartments,
   isHrbp = false,
+  personaHrbpNames,
+  onHrbpLaunchCollection,
   onUnrealizedValueClick,
 }: {
   onDeptClick: (d: Dept) => void
@@ -853,16 +855,61 @@ function BoardView({
   setUpskillingLaunchOpen: (open: boolean) => void
   scopedDepartments?: string[]
   isHrbp?: boolean
+  personaHrbpNames?: string[]
+  onHrbpLaunchCollection?: (channelsLabel: string) => void
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }) {
   // Derive convenience flags from universal state
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated } = deriveWfrFlags(wfrState.state)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
-  const ctaDemoState: WfrDemoState | null = hrbpPlansCreated ? null : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : 1
+  // Delegation is pending (some HRBP has been assigned but hasn't launched yet)
+  const delegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
+  const chroDelegationActive = !isHrbp && delegationPending
+  const ctaDemoState: WfrDemoState | null = hrbpPlansCreated ? null : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
-  // CHRO has delegated but HRBPs haven't all started yet
-  const chroDelegationActive = !isHrbp && !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated)
+  // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
+  const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
+    if (!isHrbp || !personaHrbpNames?.length || !delegationPending) return []
+    const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+    const DIRECTOR_TITLES: Record<string, string[]> = {
+      Engineering: ['VP Engineering', 'Sr. Director Engineering', 'Director Platform', 'Director Frontend', 'Director QA', 'Director DevOps', 'Director Mobile', 'Director Infrastructure', 'Director ML', 'Director SRE', 'Director Architecture', 'Director Security Eng'],
+      Sales: ['VP Sales', 'Sr. Director Enterprise', 'Director Mid-Market', 'Director Inside Sales', 'Director Sales Ops', 'Director Channel Sales', 'Director Sales Enablement', 'Director Strategic Accounts'],
+      Operations: ['VP Operations', 'Director Supply Chain', 'Director Logistics', 'Director Process Excellence', 'Director Fleet Ops', 'Director Planning'],
+      'Customer Success': ['VP Customer Success', 'Director Implementation', 'Director Support', 'Director Renewals', 'Director Customer Ops', 'Director Onboarding'],
+    }
+    return personaHrbpNames.flatMap(hrbpName => {
+      return getHrbpDepts(hrbpName).flatMap(({ dept: deptName, headcount }) => {
+        const dept = departments.find(d => d.name === deptName)
+        if (!dept) return []
+        const allMgrs = deptManagerTeams(deptName, dept.employees)
+        const deptHrbpList = getDeptHrbps(deptName)
+        const hrbpIdx = deptHrbpList.findIndex(h => h.hrbp === hrbpName)
+        let mgrStart = 0
+        for (let i = 0; i < hrbpIdx; i++) {
+          let covered = 0
+          for (let m = mgrStart; m < allMgrs.length; m++) {
+            if (covered + allMgrs[m].employees > deptHrbpList[i].headcount && covered > 0) break
+            covered += allMgrs[m].employees; mgrStart = m + 1
+          }
+        }
+        const sliced: typeof allMgrs = []; let coveredHc = 0
+        for (let m = mgrStart; m < allMgrs.length && coveredHc < headcount; m++) {
+          sliced.push(allMgrs[m]); coveredHc += allMgrs[m].employees
+        }
+        const targetDirs = Math.max(4, Math.min(12, Math.round(headcount / 300)))
+        const perDir = Math.ceil(sliced.length / targetDirs)
+        const dirTitles = DIRECTOR_TITLES[deptName] ?? ['VP', 'Sr. Director', 'Director', 'Associate Director']
+        return Array.from({ length: targetDirs }, (_, di): HrbpDirector | null => {
+          const batch = sliced.slice(di * perDir, (di + 1) * perDir)
+          if (batch.length === 0) return null
+          const empCount = batch.reduce((s, m) => s + m.employees, 0)
+          const readyCount = Math.round(empCount * dept.aiReadiness / 100)
+          return { name: DEMO_MANAGERS[(nameHash(deptName) + di * 7) % DEMO_MANAGERS.length], title: dirTitles[di % dirTitles.length], employees: empCount, readiness: dept.aiReadiness, readyCount, teamManagers: batch.length }
+        }).filter((d): d is HrbpDirector => d !== null)
+      })
+    })
+  }, [isHrbp, personaHrbpNames, delegationPending])
   // Any HRBP has been delegated (for showing Data Collection column)
   const anyDelegation = !!wfrState.hrbpStates && Object.keys(wfrState.hrbpStates).length > 0
   const [openMetric, setOpenMetric] = useState<WorkforceMetricSheetId | null>(null)
@@ -1118,11 +1165,13 @@ function BoardView({
 
   const ctaButtonClick = ctaDemoState === 1 && !isHrbp
     ? () => { setOpenMetric(null); setFocusLaunchOpen(true) }
-    : ctaDemoState === 3 && !isHrbp
-      ? () => setChroUpskillingInfoOpen(true)
-      : ctaDemoState === 3 && isHrbp
-        ? () => { setHrbpDevPlanScope('all'); setHrbpSelectedRoles({}); setHrbpDevPlanDialogOpen(true) }
-        : undefined
+    : ctaDemoState === '1b' && isHrbp
+      ? () => { setOpenMetric(null); setFocusLaunchOpen(true) }
+      : ctaDemoState === 3 && !isHrbp
+        ? () => setChroUpskillingInfoOpen(true)
+        : ctaDemoState === 3 && isHrbp
+          ? () => { setHrbpDevPlanScope('all'); setHrbpSelectedRoles({}); setHrbpDevPlanDialogOpen(true) }
+          : undefined
 
   return (
     <>
@@ -1157,7 +1206,7 @@ function BoardView({
         explainer: (c as any).explainer,
         onLearnMore: () => setMetricInfoOpen(true),
       }))}
-      heroCta={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={ctaButtonClick} /> : undefined}
+      heroCta={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={ctaButtonClick} onBarClick={ctaDemoState === 2 ? onCompleteCollection : undefined} /> : undefined}
     >
         <WorkforceMetricSheet
           metric={openMetric}
@@ -1965,6 +2014,9 @@ function BoardView({
       upskillingLaunchSummary={upskillingLaunchSummary}
       isHrbp={isHrbp}
       hrbpPlansCreated={hrbpPlansCreated}
+      hrbpDelegationPending={isHrbp && delegationPending}
+      hrbpDirectors={hrbpBoardDirectors}
+      onHrbpCollectionLaunch={(channelsLabel) => onHrbpLaunchCollection?.(channelsLabel)}
       chroDelegationActive={chroDelegationActive}
       chroDelegationScopeLabel={collectionLaunchSummary?.scopeLabel}
       gapPeopleOverride={chroDelegatedGap}
@@ -2230,13 +2282,12 @@ export function WorkforceReadinessDashboard({
   // State transition functions — per-HRBP aware
   const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
     if (summary.delegated && summary.selectedHrbpNames?.length) {
-      // Delegation: CHRO launch advances all selected HRBPs to state 2 (collection active)
+      // Delegation: set HRBPs to state 1 (pending launch) — they must each launch themselves
       const hrbpStates: Record<string, HrbpState> = {}
       for (const hrbpName of summary.selectedHrbpNames) {
-        hrbpStates[hrbpName] = { state: 2, departments: getHrbpDepts(hrbpName).map(d => d.dept), delegated: true }
+        hrbpStates[hrbpName] = { state: 1, departments: getHrbpDepts(hrbpName).map(d => d.dept), delegated: true }
       }
-      hrbpJustLaunchedSet.add('__chro__')
-      setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary, hrbpStates }))
+      setWfrState(prev => ({ ...prev, state: 1, collectionLaunchSummary: summary, hrbpStates }))
     } else {
       hrbpJustLaunchedSet.add('__chro__')
       setWfrState(prev => ({ ...prev, state: 2, collectionLaunchSummary: summary, hrbpStates: undefined }))
@@ -2265,7 +2316,7 @@ export function WorkforceReadinessDashboard({
   }, [setWfrState])
 
   const completeCollection = useCallback(() => {
-    setWfrState(prev => advanceAllHrbps(prev, '2' as WfrProgramState, '2b'))
+    setWfrState(prev => advanceAllHrbps(prev, 2, '2b'))
   }, [setWfrState])
 
   /** Advance the HRBP persona's own HRBPs directly to state 3 (collection complete).
@@ -2399,7 +2450,8 @@ export function WorkforceReadinessDashboard({
 
   if (isManager && managerTeamData) {
     const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
-    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated } = deriveWfrFlags(wfrState.state)
+    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated } = deriveWfrFlags(wfrState.state)
+    const mgrDelegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
     const mgrUpskillingBoost = mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
@@ -2451,6 +2503,12 @@ export function WorkforceReadinessDashboard({
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
         heroCta={showUpskilling && !(mgrPlansCreated || mgrAllPlansAssigned)
           ? <WfrCtaBar content={WFR_CTA_CONTENT[4]['manager']} onButtonClick={() => setMgrAssignConfirmOpen(true)} />
+          : mgrCollComplete && !mgrUpskillingActive
+          ? <WfrCtaBar content={WFR_CTA_CONTENT[3]['manager']} />
+          : mgrCollActive && !mgrCollComplete
+          ? <WfrCtaBar content={WFR_CTA_CONTENT[2]['manager']} />
+          : mgrDelegationPending
+          ? <WfrCtaBar content={WFR_CTA_CONTENT['1b']['manager']} />
           : undefined
         }
         cards={[
@@ -2767,6 +2825,12 @@ export function WorkforceReadinessDashboard({
             setUpskillingLaunchOpen={setUpskillingLaunchOpen}
             scopedDepartments={scopedDepartments}
             isHrbp={isHrbp}
+            personaHrbpNames={personaHrbpNames}
+            onHrbpLaunchCollection={personaHrbpNames?.length ? (channelsLabel: string) => {
+              for (const name of personaHrbpNames) {
+                advanceHrbpToCollection(name, channelsLabel)
+              }
+            } : undefined}
             onUnrealizedValueClick={setUvSheetData}
           />
         )}
@@ -3114,14 +3178,17 @@ export function WorkforceReadinessDashboard({
                 cards={hrbpOverviewCards}
                 heroCta={(() => {
                   if (hrbpPlansComplete) return undefined
-                  const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : 1
+                  const hrbpDelegPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
+                  const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : hrbpDelegPending ? '1b' : 1
                   const hrbpCtaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
                   const hrbpCtaClick = hrbpCtaState === 1
                     ? () => setFocusLaunchOpen(true)
-                    : hrbpCtaState === 3 && isHrbp
-                      ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
-                      : undefined
-                  return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState][hrbpCtaPersona]} onButtonClick={hrbpCtaClick} />
+                    : hrbpCtaState === '1b' && isHrbp
+                      ? () => setFocusLaunchOpen(true)
+                      : hrbpCtaState === 3 && isHrbp
+                        ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
+                        : undefined
+                  return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState][hrbpCtaPersona]} onButtonClick={hrbpCtaClick} onBarClick={hrbpCtaState === 2 ? completeCollection : undefined} />
                 })()}
               >
                 <div>
@@ -3389,11 +3456,12 @@ export function WorkforceReadinessDashboard({
             <PersonDetailLayout
               heroCard={(() => {
                 if (hrbpPlansComplete) return undefined
-                const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : 1
+                const chroHrbpDelegPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
+                const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : chroHrbpDelegPending ? '1b' : 1
                 const hrbpCtaClick = hrbpCtaState === 3
                   ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
                   : undefined
-                return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState]['chro']} onButtonClick={hrbpCtaClick} />
+                return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState]['chro']} onButtonClick={hrbpCtaClick} onBarClick={hrbpCtaState === 2 ? completeCollection : undefined} />
               })()}
               breadcrumb={(
                 <Breadcrumb>

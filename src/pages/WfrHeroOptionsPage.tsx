@@ -35,9 +35,11 @@ function GaugeSVG({ pct }: { pct: number }) {
 
 const STATE_LABELS: Record<WfrDemoState, string> = {
   1: 'State 1 — Not started',
+  '1b': 'State 1b — Delegated to HRBPs',
   2: 'State 2 — Collection in progress',
   3: 'State 3 — Collection complete',
-  4: 'State 4 — Upskilling active',
+  4: 'State 4 — Dev plan created',
+  5: 'State 5 — Upskilling active',
 }
 
 export default function WfrHeroOptionsPage() {
@@ -54,7 +56,7 @@ export default function WfrHeroOptionsPage() {
 
       {/* State tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 36, flexWrap: 'wrap' }}>
-        {([1, 2, 3, 4] as WfrDemoState[]).map(s => (
+        {([1, '1b', 2, 3, 4, 5] as WfrDemoState[]).map(s => (
           <button key={s} type="button" onClick={() => setState(s)} style={{
             padding: '6px 14px', borderRadius: 8, border: '1px solid',
             borderColor: state === s ? '#6366f1' : '#e2e8f0',

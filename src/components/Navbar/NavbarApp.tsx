@@ -107,10 +107,6 @@ const SWITCH_OPTIONS = [
   { label: 'manager@acme.com', userId: 'mateo' },
   { label: 'hrbp@acme.com', userId: 'jaydon-torff' },
   { label: 'chro@acme.com', userId: 'chro' },
-]
-
-const SWITCH_OPTIONS_CHRO = [
-  ...SWITCH_OPTIONS,
   { label: 'Components', userId: '__components__' },
 ]
 
@@ -148,7 +144,7 @@ export function useNavbarProps() {
       avatarInitials: currentUser.avatarInitials,
       avatarColor: currentUser.avatarColor,
     },
-    switchOptions: currentUser.id === 'chro' ? SWITCH_OPTIONS_CHRO : SWITCH_OPTIONS,
+    switchOptions: SWITCH_OPTIONS,
     onSwitchUser: (userId: string) => {
       if (userId === '__components__') {
         window.location.href = '/components/wfr-hero-options'
@@ -173,17 +169,22 @@ const WFR_STATE_KEY = 'tm:wfr-state'
 /** TM app Navbar: the account selected in the user menu drives the navbar variant (tabs). */
 export function NavbarApp() {
   const navbarProps = useNavbarProps()
+  const { setCurrentUser } = useUser()
 
-  // Clicking the Eightfold logo resets WFR state from any page/account
+  // Clicking the Eightfold logo resets all state and navigates to CHRO home
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const logo = (e.target as HTMLElement).closest('.navbar__logo')
       if (!logo) return
+      e.preventDefault()
+      e.stopPropagation()
       try { localStorage.removeItem(WFR_STATE_KEY) } catch { /* ignore */ }
+      setCurrentUser(CHRO)
+      window.location.href = '/'
     }
     document.addEventListener('click', handler, true)
     return () => document.removeEventListener('click', handler, true)
-  }, [])
+  }, [setCurrentUser])
 
   return <Navbar {...navbarProps} />
 }
