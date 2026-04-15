@@ -199,7 +199,7 @@ function ChroWorkforceReadinessTeaser() {
   const delegationPending = !!persistedState.hrbpStates && Object.values(persistedState.hrbpStates).some(h => h.delegated && h.state === 1)
   const ctaDemoState: WfrDemoState | null = (() => {
     const { collectionActive, collectionComplete, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(typeof wfrState === 'string' ? (parseInt(wfrState) as WfrProgramState) : wfrState)
-    if (upskillingComplete) return 6
+    if (upskillingComplete) return null
     if (hrbpPlansCreated) return 5
     if (upskillingActive) return 4
     if (collectionComplete) return 3

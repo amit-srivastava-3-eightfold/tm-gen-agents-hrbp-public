@@ -867,7 +867,7 @@ function BoardView({
   // Delegation is pending (some HRBP has been assigned but hasn't launched yet)
   const delegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
   const chroDelegationActive = !isHrbp && delegationPending
-  const ctaDemoState: WfrDemoState | null = upskillingComplete ? 6 : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
+  const ctaDemoState: WfrDemoState | null = upskillingComplete ? null : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
   // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
   const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
@@ -2505,7 +2505,7 @@ export function WorkforceReadinessDashboard({
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
         heroCta={mgrUpskillingComplete
-          ? <WfrCtaBar content={WFR_CTA_CONTENT[6]['manager']} />
+          ? undefined
           : mgrPlansCreated
           ? <WfrCtaBar content={WFR_CTA_CONTENT[5]['manager']} />
           : showUpskilling && !mgrAllPlansAssigned
