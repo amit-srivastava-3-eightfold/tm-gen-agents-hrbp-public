@@ -244,9 +244,6 @@ export function ManagerDetailPage() {
   const avgReadiness = displayEmployees.length > 0
     ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length)
     : 0
-  const rawAvgReadiness = employees.length > 0
-    ? Math.round(employees.reduce((s, e) => s + e.readinessPct, 0) / employees.length)
-    : 0
   const notReady = displayEmployees.length - readyCount
   const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
   // Collection-related state

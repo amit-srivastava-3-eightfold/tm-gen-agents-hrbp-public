@@ -2814,7 +2814,6 @@ export function WorkforceReadinessDashboard({
             deptMgrStart += slicedIdxs.length
           }
 
-          const deptTotalEmp = deptHrbpRows.reduce((s, r) => s + r.headcount, 0)
           const multiHrbp = deptHrbpList.length > 1
 
           const deptBreadcrumb = (
