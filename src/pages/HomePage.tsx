@@ -86,6 +86,8 @@ function ChroWorkforceReadinessTeaser() {
   let displayGap: number
   let displayEmployees: number
   let heroEyebrow: string
+  let rawReadiness: number = 0   // pre-program baseline for "up from X%" headline
+  let displayReady: number = 0   // AI-ready headcount at current state
 
   if (isManager) {
     const dept = departments.find(d => d.name === 'Engineering')
@@ -120,10 +122,13 @@ function ChroWorkforceReadinessTeaser() {
       const enriched = mgrEmps.map(emp => Math.max(0, Math.min(100, emp.displayReadiness + upskillingBoost)))
       displayReadiness = enriched.length > 0 ? Math.round(enriched.reduce((s, v) => s + v, 0) / enriched.length) : dept.aiReadiness
       displayGap = enriched.filter(v => v < 50).length
+      rawReadiness = dept.aiReadiness
     } else {
       displayReadiness = dept?.aiReadiness ?? 0
       displayGap = 0
+      rawReadiness = dept?.aiReadiness ?? 0
     }
+    displayReady = (mgr?.employees ?? 43) - displayGap
     displayEmployees = mgr?.employees ?? 43
     heroEyebrow = `Your team · ${displayEmployees} employees`
   } else if (isHrbp) {
@@ -177,7 +182,9 @@ function ChroWorkforceReadinessTeaser() {
       const rollup = wfrRollupDepartmentsByName(deptNames)
       displayReadiness = rollup ? Math.min(100, rollup.aiReadiness + trendDelta) : ORG.aiReadiness
     }
+    rawReadiness = dept?.aiReadiness ?? ORG.aiReadiness
     displayGap = Math.max(0, hrbpHeadcount - Math.round(hrbpHeadcount * displayReadiness / 100))
+    displayReady = hrbpHeadcount - displayGap
     displayEmployees = hrbpHeadcount
     heroEyebrow = `Your team · ${hrbpHeadcount.toLocaleString()} employees`
   } else {
@@ -189,11 +196,18 @@ function ChroWorkforceReadinessTeaser() {
         )
       : 0
     const upskillingBoost = upskillingComplete ? 12 : hrbpPlansCreated ? 3 : 0
+    rawReadiness = ORG.aiReadiness
     displayReadiness = Math.min(100, ORG.aiReadiness + collectionDelta + upskillingBoost)
     displayGap = ORG.peopleInAugRoles - Math.round(ORG.peopleInAugRoles * displayReadiness / 100)
+    displayReady = ORG.peopleInAugRoles - displayGap
     displayEmployees = ORG.totalEmployees
     heroEyebrow = `${ORG.totalEmployees.toLocaleString()} employees ${EM} Q1 2026`
   }
+
+  // ── Upskilling headline extras ────────────────────────────────────────────
+  const baseHeadcount = isManager ? displayEmployees : isHrbp ? displayEmployees : ORG.peopleInAugRoles
+  const rawGap = Math.max(0, baseHeadcount - Math.round(baseHeadcount * rawReadiness / 100))
+  const movedOut = Math.max(0, rawGap - displayGap)
 
   // ── CTA bar ──────────────────────────────────────────────────────────────
   const delegationPending = !!persistedState.hrbpStates && Object.values(persistedState.hrbpStates).some(h => h.delegated && h.state === 1)
@@ -222,13 +236,26 @@ function ChroWorkforceReadinessTeaser() {
           eyebrow={heroEyebrow}
           headline={
             <span style={{ font: 'var(--typography-header3)', letterSpacing: '-0.01em' }}>
-              <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
-              <span style={{ fontWeight: 500 }}>
-                {isManager || isHrbp ? ' of your team is AI-ready.' : ' of people in augmentable roles are AI-ready.'}
-              </span>
+              {hrbpPlansCreated && !isManager ? (
+                <>
+                  <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
+                  <span style={{ fontWeight: 500 }}>{' AI adoption'}</span>
+                  <span style={{ fontWeight: 500, opacity: 0.75 }}>{` — up from ${rawReadiness}% before upskilling. ${displayReady.toLocaleString()} ${isHrbp ? 'employees on your team' : 'employees'} are now AI-ready.`}</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
+                  <span style={{ fontWeight: 500 }}>
+                    {isManager || isHrbp ? ' of your team is AI-ready.' : ' of people in augmentable roles are AI-ready.'}
+                  </span>
+                </>
+              )}
             </span>
           }
-          supportingText={<>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> not yet AI-ready</>}
+          supportingText={hrbpPlansCreated && !isManager
+            ? <><strong style={{ fontWeight: 700, color: '#15803d' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> remaining</>
+            : <>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> not yet AI-ready</>
+          }
           ctaBar={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
         />
       </Link>
