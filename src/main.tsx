@@ -17,6 +17,9 @@ import { DevPlanTemplatesPage } from './pages/DevPlanTemplatesPage'
 import { DevPlanTemplateDetailPage } from './pages/DevPlanTemplateDetailPage'
 import { ManagerDetailPage } from './pages/ManagerDetailPage'
 import WfrHeroOptionsPage from './pages/WfrHeroOptionsPage'
+import DevPlansPage from './pages/DevPlansPage'
+import WfrMetricCardsPage from './pages/WfrMetricCardsPage'
+import WfrDialogsPage from './pages/WfrDialogsPage'
 import { ComponentsLayout } from './pages/ComponentsLayout'
 
 createRoot(document.getElementById('root')!).render(
@@ -39,6 +42,9 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/components" element={<ComponentsLayout />}>
               <Route path="skill-tag" element={<SkillTagPage />} />
               <Route path="wfr-hero-options" element={<WfrHeroOptionsPage />} />
+              <Route path="dev-plans" element={<DevPlansPage />} />
+              <Route path="wfr-metric-cards" element={<WfrMetricCardsPage />} />
+              <Route path="wfr-dialogs" element={<WfrDialogsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

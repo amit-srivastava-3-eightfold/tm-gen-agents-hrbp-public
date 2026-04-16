@@ -16,9 +16,9 @@ import {
   type WfrProgramState,
   computeOrgAggregateState,
   getPersonaEffectiveState,
-
   deriveWfrFlags,
 } from '../components/workforceReadiness/WorkforceReadinessDashboard'
+import { MetricArc } from '../components/workforceReadiness/MetricArc'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
 import { WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona } from '../components/workforceReadiness/FocusFirstModule'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
@@ -44,34 +44,6 @@ function readEffectiveWfrState(personaId: string): WfrProgramState {
   return computeOrgAggregateState(persisted)
 }
 
-/* Inline compact semicircle — readiness only, matches WFR overview hero */
-function WfrReadinessArc({ readiness, color }: { readiness: number; color?: string }) {
-  const dim = 140, r = 54, sw = 8
-  const cx = dim / 2, cy = dim / 2
-  const rad = (d: number) => (d * Math.PI) / 180
-  const arcColor = color ?? '#22c55e'
-  // Upper semicircle: 180° to 360°
-  const arcPath = (pct: number) => {
-    const sweep = (pct / 100) * 180
-    const startAngle = 180
-    const x1 = cx + r * Math.cos(rad(startAngle))
-    const y1 = cy + r * Math.sin(rad(startAngle))
-    const x2 = cx + r * Math.cos(rad(startAngle + sweep))
-    const y2 = cy + r * Math.sin(rad(startAngle + sweep))
-    return `M${x1} ${y1} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${x2} ${y2}`
-  }
-  return (
-    <div className="home-wfr-arc">
-      <svg width={dim} height={dim / 2 + 16} viewBox={`0 0 ${dim} ${dim / 2 + 16}`} overflow="visible" aria-hidden>
-        <path d={arcPath(100)} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={sw} strokeLinecap="round" />
-        <path d={arcPath(readiness)} fill="none" stroke={arcColor} strokeWidth={sw} strokeLinecap="round" />
-
-        <text x={cx} y={cy - 6} textAnchor="middle" className="home-wfr-arc__pct">{readiness}%</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="home-wfr-arc__label">{'AI ADOPTION'}</text>
-      </svg>
-    </div>
-  )
-}
 
 function ChroWorkforceReadinessTeaser() {
   const { currentUser } = useUser()
@@ -232,30 +204,23 @@ function ChroWorkforceReadinessTeaser() {
       </div>
       <Link to="/workforce" style={{ textDecoration: 'none', display: 'block' }}>
         <WfrHeroCard
-          gauge={<WfrReadinessArc readiness={displayReadiness} />}
+          gauge={<MetricArc potential={48} readiness={displayReadiness} size="lg" />}
           eyebrow={heroEyebrow}
-          headline={
-            <span style={{ font: 'var(--typography-header3)', letterSpacing: '-0.01em' }}>
-              {hrbpPlansCreated && !isManager ? (
-                <>
-                  <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
-                  <span style={{ fontWeight: 500 }}>{' AI adoption'}</span>
-                  <span style={{ fontWeight: 500, opacity: 0.75 }}>{` — up from ${rawReadiness}% before upskilling. ${displayReady.toLocaleString()} ${isHrbp ? 'employees on your team' : 'employees'} are now AI-ready.`}</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontWeight: 500 }}>{'Only '}</span>
-                  <span style={{ fontWeight: 700 }}>{displayReadiness}%</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {isManager || isHrbp ? ' of your team is AI-ready.' : ' of people in augmentable roles are AI-ready.'}
-                  </span>
-                </>
-              )}
+          headline={hrbpPlansCreated && !isManager ? (
+            <>
+              <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadiness}%</span>
+              <span className="wfr-dash__headline-text">{' AI adoption'}</span>
+              <span className="wfr-dash__headline-text" style={{ opacity: 0.75 }}>{` — up from ${rawReadiness}% before upskilling. ${displayReady.toLocaleString()} ${isHrbp ? 'employees on your team' : 'employees'} are now AI-ready.`}</span>
+            </>
+          ) : (
+            <span className="wfr-dash__headline-text">
+              Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadiness}%</span>
+              {' are AI-ready.'}
             </span>
-          }
+          )}
           supportingText={hrbpPlansCreated && !isManager
-            ? <><strong style={{ fontWeight: 700, color: '#15803d' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong> remaining</>
-            : <>~<strong style={{ fontWeight: 700, color: '#b91c1c' }}>{displayGap.toLocaleString()}</strong>{isManager || isHrbp ? ' of your team are' : ' employees in augmentable roles are'} not yet AI-ready.</>
+            ? <><strong style={{ fontWeight: 700, color: '#4ade80' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#fca5a5' }}>{displayGap.toLocaleString()}</strong> remaining</>
+            : <><strong style={{ fontWeight: 700 }}>{displayGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
           }
           ctaBar={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
         />

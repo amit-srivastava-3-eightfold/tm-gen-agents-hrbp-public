@@ -752,6 +752,10 @@
   font-size: 11px;
   color: var(--color-grey-50);
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Expanded panel */
