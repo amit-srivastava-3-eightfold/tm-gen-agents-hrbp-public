@@ -33,6 +33,7 @@ import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDia
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
 import { MetricCard } from './MetricCard'
+import { MetricArc, MetricArcCompact } from './MetricArc'
 import { PersonDetailLayout } from './PersonDetailLayout'
 import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { UnrealizedValueSheet, type UnrealizedValueSheetData } from './UnrealizedValueSheet'
@@ -213,191 +214,7 @@ function advanceAllHrbps(prev: WfrPersistedState, from: WfrProgramState | null, 
 
 /* ─── End WFR state helpers ─── */
 
-const READINESS_SEMICIRCLE = {
-  hero: {
-    dim: 180,
-    r: 68,
-    sw: 14,
-    cy: 124,
-    vbY: 40,
-    vbH: 88,
-    labelGroupY: 130,
-    pctDy: -12,
-    svgClass: 'wfr-metric-arc--lg wfr-metric-arc--readiness-hero wfr-metric-arc--semicircle',
-  },
-  compact: {
-    dim: 136,
-    r: 52,
-    sw: 10,
-    cy: 94,
-    vbY: 26,
-    vbH: 70,
-    labelGroupY: 102,
-    pctDy: -9,
-    svgClass: 'wfr-metric-arc--readiness-hero wfr-metric-arc--semicircle wfr-metric-arc--semicircle--compact',
-  },
-} as const
-
-/** Upper semicircle gauge = AI readiness only. `compact` = smaller copy for department header. */
-function MetricArcReadinessSemicircle({
-  readiness,
-  compact = false,
-}: {
-  readiness: number
-  compact?: boolean
-}) {
-  const cfg = compact ? READINESS_SEMICIRCLE.compact : READINESS_SEMICIRCLE.hero
-  const { dim, r, sw, cy, vbY, vbH, labelGroupY, pctDy, svgClass } = cfg
-  const cx = dim / 2
-  const rad = (d: number) => (d * Math.PI) / 180
-  const arc = (pct: number) => {
-    const sweepDeg = (pct / 100) * 180
-    const a1 = 180
-    const a2 = 180 + sweepDeg
-    const x1 = cx + r * Math.cos(rad(a1))
-    const y1 = cy + r * Math.sin(rad(a1))
-    const x2 = cx + r * Math.cos(rad(a2))
-    const y2 = cy + r * Math.sin(rad(a2))
-    const largeArc = sweepDeg > 180 ? 1 : 0
-    return `M${x1} ${y1} A${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
-  }
-  return (
-    <div
-      className="flex shrink-0 flex-col items-center gap-0"
-      role="img"
-      aria-label={`AI readiness ${readiness} percent of augmentable-role headcount`}
-    >
-      <svg
-        className={`wfr-metric-arc wfr-metric-arc--semicircle ${svgClass}`}
-        width={dim}
-        height={vbH}
-        viewBox={`0 ${vbY} ${dim} ${vbH}`}
-        overflow="visible"
-        aria-hidden
-      >
-        <path d={arc(100)} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} strokeLinecap="round" />
-        <path
-          d={arc(readiness)}
-          fill="none"
-          stroke="#22c55e"
-          strokeWidth={sw}
-          strokeLinecap="round"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(34,197,94,0.5))' }}
-        />
-        <g transform={`translate(${cx}, ${labelGroupY})`} className="wfr-metric-arc__semicircle-labels">
-          <text
-            x={0}
-            y={pctDy}
-            textAnchor="middle"
-            dominantBaseline="text-after-edge"
-            className="wfr-metric-arc__pct wfr-metric-arc__pct--readiness-hero"
-          >
-            {readiness}%
-          </text>
-          <text
-            x={0}
-            y={0}
-            textAnchor="middle"
-            dominantBaseline="text-after-edge"
-            className="wfr-metric-arc__label"
-          >
-            {'AI ADOPTION'}
-          </text>
-        </g>
-      </svg>
-    </div>
-  )
-}
-
-const ARC_SM = { dim: 102, r: 40, sw: 6, vbH: 102, svgH: 90 } as const
-
-function MetricArc({
-  potential,
-  readiness,
-  size,
-  showLegend = true,
-  showInteriorLabels = true,
-}: {
-  potential: number
-  readiness: number
-  size: 'lg' | 'sm'
-  showLegend?: boolean
-  showInteriorLabels?: boolean
-}) {
-  if (size === 'lg') {
-    return <MetricArcReadinessSemicircle readiness={readiness} />
-  }
-
-  const { dim, r, sw, vbH, svgH } = ARC_SM
-  const cx = dim / 2
-  const cy = dim / 2
-  const rad = (d: number) => (d * Math.PI) / 180
-  const arc = (pct: number) => {
-    const s = 210
-    const sw2 = (pct / 100) * 120
-    const x1 = cx + r * Math.cos(rad(s))
-    const y1 = cy + r * Math.sin(rad(s))
-    const x2 = cx + r * Math.cos(rad(s + sw2))
-    const y2 = cy + r * Math.sin(rad(s + sw2))
-    return `M${x1} ${y1} A${r} ${r} 0 ${sw2 > 180 ? 1 : 0} 1 ${x2} ${y2}`
-  }
-  const ty = { lab: 7, ready: 20 }
-  const pctY = showInteriorLabels ? cy - 5 : cy
-  return (
-    <div className="flex flex-col items-center gap-0">
-      <svg
-        className={`wfr-metric-arc wfr-metric-arc--sm ${!showInteriorLabels ? 'wfr-metric-arc--number-only' : ''}`}
-        width={dim}
-        height={showInteriorLabels ? svgH : 76}
-        viewBox={`0 0 ${dim} ${vbH}`}
-        overflow="visible"
-        aria-hidden
-      >
-        <path d={arc(100)} fill="none" stroke="#f1f5f9" strokeWidth={sw} strokeLinecap="round" />
-        <path
-          d={arc(potential)}
-          fill="none"
-          stroke="var(--wfr-potential)"
-          strokeWidth={sw}
-          strokeLinecap="round"
-          opacity={0.85}
-        />
-        <path d={arc(readiness)} fill="none" stroke="var(--wfr-readiness)" strokeWidth={sw} strokeLinecap="round" />
-        <text
-          x={cx}
-          y={pctY}
-          textAnchor="middle"
-          {...(!showInteriorLabels ? { dominantBaseline: 'central' as const } : {})}
-          className="wfr-metric-arc__pct"
-        >
-          {potential}%
-        </text>
-        {showInteriorLabels && (
-          <>
-            <text x={cx} y={cy + ty.lab} textAnchor="middle" className="wfr-metric-arc__label">
-              UNREALIZED VALUE
-            </text>
-            <text x={cx} y={cy + ty.ready} textAnchor="middle" className="wfr-metric-arc__ready">
-              {readiness}% ready
-            </text>
-          </>
-        )}
-      </svg>
-      {showLegend && (
-        <div className="mt-1 flex gap-3.5">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-potential)]" />
-            <span className="wfr-type-caption-sb wfr-text-potential">Unrealized value</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-readiness)]" />
-            <span className="wfr-type-caption-sb wfr-text-readiness">Readiness</span>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+export { MetricArc, MetricArcCompact } from './MetricArc'
 
 const METRIC_INFO = {
   readiness: 'People in augmentable roles using AI effectively ÷ total people in augmentable roles',
@@ -552,9 +369,9 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
     <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {!hideHero && (
         <WfrHeroCard
-          gauge={<div style={{ marginTop: -15 }}><MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" /></div>}
+          gauge={<MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />}
           eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
-          headline={<span className="wfr-dash__headline">{headline}</span>}
+          headline={headline}
           supportingText={pill}
           ctaBar={heroCta}
         />
@@ -1191,13 +1008,13 @@ function BoardView({
         </>
       ) : (
         <span className="wfr-dash__headline-text">
-          Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> of people in augmentable roles are AI-ready.
+          Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> are AI-ready.
         </span>
       )}
       subtitle={!hrbpPlansCreated ? <>Your org has <span className="font-bold wfr-text-potential">{formatDollar(orgUnrealizedValue)}</span> in unrealized value. You're capturing less than a third of it.</> : undefined}
       pill={hrbpPlansCreated
         ? <><span className="font-bold text-[#15803d]">{(preCollectionGap - gapPeople).toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> remaining.</>
-        : <>~<span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> employees in augmentable roles are not yet AI-ready.</>
+        : <><strong style={{ fontWeight: 700 }}>{gapPeople.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
       }
       cards={cards.map(c => ({
         ...c,
@@ -2501,9 +2318,9 @@ export function WorkforceReadinessDashboard({
         aiPotentialPct={mgrDept.aiPotential}
         aiReadinessPct={displayReadinessPct}
         totalEmployees={mgrData.employees}
-        headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>}
+        headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
-        pill={<>~<span className="font-bold text-[#b91c1c]">{displayNotReady.toLocaleString()}</span> of your {mgrData.employees.toLocaleString()} employees are not yet AI-ready.</>}
+        pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={mgrUpskillingComplete
           ? undefined
           : mgrPlansCreated
@@ -3179,9 +2996,9 @@ export function WorkforceReadinessDashboard({
                 aiPotentialPct={d.aiPotential}
                 aiReadinessPct={dirWeightedReadiness}
                 totalEmployees={headcount}
-                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> of your team is AI-ready.</span>}
+                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> are AI-ready.</span>}
                 subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
-                pill={<>~<span className="font-bold text-[#b91c1c]">{dirTotalGap.toLocaleString()}</span> of your {headcount.toLocaleString()} employees are not yet AI-ready.</>}
+                pill={<><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
                 cards={hrbpOverviewCards}
                 heroCta={(() => {
                   if (hrbpPlansComplete) return undefined

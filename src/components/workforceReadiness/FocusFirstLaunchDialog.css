@@ -347,9 +347,7 @@
 }
 
 .wfr-focus-launch__dept-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: block;
   max-height: 340px;
   overflow-x: auto;
   overflow-y: auto;

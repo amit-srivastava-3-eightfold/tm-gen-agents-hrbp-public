@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator, Tabs, TabsList, TabsTrigger, DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, hrbpAssignments, deptGapHeadcount, formatDollar } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
@@ -440,103 +440,101 @@ export function FocusFirstLaunchDialog({
                 <p className="wfr-focus-launch__sub">Choose departments or HRBPs to include in data collection.</p>
 
                 {/* Toggle: Departments / HRBPs */}
-                <div style={{ display: 'flex', gap: 0, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
-                  {(['departments', 'hrbps'] as const).map(mode => (
-                    <button
-                      key={mode}
-                      type="button"
-                      style={{
-                        flex: 1, padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
-                        background: scopeBy === mode ? '#3b5bdb' : '#fff',
-                        color: scopeBy === mode ? '#fff' : '#475569',
-                      }}
-                      onClick={() => setScopeBy(mode)}
-                    >
-                      {mode === 'departments' ? 'Departments' : 'HRBPs'}
-                    </button>
-                  ))}
-                </div>
+                <Tabs value={scopeBy} onValueChange={(v: string) => setScopeBy(v as 'departments' | 'hrbps')} style={{ marginBottom: 12 }}>
+                  <TabsList style={{ width: '100%' }}>
+                    <TabsTrigger value="departments" style={{ flex: 1 }}>Departments</TabsTrigger>
+                    <TabsTrigger value="hrbps" style={{ flex: 1 }}>HRBPs</TabsTrigger>
+                  </TabsList>
+                </Tabs>
 
                 {/* List */}
                 <div className="wfr-focus-launch__dept-list">
                   {scopeBy === 'hrbps'
                     ? (() => {
                         const allHrbpSelected = selectedHrbpNames.length === uniqueHrbps.length
-                        return (<>
-                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
-                          <span
-                            className="wfr-focus-launch__check"
-                            style={{ cursor: 'pointer', ...(allHrbpSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
-                            onClick={() => { if (allHrbpSelected) setSelectedHrbps({}); else { const all: Record<string, boolean> = {}; uniqueHrbps.forEach(h => { all[h.hrbp] = true }); setSelectedHrbps(all) } }}
-                          >{allHrbpSelected ? '✓' : ''}</span>
-                          <span style={{ flex: 1 }}>HRBP</span>
-                          <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
-                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                          <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
-                        </div>
-                        {uniqueHrbps.map((h) => {
-                          const hDept = departments.find(dd => dd.name === h.depts[0])
-                          const hReadiness = hDept?.aiReadiness ?? 0
-                          const hUnrealized = hDept ? Math.round(hDept.unrealizedValue * h.headcount / Math.max(1, hDept.employees)) : 0
-                          const hGap = hDept ? Math.round(deptGapHeadcount(hDept) * h.headcount / Math.max(1, hDept.employees)) : 0
-                          return (
-                            <button
-                              key={h.hrbp}
-                              type="button"
-                              className={`wfr-focus-launch__dept-row ${selectedHrbps[h.hrbp] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                              style={{ alignItems: 'center' }}
-                              onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))}
-                            >
-                              <span className="wfr-focus-launch__check">{selectedHrbps[h.hrbp] ? '✓' : ''}</span>
-                              <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                {h.hrbp}
-                                {hrbpPrioritySet.has(h.hrbp) && (
-                                  <PriorityTooltip tooltip="Highest priority score — widest gap between AI potential and current adoption">
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                                  </PriorityTooltip>
-                                )}
-                              </span>
-                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hReadiness}%</span>
-                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(hUnrealized)}</span>
-                              <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{hGap.toLocaleString()} ({h.headcount > 0 ? Math.round((hGap / h.headcount) * 100) : 0}%)</span>
-                            </button>
-                          )
-                        })}
-                      </>)
+                        return (
+                        <DataTable bordered style={{ width: '100%' }}>
+                          <DataTableHeader>
+                            <DataTableRow>
+                              <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
+                                <span
+                                  className="wfr-focus-launch__check"
+                                  style={{ cursor: 'pointer', ...(allHrbpSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                                  onClick={() => { if (allHrbpSelected) setSelectedHrbps({}); else { const all: Record<string, boolean> = {}; uniqueHrbps.forEach(h => { all[h.hrbp] = true }); setSelectedHrbps(all) } }}
+                                >{allHrbpSelected ? '✓' : ''}</span>
+                              </DataTableHead>
+                              <DataTableHead>HRBP</DataTableHead>
+                              <DataTableHead numeric>AI adoption</DataTableHead>
+                              <DataTableHead numeric>Unrealized value</DataTableHead>
+                              <DataTableHead numeric>Transformation gap</DataTableHead>
+                            </DataTableRow>
+                          </DataTableHeader>
+                          <DataTableBody>
+                            {uniqueHrbps.map((h) => {
+                              const hDept = departments.find(dd => dd.name === h.depts[0])
+                              const hReadiness = hDept?.aiReadiness ?? 0
+                              const hUnrealized = hDept ? Math.round(hDept.unrealizedValue * h.headcount / Math.max(1, hDept.employees)) : 0
+                              const hGap = hDept ? Math.round(deptGapHeadcount(hDept) * h.headcount / Math.max(1, hDept.employees)) : 0
+                              return (
+                                <DataTableRow key={h.hrbp} onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))} style={{ cursor: 'pointer', ...(selectedHrbps[h.hrbp] ? { background: '#eef2ff' } : {}) }}>
+                                  <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
+                                    <span className="wfr-focus-launch__check" style={selectedHrbps[h.hrbp] ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}}>{selectedHrbps[h.hrbp] ? '✓' : ''}</span>
+                                  </DataTableCell>
+                                  <DataTableCell className="font-semibold">
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      {h.hrbp}
+                                      {hrbpPrioritySet.has(h.hrbp) && (
+                                        <PriorityTooltip tooltip="Highest priority score — widest gap between AI potential and current adoption">
+                                          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                        </PriorityTooltip>
+                                      )}
+                                    </span>
+                                  </DataTableCell>
+                                  <DataTableCell align="right">{hReadiness}%</DataTableCell>
+                                  <DataTableCell align="right">{formatDollar(hUnrealized)}</DataTableCell>
+                                  <DataTableCell align="right">{hGap.toLocaleString()} ({h.headcount > 0 ? Math.round((hGap / h.headcount) * 100) : 0}%)</DataTableCell>
+                                </DataTableRow>
+                              )
+                            })}
+                          </DataTableBody>
+                        </DataTable>)
                     })()
                     : (() => {
                         const allDeptSelected = Object.keys(selectedDepts).filter(k => selectedDepts[k]).length === departments.length
-                        return (<>
-                        <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
-                          <span
-                            className="wfr-focus-launch__check"
-                            style={{ cursor: 'pointer', ...(allDeptSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
-                            onClick={() => { if (allDeptSelected) setSelectedDepts({}); else { const all: Record<string, boolean> = {}; departments.forEach(d => { all[d.name] = true }); setSelectedDepts(all) } }}
-                          >{allDeptSelected ? '✓' : ''}</span>
-                          <span style={{ flex: 1 }}>Department</span>
-                          <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
-                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                          <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
-                        </div>
-                        {departments.map((d) => {
-                          const gapCount = deptGapHeadcount(d)
-                          return (
-                            <button
-                              key={d.name}
-                              type="button"
-                              className={`wfr-focus-launch__dept-row ${selectedDepts[d.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                              style={{ alignItems: 'center' }}
-                              onClick={() => setSelectedDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))}
-                            >
-                              <span className="wfr-focus-launch__check">{selectedDepts[d.name] ? '✓' : ''}</span>
-                              <span className="wfr-focus-launch__dept-name" style={{ flex: 1 }}>{d.name}</span>
-                              <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{d.aiReadiness}%</span>
-                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(d.unrealizedValue)}</span>
-                              <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
-                            </button>
-                          )
-                        })}
-                      </>)
+                        return (
+                        <DataTable bordered style={{ width: '100%' }}>
+                          <DataTableHeader>
+                            <DataTableRow>
+                              <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
+                                <span
+                                  className="wfr-focus-launch__check"
+                                  style={{ cursor: 'pointer', ...(allDeptSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                                  onClick={() => { if (allDeptSelected) setSelectedDepts({}); else { const all: Record<string, boolean> = {}; departments.forEach(d => { all[d.name] = true }); setSelectedDepts(all) } }}
+                                >{allDeptSelected ? '✓' : ''}</span>
+                              </DataTableHead>
+                              <DataTableHead>Department</DataTableHead>
+                              <DataTableHead numeric>AI adoption</DataTableHead>
+                              <DataTableHead numeric>Unrealized value</DataTableHead>
+                              <DataTableHead numeric>Transformation gap</DataTableHead>
+                            </DataTableRow>
+                          </DataTableHeader>
+                          <DataTableBody>
+                            {departments.map((d) => {
+                              const gapCount = deptGapHeadcount(d)
+                              return (
+                                <DataTableRow key={d.name} onClick={() => setSelectedDepts((prev) => ({ ...prev, [d.name]: !prev[d.name] }))} style={{ cursor: 'pointer', ...(selectedDepts[d.name] ? { background: '#eef2ff' } : {}) }}>
+                                  <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
+                                    <span className="wfr-focus-launch__check" style={selectedDepts[d.name] ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}}>{selectedDepts[d.name] ? '✓' : ''}</span>
+                                  </DataTableCell>
+                                  <DataTableCell className="font-semibold">{d.name}</DataTableCell>
+                                  <DataTableCell align="right">{d.aiReadiness}%</DataTableCell>
+                                  <DataTableCell align="right">{formatDollar(d.unrealizedValue)}</DataTableCell>
+                                  <DataTableCell align="right">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</DataTableCell>
+                                </DataTableRow>
+                              )
+                            })}
+                          </DataTableBody>
+                        </DataTable>)
                     })()}
                 </div>
               </>

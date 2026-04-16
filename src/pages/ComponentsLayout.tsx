@@ -12,6 +12,9 @@ const SECTIONS: NavSection[] = [
     title: 'Career Hub Components',
     items: [
       { label: 'WFR Hero Card', path: '/components/wfr-hero-options' },
+      { label: 'WFR Metric Cards', path: '/components/wfr-metric-cards' },
+      { label: 'WFR Dialogs', path: '/components/wfr-dialogs' },
+      { label: 'Dev plans', path: '/components/dev-plans' },
     ],
   },
 ]

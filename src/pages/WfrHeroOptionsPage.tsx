@@ -5,31 +5,8 @@
 import { useState } from 'react'
 import { EM } from '../data/wfrOrgData'
 import { WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona } from '../components/workforceReadiness/FocusFirstModule'
+import { MetricArc } from '../components/workforceReadiness/MetricArc'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
-
-// ── Gauge ─────────────────────────────────────────────────────────────────────
-
-function GaugeSVG({ pct }: { pct: number }) {
-  const dim = 180, r = 68, sw = 14, cy = 124, vbY = 40, vbH = 88, cx = dim / 2
-  const rad = (d: number) => (d * Math.PI) / 180
-  const arc = (p: number) => {
-    const deg = (p / 100) * 180
-    const x1 = cx + r * Math.cos(rad(180)), y1 = cy + r * Math.sin(rad(180))
-    const x2 = cx + r * Math.cos(rad(180 + deg)), y2 = cy + r * Math.sin(rad(180 + deg))
-    return `M${x1} ${y1} A${r} ${r} 0 ${deg > 180 ? 1 : 0} 1 ${x2} ${y2}`
-  }
-  return (
-    <div style={{ marginTop: -15 }}>
-      <svg width={dim} height={vbH} viewBox={`0 ${vbY} ${dim} ${vbH}`} overflow="visible">
-        <path d={arc(100)} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} strokeLinecap="round" />
-        <path d={arc(pct)} fill="none" stroke="#22c55e" strokeWidth={sw} strokeLinecap="round"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(34,197,94,0.5))' }} />
-        <text x={cx} y={cy - 12} textAnchor="middle" fill="#22c55e" fontSize={28} fontWeight={700} fontFamily="inherit">{pct}%</text>
-        <text x={cx} y={cy + 8} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize={11} fontFamily="inherit" letterSpacing="0.07em">AI ADOPTION</text>
-      </svg>
-    </div>
-  )
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -81,10 +58,10 @@ export default function WfrHeroOptionsPage() {
                 {persona === 'chro' ? 'CHRO' : persona === 'hrbp' ? 'HRBP' : 'Manager'}
               </p>
               <WfrHeroCard
-                gauge={<GaugeSVG pct={24} />}
+                gauge={<MetricArc potential={48} readiness={24} size="lg" />}
                 eyebrow={<>49,500 employees {EM} Q1 2026</>}
-                headline={<>Only <span style={{ fontWeight: 700 }}>24%</span>{' '}<span style={{ fontWeight: 500 }}>are AI-ready.</span></>}
-                supportingText="31,920 employees in augmentable roles haven't adopted AI yet."
+                headline={<>Only <span className="wfr-text-readiness" style={{ fontWeight: 700 }}>24%</span>{' '}<span style={{ fontWeight: 500 }}>are AI-ready.</span></>}
+                supportingText={<><strong style={{ fontWeight: 700 }}>31,920</strong> employees in augmentable roles haven't adopted AI yet.</>}
                 ctaBar={state === 6 ? undefined : <WfrCtaBar content={cta} onBarClick={state === 2 ? () => setState(3) : undefined} />}
               />
             </div>

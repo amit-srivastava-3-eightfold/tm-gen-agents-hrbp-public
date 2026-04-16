@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Tag } from '@tonyh-2-eightfold/ef-design-system'
+import { DevPlanStatsBar } from './DevPlanStatsBar'
 import './DevPlanSheet.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -13,6 +14,12 @@ interface Course {
   duration: string
   level: string
   free: boolean
+  description?: string
+}
+
+interface WorkTask {
+  text: string
+  description: string
 }
 
 interface LevelDef {
@@ -21,16 +28,24 @@ interface LevelDef {
   xpLabel: string
   outcome: string
   courses: Course[]
-  tasks: string[]
+  tasks: WorkTask[]
   totalHours: number
   adoptionPts: number
 }
+
+export type DevPlanSheetView = 'full' | 'score' | 'stats' | 'curriculum' | 'unlocks'
 
 export interface DevPlanSheetProps {
   employee: { name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null
   open: boolean
   onClose: () => void
   isAssigned: boolean
+  /** Render the panel inline (no portal, no backdrop) for component explorers */
+  inline?: boolean
+  /** Which section to show in inline mode (default: 'full') */
+  view?: DevPlanSheetView
+  /** True when the employee is viewing their own plan — use second person */
+  selfView?: boolean
 }
 
 // ── Static curriculum data ─────────────────────────────────────────────────────
@@ -42,8 +57,8 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
     xpLabel: 'Foundation XP',
     outcome: 'Understand how AI works and where it applies to your daily work — so you can evaluate AI output with confidence, not just curiosity.',
     tasks: [
-      'Complete the AI readiness self-assessment',
-      'Shadow a colleague who uses AI tools daily and document one observation',
+      { text: 'Use AI to draft one piece of content in your regular workflow', description: 'Pick any content you create regularly — a status update, a proposal section, a client email. Use an AI tool to generate a first draft, then revise it. The goal isn\'t perfection; it\'s building the habit of starting with AI.' },
+      { text: 'Note what surprised you about how AI handled the task', description: 'Keep a simple log — one or two sentences is enough. What did AI get right? What did you have to fix? These observations sharpen your ability to evaluate AI output over time.' },
     ],
     totalHours: 20,
     adoptionPts: 3,
@@ -54,8 +69,8 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
     xpLabel: 'Augmentation XP',
     outcome: 'Use AI confidently on routine tasks in your role — with human judgment at every handoff, every time.',
     tasks: [
-      'Apply AI to 2 recurring weekly tasks in your workflow',
-      'Complete the AI output review checklist for one deliverable',
+      { text: 'Apply AI to a recurring task and log the time saved', description: 'Choose a task you do at least weekly — reporting, summarizing, drafting. Apply AI assistance and note how long it took vs. your usual time. Even rough estimates are useful for making the business case later.' },
+      { text: 'Review an AI output critically — note at least one error you caught', description: 'Don\'t accept AI output as-is. Read carefully, check claims, spot gaps. Write down one specific thing you corrected or improved. This builds the oversight habit that keeps AI use safe and high-quality.' },
     ],
     totalHours: 16,
     adoptionPts: 5,
@@ -66,8 +81,8 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
     xpLabel: 'Power User XP',
     outcome: 'Drive AI adoption within your immediate team — turning personal wins into repeatable, shared workflows that stick.',
     tasks: [
-      'Document 3 AI-assisted workflows your team can reuse',
-      'Present one time-saving example to your manager or team',
+      { text: 'Create a reusable AI workflow template for your team', description: 'Document the exact prompt, steps, and review checklist for one AI task you\'ve mastered. Format it so a colleague could follow it without explanation. Templates are how individual wins become team wins.' },
+      { text: 'Demo one AI-powered workflow in your next team standup', description: 'A 3–5 minute demo is enough. Show the before (manual) and after (AI-assisted), and share one thing to watch out for. Real examples move teams faster than any training deck.' },
     ],
     totalHours: 8,
     adoptionPts: 4,
@@ -78,8 +93,8 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
     xpLabel: 'Champion XP',
     outcome: 'Mentor peers, contribute to the team playbook, and help drive quarter-over-quarter readiness improvements across your org.',
     tasks: [
-      'Coach 2 peers through their AI onboarding journey',
-      'Contribute at least one workflow to the team AI playbook',
+      { text: 'Pair with a colleague for one hour on their AI onboarding', description: 'Work alongside someone earlier in their AI journey. Help them apply a tool to one of their actual tasks. Teaching solidifies your own skills and builds social proof within the team.' },
+      { text: 'Submit one workflow improvement to the team AI playbook', description: 'Take a workflow you\'ve refined and document it for others. Include the prompt, the steps, and the gotchas you learned. Shared playbooks are how teams compound their AI gains quarter over quarter.' },
     ],
     totalHours: 6,
     adoptionPts: 2,
@@ -88,15 +103,15 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
 
 const LEVEL_COURSES: Record<number, Course[]> = {
   1: [
-    { name: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '12 hrs', level: 'Beginner', free: true },
-    { name: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '8 hrs', level: 'Beginner', free: true },
+    { name: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '12 hrs', level: 'Beginner', free: true, description: 'A hands-on introduction to AI concepts tailored for business contexts. Covers how AI works, where it applies to daily work, and how to critically evaluate AI-generated outputs so you can act on them with confidence.' },
+    { name: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '8 hrs', level: 'Beginner', free: true, description: 'Learn to write clear, effective prompts that get better results from large language models. Covers zero-shot, few-shot, and chain-of-thought techniques with practical exercises you can apply immediately.' },
   ],
   2: [
-    { name: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hrs', level: 'Intermediate', free: true },
+    { name: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hrs', level: 'Intermediate', free: true, description: 'A deeper look at how LLMs work — from transformer architecture to fine-tuning and deployment. Includes hands-on labs for integrating generative AI into real workflows and evaluating output quality.' },
   ],
   // Level 3 is built dynamically from role title
   4: [
-    { name: 'AI Strategy & Governance', provider: 'Eightfold Academy', duration: '6 hrs', level: 'Advanced', free: false },
+    { name: 'AI Strategy & Governance', provider: 'Eightfold Academy', duration: '6 hrs', level: 'Advanced', free: false, description: 'Frameworks for responsible AI adoption at scale. Covers policy design, risk management, bias mitigation, and how to build governance structures that support sustainable AI use across teams.' },
   ],
 }
 
@@ -124,7 +139,7 @@ const AI_SKILLS_BY_ROLE: Array<{ pattern: RegExp; skills: string[] }> = [
   { pattern: /qa/i,                   skills: ['AI-generated test plans', 'writing better prompts', 'automated defect triage', 'AI-assisted root cause analysis'] },
 ]
 
-function getUnlocks(name: string, title: string | undefined, displayReadiness: number) {
+function getUnlocks(name: string, title: string | undefined, displayReadiness: number, gainPts = 0) {
   const h = Math.abs(Array.from(name).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0))
   const doorEntry = CAREER_DOORS.find(r => r.pattern.test(title ?? ''))
   const doorRoles = doorEntry?.roles ?? ['Senior Specialist', 'Team Lead', 'Manager']
@@ -135,8 +150,42 @@ function getUnlocks(name: string, title: string | undefined, displayReadiness: n
   const riskDrop = currentRisk - pathsTo
   const aiSkillEntry = AI_SKILLS_BY_ROLE.find(r => r.pattern.test(title ?? ''))
   const aiSkills = aiSkillEntry?.skills ?? ['writing better prompts', 'reviewing and editing AI outputs', 'structuring presentations for impact']
-  const allFits = doorRoles.slice(0, doorCount).map((role, i) => ({ role, fit: Math.max(30, topFit - i * (5 + (h % 4))) }))
+  const fitBoost = Math.round(gainPts * 0.55)
+  const allFits = doorRoles.slice(0, doorCount).map((role, i) => {
+    const baseFit = Math.max(30, topFit - i * (5 + (h % 4)))
+    return { role, fit: baseFit + fitBoost, baseFit }
+  })
   return { doorCount, topRole: doorRoles[0], topFit, currentRisk, pathsTo, riskDrop, aiSkills: aiSkills.slice(0, 4), displayReadiness, allRoles: allFits }
+}
+
+// ── BarWithTip ────────────────────────────────────────────────────────────────
+
+function BarWithTip({ style, tip }: { style: React.CSSProperties; tip: string }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div
+      style={{ ...style, overflow: 'visible' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {hover && (
+        <div style={{
+          position: 'absolute', bottom: 'calc(100% + 7px)', left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1e293b', color: '#fff', fontSize: 11, fontWeight: 500,
+          padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 20,
+        }}>
+          {tip}
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            width: 0, height: 0,
+            borderLeft: '4px solid transparent', borderRight: '4px solid transparent',
+            borderTop: '4px solid #1e293b',
+          }} />
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -147,6 +196,23 @@ function nameHash(s: string) {
   return Math.abs(h)
 }
 
+// Returns a deterministic completion date string like "Feb 5" for a given level.
+// Level 1 = oldest (8–10 weeks ago), Level 4 = most recent (1–3 weeks ago).
+function getCompletedDate(name: string, levelId: number): string {
+  const h = nameHash(name + levelId)
+  const ranges: [number, number][] = [
+    [56, 70], // Level 1
+    [42, 55], // Level 2
+    [21, 41], // Level 3
+    [7, 20],  // Level 4
+  ]
+  const [min, max] = ranges[levelId - 1] ?? [7, 20]
+  const daysAgo = min + (h % (max - min + 1))
+  const d = new Date('2026-04-16')
+  d.setDate(d.getDate() - daysAgo)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 
 
 
@@ -155,7 +221,7 @@ function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
   return LEVEL_BASE.map(base => ({
     ...base,
     courses: base.id === 3
-      ? [{ name: `AI-Powered ${roleWord} Workflows`, provider: 'Eightfold Academy', duration: 'Self-paced · ~8 hrs', level: 'Intermediate', free: false }]
+      ? [{ name: `AI-Powered ${roleWord} Workflows`, provider: 'Eightfold Academy', duration: 'Self-paced · ~8 hrs', level: 'Intermediate', free: false, description: `Role-specific playbook for using AI in ${roleWord} work. Walks through the highest-impact augmentable tasks in your role, with guided exercises for building repeatable AI-assisted workflows your team can adopt.` }]
       : (LEVEL_COURSES[base.id] ?? []),
   }))
 }
@@ -163,29 +229,67 @@ function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function CourseItem({ course, recognized = false }: { course: Course; recognized?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const canExpand = !!course.description
   return (
-    <div className={`dev-plan-sheet__course${recognized ? ' dev-plan-sheet__course--recognized' : ''}`}>
-      <span className={`material-symbols-outlined dev-plan-sheet__course-icon${recognized ? ' dev-plan-sheet__course-icon--recognized' : ''}`}>
-        {recognized ? 'check_circle' : 'menu_book'}
-      </span>
-      <div className="dev-plan-sheet__course-info">
-        <div className={`dev-plan-sheet__course-name${recognized ? ' dev-plan-sheet__course-name--recognized' : ''}`}>
-          {course.name}
+    <div className={`dev-plan-sheet__course${recognized ? ' dev-plan-sheet__course--recognized' : ''}`}
+      style={canExpand ? { flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer', userSelect: 'none' } : undefined}
+      onClick={canExpand ? () => setExpanded(e => !e) : undefined}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span className={`material-symbols-outlined dev-plan-sheet__course-icon${recognized ? ' dev-plan-sheet__course-icon--recognized' : ''}`}>
+          {recognized ? 'check_circle' : 'menu_book'}
+        </span>
+        <div className="dev-plan-sheet__course-info" style={{ flex: 1 }}>
+          <div className={`dev-plan-sheet__course-name${recognized ? ' dev-plan-sheet__course-name--recognized' : ''}`}>
+            {course.name}
+          </div>
+          <div className="dev-plan-sheet__course-meta">
+            {course.provider} · {course.duration} · {course.level}
+          </div>
         </div>
-        <div className="dev-plan-sheet__course-meta">
-          {course.provider} · {course.duration} · {course.level}
-        </div>
+        {course.free && <span className="dev-plan-sheet__course-free">Free</span>}
+        {canExpand && (
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#94a3b8', transition: 'transform 0.15s', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+            expand_more
+          </span>
+        )}
       </div>
-      {course.free && <span className="dev-plan-sheet__course-free">Free</span>}
+      {expanded && course.description && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 8, marginBottom: 2 }}>
+          <span style={{ width: 16, flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+            {course.description}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
 
-function TaskItem({ text }: { text: string }) {
+function TaskItem({ task, recognized = false }: { task: WorkTask; recognized?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
   return (
-    <div className="dev-plan-sheet__task">
-      <div className="dev-plan-sheet__task-dot" />
-      {text}
+    <div
+      className={`dev-plan-sheet__course${recognized ? ' dev-plan-sheet__course--recognized' : ''}`}
+      style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => setExpanded(e => !e)}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span className={`material-symbols-outlined dev-plan-sheet__course-icon${recognized ? ' dev-plan-sheet__course-icon--recognized' : ''}`} style={recognized ? undefined : { color: '#94a3b8' }}>{recognized ? 'check_circle' : 'task_alt'}</span>
+        <div className="dev-plan-sheet__course-info" style={{ flex: 1 }}>
+          <div className="dev-plan-sheet__course-name">{task.text}</div>
+        </div>
+        <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#94a3b8', transition: 'transform 0.15s', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+          expand_more
+        </span>
+      </div>
+      {expanded && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 8, marginBottom: 2 }}>
+          <span style={{ width: 16, flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: 12, color: '#475569', lineHeight: 1.6 }}>{task.description}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -199,6 +303,7 @@ function LevelCard({
   isAssigned,
   expanded,
   onToggle,
+  completedAt,
 }: {
   level: LevelDef
   state: LevelState
@@ -206,6 +311,7 @@ function LevelCard({
   isAssigned: boolean
   expanded: boolean
   onToggle: () => void
+  completedAt?: string
 }) {
   const isCurrent = state === 'current'
   const isRecognized = state === 'recognized'
@@ -246,11 +352,11 @@ function LevelCard({
 
         <div className="dev-plan-sheet__level-title-group">
           <div className={`dev-plan-sheet__level-name${isLocked ? ' dev-plan-sheet__level-name--locked' : ''}`}>
-            Step {level.id}: {level.name}
+            {level.name}
           </div>
-          {isCurrent && !isAssigned && (
-            <div className="dev-plan-sheet__level-sublabel">Assign plans to activate</div>
-          )}
+          <div style={{ fontSize: 11, color: completedAt ? '#15803d' : '#94a3b8', marginTop: 1 }}>
+            {completedAt ? `Completed ${completedAt}` : `${level.totalHours} hrs est.`}
+          </div>
         </div>
 
         <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${isRecognized ? 'credited' : isLocked ? 'locked' : 'current'}`}>
@@ -305,10 +411,10 @@ function LevelCard({
           </div>
 
           {/* Tasks */}
-          <div className="dev-plan-sheet__section-heading">Practice tasks</div>
+          <div className="dev-plan-sheet__section-heading">Tasks</div>
           <div className="dev-plan-sheet__tasks">
             {level.tasks.map((t, i) => (
-              <TaskItem key={i} text={t} />
+              <TaskItem key={i} task={t} recognized={isRecognized} />
             ))}
           </div>
         </div>
@@ -329,7 +435,7 @@ function LevelCard({
 
 // ── DevPlanSheet ──────────────────────────────────────────────────────────────
 
-export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanSheetProps) {
+export function DevPlanSheet({ employee, open, onClose, isAssigned, inline, view = 'full', selfView = false }: DevPlanSheetProps) {
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
   const [modified, setModified] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
@@ -390,15 +496,24 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
 
   // Completion unlocks
   const firstName = employee.name.split(' ')[0]
-  const unlocks = getUnlocks(employee.name, employee.title, employee.displayReadiness)
+  const unlocks = getUnlocks(employee.name, employee.title, employee.displayReadiness, planComplete ? totalAdoptionPts : 0)
 
-  return createPortal(
-    <div className="dev-plan-sheet__root">
-      <div className="dev-plan-sheet__backdrop" onClick={onClose} />
+  const showScore      = view === 'full' || view === 'score'      || !inline
+  const showStats      = view === 'full' || view === 'stats'      || !inline
+  const showCurriculum = view === 'full' || view === 'curriculum' || !inline
+  const showUnlocks    = view === 'full' || view === 'unlocks'    || !inline
+  const showHeader     = view === 'full' || !inline
+  const showFooter     = view === 'full' || !inline
+  const showBanner     = planComplete && (view === 'full' || view === 'score' || !inline)
 
-      <div className="dev-plan-sheet__panel" onClick={(e) => e.stopPropagation()}>
-
-        {/* Header */}
+  const panelContent = (
+    <div
+      className="dev-plan-sheet__panel"
+      onClick={(e) => e.stopPropagation()}
+      style={inline ? { position: 'relative', top: 'auto', right: 'auto', bottom: 'auto', maxWidth: '100%', boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: 16, maxHeight: '80vh', overflowY: 'auto' } : undefined}
+    >
+      {/* Header */}
+      {showHeader && (
         <div className="dev-plan-sheet__header">
           <div className="dev-plan-sheet__header-info">
             <h2 className="dev-plan-sheet__name">{employee.name}</h2>
@@ -412,37 +527,48 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
           </button>
         </div>
+      )}
 
-        {/* Completion banner */}
-        {planComplete && (
-          <div style={{ margin: '16px 24px 0', borderRadius: 14, overflow: 'hidden', background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-            <div style={{ position: 'relative', padding: '20px 20px 16px', display: 'flex', gap: 14 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#fbbf24' }}>emoji_events</span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>Plan complete</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.5 }}>
-                  AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalAdoptionPts} pts</strong> — {firstName} is now AI-ready.
-                </div>
+      {/* Completion banner */}
+      {showBanner && (
+        <div style={{ margin: '16px 24px 0', borderRadius: 14, overflow: 'hidden', background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+          <div style={{ position: 'relative', padding: '20px 20px 16px', display: 'flex', gap: 14 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#fbbf24' }}>emoji_events</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Plan complete</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.5 }}>
+                AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalAdoptionPts} pts</strong> — {selfView ? 'you are' : `${firstName} is`} now AI-ready.
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* AI Adoption Score — horizontal bar */}
+      {/* AI Adoption Score */}
+      {showScore && (
         <div style={{ padding: '20px 24px 16px' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 14 }}>AI Adoption Score</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
-            <div style={{ fontSize: 36, fontWeight: 800, color: planComplete ? '#15803d' : '#0f172a', lineHeight: 1, minWidth: 60 }}>{employee.displayReadiness}<span style={{ fontSize: 18, fontWeight: 600, color: planComplete ? '#15803d' : '#64748b' }}>%</span></div>
+            <div style={{ fontSize: 36, fontWeight: 800, color: planComplete ? '#15803d' : '#0f172a', lineHeight: 1, minWidth: 60 }}>{employee.readinessPct}<span style={{ fontSize: 18, fontWeight: 600, color: planComplete ? '#15803d' : '#64748b' }}>%</span></div>
             <div style={{ flex: 1, position: 'relative' }}>
               <div style={{ height: 12, borderRadius: 6, background: '#f1f5f9', position: 'relative', overflow: 'visible' }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${employee.displayReadiness}%`, borderRadius: 6, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : '#22c55e' }} />
+                <BarWithTip
+                  style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${employee.readinessPct}%`, borderRadius: 6, background: planComplete ? 'linear-gradient(90deg, #15803d, #22c55e)' : '#22c55e' }}
+                  tip={`Baseline · ${employee.readinessPct}%`}
+                />
                 {potentialPct > 0 && (
-                  <div style={{ position: 'absolute', left: `${employee.displayReadiness}%`, top: 0, height: '100%', width: `${potentialPct}%`, borderRadius: '0 6px 6px 0', background: '#6366f1', opacity: 0.5 }} />
+                  <BarWithTip
+                    style={{ position: 'absolute', left: `${employee.readinessPct}%`, top: 0, height: '100%', width: `${projectedScore - employee.readinessPct}%`, borderRadius: '0 6px 6px 0', background: '#6366f1', opacity: 0.5 }}
+                    tip={`After plan · ${projectedScore}% (+${remainingAdoptionPts} pts)`}
+                  />
                 )}
                 <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 2, background: '#22c55e', borderRadius: 1 }} />
+                {potentialPct > 0 && (
+                  <div style={{ position: 'absolute', left: `${employee.displayReadiness}%`, top: -9, transform: 'translateX(-50%)', zIndex: 2, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid #16a34a' }} />
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, position: 'relative' }}>
                 <span style={{ fontSize: 10, color: '#cbd5e1' }}>0%</span>
@@ -463,8 +589,8 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e' }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>Current · <strong style={{ color: '#0f172a' }}>{employee.displayReadiness}%</strong></span>
+                  <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid #16a34a' }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>Current · <strong style={{ color: '#0f172a' }}>{employee.readinessPct}%</strong></span>
                 </div>
                 {potentialPct > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -477,56 +603,53 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             )}
           </div>
         </div>
+      )}
 
-        {/* Body */}
-        <div className="dev-plan-sheet__body">
+      {/* Body */}
+      <div className="dev-plan-sheet__body">
 
-
-          {/* Estimated time to completion */}
-          <div style={{ display: 'flex', margin: '0 0 24px', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            <div style={{ flex: 1, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eff3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#3b5bdb' }}>schedule</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{levels.reduce((s, l) => s + l.totalHours, 0)}<span style={{ fontSize: 13, fontWeight: 500, color: '#64748b', marginLeft: 3 }}>hrs</span></div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Estimated effort</div>
-              </div>
-            </div>
-            <div style={{ width: 1, background: '#e2e8f0' }} />
-            <div style={{ flex: 1, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#15803d' }}>event_available</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>6<span style={{ fontSize: 13, fontWeight: 500, color: '#64748b', marginLeft: 3 }}>weeks</span></div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Target duration</div>
-              </div>
-            </div>
+        {/* Stats bar */}
+        {showStats && (
+          <div style={{ marginBottom: 24 }}>
+            <DevPlanStatsBar
+              adoptionGain={planComplete ? totalAdoptionPts : potentialPct}
+              planComplete={planComplete}
+              totalHours={levels.reduce((s, l) => s + l.totalHours, 0)}
+              actualHours={planComplete ? levels.reduce((s, l) => s + l.totalHours, 0) - (nameHash(employee.name) % 6 + 1) : undefined}
+              actualWeeks={planComplete ? 7 + (nameHash(employee.name + 'wk') % 3) : undefined}
+            />
           </div>
+        )}
 
-          {/* Curriculum */}
-          <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
+        {/* Curriculum */}
+        {showCurriculum && (
+          <>
+            <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
+            {levels.map(level => {
+              const state = getLevelState(level.id)
+              return (
+                <LevelCard
+                  key={level.id}
+                  level={level}
+                  state={state}
+                  xpPct={getXpPct(level.id)}
+                  isAssigned={isAssigned}
+                  expanded={expandedLevels.has(level.id)}
+                  onToggle={() => toggleExpand(level.id)}
+                  completedAt={planComplete ? getCompletedDate(employee.name, level.id) : undefined}
+                />
+              )
+            })}
+          </>
+        )}
 
-          {levels.map(level => {
-            const state = getLevelState(level.id)
-            return (
-              <LevelCard
-                key={level.id}
-                level={level}
-                state={state}
-                xpPct={getXpPct(level.id)}
-                isAssigned={isAssigned}
-                expanded={expandedLevels.has(level.id)}
-                onToggle={() => toggleExpand(level.id)}
-              />
-            )
-          })}
-
-          {/* Completion unlocks */}
+        {/* Completion unlocks */}
+        {showUnlocks && (
           <div className="dev-plan-sheet__unlocks">
             <div className="dev-plan-sheet__unlocks-heading">
-              What completing this plan unlocks for {firstName}
+              {planComplete
+                ? selfView ? 'What this plan unlocked for you' : `What this plan unlocked for ${firstName}`
+                : selfView ? 'What completing this plan unlocks for you' : `What completing this plan unlocks for ${firstName}`}
             </div>
             <div className="dev-plan-sheet__unlocks-badges">
               {([
@@ -568,6 +691,12 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
                           fontFamily: 'inherit',
                         }}
                       >{value}</text>
+                      {planComplete && (
+                        <>
+                          <circle cx="83" cy="97" r="12" fill="#15803d" />
+                          <path d="M78 97 L82 101 L89 92" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                        </>
+                      )}
                     </svg>
                     <div className="dev-plan-sheet__unlock-badge-label">{label}</div>
                     <div className="dev-plan-sheet__unlock-badge-detail">{detail}</div>
@@ -576,20 +705,25 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
               })}
             </div>
 
-            {/* Expanded detail panel */}
             {activeUnlock === 'doors' && (
               <div className="dev-plan-sheet__unlock-panel">
                 <div className="dev-plan-sheet__unlock-panel-heading">Potential new roles</div>
                 <div className="dev-plan-sheet__unlock-panel-roles">
-                  {unlocks.allRoles.map(({ role, fit }) => (
-                    <div key={role} className="dev-plan-sheet__unlock-role-row">
-                      <span className="dev-plan-sheet__unlock-role-name">{role}</span>
-                      <div className="dev-plan-sheet__unlock-role-bar-wrap">
-                        <div className="dev-plan-sheet__unlock-role-bar" style={{ width: `${fit}%` }} />
+                  {unlocks.allRoles.map(({ role, fit, baseFit }) => {
+                    const gain = fit - baseFit
+                    return (
+                      <div key={role} className="dev-plan-sheet__unlock-role-row">
+                        <span className="dev-plan-sheet__unlock-role-name">{role}</span>
+                        <div className="dev-plan-sheet__unlock-role-bar-wrap" style={{ display: 'flex' }}>
+                          <div className="dev-plan-sheet__unlock-role-bar" style={{ width: `${baseFit}%`, borderRadius: gain > 0 ? '3px 0 0 3px' : undefined }} />
+                          {gain > 0 && <div style={{ height: '100%', width: `${gain}%`, background: 'var(--color-green-60)', borderRadius: '0 3px 3px 0' }} />}
+                        </div>
+                        <span className="dev-plan-sheet__unlock-role-fit" style={{ width: gain > 0 ? 64 : undefined }}>
+                          {gain > 0 ? <><strong style={{ color: '#15803d' }}>{fit}%</strong> <span style={{ fontSize: 10, color: '#15803d', fontWeight: 600 }}>+{gain}</span></> : `${fit}% fit`}
+                        </span>
                       </div>
-                      <span className="dev-plan-sheet__unlock-role-fit">{fit}% fit</span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -598,8 +732,8 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
               <div className="dev-plan-sheet__unlock-panel">
                 <div className="dev-plan-sheet__unlock-panel-heading">Automation risk summary</div>
                 <p className="dev-plan-sheet__unlock-panel-body">
-                  {firstName}'s current role has a <strong>{unlocks.currentRisk}% automation risk</strong> — meaning most routine tasks could be automated without AI fluency.
-                  Completing this plan develops the judgment, prompt skills, and oversight capabilities that place {firstName} firmly in the <em>augmentation zone</em>, dropping exposure to just {unlocks.pathsTo}%.
+                  {selfView ? 'Your' : `${firstName}'s`} current role has a <strong>{unlocks.currentRisk}% automation risk</strong> — meaning most routine tasks could be automated without AI fluency.
+                  Completing this plan develops the judgment, prompt skills, and oversight capabilities that place {selfView ? 'you' : firstName} firmly in the <em>augmentation zone</em>, dropping exposure to just {unlocks.pathsTo}%.
                 </p>
                 <div className="dev-plan-sheet__unlock-risk-bars">
                   <div className="dev-plan-sheet__unlock-risk-row">
@@ -622,7 +756,7 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
 
             {activeUnlock === 'skills' && (
               <div className="dev-plan-sheet__unlock-panel">
-                <div className="dev-plan-sheet__unlock-panel-heading">Skills {firstName} will gain</div>
+                <div className="dev-plan-sheet__unlock-panel-heading">Skills {selfView ? 'you' : firstName} will gain</div>
                 <div className="dev-plan-sheet__unlock-skills-cloud">
                   {unlocks.aiSkills.map(skill => (
                     <Tag key={skill} className="dev-plan-sheet__skill-tag">{skill}</Tag>
@@ -631,9 +765,11 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
               </div>
             )}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Footer */}
+      {/* Footer */}
+      {showFooter && (
         <div className="dev-plan-sheet__footer">
           <div className="dev-plan-sheet__footer-left">
             <Button variant="secondary" aria-label="Share">
@@ -654,8 +790,16 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned }: DevPlanShe
             {modified && <Button variant="primary" onClick={onClose}>Save changes</Button>}
           </div>
         </div>
-      </div>
+      )}
+    </div>
+  )
 
+  if (inline) return panelContent
+
+  return createPortal(
+    <div className="dev-plan-sheet__root">
+      <div className="dev-plan-sheet__backdrop" onClick={onClose} />
+      {panelContent}
     </div>,
     document.body
   )
