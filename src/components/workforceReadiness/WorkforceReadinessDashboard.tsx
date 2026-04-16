@@ -33,7 +33,7 @@ import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDia
 import { UpskillingLaunchDialog, type UpskillingLaunchSummary } from './UpskillingLaunchDialog'
 // FocusCollectionDetailSheet removed — collection progress is now inline in the table panel tabs
 import { MetricCard } from './MetricCard'
-import { MetricArc, MetricArcCompact } from './MetricArc'
+import { MetricArc } from './MetricArc'
 import { PersonDetailLayout } from './PersonDetailLayout'
 import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { UnrealizedValueSheet, type UnrealizedValueSheetData } from './UnrealizedValueSheet'
