@@ -274,43 +274,49 @@ export function FocusFirstLaunchDialog({
                   <p className="wfr-focus-launch__sub">Choose which client manager teams to include in data collection. AI-powered interviews will be sent to employees in the selected teams.</p>
 
                   <div className="wfr-focus-launch__dept-list">
-                    <div style={{ display: 'flex', gap: 10, padding: '0 14px 4px', fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center' }}>
-                      <span
-                        className={`wfr-focus-launch__check ${hrbpAllSelected ? '' : ''}`}
-                        style={{ cursor: 'pointer', ...(hrbpAllSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
-                        onClick={() => { if (hrbpAllSelected) setHrbpSelectedDirs({}); else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) } }}
-                      >{hrbpAllSelected ? '✓' : ''}</span>
-                      <span style={{ flex: 1 }}>Manager</span>
-                      <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
-                      <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
-                      <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
-                    </div>
-                    {dirs.map((dir) => {
-                      const dirNotReady = dir.employees - (dir.readyCount ?? 0)
-                      const dirUnrealized = dir.employees > 0 && hrbpDept ? Math.round(hrbpDept.unrealizedValue * dir.employees / Math.max(1, hrbpDept.employees)) : 0
-                      return (
-                        <button
-                          key={dir.name}
-                          type="button"
-                          className={`wfr-focus-launch__dept-row ${hrbpSelectedDirs[dir.name] ? 'wfr-focus-launch__dept-row--on' : ''}`}
-                          style={{ alignItems: 'center' }}
-                          onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))}
-                        >
-                          <span className="wfr-focus-launch__check">{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
-                          <span className="wfr-focus-launch__dept-name" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {dir.name}
-                            {dirPrioritySet.has(dir.name) && (
-                              <PriorityTooltip tooltip="Largest team — most employees to include in data collection">
-                                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                              </PriorityTooltip>
-                            )}
-                          </span>
-                          <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
-                          <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
-                          <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dirNotReady.toLocaleString()} ({dir.employees > 0 ? Math.round((dirNotReady / dir.employees) * 100) : 0}%)</span>
-                        </button>
-                      )
-                    })}
+                    <DataTable bordered style={{ width: '100%' }}>
+                      <DataTableHeader>
+                        <DataTableRow>
+                          <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
+                            <span
+                              className="wfr-focus-launch__check"
+                              style={{ cursor: 'pointer', ...(hrbpAllSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                              onClick={() => { if (hrbpAllSelected) setHrbpSelectedDirs({}); else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) } }}
+                            >{hrbpAllSelected ? '✓' : ''}</span>
+                          </DataTableHead>
+                          <DataTableHead>Manager</DataTableHead>
+                          <DataTableHead numeric>AI adoption</DataTableHead>
+                          <DataTableHead numeric>Unrealized value</DataTableHead>
+                          <DataTableHead numeric>Transformation gap</DataTableHead>
+                        </DataTableRow>
+                      </DataTableHeader>
+                      <DataTableBody>
+                        {dirs.map((dir) => {
+                          const dirNotReady = dir.employees - (dir.readyCount ?? 0)
+                          const dirUnrealized = dir.employees > 0 && hrbpDept ? Math.round(hrbpDept.unrealizedValue * dir.employees / Math.max(1, hrbpDept.employees)) : 0
+                          return (
+                            <DataTableRow key={dir.name} onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))} style={{ cursor: 'pointer', ...(hrbpSelectedDirs[dir.name] ? { background: '#eef2ff' } : {}) }}>
+                              <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
+                                <span className="wfr-focus-launch__check" style={hrbpSelectedDirs[dir.name] ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}}>{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
+                              </DataTableCell>
+                              <DataTableCell className="font-semibold">
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  {dir.name}
+                                  {dirPrioritySet.has(dir.name) && (
+                                    <PriorityTooltip tooltip="Largest team — most employees to include in data collection">
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                    </PriorityTooltip>
+                                  )}
+                                </span>
+                              </DataTableCell>
+                              <DataTableCell align="right">{dir.readiness ?? 0}%</DataTableCell>
+                              <DataTableCell align="right">{formatDollar(dirUnrealized)}</DataTableCell>
+                              <DataTableCell align="right">{dirNotReady.toLocaleString()} ({dir.employees > 0 ? Math.round((dirNotReady / dir.employees) * 100) : 0}%)</DataTableCell>
+                            </DataTableRow>
+                          )
+                        })}
+                      </DataTableBody>
+                    </DataTable>
                   </div>
                 </>
               )}

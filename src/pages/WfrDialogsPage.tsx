@@ -4,9 +4,26 @@
  */
 import { useState } from 'react'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { FocusFirstLaunchDialog } from '../components/workforceReadiness/FocusFirstLaunchDialog'
+import { FocusFirstLaunchDialog, type HrbpDirector } from '../components/workforceReadiness/FocusFirstLaunchDialog'
 import { UpskillingLaunchDialog } from '../components/workforceReadiness/UpskillingLaunchDialog'
+import { departments } from '../data/wfrOrgData'
+import { deptManagerTeams } from '../components/workforceReadiness/collectionHelpers'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
+
+// Build demo directors from Engineering dept for the HRBP component preview
+const DEMO_HRBP_DIRECTORS: HrbpDirector[] = (() => {
+  const dept = departments.find(d => d.name === 'Engineering')
+  if (!dept) return []
+  const mgrs = deptManagerTeams('Engineering', dept.employees)
+  const names = ['Robin Cohen', 'Taylor Reyes', 'Morgan Brown', 'Blake Culhane', 'Emery Johansson', 'Kendall Gupta', 'Devon Larsson', 'Rowan Petrov', 'Priya Thompson', 'Logan Wilson']
+  const titles = ['VP Engineering', 'Sr. Director Engineering', 'Director Platform', 'Director Frontend', 'Director QA', 'Director DevOps', 'Director Mobile', 'Director Infrastructure', 'Director ML', 'Director SRE']
+  const perDir = Math.ceil(mgrs.length / 10)
+  return Array.from({ length: 10 }, (_, i) => {
+    const batch = mgrs.slice(i * perDir, (i + 1) * perDir)
+    const employees = batch.reduce((s, m) => s + m.employees, 0)
+    return { name: names[i], title: titles[i], employees, readiness: dept.aiReadiness, readyCount: Math.round(employees * dept.aiReadiness / 100), teamManagers: batch.length }
+  }).filter(d => d.employees > 0)
+})()
 
 export default function WfrDialogsPage() {
   const [collectionOpen, setCollectionOpen] = useState(false)
@@ -67,6 +84,8 @@ export default function WfrDialogsPage() {
         open={collectionHrbpOpen}
         onOpenChange={setCollectionHrbpOpen}
         hrbpMode
+        hrbpDirectors={DEMO_HRBP_DIRECTORS}
+        defaultScopeDepartmentName="Engineering"
         onHrbpLaunch={() => setCollectionHrbpOpen(false)}
       />
 
