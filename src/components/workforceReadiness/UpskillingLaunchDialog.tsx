@@ -290,7 +290,7 @@ export function UpskillingLaunchDialog({
           {stepLabels.map((label, i) => (
             <Fragment key={label}>
               {i > 0 && <StepperSeparator />}
-              <StepperItem>
+              <StepperItem step={i}>
                 <StepperTrigger>
                   <StepperIndicator />
                   <StepperTitle>{label}</StepperTitle>
