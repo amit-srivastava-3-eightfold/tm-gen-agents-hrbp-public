@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
-  Stepper, StepperList, StepperItem, StepperSeparator, StepperIndicator, StepperTitle,
+  Stepper, StepperList, StepperItem, StepperTrigger, StepperSeparator, StepperIndicator, StepperTitle,
 } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, deptGapHeadcount, tGap } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css' // reuse same dialog styles
@@ -285,14 +285,16 @@ export function UpskillingLaunchDialog({
 
   function renderStepper(): ReactNode {
     return (
-      <Stepper value={step - 1} size="sm" className="mt-3 mb-4">
+      <Stepper value={step - 1} size="sm" className="mt-3 mb-4" style={{ maxWidth: 360 }}>
         <StepperList>
           {stepLabels.map((label, i) => (
             <Fragment key={label}>
               {i > 0 && <StepperSeparator />}
               <StepperItem>
-                <StepperIndicator />
-                <StepperTitle>{label}</StepperTitle>
+                <StepperTrigger>
+                  <StepperIndicator />
+                  <StepperTitle>{label}</StepperTitle>
+                </StepperTrigger>
               </StepperItem>
             </Fragment>
           ))}

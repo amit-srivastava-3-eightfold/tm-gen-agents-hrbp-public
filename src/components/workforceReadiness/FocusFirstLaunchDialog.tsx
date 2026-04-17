@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Button, Stepper, StepperList, StepperItem, StepperIndicator, StepperTitle, StepperSeparator, Tabs, TabsList, TabsTrigger, DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, Stepper, StepperList, StepperItem, StepperTrigger, StepperIndicator, StepperTitle, StepperSeparator, Tabs, TabsList, TabsTrigger, DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell } from '@tonyh-2-eightfold/ef-design-system'
 import { departments, hrbpAssignments, deptGapHeadcount, formatDollar } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
@@ -250,16 +250,20 @@ export function FocusFirstLaunchDialog({
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
                 </Dialog.Close>
               </div>
-              <Stepper value={hrbpStep - 1} size="sm" className="mt-3 mb-4">
+              <Stepper value={hrbpStep - 1} size="sm" className="mt-3 mb-4" style={{ maxWidth: 260 }}>
                 <StepperList>
-                  <StepperItem step={0} className="flex-row gap-1.5">
-                    <StepperIndicator />
-                    <StepperTitle>Teams</StepperTitle>
+                  <StepperItem step={0}>
+                    <StepperTrigger>
+                      <StepperIndicator />
+                      <StepperTitle>Teams</StepperTitle>
+                    </StepperTrigger>
                   </StepperItem>
                   <StepperSeparator />
-                  <StepperItem step={1} className="flex-row gap-1.5">
-                    <StepperIndicator />
-                    <StepperTitle>Review</StepperTitle>
+                  <StepperItem step={1}>
+                    <StepperTrigger>
+                      <StepperIndicator />
+                      <StepperTitle>Review</StepperTitle>
+                    </StepperTrigger>
                   </StepperItem>
                 </StepperList>
               </Stepper>
@@ -383,21 +387,27 @@ export function FocusFirstLaunchDialog({
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
               </Dialog.Close>
             </div>
-            <Stepper value={step - 1} size="sm" className="mt-3 mb-4">
+            <Stepper value={step - 1} size="sm" className="mt-3 mb-4" style={{ maxWidth: 360 }}>
               <StepperList>
-                <StepperItem step={0} className="flex-row gap-1.5">
-                  <StepperIndicator />
-                  <StepperTitle>Assign</StepperTitle>
+                <StepperItem step={0}>
+                  <StepperTrigger>
+                    <StepperIndicator />
+                    <StepperTitle>Assign</StepperTitle>
+                  </StepperTrigger>
                 </StepperItem>
                 <StepperSeparator />
-                <StepperItem step={1} className="flex-row gap-1.5">
-                  <StepperIndicator />
-                  <StepperTitle>Scope</StepperTitle>
+                <StepperItem step={1}>
+                  <StepperTrigger>
+                    <StepperIndicator />
+                    <StepperTitle>Scope</StepperTitle>
+                  </StepperTrigger>
                 </StepperItem>
                 <StepperSeparator />
-                <StepperItem step={2} className="flex-row gap-1.5">
-                  <StepperIndicator />
-                  <StepperTitle>Review</StepperTitle>
+                <StepperItem step={2}>
+                  <StepperTrigger>
+                    <StepperIndicator />
+                    <StepperTitle>Review</StepperTitle>
+                  </StepperTrigger>
                 </StepperItem>
               </StepperList>
             </Stepper>
