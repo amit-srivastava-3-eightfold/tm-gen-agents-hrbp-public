@@ -80,7 +80,21 @@ const CAREER_HUB_EMPLOYEE_TABS: NavbarTabItem[] = [
   { id: 'home', label: 'Home', path: '/' },
   { id: 'my-career', label: 'My career', chevron: true },
   { id: 'marketplace', label: 'Marketplace', chevron: true },
-  { id: 'my-activity', label: 'My activity', chevron: true },
+  {
+    id: 'my-activity',
+    label: 'My activity',
+    path: '/my-activity',
+    chevron: true,
+    subItems: [
+      { label: 'My Jobs', path: '/my-activity/jobs' },
+      { label: 'My Experts', path: '/my-activity/experts' },
+      { label: 'My Projects', path: '/my-activity/projects' },
+      { label: 'My Courses', path: '/my-activity/courses' },
+      { label: 'My Referrals', path: '/my-activity/referrals' },
+      { label: 'My skill assessment requests', path: '/my-activity/skill-assessments' },
+      { label: 'Development Plan Templates', path: '/my-activity/dev-plan-templates' },
+    ],
+  },
   { id: 'people', label: 'People', path: '/people' },
 ]
 

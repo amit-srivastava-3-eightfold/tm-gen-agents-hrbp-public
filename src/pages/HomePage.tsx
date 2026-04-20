@@ -9,6 +9,7 @@ import { useUser } from '../contexts/UserContext'
 import {
   EM, ORG, getPersonaHrbpNames, getPersonaDepartments,
   wfrRollupDepartmentsByName, departments, getEmployeesForRole, getRolesForDept, getDeptHrbps, getHrbpDepts,
+  getTasksForRole, taskZone,
   type RoleRowType,
 } from '../data/wfrOrgData'
 import {
@@ -229,6 +230,85 @@ function ChroWorkforceReadinessTeaser() {
   )
 }
 
+function EmployeeTasksTeaser() {
+  const { currentUser } = useUser()
+  // Pull tasks for the employee's role (falls back to Engineering Lead for the csm demo user)
+  const roleTitle = currentUser.title ?? 'Engineering Lead'
+  const tasks = getTasksForRole(roleTitle)
+  const total = tasks.length
+  const augment = tasks.filter(t => taskZone(t.score) === 'augment').length
+  // Demo adoption: deterministic per user — ~30% of augmentable tasks are AI-assisted today
+  const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
+  const adoptionRatio = augment > 0 ? 0.25 + ((nameHash(currentUser.id) % 20) / 100) : 0 // 0.25–0.44
+  const aiAssisted = Math.round(augment * adoptionRatio)
+  const augmentablePct = total > 0 ? Math.round((augment / total) * 100) : 0
+  const adoptionPct = augment > 0 ? Math.round((aiAssisted / augment) * 100) : 0
+
+  return (
+    <article className="home-page__wfr-compact" aria-label="Your work and AI">
+      <div className="home-page__wfr-compact__title-row">
+        <h3 className="home-page__wfr-compact__title">Your work &amp; AI</h3>
+        <Link to="/profile" className="home-page__wfr-compact__view-link">Explore tasks&nbsp;→</Link>
+      </div>
+      <Link to="/profile" style={{ textDecoration: 'none', display: 'block' }}>
+        <WfrHeroCard
+          gauge={<MetricArc potential={augmentablePct} readiness={Math.round(augmentablePct * (aiAssisted / Math.max(1, augment)))} size="lg" />}
+          eyebrow={<>{roleTitle} {EM} {total} tasks</>}
+          headline={
+            <span className="wfr-dash__headline-text">
+              <span className="wfr-dash__headline-pct wfr-text-potential" style={{ fontSize: 'inherit' }}>{augment}</span>
+              {` of your ${total} tasks can be AI-assisted.`}
+            </span>
+          }
+          supportingText={
+            <>
+              You're using AI on <strong style={{ fontWeight: 700, color: '#4ade80' }}>{aiAssisted}</strong> of them today
+              {augment - aiAssisted > 0 ? (
+                <> {EM} <strong style={{ fontWeight: 700 }}>{augment - aiAssisted}</strong> more are ready to try.</>
+              ) : '.'}
+            </>
+          }
+          ctaBar={
+            <div
+              style={{
+                background: 'rgba(59,91,219,0.30)',
+                padding: '18px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{
+                flexShrink: 0, width: 40, height: 40, borderRadius: 10,
+                background: 'rgba(255,255,255,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#fff' }}>insights</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>
+                  You're using AI on {adoptionPct}% of your augmentable work.
+                </p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>
+                  Explore your tasks to see where AI can help most and pick up new skills.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}
+                style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: 'none', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}
+              >
+                Explore my tasks&nbsp;→
+              </button>
+            </div>
+          }
+        />
+      </Link>
+    </article>
+  )
+}
+
 export function HomePage() {
   const { currentUser } = useUser()
   const firstName = currentUser.name.split(' ')[0] ?? currentUser.name
@@ -276,6 +356,7 @@ export function HomePage() {
           </div>
           <div className="home-page__content col-span-8" aria-label="Main content">
             {(currentUser.id === 'chro' || currentUser.id === 'jaydon-torff' || currentUser.id === 'mateo') ? <ChroWorkforceReadinessTeaser /> : null}
+            {currentUser.id === 'csm' ? <EmployeeTasksTeaser /> : null}
             <CareerHubExploreCards />
             <ErrorBoundary>
               <FavoritesSection />
