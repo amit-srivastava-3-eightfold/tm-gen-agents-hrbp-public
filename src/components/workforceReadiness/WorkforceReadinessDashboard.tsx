@@ -2321,23 +2321,12 @@ export function WorkforceReadinessDashboard({
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
-        heroCta={mgrUpskillingComplete
-          ? undefined
-          : mgrPlansCreated
-          ? <WfrCtaBar content={WFR_CTA_CONTENT[5]['manager']} />
-          : showUpskilling && !mgrAllPlansAssigned
-          ? <WfrCtaBar content={WFR_CTA_CONTENT[4]['manager']} onButtonClick={() => setMgrAssignConfirmOpen(true)} />
-          : mgrCollComplete && !mgrUpskillingActive
-          ? <WfrCtaBar content={WFR_CTA_CONTENT[3]['manager']} />
-          : mgrCollActive && !mgrCollComplete
-          ? <WfrCtaBar content={WFR_CTA_CONTENT[2]['manager']} />
-          : mgrDelegationPending
-          ? <WfrCtaBar content={WFR_CTA_CONTENT['1b']['manager']} />
-          : undefined
-        }
+        heroCta={undefined}
         cards={[
+          { id: 'readiness' as const, icon: 'person_check', label: 'AI adoption', value: `${displayReadinessPct}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, mgrData.employees - displayNotReady).toLocaleString()} of {mgrData.employees} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
           { id: 'ai-potential' as const, icon: 'bolt', label: 'AI potential', value: `${mgrDept.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
           { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
+          { id: 'gap' as const, icon: 'group', label: 'Transformation gap', value: displayNotReady.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{mgrData.employees > 0 ? Math.round((displayNotReady / mgrData.employees) * 100) : 0}% of your team needs upskilling</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
         ]}
       >
         <div>
@@ -2719,7 +2708,10 @@ export function WorkforceReadinessDashboard({
               breadcrumb={deptBreadcrumb}
               name={d.name}
               subtitle={`Department · ${d.employees.toLocaleString()} employees`}
+              readiness={(() => { const readyCount = Math.round(d.employees * d.aiReadiness / 100); return { value: `${d.aiReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {d.employees.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
+              aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this department's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               potential={{ value: formatDollar(d.unrealizedValue), description: <>The annual productivity value waiting to be captured.</>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={(() => { const readyCount = Math.round(d.employees * d.aiReadiness / 100); const gapCount = Math.max(0, d.employees - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}% of this department needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               tableTitle={multiHrbp ? `${deptHrbpList.length} HR Business Partners` : 'Team managers'}
               tableHint={multiHrbp ? 'Click an HRBP to see their team' : `${deptHrbpRows[0]?.hrbp ?? ''} · ${(deptHrbpRows[0]?.headcount ?? 0).toLocaleString()} employees`}
               compactCards
@@ -2985,8 +2977,10 @@ export function WorkforceReadinessDashboard({
           )
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
+            { id: 'readiness', icon: 'person_check', label: 'AI adoption', value: `${dirWeightedReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, headcount - dirTotalGap).toLocaleString()} of {headcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
             { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
             { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
+            { id: 'gap', icon: 'group', label: 'Transformation gap', value: dirTotalGap.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{headcount > 0 ? Math.round((dirTotalGap / headcount) * 100) : 0}% of your team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -3000,20 +2994,7 @@ export function WorkforceReadinessDashboard({
                 subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
                 pill={<><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
                 cards={hrbpOverviewCards}
-                heroCta={(() => {
-                  if (hrbpPlansComplete) return undefined
-                  const hrbpDelegPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
-                  const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : hrbpDelegPending ? '1b' : 1
-                  const hrbpCtaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
-                  const hrbpCtaClick = hrbpCtaState === 1
-                    ? () => setFocusLaunchOpen(true)
-                    : hrbpCtaState === '1b' && isHrbp
-                      ? () => setFocusLaunchOpen(true)
-                      : hrbpCtaState === 3 && isHrbp
-                        ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
-                        : undefined
-                  return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState][hrbpCtaPersona]} onButtonClick={hrbpCtaClick} onBarClick={hrbpCtaState === 2 ? completeCollection : undefined} />
-                })()}
+                heroCta={undefined}
               >
                 <div>
                   <div className="wfr-dash__panel-head">
@@ -3278,15 +3259,7 @@ export function WorkforceReadinessDashboard({
           return (
             <>
             <PersonDetailLayout
-              heroCard={(() => {
-                if (hrbpPlansComplete) return undefined
-                const chroHrbpDelegPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
-                const hrbpCtaState: WfrDemoState = hrbpUpskillingActive ? 4 : hrbpCollectionComplete ? 3 : hrbpCollecting ? 2 : chroHrbpDelegPending ? '1b' : 1
-                const hrbpCtaClick = hrbpCtaState === 3
-                  ? () => { const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name); setHrbpUpskillingSelectedDirs(new Set(inScope)); setHrbpUpskillingDialogOpen(true) }
-                  : undefined
-                return <WfrCtaBar content={WFR_CTA_CONTENT[hrbpCtaState]['chro']} onButtonClick={hrbpCtaClick} onBarClick={hrbpCtaState === 2 ? completeCollection : undefined} />
-              })()}
+              heroCard={undefined}
               breadcrumb={(
                 <Breadcrumb>
                   <BreadcrumbList>
@@ -3299,7 +3272,9 @@ export function WorkforceReadinessDashboard({
               name={hrbpName ?? ''}
               subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              readiness={{ value: `${dirWeightedReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, headcount - dirTotalGap).toLocaleString()} of {headcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={{ value: dirTotalGap.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{headcount > 0 ? Math.round((dirTotalGap / headcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               tableTitle={<>Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></>}
               tableHint={
                 (showHrbpCollection || hrbpCollectionComplete) && directors.some(dir => hrbpDirInScope(dir.name))
@@ -3589,8 +3564,10 @@ export function WorkforceReadinessDashboard({
               }
               name={directorData.name}
               subtitle={`${directorData.title} · ${d.name} · ${dirHeadcount.toLocaleString()} employees`}
+              readiness={(() => { const readyCount = Math.round(dirHeadcount * dirMeasuredReadiness / 100); return { value: `${dirMeasuredReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {dirHeadcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={(() => { const readyCount = Math.round(dirHeadcount * dirMeasuredReadiness / 100); const gapCount = Math.max(0, dirHeadcount - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{dirHeadcount > 0 ? Math.round((gapCount / dirHeadcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               managerTable={{
                 title: 'Manager summary',
                 hint: d.name,
@@ -3853,8 +3830,10 @@ export function WorkforceReadinessDashboard({
               }
               name={seniorMgrData.name}
               subtitle={`${seniorMgrData.title} · ${d.name} · ${srHeadcount.toLocaleString()} employees`}
+              readiness={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); return { value: `${srMeasuredReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {srHeadcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); const gapCount = Math.max(0, srHeadcount - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{srHeadcount > 0 ? Math.round((gapCount / srHeadcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               managerTable={{
                 title: 'Manager summary',
                 hint: d.name,
