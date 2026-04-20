@@ -6,11 +6,40 @@ import { Navbar, getNavbarProductConfig } from '@tonyh-2-eightfold/ef-design-sys
 
 type NavbarTabItem = NonNullable<ComponentProps<typeof Navbar>['tabs']>[number]
 
+/** Shared "My career" submenu. */
+const MY_CAREER_SUBITEMS = [
+  { label: 'Career Interests', path: '/profile?tab=career' },
+  { label: 'Career Navigator', path: '/career-navigator' },
+  { label: 'Resume Coach', path: '/resume-coach' },
+]
+
+/** Shared "Marketplace" submenu. */
+const MARKETPLACE_SUBITEMS = [
+  { label: 'Projects', path: '/marketplace/projects' },
+  { label: 'Jobs', path: '/marketplace/jobs' },
+  { label: 'Courses', path: '/marketplace/courses' },
+  { label: 'Development Plans', path: '/marketplace/development-plans' },
+  { label: 'Nectar', path: '/marketplace/nectar' },
+  { label: 'Google Drive', path: '/marketplace/google-drive' },
+]
+
 /** Career Hub navbar tabs for employee/manager. */
 const CAREER_HUB_TABS: NavbarTabItem[] = [
   { id: 'home', label: 'Home', path: '/' },
-  { id: 'my-career', label: 'My career', chevron: true },
-  { id: 'marketplace', label: 'Marketplace', chevron: true },
+  {
+    id: 'my-career',
+    label: 'My career',
+    path: '/my-career',
+    chevron: true,
+    subItems: [...MY_CAREER_SUBITEMS],
+  },
+  {
+    id: 'marketplace',
+    label: 'Marketplace',
+    path: '/marketplace',
+    chevron: true,
+    subItems: [...MARKETPLACE_SUBITEMS],
+  },
   { id: 'my-activity', label: 'My activity', chevron: true },
   { id: 'people', label: 'People', path: '/people' },
   { id: 'my-team', label: 'My team', path: '/my-team' },
@@ -78,8 +107,20 @@ const CAREER_HUB_CHRO_TABS: NavbarTabItem[] = [
 
 const CAREER_HUB_EMPLOYEE_TABS: NavbarTabItem[] = [
   { id: 'home', label: 'Home', path: '/' },
-  { id: 'my-career', label: 'My career', chevron: true },
-  { id: 'marketplace', label: 'Marketplace', chevron: true },
+  {
+    id: 'my-career',
+    label: 'My career',
+    path: '/my-career',
+    chevron: true,
+    subItems: [...MY_CAREER_SUBITEMS],
+  },
+  {
+    id: 'marketplace',
+    label: 'Marketplace',
+    path: '/marketplace',
+    chevron: true,
+    subItems: [...MARKETPLACE_SUBITEMS],
+  },
   {
     id: 'my-activity',
     label: 'My activity',
