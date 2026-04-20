@@ -68,7 +68,7 @@ export default function WfrDialogsPage() {
             Upskilling Launch
           </p>
           <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 16px' }}>
-            3-step wizard: Assign &rarr; Departments &rarr; Review
+            2-step wizard: Departments &rarr; Review
           </p>
           <Button text="Open dialog" variant="Default" onClick={() => setUpskillingOpen(true)} />
         </div>

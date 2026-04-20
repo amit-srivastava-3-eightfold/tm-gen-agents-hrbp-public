@@ -31,11 +31,6 @@ export interface UpskillingLaunchDialogProps {
   excludeDeptNames?: string[]
 }
 
-const ASSIGN_OPTIONS: { value: UpskillingAssignOwner; label: string; desc: string }[] = [
-  { value: 'hrbp', label: 'Assign to HRBPs', desc: 'Each HRBP creates development plans for their departments' },
-  { value: 'self', label: "I'll manage it", desc: 'You create and manage development plans yourself' },
-]
-
 export function UpskillingLaunchDialog({
   open,
   onOpenChange,
@@ -44,20 +39,18 @@ export function UpskillingLaunchDialog({
   excludeDeptNames = [],
 }: UpskillingLaunchDialogProps) {
   const [step, setStep] = useState(1)
-  const [assignOwner, setAssignOwner] = useState<UpskillingAssignOwner>('hrbp')
   const [scopeMode, setScopeMode] = useState<'all' | 'select'>('all')
   const [selectedDepts, setSelectedDepts] = useState<Record<string, boolean>>({})
 
-  const delegated = assignOwner === 'hrbp'
-  const stepLabels = ['Assign', 'Departments', 'Review'] as const
-  const totalSteps = 3
+  const assignOwner: UpskillingAssignOwner = 'hrbp'
+  const delegated = true
+  const stepLabels = ['Departments', 'Review'] as const
 
   // Pre-select priority departments when dialog opens (only on open transition)
   const priorityKey = priorityDeptNames.join(',')
   useEffect(() => {
     if (open) {
       setStep(1)
-      setAssignOwner('hrbp')
       setScopeMode('all')
       const initial: Record<string, boolean> = {}
       for (const name of priorityDeptNames) initial[name] = true
@@ -117,35 +110,6 @@ export function UpskillingLaunchDialog({
   }
 
   /* ── Step renderers ── */
-
-  function renderAssign(): ReactNode {
-    return (
-      <>
-        <h2 className="wfr-focus-launch__title">Who should manage upskilling?</h2>
-        <p className="wfr-focus-launch__sub">Assign to HRBPs or manage development plans yourself.</p>
-        <div className="wfr-focus-launch__options" role="radiogroup" aria-label="Assignment">
-          {ASSIGN_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={assignOwner === opt.value}
-              className={`wfr-focus-launch__option ${assignOwner === opt.value ? 'wfr-focus-launch__option--selected' : ''}`}
-              onClick={() => setAssignOwner(opt.value)}
-            >
-              <span className="wfr-focus-launch__radio">
-                {assignOwner === opt.value ? <span className="wfr-focus-launch__radio-dot" /> : null}
-              </span>
-              <span className="wfr-focus-launch__option-text">
-                <span className="wfr-focus-launch__option-label">{opt.label}</span>
-                <span className="wfr-focus-launch__option-desc">{opt.desc}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </>
-    )
-  }
 
   function renderDepartments(): ReactNode {
     const totalGapCount = deptsByGap.reduce((sum, d) => sum + deptGapHeadcount(d), 0)
@@ -249,16 +213,15 @@ export function UpskillingLaunchDialog({
           <div className="wfr-focus-launch__review-row">
             <div>
               <p className="wfr-focus-launch__review-k">Owner</p>
-              <p className="wfr-focus-launch__review-v">{delegated ? 'HRBPs' : 'You'}</p>
+              <p className="wfr-focus-launch__review-v">HRBPs</p>
             </div>
-            <button type="button" className="wfr-focus-launch__edit" onClick={() => setStep(1)}>Edit</button>
           </div>
           <div className="wfr-focus-launch__review-row">
             <div>
               <p className="wfr-focus-launch__review-k">Departments</p>
               <p className="wfr-focus-launch__review-v">{scopeLabel}</p>
             </div>
-            <button type="button" className="wfr-focus-launch__edit" onClick={() => setStep(2)}>Edit</button>
+            <button type="button" className="wfr-focus-launch__edit" onClick={() => setStep(1)}>Edit</button>
           </div>
           <div className="wfr-focus-launch__review-row">
             <div>
@@ -270,9 +233,7 @@ export function UpskillingLaunchDialog({
             <div>
               <p className="wfr-focus-launch__review-k">Action</p>
               <p className="wfr-focus-launch__review-v wfr-focus-launch__review-v--muted">
-                {delegated
-                  ? 'HRBPs will create development plans for employees in their departments'
-                  : 'You will create and manage development plans'}
+                HRBPs will create development plans for employees in their departments
               </p>
             </div>
           </div>
@@ -306,11 +267,10 @@ export function UpskillingLaunchDialog({
   /* ── Body ── */
 
   let body: ReactNode
-  if (step === 1) body = renderAssign()
-  else if (step === 2) body = renderDepartments()
+  if (step === 1) body = renderDepartments()
   else body = renderReview()
 
-  const canNext = step === 1 ? true : step === 2 ? canProceedDepts : true
+  const canNext = step === 1 ? canProceedDepts : true
 
   const portalContainer = typeof document !== 'undefined' ? document.body : undefined
 
@@ -337,12 +297,7 @@ export function UpskillingLaunchDialog({
             {step === 1 ? (
               <>
                 <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="button" variant="primary" onClick={() => setStep(2)}>Next&nbsp;→</Button>
-              </>
-            ) : step < totalSteps ? (
-              <>
-                <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>Back</Button>
-                <Button type="button" variant="primary" disabled={!canNext} onClick={() => setStep(step + 1)}>Next&nbsp;→</Button>
+                <Button type="button" variant="primary" disabled={!canNext} onClick={() => setStep(2)}>Next&nbsp;→</Button>
               </>
             ) : (
               <>

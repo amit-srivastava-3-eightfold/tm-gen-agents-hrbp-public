@@ -373,6 +373,12 @@ export function ManagerDetailPage() {
             ) : undefined}
             name={mgr.manager}
             subtitle={`${mgr.title} · ${dept.name} · ${employees.length} employees`}
+            readiness={{
+              value: `${avgReadiness}%`,
+              explainer: `Employees in augmentable roles using AI effectively.`,
+              description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {employees.length.toLocaleString()} employees in augmentable roles are AI-ready</span>,
+              onLearnMore: () => setMetricInfoOpen(true),
+            }}
             aiPotential={{
               value: `${dept.aiPotential}%`,
               explainer: `How much of this team's daily work AI is capable of supporting.`,
@@ -381,6 +387,12 @@ export function ManagerDetailPage() {
               onLearnMore: () => setMetricInfoOpen(true),
             }}
             potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
+            gap={{
+              value: notReady.toLocaleString(),
+              explainer: `People in augmentable roles who aren't yet AI-ready.`,
+              description: <span style={{ color: '#94a3b8' }}>{employees.length > 0 ? Math.round((notReady / employees.length) * 100) : 0}% of this team needs upskilling</span>,
+              onLearnMore: () => setMetricInfoOpen(true),
+            }}
             managerTable={{
               title: 'Manager summary',
               hint: dept.name,

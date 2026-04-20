@@ -49,7 +49,9 @@ export function PersonDetailLayout({
   name,
   subtitle,
   aiPotential,
+  readiness,
   potential,
+  gap,
   tableTitle,
   tableHint,
   breadcrumb,
@@ -80,6 +82,19 @@ export function PersonDetailLayout({
         {heroCard}
 
         <div className={`wfr-dash__cards-row${compactCards ? '' : ' person-detail__cards'}`} style={{ margin: 0 }}>
+            {readiness && (
+              <MetricCard
+                variant="readiness"
+                icon="person_check"
+                label="AI adoption"
+                value={readiness.value}
+                explainer={readiness.explainer}
+                description={readiness.description}
+                hint={readiness.hint}
+                tag={readiness.tag}
+                onLearnMore={readiness.onLearnMore}
+              />
+            )}
             {aiPotential && (
               <MetricCard
                 variant="ai-potential"
@@ -102,6 +117,19 @@ export function PersonDetailLayout({
               tag={potential.tag}
               onLearnMore={potential.onLearnMore}
             />
+            {gap && (
+              <MetricCard
+                variant="gap"
+                icon="group"
+                label="Transformation gap"
+                value={gap.value}
+                explainer={gap.explainer}
+                description={gap.description}
+                hint={gap.hint}
+                tag={gap.tag}
+                onLearnMore={gap.onLearnMore}
+              />
+            )}
           </div>
 
         {managerTable && (
