@@ -379,11 +379,13 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
 
       {beforeCards}
 
-      <div className="wfr-dash__cards-row">
-        {cards.map((c) => (
-          <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} explainer={c.explainer} description={c.description} hint={c.hint} tag={c.tag} onLearnMore={c.onLearnMore} />
-        ))}
-      </div>
+      {cards.length > 0 && (
+        <div className="wfr-dash__cards-row">
+          {cards.map((c) => (
+            <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} explainer={c.explainer} description={c.description} hint={c.hint} tag={c.tag} onLearnMore={c.onLearnMore} />
+          ))}
+        </div>
+      )}
 
       {children}
     </div>
@@ -2322,12 +2324,7 @@ export function WorkforceReadinessDashboard({
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={undefined}
-        cards={[
-          { id: 'readiness' as const, icon: 'person_check', label: 'AI adoption', value: `${displayReadinessPct}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, mgrData.employees - displayNotReady).toLocaleString()} of {mgrData.employees} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'ai-potential' as const, icon: 'bolt', label: 'AI potential', value: `${mgrDept.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(mgrUnrealized), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span></>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-          { id: 'gap' as const, icon: 'group', label: 'Transformation gap', value: displayNotReady.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{mgrData.employees > 0 ? Math.round((displayNotReady / mgrData.employees) * 100) : 0}% of your team needs upskilling</span>, onLearnMore: () => setMgrMetricInfoOpen(true) },
-        ]}
+        cards={[]}
       >
         <div>
           {false && null /* CTA card moved to beforeCards */}
