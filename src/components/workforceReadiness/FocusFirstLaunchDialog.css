@@ -1,3 +1,14 @@
+.wfr-focus-launch__table-wrap {
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.wfr-focus-launch__table tr {
+  border-bottom-color: var(--color-border-default) !important;
+}
+
 .wfr-focus-launch__overlay {
   position: fixed;
   inset: 0;

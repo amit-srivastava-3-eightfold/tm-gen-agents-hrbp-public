@@ -278,7 +278,7 @@ export function FocusFirstLaunchDialog({
                   <p className="wfr-focus-launch__sub">Choose which client manager teams to include in data collection. AI-powered interviews will be sent to employees in the selected teams.</p>
 
                   <div className="wfr-focus-launch__dept-list">
-                    <DataTable bordered style={{ width: '100%' }}>
+                    <div className="wfr-focus-launch__table-wrap"><DataTable className="wfr-focus-launch__table" style={{ width: '100%' }}>
                       <DataTableHeader>
                         <DataTableRow>
                           <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
@@ -320,7 +320,7 @@ export function FocusFirstLaunchDialog({
                           )
                         })}
                       </DataTableBody>
-                    </DataTable>
+                    </DataTable></div>
                   </div>
                 </>
               )}
@@ -469,7 +469,7 @@ export function FocusFirstLaunchDialog({
                     ? (() => {
                         const allHrbpSelected = selectedHrbpNames.length === uniqueHrbps.length
                         return (
-                        <DataTable bordered style={{ width: '100%' }}>
+                        <div className="wfr-focus-launch__table-wrap"><DataTable className="wfr-focus-launch__table" style={{ width: '100%' }}>
                           <DataTableHeader>
                             <DataTableRow>
                               <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
@@ -513,12 +513,12 @@ export function FocusFirstLaunchDialog({
                               )
                             })}
                           </DataTableBody>
-                        </DataTable>)
+                        </DataTable></div>)
                     })()
                     : (() => {
                         const allDeptSelected = Object.keys(selectedDepts).filter(k => selectedDepts[k]).length === departments.length
                         return (
-                        <DataTable bordered style={{ width: '100%' }}>
+                        <div className="wfr-focus-launch__table-wrap"><DataTable className="wfr-focus-launch__table" style={{ width: '100%' }}>
                           <DataTableHeader>
                             <DataTableRow>
                               <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
@@ -550,7 +550,7 @@ export function FocusFirstLaunchDialog({
                               )
                             })}
                           </DataTableBody>
-                        </DataTable>)
+                        </DataTable></div>)
                     })()}
                 </div>
               </>
