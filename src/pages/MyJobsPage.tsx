@@ -192,7 +192,7 @@ export function MyJobsPage() {
 
       <main style={{ maxWidth: 1440, margin: '0 auto', padding: '24px 32px 32px' }}>
         <div>
-        <Tabs value={tab} onValueChange={v => setTab(v as TabId)}>
+        <Tabs value={tab} onValueChange={(v: string) => setTab(v as TabId)}>
           <TabsList variant="line" style={{ width: '100%', marginBottom: 24, justifyContent: 'flex-start' }}>
             <TabsTrigger className="!flex-none" value="applications" badge={tabCount('applications')}>Applications</TabsTrigger>
             <TabsTrigger className="!flex-none" value="interviews" badge={tabCount('interviews')}>Interviews</TabsTrigger>
