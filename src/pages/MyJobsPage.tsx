@@ -14,6 +14,13 @@ import { NavbarApp } from '../components/Navbar'
 
 type JobStatus = 'saved' | 'applied' | 'in_review' | 'interview' | 'offer' | 'closed'
 type TabId = 'applications' | 'interviews' | 'offers' | 'saved'
+type AppFilter = 'active' | 'draft' | 'inactive'
+
+const APP_FILTER_STATUSES: Record<AppFilter, JobStatus[]> = {
+  active: ['applied', 'in_review'],
+  draft: [],
+  inactive: ['closed'],
+}
 
 interface Job {
   id: string
@@ -134,14 +141,47 @@ function MatchBadge({ percent }: { percent: number }) {
   )
 }
 
+function AppStatusCard({
+  label, count, icon, active, onClick,
+}: { label: string; count: number; icon: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '9px 12px', borderRadius: 16, cursor: 'pointer',
+        border: active ? '1px solid #BCE4FF' : '1px solid #e5e7eb',
+        background: active ? '#EBF5FF' : '#F6F7F8',
+      }}
+    >
+      <span style={{
+        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+        background: active ? '#1B4FA8' : '#69717F',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#fff' }}>{icon}</span>
+      </span>
+      <div style={{ textAlign: 'left' }}>
+        <div style={{ fontSize: 10, color: '#4F5666', lineHeight: 1.3 }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#1A212E', lineHeight: 1.2 }}>{count}</div>
+      </div>
+    </button>
+  )
+}
+
 export function MyJobsPage() {
   const [tab, setTab] = useState<TabId>('applications')
+  const [appFilter, setAppFilter] = useState<AppFilter>('active')
   const [search, setSearch] = useState('')
 
   const tabCount = (t: TabId) => JOBS.filter(j => TAB_STATUSES[t].includes(j.status)).length
+  const appFilterCount = (f: AppFilter) => JOBS.filter(j => APP_FILTER_STATUSES[f].includes(j.status)).length
 
   const filtered = JOBS
-    .filter(j => TAB_STATUSES[tab].includes(j.status))
+    .filter(j => tab === 'applications'
+      ? APP_FILTER_STATUSES[appFilter].includes(j.status)
+      : TAB_STATUSES[tab].includes(j.status))
     .filter(j => !search || j.title.toLowerCase().includes(search.toLowerCase()) || j.department.toLowerCase().includes(search.toLowerCase()))
 
   return (
@@ -174,6 +214,14 @@ export function MyJobsPage() {
 
           {(['applications', 'interviews', 'offers', 'saved'] as TabId[]).map(t => (
             <TabsContent key={t} value={t}>
+              {/* Application status bar */}
+              {t === 'applications' && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                  <AppStatusCard label="Active" count={appFilterCount('active')} icon="task_alt" active={appFilter === 'active'} onClick={() => setAppFilter('active')} />
+                  <AppStatusCard label="Draft" count={appFilterCount('draft')} icon="edit_document" active={appFilter === 'draft'} onClick={() => setAppFilter('draft')} />
+                  <AppStatusCard label="Inactive" count={appFilterCount('inactive')} icon="assignment_late" active={appFilter === 'inactive'} onClick={() => setAppFilter('inactive')} />
+                </div>
+              )}
               {/* Search */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, border: '1px solid #d9dce1', background: '#fff', maxWidth: 260, marginBottom: 16 }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#94a3b8' }}>search</span>
