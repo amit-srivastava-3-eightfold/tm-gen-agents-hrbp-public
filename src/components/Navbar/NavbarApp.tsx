@@ -107,6 +107,7 @@ const CAREER_HUB_CHRO_TABS: NavbarTabItem[] = [
 
 const CAREER_HUB_EMPLOYEE_TABS: NavbarTabItem[] = [
   { id: 'home', label: 'Home', path: '/' },
+  { id: 'my-work', label: 'My work', path: '/my-work' },
   {
     id: 'my-career',
     label: 'My career',

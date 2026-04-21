@@ -64,7 +64,7 @@ export const CHRO: CurrentUser = {
   location: 'San Francisco, CA',
   pronouns: 'They/Them/Theirs',
   avatarType: 'photo',
-  avatarPhotoSrc: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face',
+  avatarPhotoSrc: '/jordan.png',
   avatarInitials: 'JR',
   avatarColor: '#2E7D32',
   about: 'As Chief People Officer, I lead Acme\'s global people strategy, talent acquisition, and organizational development. I focus on building a culture where every employee can thrive, driving diversity and inclusion initiatives, and aligning people programs with business outcomes.',
@@ -79,12 +79,12 @@ export const CHRO: CurrentUser = {
 
 export const CSM: CurrentUser = {
   id: 'csm',
-  name: 'Ryan Mitchell',
+  name: 'Sarah Culhane',
   title: 'Engineering Lead',
   location: 'San Francisco, CA',
   pronouns: 'He/Him/His',
   avatarType: 'photo',
-  avatarPhotoSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
+  avatarPhotoSrc: '/sarah.png',
   avatarInitials: 'RM',
   avatarColor: '#1565C0',
   about: 'Engineering Lead focused on platform reliability and AI-assisted development workflows. I lead a cross-functional team delivering infrastructure tooling and work closely with product to prioritize technical investments that scale.',

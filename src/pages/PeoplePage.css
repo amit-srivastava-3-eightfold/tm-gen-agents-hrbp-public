@@ -4,7 +4,12 @@
   min-height: 100vh;
   background: #FFFFFF;
   font-family: var(--font-family);
-  padding-top: 80px;
+}
+
+.people-page__bg {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--navbar-height, 60px);
 }
 
 .people-page__main {
@@ -22,7 +27,7 @@
   flex: 1;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 24px 24px;
+  padding: 24px 32px 24px;
   width: 100%;
   box-sizing: border-box;
 }

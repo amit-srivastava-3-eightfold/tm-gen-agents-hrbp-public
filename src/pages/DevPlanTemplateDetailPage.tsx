@@ -397,7 +397,7 @@ export function DevPlanTemplateDetailPage() {
                 let wfrState = 1
                 try { wfrState = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}').state ?? 1 } catch {}
                 // Employee's plan is complete when WFR state >= 5 and their hash gives 100%
-                // For Ryan Mitchell (the employee persona), use a fixed planPct based on state
+                // For Sarah Culhane (the employee persona), use a fixed planPct based on state
                 const planComplete = wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })()
                 const basePct = 48
                 const totalPlanPts = 14
