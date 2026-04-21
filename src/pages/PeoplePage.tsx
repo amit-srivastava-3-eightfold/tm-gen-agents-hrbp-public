@@ -1,13 +1,21 @@
 import { useMemo } from 'react'
-import * as Tabs from '@radix-ui/react-tabs'
 import { useSearchParams } from 'react-router-dom'
 import { NavbarApp } from '../components/Navbar'
-import { PageHeader } from '../components/PageHeader'
+import {
+  ProductBackground,
+  Header,
+  HeaderToolbar,
+  HeaderTextGroup,
+  HeaderTitle,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@tonyh-2-eightfold/ef-design-system'
 import { useUser } from '../contexts/UserContext'
 import { PeopleProfileCard } from '../components/PeopleProfileCard'
 import { SEARCH_PEOPLE_CARDS, OPEN_ROLES_PEOPLE_CARDS } from '../data/peopleData'
 import type { PeopleProfileCardData } from '../components/PeopleProfileCard'
-import '../components/PageHeader.css'
 import './PeoplePage.css'
 
 function getUniqueRolesFromData(cards: PeopleProfileCardData[]): { value: string; label: string }[] {
@@ -70,34 +78,31 @@ export function PeoplePage() {
   return (
     <div className="people-page">
       <NavbarApp />
-      <PageHeader title="People" {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })} />
+      <ProductBackground
+        className="people-page__bg"
+        variant="career-hub"
+        {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+      >
+        <Header variant="career-hub" chSize="parent" overlayBackground>
+          <HeaderToolbar>
+            <HeaderTextGroup>
+              <HeaderTitle>People</HeaderTitle>
+            </HeaderTextGroup>
+          </HeaderToolbar>
+        </Header>
+      </ProductBackground>
       <main className="people-page__main">
         <div className="people-page__content">
-          <Tabs.Root value={validTab} onValueChange={handleTabChange} className="people-page__tabs">
-            <Tabs.List className="people-page__tabs-list">
-              <Tabs.Trigger value="search" className="people-page__tab">
-                Search
-              </Tabs.Trigger>
-              <Tabs.Trigger value="open-roles" className="people-page__tab">
-                My open positions
-                <span className="people-page__tab-badge">{totalOpenRequisitions}</span>
-              </Tabs.Trigger>
-              <Tabs.Trigger value="mentors" className="people-page__tab">
-                My mentors
-                <span className="people-page__tab-badge">5</span>
-              </Tabs.Trigger>
-              <Tabs.Trigger value="mentees" className="people-page__tab">
-                My mentees
-                <span className="people-page__tab-badge">2</span>
-              </Tabs.Trigger>
-              <Tabs.Trigger value="coffee" className="people-page__tab">
-                Coffee chats
-              </Tabs.Trigger>
-              <Tabs.Trigger value="saved" className="people-page__tab">
-                Saved
-              </Tabs.Trigger>
-            </Tabs.List>
-            <Tabs.Content value="search" className="people-page__tabs-content">
+          <Tabs value={validTab} onValueChange={handleTabChange} className="people-page__tabs">
+            <TabsList variant="line" style={{ width: '100%', justifyContent: 'flex-start', marginBottom: 24 }}>
+              <TabsTrigger className="!flex-none" value="search">Search</TabsTrigger>
+              <TabsTrigger className="!flex-none" value="open-roles" badge={totalOpenRequisitions}>My open positions</TabsTrigger>
+              <TabsTrigger className="!flex-none" value="mentors" badge={5}>My mentors</TabsTrigger>
+              <TabsTrigger className="!flex-none" value="mentees" badge={2}>My mentees</TabsTrigger>
+              <TabsTrigger className="!flex-none" value="coffee">Coffee chats</TabsTrigger>
+              <TabsTrigger className="!flex-none" value="saved">Saved</TabsTrigger>
+            </TabsList>
+            <TabsContent value="search" className="people-page__tabs-content">
               <div className="people-page__search-bar">
                 <div className="people-page__search-inputs">
                   <div className="people-page__search-field">
@@ -145,8 +150,8 @@ export function PeoplePage() {
                   <PeopleProfileCard key={person.id} person={person} />
                 ))}
               </div>
-            </Tabs.Content>
-            <Tabs.Content value="open-roles" className="people-page__tabs-content people-page__tabs-content--open-roles">
+            </TabsContent>
+            <TabsContent value="open-roles" className="people-page__tabs-content people-page__tabs-content--open-roles">
               <div className="people-page__search-bar people-page__search-bar--open-roles">
                 <div className="people-page__search-inputs">
                   <div className="people-page__search-field">
@@ -194,20 +199,20 @@ export function PeoplePage() {
                   <PeopleProfileCard key={person.id} person={person} matchRole={matchRoleLabel} showSaveLead />
                 ))}
               </div>
-            </Tabs.Content>
-            <Tabs.Content value="mentors" className="people-page__tabs-content">
+            </TabsContent>
+            <TabsContent value="mentors" className="people-page__tabs-content">
               <p className="people-page__placeholder">My mentors content goes here.</p>
-            </Tabs.Content>
-            <Tabs.Content value="mentees" className="people-page__tabs-content">
+            </TabsContent>
+            <TabsContent value="mentees" className="people-page__tabs-content">
               <p className="people-page__placeholder">My mentees content goes here.</p>
-            </Tabs.Content>
-            <Tabs.Content value="coffee" className="people-page__tabs-content">
+            </TabsContent>
+            <TabsContent value="coffee" className="people-page__tabs-content">
               <p className="people-page__placeholder">Coffee chats content goes here.</p>
-            </Tabs.Content>
-            <Tabs.Content value="saved" className="people-page__tabs-content">
+            </TabsContent>
+            <TabsContent value="saved" className="people-page__tabs-content">
               <p className="people-page__placeholder">Saved content goes here.</p>
-            </Tabs.Content>
-          </Tabs.Root>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
