@@ -60,12 +60,13 @@ const AVATAR_COLORS = ['#1565C0','#00838F','#6A1B9A','#C62828','#2E7D32','#E6510
 
 function nh(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
 
-function PersonAvatar({ name, size = 28 }: { name: string; size?: number }) {
+function PersonAvatar({ name, size = 28, src }: { name: string; size?: number; src?: string }) {
   const h = nh(name)
   const parts = name.split(' ')
   const initials = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
-  if (h % 5 < 2) {
-    return <img src={AVATAR_PHOTOS[h % AVATAR_PHOTOS.length]} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  const photoSrc = src ?? (h % 5 < 2 ? AVATAR_PHOTOS[h % AVATAR_PHOTOS.length] : undefined)
+  if (photoSrc) {
+    return <img src={photoSrc} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   return <div style={{ width: size, height: size, borderRadius: '50%', background: AVATAR_COLORS[h % AVATAR_COLORS.length], color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.36, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
 }
@@ -2313,6 +2314,25 @@ export function WorkforceReadinessDashboard({
       : enrichedMgrEmployees.length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
+    // Assign a unique pravatar photo to every team member — no duplicates
+    const mgrPhotoMap = (() => {
+      const ids = Array.from({ length: 70 }, (_, i) => i + 1)
+      let s = 12345
+      for (let i = ids.length - 1; i > 0; i--) {
+        s = (s * 1664525 + 1013904223) >>> 0
+        const j = s % (i + 1)
+        ;[ids[i], ids[j]] = [ids[j]!, ids[i]!]
+      }
+      const map = new Map<string, string>()
+      ;[...mgrEmployees].sort((a, b) => nh(a.name) - nh(b.name)).forEach((emp, i) => {
+        if (emp.name.startsWith('Sarah ')) {
+          map.set(emp.name, '/sarah.png')
+        } else {
+          map.set(emp.name, `https://i.pravatar.cc/64?img=${ids[i % ids.length]}`)
+        }
+      })
+      return map
+    })()
     return (
       <>
       <WfrOverviewLayout
@@ -2323,7 +2343,34 @@ export function WorkforceReadinessDashboard({
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={undefined}
-        cards={[]}
+        hideHero
+        cards={[
+          {
+            id: 'ai-potential',
+            label: 'AI potential',
+            icon: 'bolt',
+            value: `${mgrDept.aiPotential}%`,
+            explainer: `How much of your team's daily work AI is capable of supporting.`,
+            description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>,
+            tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
+          },
+          {
+            id: 'readiness',
+            label: 'AI readiness',
+            icon: 'psychology',
+            value: `${displayReadinessPct}%`,
+            explainer: `Share of your team in augmentable roles who are actively using AI.`,
+            description: <span style={{ color: '#94a3b8' }}>{Math.round(mgrData.employees * displayReadinessPct / 100)} of {mgrData.employees} employees are AI-ready</span>,
+          },
+          {
+            id: 'gap',
+            label: 'Transformation gap',
+            icon: 'trending_up',
+            value: displayNotReady.toLocaleString(),
+            explainer: `Employees in augmentable roles who haven't adopted AI yet.`,
+            description: <span style={{ color: '#94a3b8' }}>Need upskilling to reach AI-ready threshold</span>,
+          },
+        ]}
       >
         <div>
           {false && null /* CTA card moved to beforeCards */}
@@ -2378,7 +2425,10 @@ export function WorkforceReadinessDashboard({
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
-                    <span className="text-[#1e293b]">{emp.name}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <PersonAvatar name={emp.name} size={28} src={mgrPhotoMap.get(emp.name)} />
+                      <span className="text-[#1e293b]">{emp.name}</span>
+                    </span>
                   </DataTableCell>
                   <DataTableCell className="text-[13px] text-[#475569] !max-w-[140px] truncate">{emp.title ?? '—'}</DataTableCell>
                   <DataTableCell align="right">

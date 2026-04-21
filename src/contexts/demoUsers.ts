@@ -84,7 +84,7 @@ export const CSM: CurrentUser = {
   location: 'San Francisco, CA',
   pronouns: 'He/Him/His',
   avatarType: 'photo',
-  avatarPhotoSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
+  avatarPhotoSrc: '/sarah.png',
   avatarInitials: 'RM',
   avatarColor: '#1565C0',
   about: 'Engineering Lead focused on platform reliability and AI-assisted development workflows. I lead a cross-functional team delivering infrastructure tooling and work closely with product to prioritize technical investments that scale.',
