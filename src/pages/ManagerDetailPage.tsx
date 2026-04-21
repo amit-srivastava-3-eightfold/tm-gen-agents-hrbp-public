@@ -23,7 +23,7 @@ import {
   DataTableHead,
   DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, getTasksForRole, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, WFR_FIRST_NAMES, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -234,6 +234,18 @@ export function ManagerDetailPage() {
   const deptRoles = getRolesForDept(dept.name)
   const parsedMgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
 
+  // Shuffle first names with the same mgrIdx seed as the manager persona so names match across views
+  const fnMulberry = (s: number) => { let t = (s + 0x6d2b79f5) >>> 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+  const teamFirstNames = [...WFR_FIRST_NAMES] as string[]
+  if (parsedMgrIdx >= 0) {
+    let fnSeed = (parsedMgrIdx * 2654435761) >>> 0
+    for (let i = teamFirstNames.length - 1; i > 0; i--) {
+      fnSeed = (fnSeed + 0x6d2b79f5) >>> 0
+      const j = Math.floor(fnMulberry(fnSeed) * (i + 1))
+      ;[teamFirstNames[i], teamFirstNames[j]] = [teamFirstNames[j]!, teamFirstNames[i]!]
+    }
+  }
+
   // Use the same readiness formula as the manager persona for consistency:
   // roleBase + deterministic noise, capped at 49 until plans are created.
   const displayEmployees = employees.map((e, i) => {
@@ -246,8 +258,12 @@ export function ManagerDetailPage() {
     const empBoost = hrbpPlansCreated ? Math.round(upskillingBoostBase * (0.5 + (nameHash(e.name) % 10) / 10)) : 0
     const withCalibration = Math.max(0, Math.min(100, baseReadiness + calibrationDelta + empBoost))
     const displayReadiness = !hrbpPlansCreated ? Math.min(49, withCalibration) : withCalibration
-    return { ...e, readinessPct: baseReadiness, displayReadiness }
+    const lastName = e.name.split(' ').slice(1).join(' ')
+    const firstName = teamFirstNames[i % teamFirstNames.length]!
+    return { ...e, name: `${firstName} ${lastName}`, readinessPct: baseReadiness, displayReadiness }
   })
+
+  const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
 
   // Assign unique photos — same logic as manager persona, Sarah uses her persona photo
   const empPhotoMap = (() => {
@@ -410,6 +426,7 @@ export function ManagerDetailPage() {
               tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
               onLearnMore: () => setMetricInfoOpen(true),
             }}
+            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
             gap={{
               value: notReady.toLocaleString(),
               explainer: `People in augmentable roles who aren't yet AI-ready.`,
