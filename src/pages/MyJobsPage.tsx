@@ -24,6 +24,7 @@ const APP_FILTER_STATUSES: Record<AppFilter, JobStatus[]> = {
 
 interface Job {
   id: string
+  jobId: string
   title: string
   department: string
   location: string
@@ -38,42 +39,46 @@ interface Job {
 const JOBS: Job[] = [
   {
     id: '1',
+    jobId: '4821',
     title: 'Principal Software Engineer',
     department: 'Platform Engineering',
     location: 'Remote',
     type: 'internal',
     postedDate: '2 weeks ago',
-    appliedDate: '12 days ago',
+    appliedDate: 'Apr 9, 2026',
     status: 'interview',
     matchPercent: 94,
     skills: ['Distributed Systems', 'Go', 'Platform Architecture'],
   },
   {
     id: '2',
+    jobId: '5103',
     title: 'Staff Engineer, AI Infrastructure',
     department: 'AI & Machine Learning',
     location: 'San Francisco, CA',
     type: 'internal',
     postedDate: '3 weeks ago',
-    appliedDate: '18 days ago',
+    appliedDate: 'Apr 3, 2026',
     status: 'in_review',
     matchPercent: 88,
     skills: ['Python', 'LLM Infrastructure', 'MLOps'],
   },
   {
     id: '3',
+    jobId: '4956',
     title: 'Engineering Manager, Developer Experience',
     department: 'Engineering',
     location: 'Hybrid — SF or NYC',
     type: 'internal',
     postedDate: '1 month ago',
-    appliedDate: '3 weeks ago',
+    appliedDate: 'Mar 31, 2026',
     status: 'applied',
     matchPercent: 81,
     skills: ['People Management', 'Developer Tooling', 'CI/CD'],
   },
   {
     id: '4',
+    jobId: '5210',
     title: 'Director of Platform Engineering',
     department: 'Engineering Leadership',
     location: 'San Francisco, CA',
@@ -85,6 +90,7 @@ const JOBS: Job[] = [
   },
   {
     id: '5',
+    jobId: '5247',
     title: 'VP of Engineering',
     department: 'Engineering Leadership',
     location: 'San Francisco, CA',
@@ -96,12 +102,13 @@ const JOBS: Job[] = [
   },
   {
     id: '6',
+    jobId: '4602',
     title: 'Senior Engineering Manager, Reliability',
     department: 'Site Reliability',
     location: 'Remote',
     type: 'internal',
     postedDate: '2 months ago',
-    appliedDate: '6 weeks ago',
+    appliedDate: 'Mar 5, 2026',
     status: 'closed',
     matchPercent: 87,
     skills: ['SRE', 'Incident Management', 'Observability'],
@@ -124,22 +131,6 @@ const TAB_STATUSES: Record<TabId, JobStatus[]> = {
   saved: ['saved'],
 }
 
-function MatchBadge({ percent }: { percent: number }) {
-  const color = percent >= 85 ? '#15803d' : percent >= 70 ? '#b45309' : '#64748b'
-  const bg = percent >= 85 ? '#f0fdf4' : percent >= 70 ? '#fffbeb' : '#f8fafc'
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 3,
-      padding: '2px 8px', borderRadius: 4,
-      background: bg, color, fontSize: 11, fontWeight: 600,
-    }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-        {percent >= 85 ? 'verified' : 'bolt'}
-      </span>
-      {percent}% match
-    </span>
-  )
-}
 
 function AppStatusCard({
   label, count, icon, active, onClick,
@@ -234,92 +225,44 @@ export function MyJobsPage() {
               <div
                 key={job.id}
                 style={{
-                  padding: '18px 20px',
+                  padding: '14px 20px',
                   borderRadius: 12,
                   border: '1px solid #e5e7eb',
                   background: isClosed ? '#fafafa' : '#fff',
-                  opacity: isClosed ? 0.75 : 1,
+                  opacity: isClosed ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Title row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: '#1a212e' }}>{job.title}</span>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 3,
-                        padding: '2px 8px', borderRadius: 4,
-                        background: statusCfg.bg, color: statusCfg.color, fontSize: 11, fontWeight: 500,
-                      }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 11 }}>{statusCfg.icon}</span>
-                        {statusCfg.label}
-                      </span>
-                      {job.type === 'internal' && (
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 500,
-                          background: '#fef9c3', color: '#854d0e',
-                        }}>
-                          Internal
-                        </span>
-                      )}
-                    </div>
+                {/* Icon */}
+                <div style={{
+                  width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+                  background: isClosed ? '#94a3b8' : '#1B4FA8',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#fff', fontVariationSettings: "'FILL' 1" }}>description</span>
+                </div>
 
-                    {/* Meta row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>corporate_fare</span>
-                        {job.department}
-                      </span>
-                      <span style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>location_on</span>
-                        {job.location}
-                      </span>
-                      <span style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>schedule</span>
-                        Posted {job.postedDate}
-                        {job.appliedDate && ` · Applied ${job.appliedDate}`}
-                      </span>
-                    </div>
-
-                    {/* Skills + match */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <MatchBadge percent={job.matchPercent} />
-                      {job.skills.map(skill => (
-                        <span key={skill} style={{
-                          padding: '2px 8px', borderRadius: 4, fontSize: 11,
-                          background: '#f1f5f9', color: '#475569',
-                        }}>
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+                {/* Title + meta */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1a212e', marginBottom: 4 }}>{job.title}</div>
+                  <div style={{ fontSize: 13, color: '#64748b' }}>
+                    {job.location}
+                    <span style={{ margin: '0 6px', color: '#d9dce1' }}>•</span>
+                    Job ID: {job.jobId}
                   </div>
+                </div>
 
-                  {/* Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    {job.status === 'saved' && (
-                      <button type="button" style={{
-                        padding: '6px 14px', borderRadius: 6, border: '1px solid #3b5bdb',
-                        background: '#fff', color: '#3b5bdb', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                      }}>
-                        Apply
-                      </button>
-                    )}
-                    {(job.status === 'applied' || job.status === 'in_review' || job.status === 'interview') && (
-                      <button type="button" style={{
-                        padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb',
-                        background: '#fff', color: '#64748b', fontSize: 13, cursor: 'pointer',
-                      }}>
-                        View
-                      </button>
-                    )}
-                    <button type="button" style={{
-                      padding: 6, borderRadius: 6, border: '1px solid #e5e7eb',
-                      background: '#fff', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>more_horiz</span>
-                    </button>
+                {/* Status + date */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginBottom: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusCfg.color, display: 'inline-block', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: statusCfg.color, fontWeight: 500 }}>{statusCfg.label}</span>
                   </div>
+                  {job.appliedDate && (
+                    <div style={{ fontSize: 13, color: '#64748b' }}>Applied on {job.appliedDate}</div>
+                  )}
                 </div>
               </div>
             )
