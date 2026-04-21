@@ -247,10 +247,14 @@ export function MyJobsPage() {
                 {/* Title + meta */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: '#1a212e', marginBottom: 4 }}>{job.title}</div>
-                  <div style={{ fontSize: 13, color: '#64748b' }}>
-                    {job.location}
-                    <span style={{ margin: '0 6px', color: '#d9dce1' }}>•</span>
-                    Job ID: {job.jobId}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>{job.location}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, color: '#4F5666',
+                      background: '#F1F3F5', borderRadius: 4, padding: '2px 7px',
+                    }}>
+                      Job ID: {job.jobId}
+                    </span>
                   </div>
                 </div>
 
