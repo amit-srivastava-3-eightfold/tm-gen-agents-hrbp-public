@@ -2360,7 +2360,7 @@ export function WorkforceReadinessDashboard({
             icon: 'psychology',
             value: `${displayReadinessPct}%`,
             explainer: `Share of your team in augmentable roles who are actively using AI.`,
-            description: <span style={{ color: '#94a3b8' }}>{Math.round(mgrData.employees * displayReadinessPct / 100)} of {mgrData.employees} employees are AI-ready</span>,
+            description: <span style={{ color: '#94a3b8' }}>{mgrData.employees - displayNotReady} of {mgrData.employees} employees are AI-ready</span>,
           },
           {
             id: 'gap',

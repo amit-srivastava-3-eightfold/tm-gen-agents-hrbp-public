@@ -23,7 +23,7 @@ import {
   DataTableHead,
   DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, WFR_FIRST_NAMES, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -58,15 +58,13 @@ const AVATAR_PHOTOS = [
 ]
 const AVATAR_COLORS = ['#1565C0','#00838F','#6A1B9A','#C62828','#2E7D32','#E65100','#4527A0','#AD1457','#0277BD','#558B2F']
 
-function EmpAvatar({ name, size = 28 }: { name: string; size?: number }) {
+function EmpAvatar({ name, size = 28, src }: { name: string; size?: number; src?: string }) {
   const h = nameHash(name)
   const parts = name.split(' ')
   const initials = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
-  // ~40% get photos
-  const hasPhoto = h % 5 < 2
-  if (hasPhoto) {
-    const src = AVATAR_PHOTOS[h % AVATAR_PHOTOS.length]
-    return <img src={src} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  const photoSrc = src ?? (h % 5 < 2 ? AVATAR_PHOTOS[h % AVATAR_PHOTOS.length] : undefined)
+  if (photoSrc) {
+    return <img src={photoSrc} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   const color = AVATAR_COLORS[h % AVATAR_COLORS.length]
   return <div style={{ width: size, height: size, borderRadius: '50%', background: color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.36, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
@@ -233,19 +231,61 @@ export function ManagerDetailPage() {
 
   const { mgr, employees, parentManager, parentMgrIdx } = managerData
 
-  // Apply calibration: add deptTrend delta + per-employee upskilling boost
-  const displayEmployees = employees.map(e => {
+  const deptRoles = getRolesForDept(dept.name)
+  const parsedMgrIdx = mgrIdxParam !== null ? parseInt(mgrIdxParam, 10) : -1
+
+  // Shuffle first names with the same mgrIdx seed as the manager persona so names match across views
+  const fnMulberry = (s: number) => { let t = (s + 0x6d2b79f5) >>> 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+  const teamFirstNames = [...WFR_FIRST_NAMES] as string[]
+  if (parsedMgrIdx >= 0) {
+    let fnSeed = (parsedMgrIdx * 2654435761) >>> 0
+    for (let i = teamFirstNames.length - 1; i > 0; i--) {
+      fnSeed = (fnSeed + 0x6d2b79f5) >>> 0
+      const j = Math.floor(fnMulberry(fnSeed) * (i + 1))
+      ;[teamFirstNames[i], teamFirstNames[j]] = [teamFirstNames[j]!, teamFirstNames[i]!]
+    }
+  }
+
+  // Use the same readiness formula as the manager persona for consistency:
+  // roleBase + deterministic noise, capped at 49 until plans are created.
+  const displayEmployees = employees.map((e, i) => {
+    const roleData = deptRoles.find(r => r.title === e.title)
+    const roleBase = roleData?.aiReadiness ?? dept.aiReadiness
+    const noiseVal = parsedMgrIdx >= 0
+      ? Math.round(((i * 374761393 + parsedMgrIdx * 2654435761) % 38) - 19)
+      : Math.round((nameHash(e.name) % 38) - 19)
+    const baseReadiness = Math.max(0, Math.min(100, roleBase + noiseVal))
     const empBoost = hrbpPlansCreated ? Math.round(upskillingBoostBase * (0.5 + (nameHash(e.name) % 10) / 10)) : 0
-    const displayReadiness = Math.max(0, Math.min(100, e.readinessPct + calibrationDelta + empBoost))
-    return { ...e, displayReadiness }
+    const withCalibration = Math.max(0, Math.min(100, baseReadiness + calibrationDelta + empBoost))
+    const displayReadiness = !hrbpPlansCreated ? Math.min(49, withCalibration) : withCalibration
+    const lastName = e.name.split(' ').slice(1).join(' ')
+    const firstName = teamFirstNames[i % teamFirstNames.length]!
+    return { ...e, name: `${firstName} ${lastName}`, readinessPct: baseReadiness, displayReadiness }
   })
+
+  const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
+
+  // Assign unique photos — same logic as manager persona, Sarah uses her persona photo
+  const empPhotoMap = (() => {
+    const ids = Array.from({ length: 70 }, (_, i) => i + 1)
+    let s = 12345
+    for (let i = ids.length - 1; i > 0; i--) {
+      s = (s * 1664525 + 1013904223) >>> 0
+      const j = s % (i + 1)
+      ;[ids[i], ids[j]] = [ids[j]!, ids[i]!]
+    }
+    const map = new Map<string, string>()
+    ;[...displayEmployees].sort((a, b) => nameHash(a.name) - nameHash(b.name)).forEach((emp, i) => {
+      map.set(emp.name, emp.name.startsWith('Sarah ') ? '/sarah.png' : `https://i.pravatar.cc/64?img=${ids[i % ids.length]}`)
+    })
+    return map
+  })()
 
   const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
   const avgReadiness = displayEmployees.length > 0
     ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length)
     : 0
   const notReady = displayEmployees.length - readyCount
-  const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
   // Collection-related state
   const showCollection = collectionActive && !collectionComplete
   // Table hint
@@ -500,7 +540,7 @@ export function ManagerDetailPage() {
                       { borderLeft: '3px solid transparent', paddingLeft: 17 }
                     }>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <EmpAvatar name={emp.name} />
+                        <EmpAvatar name={emp.name} src={empPhotoMap.get(emp.name)} />
                         <span className="text-[13px] text-[#1a212e]">{emp.name}</span>
                       </div>
                     </DataTableCell>

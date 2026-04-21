@@ -26,7 +26,7 @@ export interface PersonDetailLayoutProps {
   subtitle: string
   aiPotential?: MetricCardData
   readiness?: MetricCardData
-  potential: MetricCardData
+  potential?: MetricCardData
   gap?: MetricCardData
   tableTitle: ReactNode
   tableHint: React.ReactNode
@@ -50,7 +50,7 @@ export function PersonDetailLayout({
   subtitle,
   aiPotential,
   readiness,
-  potential,
+  potential = undefined,
   gap,
   tableTitle,
   tableHint,
@@ -86,7 +86,7 @@ export function PersonDetailLayout({
               <MetricCard
                 variant="readiness"
                 icon="person_check"
-                label="AI adoption"
+                label="AI readiness"
                 value={readiness.value}
                 explainer={readiness.explainer}
                 description={readiness.description}
@@ -107,16 +107,18 @@ export function PersonDetailLayout({
                 onLearnMore={aiPotential.onLearnMore}
               />
             )}
-            <MetricCard
-              variant="potential"
-              icon="auto_awesome"
-              label="Unrealized value"
-              value={potential.value}
-              description={potential.description}
-              hint={potential.hint}
-              tag={potential.tag}
-              onLearnMore={potential.onLearnMore}
-            />
+            {potential && (
+              <MetricCard
+                variant="potential"
+                icon="auto_awesome"
+                label="Unrealized value"
+                value={potential.value}
+                description={potential.description}
+                hint={potential.hint}
+                tag={potential.tag}
+                onLearnMore={potential.onLearnMore}
+              />
+            )}
             {gap && (
               <MetricCard
                 variant="gap"
