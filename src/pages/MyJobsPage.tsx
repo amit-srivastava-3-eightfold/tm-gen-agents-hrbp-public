@@ -173,16 +173,13 @@ function AppStatusCard({
 export function MyJobsPage() {
   const [tab, setTab] = useState<TabId>('applications')
   const [appFilter, setAppFilter] = useState<AppFilter>('active')
-  const [search, setSearch] = useState('')
 
   const tabCount = (t: TabId) => JOBS.filter(j => TAB_STATUSES[t].includes(j.status)).length
   const appFilterCount = (f: AppFilter) => JOBS.filter(j => APP_FILTER_STATUSES[f].includes(j.status)).length
 
-  const filtered = JOBS
-    .filter(j => tab === 'applications'
-      ? APP_FILTER_STATUSES[appFilter].includes(j.status)
-      : TAB_STATUSES[tab].includes(j.status))
-    .filter(j => !search || j.title.toLowerCase().includes(search.toLowerCase()) || j.department.toLowerCase().includes(search.toLowerCase()))
+  const filtered = JOBS.filter(j => tab === 'applications'
+    ? APP_FILTER_STATUSES[appFilter].includes(j.status)
+    : TAB_STATUSES[tab].includes(j.status))
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
@@ -222,18 +219,6 @@ export function MyJobsPage() {
                   <AppStatusCard label="Inactive" count={appFilterCount('inactive')} icon="assignment_late" active={appFilter === 'inactive'} onClick={() => setAppFilter('inactive')} />
                 </div>
               )}
-              {/* Search */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, border: '1px solid #d9dce1', background: '#fff', maxWidth: 260, marginBottom: 16 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#94a3b8' }}>search</span>
-                <input
-                  type="text"
-                  placeholder="Search jobs"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  style={{ border: 'none', outline: 'none', fontSize: 13, color: '#1a212e', width: '100%', background: 'transparent' }}
-                />
-              </div>
-
               {/* Job cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.length === 0 && (
