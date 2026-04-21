@@ -1940,7 +1940,7 @@ export const WFR_FIRST_NAMES = [
   'Yuki',
   'Elena',
   'Omar',
-  'Ryan',
+  'Sarah',
   'James',
   'Anika',
   'Lucas',

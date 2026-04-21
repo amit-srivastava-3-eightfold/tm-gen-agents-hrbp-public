@@ -79,7 +79,7 @@ export const CHRO: CurrentUser = {
 
 export const CSM: CurrentUser = {
   id: 'csm',
-  name: 'Ryan Mitchell',
+  name: 'Sarah Culhane',
   title: 'Engineering Lead',
   location: 'San Francisco, CA',
   pronouns: 'He/Him/His',
