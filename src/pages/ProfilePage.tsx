@@ -6,7 +6,7 @@ import { TabsWithLines } from '../components/ui/TabsWithLines'
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
-import { Button as DsButton, ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
+import { Button as DsButton, ProductBackground, StatCard } from '@tonyh-2-eightfold/ef-design-system'
 import { OpenTo } from '../components/OpenTo'
 import { AboutCard } from '../components/AboutCard'
 import { MentorshipTab } from '../components/MentorshipTab'
@@ -205,14 +205,20 @@ export function ProfilePage() {
 
                 {/* Stats */}
                 <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-                  <div style={{ padding: '12px 20px', borderRadius: 10, background: 'var(--color-button-primary-bg, #3b5bdb)', color: 'var(--color-button-primary-text, #fff)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.8 }}>My plans</div>
-                    <div style={{ fontSize: 24, fontWeight: 700 }}>{currentUser.id === 'csm' ? (() => { try { const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}'); return s.state >= 4 ? 3 : 2 } catch { return 2 } })() : 2}</div>
-                  </div>
-                  <div style={{ padding: '12px 20px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                    <div style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Supporting</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: '#1a212e' }}>0</div>
-                  </div>
+                  <StatCard
+                    size="md"
+                    icon="assignment"
+                    label="My plans"
+                    value={currentUser.id === 'csm' ? (() => { try { const s = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}'); return s.state >= 4 ? 3 : 2 } catch { return 2 } })() : 2}
+                    color="blue"
+                  />
+                  <StatCard
+                    size="md"
+                    icon="group"
+                    label="Supporting"
+                    value={0}
+                    color="grey"
+                  />
                 </div>
 
                 {/* Filters */}

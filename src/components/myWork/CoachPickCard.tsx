@@ -1,5 +1,4 @@
 import type { CoachPick } from '../../data/myWorkData'
-import { CoachAvatar } from './CoachAvatar'
 import { LiveCoachingVisual } from './LiveCoachingVisual'
 
 interface CoachPickCardProps {
@@ -9,33 +8,32 @@ interface CoachPickCardProps {
   onDismiss?: () => void
 }
 
-export function CoachPickCard({ pick, firstName, onStart, onDismiss }: CoachPickCardProps) {
-  const quip = pick.quip.replace('{firstName}', firstName)
-
+export function CoachPickCard({ pick, onStart, onDismiss }: CoachPickCardProps) {
   return (
-    <section className="mw-pick">
+    <section className="pick">
       <div>
-        <div className="mw-pick__from">
-          <CoachAvatar size="md" />
-          <div>
-            <div className="mw-coach-label">
-              <span className="mw-coach-label__dot" aria-hidden />
-              FROM YOUR AI COACH
-            </div>
-            <div className="mw-pick__quip">{quip}</div>
+        {pick.eyebrow && <div className="pick-eyebrow">{pick.eyebrow}</div>}
+        <h2>{pick.headline}</h2>
+        <p>{pick.body}</p>
+        {pick.outcomes && pick.outcomes.length > 0 && (
+          <div className="pick-outcomes">
+            {pick.outcomes.map((o) => (
+              <div key={o.icon} className="pick-outcome">
+                <span className="material-symbols-outlined">{o.icon}</span>
+                <div><b>{o.bold}</b>{o.label}</div>
+              </div>
+            ))}
           </div>
-        </div>
-        <h2 className="mw-pick__h">{pick.headline}</h2>
-        <p className="mw-pick__p">{pick.body}</p>
-        <div className="mw-pick__ctas">
-          <button type="button" className="mw-btn-primary" onClick={onStart}>
+        )}
+        <div className="cta-row">
+          <button type="button" className="btn-primary" onClick={onStart}>
             <span className="material-symbols-outlined">videocam</span>
             {pick.primaryCtaLabel}
           </button>
-          <button type="button" className="mw-btn-ghost" onClick={onDismiss}>
+          <button type="button" className="btn-ghost" onClick={onDismiss}>
             {pick.secondaryCtaLabel}
           </button>
-          <div className="mw-pick__hint">
+          <div className="coach-steps-hint">
             <span className="material-symbols-outlined">forum</span>
             {pick.durationHint}
           </div>

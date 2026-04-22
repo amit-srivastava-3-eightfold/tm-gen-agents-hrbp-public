@@ -6,20 +6,22 @@ interface CheckInCardProps {
 
 export function CheckInCard({ onStart }: CheckInCardProps) {
   return (
-    <section className="mw-checkin">
+    <section className="checkin">
       <CoachAvatar size="lg" />
-      <div className="mw-checkin__body">
-        <div className="mw-coach-label mw-checkin__label">
-          <span className="mw-coach-label__dot" aria-hidden />
+      <div className="c-body">
+        <div className="coach-label">
+          <span className="dot" aria-hidden />
           YOUR AI COACH
         </div>
         <h3>How's AI fitting into your week so far?</h3>
         <p>Tell me what's clicking and what's still clunky — I'll tune what I suggest next. 90 seconds, promise.</p>
       </div>
-      <button type="button" className="mw-checkin__btn" onClick={onStart}>
-        Start check-in
-        <span className="material-symbols-outlined">arrow_forward</span>
-      </button>
+      <div className="checkin-buttons">
+        <button type="button" onClick={onStart}>
+          Start check-in
+          <span className="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </div>
     </section>
   )
 }

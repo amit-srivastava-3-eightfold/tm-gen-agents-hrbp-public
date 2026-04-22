@@ -1,5 +1,7 @@
 import type { Idea } from '../../data/myWorkData'
 
+const COLOR_CLASS: Record<string, string> = { lavender: 'c1', sage: 'c2', peach: 'c3' }
+
 interface IdeaCardProps {
   idea: Idea
   onCtaClick?: (idea: Idea) => void
@@ -7,17 +9,13 @@ interface IdeaCardProps {
 
 export function IdeaCard({ idea, onCtaClick }: IdeaCardProps) {
   return (
-    <article className={`mw-idea mw-idea--${idea.color}`}>
-      <div className="mw-idea__icon" aria-hidden>
+    <article className={`idea ${COLOR_CLASS[idea.color] ?? 'c1'}`}>
+      <div className="icon-wrap" aria-hidden>
         <span className="material-symbols-outlined">{idea.icon}</span>
       </div>
-      <h3 className="mw-idea__title">{idea.title}</h3>
-      <p className="mw-idea__body">{idea.body}</p>
-      <button
-        type="button"
-        className="mw-idea__cta"
-        onClick={() => onCtaClick?.(idea)}
-      >
+      <h3>{idea.title}</h3>
+      <p>{idea.body}</p>
+      <button type="button" className="foot" onClick={() => onCtaClick?.(idea)}>
         {idea.ctaLabel} <span className="material-symbols-outlined">arrow_forward</span>
       </button>
     </article>

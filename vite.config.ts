@@ -13,12 +13,5 @@ export default defineConfig({
   server: { port: 5173 },
   resolve: {
     dedupe: ['react', 'react-dom'],
-    alias: {
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
 })

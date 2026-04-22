@@ -18,13 +18,13 @@ interface CoachDrawerProps {
   onClose: () => void
 }
 
-const BODY_ATTR = 'data-mw-coach-open'
+const BODY_ATTR = 'data-coach-open'
 
 function CoachMessage({ children }: { children: ReactNode }) {
   return (
-    <div className="mw-msg">
+    <div className="coach-msg">
       <CoachAvatar size="sm" />
-      <div className="mw-msg__bubble">{children}</div>
+      <div className="bubble">{children}</div>
     </div>
   )
 }
@@ -33,13 +33,13 @@ function PrWalkthroughView() {
   return (
     <>
       <CoachMessage>{COACH_GREETING_PR}</CoachMessage>
-      <div className="mw-steps">
+      <div className="coach-steps">
         {WALKTHROUGH_STEPS.map((step, idx) => (
           <div
             key={step.id}
-            className={`mw-step${step.state === 'active' ? ' mw-step--active' : ''}${step.state === 'done' ? ' mw-step--done' : ''}`}
+            className={`coach-step${step.state === 'active' ? ' active' : ''}${step.state === 'done' ? ' done' : ''}`}
           >
-            <div className="mw-step__dot">
+            <div className="step-dot">
               {step.state === 'done' ? (
                 <span className="material-symbols-outlined">check</span>
               ) : (
@@ -47,8 +47,8 @@ function PrWalkthroughView() {
               )}
             </div>
             <div>
-              <div className="mw-step__title">{step.title}</div>
-              <div className="mw-step__body">
+              <div className="step-title">{step.title}</div>
+              <div className="step-body">
                 {step.body}
                 {step.link ? (
                   <>
@@ -61,7 +61,7 @@ function PrWalkthroughView() {
                 ) : null}
               </div>
               {step.ctaLabel ? (
-                <button type="button" className="mw-step__btn">
+                <button type="button" className="step-btn">
                   {step.ctaLabel}
                   {step.ctaIcon ? (
                     <span className="material-symbols-outlined">{step.ctaIcon}</span>
@@ -72,9 +72,9 @@ function PrWalkthroughView() {
           </div>
         ))}
       </div>
-      <div className="mw-drawer__input">
+      <div className="coach-input">
         <input placeholder="Stuck? Ask me anything about this step…" />
-        <button type="button" className="mw-drawer__send" aria-label="Send">
+        <button type="button" className="send-btn" aria-label="Send">
           <span className="material-symbols-outlined">arrow_upward</span>
         </button>
       </div>
@@ -93,17 +93,17 @@ function CheckInView({ onClose }: { onClose: () => void }) {
     <>
       <CoachMessage>{COACH_GREETING_CHECKIN}</CoachMessage>
       {CHECKIN_QUESTIONS.map((q) => (
-        <div key={q.id} className="mw-q">
-          <div className="mw-q__label">{q.label}</div>
+        <div key={q.id} className="checkin-q">
+          <div className="q-label">{q.label}</div>
           {q.kind === 'single' ? (
-            <div className="mw-q__opts">
+            <div className="q-opts">
               {q.options?.map((opt) => {
                 const active = selected[q.id] === opt.label
                 return (
                   <button
                     key={opt.label}
                     type="button"
-                    className={`mw-chip${active ? ' mw-chip--selected' : ''}`}
+                    className={`q-chip${active ? ' selected' : ''}`}
                     onClick={() => setSelected((prev) => ({ ...prev, [q.id]: opt.label }))}
                   >
                     {opt.emoji ? <>{opt.emoji} </> : null}
@@ -121,12 +121,12 @@ function CheckInView({ onClose }: { onClose: () => void }) {
           )}
         </div>
       ))}
-      <div className="mw-drawer__actions">
-        <button type="button" className="mw-btn-primary" onClick={onClose}>
+      <div className="coach-actions">
+        <button type="button" className="btn-primary" onClick={onClose}>
           Send it
           <span className="material-symbols-outlined">arrow_forward</span>
         </button>
-        <button type="button" className="mw-btn-ghost" onClick={onClose}>
+        <button type="button" className="btn-ghost" onClick={onClose}>
           Skip for now
         </button>
       </div>
@@ -141,26 +141,26 @@ function ChatView({ firstName }: { firstName: string }) {
   return (
     <>
       <CoachMessage>{greeting}</CoachMessage>
-      <div className="mw-suggest">
-        <div className="mw-suggest__label">Some things I can help with:</div>
+      <div className="chat-suggest">
+        <div className="cs-label">Some things I can help with:</div>
         {CHAT_SUGGESTIONS.map((s) => (
           <button
             key={s.id}
             type="button"
-            className="mw-suggest__chip"
+            className="cs-chip-suggest"
             onClick={() => setInput(s.text)}
           >
             {s.emoji} {s.text}
           </button>
         ))}
       </div>
-      <div className="mw-drawer__input">
+      <div className="coach-input">
         <input
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button type="button" className="mw-drawer__send" aria-label="Send">
+        <button type="button" className="send-btn" aria-label="Send">
           <span className="material-symbols-outlined">arrow_upward</span>
         </button>
       </div>
@@ -190,31 +190,28 @@ export function CoachDrawer({ view, firstName, onClose }: CoachDrawerProps) {
   }, [open, onClose])
 
   const content = (
-    <div
-      className={`my-work mw-drawer${open ? ' mw-drawer--open' : ''}`}
-      aria-hidden={!open}
-    >
-      <div className="mw-drawer__backdrop" onClick={onClose} aria-hidden />
-      <aside className="mw-drawer__panel" role="dialog" aria-modal="true">
-        <header className="mw-drawer__head">
+    <div className={`my-work-page coach-drawer${open ? ' open' : ''}`} aria-hidden={!open}>
+      <div className="coach-backdrop" onClick={onClose} aria-hidden />
+      <aside className="coach-panel" role="dialog" aria-modal="true">
+        <header className="coach-panel-head">
           <CoachAvatar size="md" />
           <div>
-            <div className="mw-drawer__title">Your AI coach</div>
-            <div className="mw-drawer__sub">
-              <span className="mw-drawer__online-dot" aria-hidden />
+            <div className="coach-panel-title">Your AI coach</div>
+            <div className="coach-panel-sub">
+              <span className="online-dot" aria-hidden />
               Here to help, not to grade
             </div>
           </div>
           <button
             type="button"
-            className="mw-drawer__close"
+            className="coach-close"
             onClick={onClose}
             aria-label="Close coach"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
-        <div className="mw-drawer__view">
+        <div className="coach-view">
           {view === 'pr' ? <PrWalkthroughView /> : null}
           {view === 'checkin' ? <CheckInView onClose={onClose} /> : null}
           {view === 'chat' ? <ChatView firstName={firstName} /> : null}

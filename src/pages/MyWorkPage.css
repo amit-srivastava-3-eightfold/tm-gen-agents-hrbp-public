@@ -1,8 +1,13 @@
 .my-work-page {
-  position: relative;
   min-height: 100vh;
-  background: #ffffff;
+  background: #f6f7f8;
   font-family: var(--font-family);
+}
+
+/* The portaled CoachDrawer reuses .my-work-page for CSS var scope — must not inherit the page background */
+.my-work-page.coach-drawer {
+  background: transparent;
+  min-height: unset;
 }
 
 .my-work-page__bg {
@@ -14,11 +19,10 @@
 .my-work-page__main {
   position: relative;
   z-index: 2;
-  padding-bottom: 24px;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: transparent;
+  margin-top: -60px;
 }
 
 .my-work-page__wrap {
@@ -26,6 +30,6 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 48px 80px;
+  padding: 0 48px 80px;
   box-sizing: border-box;
 }

@@ -1,50 +1,37 @@
-import { CoachAvatar } from './CoachAvatar'
-
 interface LiveCoachingVisualProps {
-  caption: string
+  caption?: string
   onClick?: () => void
 }
 
-export function LiveCoachingVisual({ caption, onClick }: LiveCoachingVisualProps) {
+export function LiveCoachingVisual({ onClick }: LiveCoachingVisualProps) {
   return (
-    <div
-      className="mw-video"
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick?.()
-        }
-      }}
-      aria-label="Start live coaching session"
+    <div className="pick-visual video-visual" role="button" tabIndex={0} onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } }}
+      aria-label="Start coaching session"
     >
-      <span className="mw-video__live">
-        <span className="mw-video__live-dot" aria-hidden />
-        LIVE COACHING
+      <span className="live-badge">
+        <span className="material-symbols-outlined agent-sparkle">auto_awesome</span>
+        Career Agent
       </span>
-      <div className="mw-video__face">
-        <CoachAvatar size="xl" />
-        <div className="mw-video__wave" aria-hidden>
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
+      <div className="video-face">
+        <div className="vv-avatar-wrap">
+          <div className="vv-avatar-ring" />
+          <div className="vv-avatar">
+            <img src="/john.png" alt="" />
+          </div>
+          <div className="vv-speaker-chip">
+            <span className="material-symbols-outlined">volume_up</span>
+          </div>
+          <div className="vv-chip vv-chip--ask">Ask anything</div>
+          <div className="vv-chip vv-chip--focused">Focused on you</div>
+          <div className="vv-chip vv-chip--private">Always private</div>
         </div>
-        <div className="mw-video__caption">“{caption}”</div>
-      </div>
-      <div className="mw-video__controls">
-        <button type="button" className="mw-call-btn" aria-label="Mute">
-          <span className="material-symbols-outlined">mic</span>
-        </button>
-        <button type="button" className="mw-call-btn mw-call-btn--primary" aria-label="Join call">
-          <span className="material-symbols-outlined">videocam</span>
-        </button>
-        <button type="button" className="mw-call-btn" aria-label="Chat">
-          <span className="material-symbols-outlined">chat</span>
-        </button>
+        <div className="vv-name-chip">
+          <div className="vv-bars" aria-hidden>
+            <span /><span /><span /><span />
+          </div>
+          John
+        </div>
       </div>
     </div>
   )
