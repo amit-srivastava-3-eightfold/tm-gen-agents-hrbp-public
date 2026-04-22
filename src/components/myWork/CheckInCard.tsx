@@ -11,7 +11,7 @@ export function CheckInCard({ onStart }: CheckInCardProps) {
       <div className="c-body">
         <div className="coach-label">
           <span className="dot" aria-hidden />
-          YOUR AI COACH
+          AI WORK COACH
         </div>
         <h3>How's AI fitting into your week so far?</h3>
         <p>Tell me what's clicking and what's still clunky — I'll tune what I suggest next. 90 seconds, promise.</p>

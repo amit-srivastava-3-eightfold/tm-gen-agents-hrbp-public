@@ -10,6 +10,7 @@ export interface CoachPick {
   eyebrow?: string
   quip: string
   headline: string
+  desc: string
   body: string
   outcomes?: CoachPickOutcome[]
   primaryCtaLabel: string
@@ -87,6 +88,7 @@ export const COACH_PICK: CoachPick = {
   quip:
     "Hey {firstName} — want to jump on a quick coaching session? I'll ask a few questions about how your team reviews PRs, then help you set this up the right way for your workflow.",
   headline: 'Let AI pre-read your model PRs.',
+  desc: 'Flag bugs and style issues before you open the PR.',
   body: "You spend about 5 hours a week on code review — a lot of it ML plumbing changes. AI can flag data-handling bugs, tensor-shape issues, and style nits before you even open the PR, so you can focus on the modeling judgment only you can make. Most leads save an hour or two their first week.",
   outcomes: [
     { icon: 'schedule', bold: '~90 min', label: ' back each week' },

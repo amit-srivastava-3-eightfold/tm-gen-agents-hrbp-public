@@ -196,7 +196,7 @@ export function CoachDrawer({ view, firstName, onClose }: CoachDrawerProps) {
         <header className="coach-panel-head">
           <CoachAvatar size="md" />
           <div>
-            <div className="coach-panel-title">Your AI coach</div>
+            <div className="coach-panel-title">AI Work Coach</div>
             <div className="coach-panel-sub">
               <span className="online-dot" aria-hidden />
               Here to help, not to grade

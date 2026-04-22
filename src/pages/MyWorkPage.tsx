@@ -204,7 +204,12 @@ export function MyWorkPage() {
         firstName={firstName}
         onClose={() => setDrawerView(null)}
       />
-      <CoachSessionPanel open={sessionOpen} onClose={() => setSessionOpen(false)} />
+      <CoachSessionPanel
+        open={sessionOpen}
+        onClose={() => setSessionOpen(false)}
+        sessionTitle={COACH_PICK.headline}
+        sessionDesc={COACH_PICK.desc}
+      />
       <TaskDetailDrawer
         task={selectedTask}
         onClose={() => setSelectedTaskId(null)}
