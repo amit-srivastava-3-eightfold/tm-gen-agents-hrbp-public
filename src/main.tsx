@@ -8,6 +8,7 @@ import './index.css'
 import { HomePage } from './pages/HomePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { MyTeamPage } from './pages/MyTeamPage'
+import { MyWorkPage } from './pages/MyWorkPage'
 import { PeoplePage } from './pages/PeoplePage'
 import { PositionPage } from './pages/PositionPage'
 import { PeopleProfilePage } from './pages/PeopleProfilePage'
@@ -35,6 +36,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/people" element={<PeoplePage />} />
             <Route path="/people/:id" element={<PeopleProfilePage />} />
             <Route path="/my-team" element={<MyTeamPage />} />
+            <Route path="/my-work" element={<MyWorkPage />} />
             <Route path="/workforce" element={<WorkforceReadinessPage />} />
             <Route path="/workforce/manager/:managerId" element={<ManagerDetailPage />} />
             <Route path="/my-activity/jobs" element={<MyJobsPage />} />
