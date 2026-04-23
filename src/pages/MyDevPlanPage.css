@@ -1,0 +1,344 @@
+/* My Development Plan — full-page view */
+
+.my-dev-plan {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.my-dev-plan__shell {
+  flex: 1;
+  background: #f8fafc;
+  padding-bottom: 56px;
+}
+
+.my-dev-plan__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+/* ── Breadcrumb ───────────────────────────────────────────────────────────── */
+
+.my-dev-plan__breadcrumb {
+  margin-bottom: 18px;
+}
+
+.my-dev-plan__breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.my-dev-plan__breadcrumb-link:hover {
+  color: #0f172a;
+}
+
+.my-dev-plan__breadcrumb-link .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.my-dev-plan__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.my-dev-plan__identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.my-dev-plan__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.my-dev-plan__emp-name {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.my-dev-plan__plan-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.my-dev-plan__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.my-dev-plan__notes-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 4px;
+  margin-left: 2px;
+}
+
+.my-dev-plan__more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.my-dev-plan__more-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* ── Provenance ───────────────────────────────────────────────────────────── */
+
+.my-dev-plan__provenance {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── Two-column layout ────────────────────────────────────────────────────── */
+
+.my-dev-plan__columns {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
+.my-dev-plan__sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.my-dev-plan__meta-block {
+  margin-bottom: 12px;
+}
+
+.my-dev-plan__meta-row {
+  padding: 10px 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.my-dev-plan__meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.my-dev-plan__meta-desc {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.my-dev-plan__meta-value {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+/* ── Main content ─────────────────────────────────────────────────────────── */
+
+.my-dev-plan__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── AI Adoption Score card ───────────────────────────────────────────────── */
+
+.my-dev-plan__score-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px 18px;
+}
+
+.my-dev-plan__score-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.my-dev-plan__score-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.my-dev-plan__score-num {
+  font-size: 42px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  min-width: 64px;
+}
+
+.my-dev-plan__score-pct {
+  font-size: 20px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.my-dev-plan__score-bar-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.my-dev-plan__score-track {
+  height: 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  position: relative;
+  overflow: visible;
+}
+
+.my-dev-plan__score-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 6px;
+  background: #f59e0b;
+}
+
+.my-dev-plan__score-gain-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: #cbd5e1;
+  border-radius: 0 6px 6px 0;
+}
+
+.my-dev-plan__score-threshold {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #22c55e;
+  border-radius: 1px;
+  z-index: 1;
+}
+
+.my-dev-plan__score-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  position: relative;
+}
+
+.my-dev-plan__score-axis > span {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.my-dev-plan__score-ready-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #16a34a !important;
+  white-space: nowrap;
+}
+
+.my-dev-plan__score-legend {
+  display: flex;
+  gap: 24px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.my-dev-plan__score-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.my-dev-plan__score-swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.my-dev-plan__score-swatch--orange {
+  background: #f59e0b;
+}
+
+.my-dev-plan__score-swatch--gray {
+  background: #cbd5e1;
+}
+
+.my-dev-plan__score-delta {
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* ── Curriculum ───────────────────────────────────────────────────────────── */
+
+.my-dev-plan__curriculum {
+  display: flex;
+  flex-direction: column;
+}

@@ -77,23 +77,8 @@ export function CoachSessionPanel({ open, onClose, sessionTitle = 'Coaching sess
             </div>
 
             <div className="cs-mid">
-              <div className="cs-intro">
-                Let's set up AI pre-review<br />for your model PRs.
-              </div>
-              <div className="cs-cats">
-                <button type="button" className="cs-cat" title="Your profile">
-                  <span className="material-symbols-outlined">badge</span>
-                </button>
-                <button type="button" className="cs-cat" title="Explore roles">
-                  <span className="material-symbols-outlined">explore</span>
-                </button>
-                <button type="button" className="cs-cat" title="Growth plan">
-                  <span className="material-symbols-outlined">trending_up</span>
-                </button>
-                <button type="button" className="cs-cat" title="Learning">
-                  <span className="material-symbols-outlined">lightbulb</span>
-                </button>
-              </div>
+              <div className="cs-intro">{sessionTitle}</div>
+              {sessionDesc && <div className="cs-session-sub" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 1.6, textAlign: 'center', padding: '0 24px', marginTop: 8 }}>{sessionDesc}</div>}
             </div>
 
             <div className="cs-foot">

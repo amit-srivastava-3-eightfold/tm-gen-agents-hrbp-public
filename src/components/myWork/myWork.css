@@ -573,10 +573,10 @@ body[data-coach-open] { overflow: hidden; }
 .cs-wave span:nth-child(3) { height: 70%; animation-delay: 0.3s; }
 .cs-wave span:nth-child(4) { height: 40%; animation-delay: 0.45s; }
 @keyframes cs-wave { 0%, 100% { transform: scaleY(0.6); } 50% { transform: scaleY(1); } }
-.coach-session .cs-hero .cs-chip { position: absolute; background: rgba(30,20,70,0.45); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); color: white; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: inherit; cursor: default; }
-.cs-chip-left { left: 40px; top: 48%; }
-.cs-chip-tr { right: 40px; top: 28%; }
-.cs-chip-br { right: 40px; top: 62%; }
+.coach-session .cs-hero .cs-chip { position: absolute; background: rgba(30,20,70,0.45); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); color: white; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: inherit; cursor: default; white-space: nowrap; z-index: 10; }
+.cs-chip-left { left: 12px; top: 50%; transform: translateY(-50%); opacity: 1; }
+.cs-chip-tr { right: 12px; top: 30%; opacity: 0.65; }
+.cs-chip-br { right: 12px; bottom: 30%; opacity: 0.4; }
 .cs-mid { position: relative; z-index: 2; padding: 96px 32px 24px; text-align: center; }
 .cs-intro { font-size: 22px; font-weight: 500; color: white; line-height: 1.35; letter-spacing: -0.01em; margin-bottom: 22px; }
 .cs-cats { display: flex; justify-content: center; gap: 12px; }

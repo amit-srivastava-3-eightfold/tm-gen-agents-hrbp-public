@@ -6,9 +6,9 @@ import './DevPlanSheet.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LevelState = 'recognized' | 'current' | 'locked'
+export type LevelState = 'recognized' | 'current' | 'locked'
 
-interface Course {
+export interface Course {
   name: string
   provider: string
   duration: string
@@ -17,12 +17,18 @@ interface Course {
   description?: string
 }
 
-interface WorkTask {
+export interface WorkTask {
   text: string
   description: string
 }
 
-interface LevelDef {
+export interface CoachTask {
+  text: string
+  sessionTitle: string
+  sessionDesc: string
+}
+
+export interface LevelDef {
   id: number
   name: string
   xpLabel: string
@@ -31,6 +37,7 @@ interface LevelDef {
   tasks: WorkTask[]
   totalHours: number
   adoptionPts: number
+  coachTask?: CoachTask
 }
 
 export type DevPlanSheetView = 'full' | 'score' | 'stats' | 'curriculum' | 'unlocks'
@@ -60,6 +67,11 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       { text: 'Use AI to draft one piece of content in your regular workflow', description: 'Pick any content you create regularly — a status update, a proposal section, a client email. Use an AI tool to generate a first draft, then revise it. The goal isn\'t perfection; it\'s building the habit of starting with AI.' },
       { text: 'Note what surprised you about how AI handled the task', description: 'Keep a simple log — one or two sentences is enough. What did AI get right? What did you have to fix? These observations sharpen your ability to evaluate AI output over time.' },
     ],
+    coachTask: {
+      text: 'Debrief your first AI experiment with your coach',
+      sessionTitle: 'AI Foundations — Practice Session',
+      sessionDesc: 'Share what you tried and what happened. Your coach will help you reflect on what worked, what surprised you, and how to use that to sharpen your judgment going forward.',
+    },
     totalHours: 20,
     adoptionPts: 3,
   },
@@ -72,6 +84,11 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       { text: 'Apply AI to a recurring task and log the time saved', description: 'Choose a task you do at least weekly — reporting, summarizing, drafting. Apply AI assistance and note how long it took vs. your usual time. Even rough estimates are useful for making the business case later.' },
       { text: 'Review an AI output critically — note at least one error you caught', description: 'Don\'t accept AI output as-is. Read carefully, check claims, spot gaps. Write down one specific thing you corrected or improved. This builds the oversight habit that keeps AI use safe and high-quality.' },
     ],
+    coachTask: {
+      text: 'Bring an AI output you\'ve reviewed — your coach will walk through it with you',
+      sessionTitle: 'Augmentation-Ready — Review Session',
+      sessionDesc: 'Bring a recent AI-generated output to your session. Your coach will help you identify what to trust, what to question, and how to build the oversight habit that makes AI use safe and high-quality.',
+    },
     totalHours: 16,
     adoptionPts: 5,
   },
@@ -84,6 +101,11 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       { text: 'Create a reusable AI workflow template for your team', description: 'Document the exact prompt, steps, and review checklist for one AI task you\'ve mastered. Format it so a colleague could follow it without explanation. Templates are how individual wins become team wins.' },
       { text: 'Demo one AI-powered workflow in your next team standup', description: 'A 3–5 minute demo is enough. Show the before (manual) and after (AI-assisted), and share one thing to watch out for. Real examples move teams faster than any training deck.' },
     ],
+    coachTask: {
+      text: 'Draft your first team AI workflow template with your coach',
+      sessionTitle: 'Power User — Workflow Session',
+      sessionDesc: 'Work with your coach to design a reusable AI workflow template your team can actually adopt — complete with prompt, steps, and the gotchas others should know about.',
+    },
     totalHours: 8,
     adoptionPts: 4,
   },
@@ -96,6 +118,11 @@ const LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
       { text: 'Pair with a colleague for one hour on their AI onboarding', description: 'Work alongside someone earlier in their AI journey. Help them apply a tool to one of their actual tasks. Teaching solidifies your own skills and builds social proof within the team.' },
       { text: 'Submit one workflow improvement to the team AI playbook', description: 'Take a workflow you\'ve refined and document it for others. Include the prompt, the steps, and the gotchas you learned. Shared playbooks are how teams compound their AI gains quarter over quarter.' },
     ],
+    coachTask: {
+      text: 'Plan your first peer coaching session with your coach',
+      sessionTitle: 'AI Champion — Mentor Session',
+      sessionDesc: 'Your coach will help you prepare to pair with a teammate on their AI onboarding — and work out how to document and submit your first workflow improvement to the team playbook.',
+    },
     totalHours: 6,
     adoptionPts: 2,
   },
@@ -139,7 +166,7 @@ const AI_SKILLS_BY_ROLE: Array<{ pattern: RegExp; skills: string[] }> = [
   { pattern: /qa/i,                   skills: ['AI-generated test plans', 'writing better prompts', 'automated defect triage', 'AI-assisted root cause analysis'] },
 ]
 
-function getUnlocks(name: string, title: string | undefined, displayReadiness: number, gainPts = 0) {
+export function getUnlocks(name: string, title: string | undefined, displayReadiness: number, gainPts = 0) {
   const h = Math.abs(Array.from(name).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0))
   const doorEntry = CAREER_DOORS.find(r => r.pattern.test(title ?? ''))
   const doorRoles = doorEntry?.roles ?? ['Senior Specialist', 'Team Lead', 'Manager']
@@ -190,7 +217,7 @@ function BarWithTip({ style, tip }: { style: React.CSSProperties; tip: string })
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function nameHash(s: string) {
+export function nameHash(s: string) {
   let h = 0
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
   return Math.abs(h)
@@ -216,7 +243,7 @@ function getCompletedDate(name: string, levelId: number): string {
 
 
 
-function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
+export function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
   const roleWord = employee?.title?.split(' ')[0] ?? 'Business'
   return LEVEL_BASE.map(base => ({
     ...base,
@@ -228,7 +255,7 @@ function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function CourseItem({ course, recognized = false }: { course: Course; recognized?: boolean }) {
+export function CourseItem({ course, recognized = false }: { course: Course; recognized?: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const canExpand = !!course.description
   return (
@@ -267,7 +294,7 @@ function CourseItem({ course, recognized = false }: { course: Course; recognized
   )
 }
 
-function TaskItem({ task, recognized = false }: { task: WorkTask; recognized?: boolean }) {
+export function TaskItem({ task, recognized = false }: { task: WorkTask; recognized?: boolean }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <div
@@ -294,9 +321,30 @@ function TaskItem({ task, recognized = false }: { task: WorkTask; recognized?: b
   )
 }
 
+// ── CoachTaskItem ─────────────────────────────────────────────────────────────
+
+export function CoachTaskItem({ task, onOpen }: { task: CoachTask; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      className="dev-plan-sheet__coach-task"
+      onClick={onOpen}
+    >
+      <div className="dev-plan-sheet__coach-task-icon">
+        <span className="material-symbols-outlined">auto_awesome</span>
+      </div>
+      <div className="dev-plan-sheet__coach-task-text">{task.text}</div>
+      <div className="dev-plan-sheet__coach-task-cta">
+        Start with coach
+        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+      </div>
+    </button>
+  )
+}
+
 // ── LevelCard ─────────────────────────────────────────────────────────────────
 
-function LevelCard({
+export function LevelCard({
   level,
   state,
   xpPct,
@@ -304,6 +352,7 @@ function LevelCard({
   expanded,
   onToggle,
   completedAt,
+  onCoachTask,
 }: {
   level: LevelDef
   state: LevelState
@@ -312,6 +361,7 @@ function LevelCard({
   expanded: boolean
   onToggle: () => void
   completedAt?: string
+  onCoachTask?: (task: CoachTask) => void
 }) {
   const isCurrent = state === 'current'
   const isRecognized = state === 'recognized'
@@ -411,11 +461,17 @@ function LevelCard({
           </div>
 
           {/* Tasks */}
-          <div className="dev-plan-sheet__section-heading">Tasks</div>
+          <div className="dev-plan-sheet__section-heading">Practice Tasks</div>
           <div className="dev-plan-sheet__tasks">
             {level.tasks.map((t, i) => (
               <TaskItem key={i} task={t} recognized={isRecognized} />
             ))}
+            {level.coachTask && onCoachTask && !isRecognized && (
+              <CoachTaskItem
+                task={level.coachTask}
+                onOpen={() => onCoachTask(level.coachTask!)}
+              />
+            )}
           </div>
         </div>
       )}

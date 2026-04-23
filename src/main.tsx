@@ -22,6 +22,7 @@ import WfrHeroOptionsPage from './pages/WfrHeroOptionsPage'
 import DevPlansPage from './pages/DevPlansPage'
 import WfrMetricCardsPage from './pages/WfrMetricCardsPage'
 import WfrDialogsPage from './pages/WfrDialogsPage'
+import { MyDevPlanPage } from './pages/MyDevPlanPage'
 import { ComponentsLayout } from './pages/ComponentsLayout'
 
 createRoot(document.getElementById('root')!).render(
@@ -37,6 +38,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/people/:id" element={<PeopleProfilePage />} />
             <Route path="/my-team" element={<MyTeamPage />} />
             <Route path="/my-work" element={<MyWorkPage />} />
+            <Route path="/my-development-plans" element={<MyDevPlanPage />} />
             <Route path="/workforce" element={<WorkforceReadinessPage />} />
             <Route path="/workforce/manager/:managerId" element={<ManagerDetailPage />} />
             <Route path="/my-activity/jobs" element={<MyJobsPage />} />

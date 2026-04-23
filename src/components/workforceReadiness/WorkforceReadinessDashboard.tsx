@@ -680,8 +680,9 @@ function BoardView({
   onHrbpLaunchCollection?: (channelsLabel: string) => void
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }) {
-  // Derive convenience flags from universal state
-  const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(wfrState.state)
+  // Derive convenience flags — for HRBP, use their persona-scoped state (not org-level)
+  const effectiveFlagState = isHrbp && personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : wfrState.state
+  const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(effectiveFlagState)
   const collectionLaunchSummary = wfrState.collectionLaunchSummary ?? null
   const upskillingLaunchSummary = wfrState.upskillingLaunchSummary ?? null
   // Delegation is pending (some HRBP has been assigned but hasn't launched yet)
@@ -2333,6 +2334,8 @@ export function WorkforceReadinessDashboard({
       })
       return map
     })()
+    const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? null : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : 2
+    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} /> : undefined
     return (
       <>
       <WfrOverviewLayout
@@ -2342,8 +2345,7 @@ export function WorkforceReadinessDashboard({
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
-        heroCta={undefined}
-        hideHero
+        heroCta={mgrHeroCta}
         cards={[
           {
             id: 'ai-potential',
@@ -2978,6 +2980,24 @@ export function WorkforceReadinessDashboard({
           const hrbpDirInUpskilling = (dirName: string) => !!hrbpUpskillingDirNames && hrbpUpskillingDirNames.includes(dirName)
           // Build the CTA card for the heroCard slot
           const hrbpShowFocusModule = true || hrbpDelegatedPending || hrbpCollecting || (hrbpCollectionComplete && !hrbpUpskillingActive) || (hrbpUpskillingActive && !hrbpPlansComplete)
+          // Mirror home page ctaDemoState exactly — use getPersonaEffectiveState so states always match
+          const personaEffStateForCta = personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : hrbpEffState
+          const { collectionActive: ctaCollActive, collectionComplete: ctaCollComplete, upskillingActive: ctaUpskillingActive, hrbpPlansCreated: ctaPlansCreated, upskillingComplete: ctaUpskillingComplete } = deriveWfrFlags(personaEffStateForCta)
+          const hrbpCtaDemoState: WfrDemoState | null = ctaUpskillingComplete ? null : ctaPlansCreated ? 5 : ctaUpskillingActive ? 4 : ctaCollComplete ? 3 : ctaCollActive ? 2 : hrbpDelegatedPending ? '1b' : 1
+          const hrbpHeroCta = hrbpCtaDemoState ? (
+            <WfrCtaBar
+              content={WFR_CTA_CONTENT[hrbpCtaDemoState]['hrbp']}
+              onButtonClick={
+                hrbpCtaDemoState === '1b' ? () => setFocusLaunchOpen(true) :
+                hrbpCtaDemoState === 3 ? () => {
+                  const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name)
+                  setHrbpUpskillingSelectedDirs(new Set(inScope))
+                  setHrbpUpskillingDialogOpen(true)
+                } : undefined
+              }
+              onBarClick={hrbpCtaDemoState === 2 ? completeHrbpCollection : undefined}
+            />
+          ) : undefined
           const hrbpFocusFirstModule = !hrbpShowFocusModule ? undefined : (
             <FocusFirstModule
               suppressCard={true}
@@ -3023,10 +3043,8 @@ export function WorkforceReadinessDashboard({
           )
           const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
-            { id: 'readiness', icon: 'person_check', label: 'AI adoption', value: `${dirWeightedReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, headcount - dirTotalGap).toLocaleString()} of {headcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
             { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
             { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
-            { id: 'gap', icon: 'group', label: 'Transformation gap', value: dirTotalGap.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{headcount > 0 ? Math.round((dirTotalGap / headcount) * 100) : 0}% of your team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -3040,7 +3058,7 @@ export function WorkforceReadinessDashboard({
                 subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
                 pill={<><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
                 cards={hrbpOverviewCards}
-                heroCta={undefined}
+                heroCta={hrbpHeroCta}
               >
                 <div>
                   <div className="wfr-dash__panel-head">

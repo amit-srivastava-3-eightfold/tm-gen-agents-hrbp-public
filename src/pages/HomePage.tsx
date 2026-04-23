@@ -195,7 +195,7 @@ function ChroWorkforceReadinessTeaser() {
     return 1
   })()
   const ctaPersona: WfrPersona = isManager ? 'manager' : isHrbp ? 'hrbp' : 'chro'
-  const ctaButtonHref = ctaDemoState === 1 && !isHrbp && !isManager ? '/workforce?action=launch' : '/workforce'
+  const ctaButtonHref = (ctaDemoState === 1 && !isHrbp && !isManager) || ctaDemoState === '1b' ? '/workforce?action=launch' : '/workforce'
 
   return (
     <article className="home-page__wfr-compact" aria-label="Workforce Readiness">
