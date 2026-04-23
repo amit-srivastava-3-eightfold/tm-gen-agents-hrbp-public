@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { Button, CourseObjectCard, Progress } from '@tonyh-2-eightfold/ef-design-system'
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
+import { buildLevels, LevelCard, type CoachTask, type LevelState } from '../components/workforceReadiness/DevPlanSheet'
+import { CoachSessionPanel } from '../components/myWork/CoachSessionPanel'
 import './DevPlanTemplateDetailPage.css'
 import '../components/workforceReadiness/DevPlanSheet.css'
 
@@ -147,6 +149,8 @@ export function DevPlanTemplateDetailPage() {
   const [assignedCount, setAssignedCount] = useState(isAlreadyPublished ? 75 : 0)
   const [toast, setToast] = useState<string | null>(null)
   const [activeUnlock, setActiveUnlock] = useState<'doors' | 'risk' | 'skills' | null>(null)
+  const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
+  const [coachSession, setCoachSession] = useState<CoachTask | null>(null)
 
   return (
     <div>
@@ -404,12 +408,7 @@ export function DevPlanTemplateDetailPage() {
                 const currentPct = planComplete ? basePct + totalPlanPts : basePct
                 const targetPct = basePct + totalPlanPts
                 const potentialPct = planComplete ? 0 : targetPct - currentPct
-                const curriculum = [
-                  { id: 1, name: 'AI Foundations', pts: 3, outcome: 'Understand how AI works and where it applies to your daily work — so you can evaluate AI output with confidence, not just curiosity.', courses: [{ name: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '12 hrs', free: true }, { name: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '8 hrs', free: true }], tasks: ['Complete the AI readiness self-assessment', 'Shadow a colleague who uses AI tools daily and document one observation'] },
-                  { id: 2, name: 'Augmentation-Ready', pts: 5, outcome: 'Use AI confidently on routine tasks in your role — with human judgment at every handoff, every time.', courses: [{ name: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hrs', free: true }], tasks: ['Apply AI to 2 recurring weekly tasks in your workflow', 'Complete the AI output review checklist for one deliverable'] },
-                  { id: 3, name: 'Power User', pts: 4, outcome: 'Drive AI adoption within your immediate team — turning personal wins into repeatable, shared workflows.', courses: [{ name: 'AI-Assisted Engineering Workflows', provider: 'Eightfold Academy', duration: '~8 hrs', free: false }], tasks: ['Document 3 AI-assisted workflows your team can reuse', 'Present one time-saving example to your manager or team'] },
-                  { id: 4, name: 'AI Champion', pts: 2, outcome: 'Mentor peers, contribute to the team playbook, and help drive quarter-over-quarter readiness improvements.', courses: [{ name: 'AI Strategy & Governance', provider: 'Eightfold Academy', duration: '6 hrs', free: false }], tasks: ['Coach 2 peers through their AI onboarding journey', 'Contribute at least one workflow to the team AI playbook'] },
-                ]
+                const levels = buildLevels({ name: currentUser.name, title: currentUser.title, readinessPct: basePct, displayReadiness: currentPct, planPct: planComplete ? 100 : 0 })
                 const unlocks = [
                   { id: 'doors' as const, value: '3', label: 'Career doors unlock', detail: `Top: Staff Engineer (87% fit)`, color: 'var(--color-blue-60)', gid: 'udg-blue-t' },
                   { id: 'risk' as const, value: '−12%', label: 'Automation risk drop', detail: '38% now → 26%', color: 'var(--color-green-60)', gid: 'udg-green-t' },
@@ -495,56 +494,23 @@ export function DevPlanTemplateDetailPage() {
                       </div>
                     </div>
 
-                    {/* Curriculum — uses DevPlanSheet CSS classes */}
-                    <div className="dev-plan-sheet__curriculum-heading">Curriculum · {curriculum.length} steps</div>
-                    {curriculum.map((step) => (
-                      <div key={step.id} className={`dev-plan-sheet__level ${planComplete ? 'dev-plan-sheet__level--recognized' : step.id === 1 ? 'dev-plan-sheet__level--current' : 'dev-plan-sheet__level--locked'}`}>
-                        <div className={`dev-plan-sheet__level-header${!planComplete && step.id > 1 ? ' dev-plan-sheet__level-header--clickable' : planComplete ? ' dev-plan-sheet__level-header--clickable' : ''}`} onClick={planComplete || step.id > 1 ? () => { const d = document.getElementById(`tpl-step-${step.id}`); if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none' } : undefined}>
-                          <div className={`dev-plan-sheet__level-badge ${planComplete ? 'dev-plan-sheet__level-badge--recognized' : step.id === 1 ? 'dev-plan-sheet__level-badge--current' : 'dev-plan-sheet__level-badge--locked'}`}>
-                            {planComplete ? <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span> : step.id === 1 ? step.id : <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>}
-                          </div>
-                          <div className="dev-plan-sheet__level-title-group">
-                            <div className="dev-plan-sheet__level-name">Step {step.id}: {step.name}</div>
-                          </div>
-                          <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${planComplete ? 'credited' : step.id === 1 ? 'current' : 'locked'}`}>{planComplete ? `+${step.pts} pts credited` : `+${step.pts} pts`}</span>
-                          <span className="material-symbols-outlined dev-plan-sheet__level-chevron">expand_more</span>
-                        </div>
-                        <div id={`tpl-step-${step.id}`} style={!planComplete && step.id > 1 ? { display: 'none' } : planComplete && step.id > 1 ? { display: 'none' } : undefined}>
-                          <div className="dev-plan-sheet__level-body">
-                            <hr className="dev-plan-sheet__level-divider" />
-                            <div className="dev-plan-sheet__section-heading">Outcome</div>
-                            <p className="dev-plan-sheet__outcome">{step.outcome}</p>
-                            <div className="dev-plan-sheet__section-heading">Courses</div>
-                            <div className="dev-plan-sheet__courses">
-                              {step.courses.map((c, ci) => (
-                                <div key={ci} className="dev-plan-sheet__course">
-                                  <span className="material-symbols-outlined dev-plan-sheet__course-icon">school</span>
-                                  <div className="dev-plan-sheet__course-info">
-                                    <div className="dev-plan-sheet__course-name">{c.name}</div>
-                                    <div className="dev-plan-sheet__course-meta">{c.provider} · {c.duration}</div>
-                                  </div>
-                                  {c.free && <span className="dev-plan-sheet__course-free">Free</span>}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="dev-plan-sheet__section-heading">Practice tasks</div>
-                            <div className="dev-plan-sheet__tasks">
-                              {step.tasks.map((t, ti) => (
-                                <div key={ti} className="dev-plan-sheet__task"><div className="dev-plan-sheet__task-dot" />{t}</div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        {!planComplete && step.id > 1 && (
-                          <div className="dev-plan-sheet__gate">
-                            <div className="dev-plan-sheet__gate-info">
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>
-                              Complete Step {step.id - 1} to unlock
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {/* Curriculum */}
+                    <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
+                    {levels.map(level => {
+                      const state: LevelState = planComplete ? 'recognized' : level.id === 1 ? 'current' : 'locked'
+                      return (
+                        <LevelCard
+                          key={level.id}
+                          level={{ ...level, name: `Step ${level.id}: ${level.name}` }}
+                          state={state}
+                          xpPct={0}
+                          isAssigned={planComplete}
+                          expanded={expandedLevels.has(level.id)}
+                          onToggle={() => setExpandedLevels(prev => { const next = new Set(prev); next.has(level.id) ? next.delete(level.id) : next.add(level.id); return next })}
+                          onCoachTask={task => setCoachSession(task)}
+                        />
+                      )
+                    })}
 
                     {/* Unlocks — uses DevPlanSheet CSS classes */}
                     <div className="dev-plan-sheet__unlocks">
@@ -803,6 +769,12 @@ export function DevPlanTemplateDetailPage() {
           {toast}
         </div>
       )}
+      <CoachSessionPanel
+        open={coachSession !== null}
+        onClose={() => setCoachSession(null)}
+        sessionTitle={coachSession?.sessionTitle}
+        sessionDesc={coachSession?.sessionDesc}
+      />
     </div>
   )
 }
