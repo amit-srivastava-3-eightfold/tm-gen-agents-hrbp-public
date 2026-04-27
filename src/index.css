@@ -5,6 +5,13 @@
 .bg-muted {
   background-color: var(--muted, #f6f7f8);
 }
+
+/* DS Breadcrumb separator: [&>svg]:w-3.5 [&>svg]:h-3.5 not scanned by Tailwind v4 */
+[data-slot="breadcrumb-separator"] > svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
 @import './fonts/gilroy.css';
 @import './styles/typography-tokens.css';
 @import './styles/ds.css';

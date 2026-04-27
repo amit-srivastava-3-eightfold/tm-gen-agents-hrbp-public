@@ -545,7 +545,9 @@ export function ManagerDetailPage() {
                       </div>
                     </DataTableCell>
                     <DataTableCell>
-                      <div className="text-[13px] text-[#475569]">{emp.title ?? '—'}</div>
+                      {emp.title
+                        ? <button type="button" onClick={() => navigate(`/workforce?role=${encodeURIComponent(emp.title!)}&roledept=${encodeURIComponent(deptName)}`)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 600, fontSize: 13, fontFamily: 'inherit' }}>{emp.title}</button>
+                        : <span className="text-[13px] text-[#475569]">—</span>}
                     </DataTableCell>
                     <DataTableCell align="right">
                       {empTaskCount > 0 && emp.title ? (

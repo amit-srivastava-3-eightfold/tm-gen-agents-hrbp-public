@@ -661,6 +661,7 @@ function BoardView({
   personaHrbpNames,
   onHrbpLaunchCollection,
   onUnrealizedValueClick,
+  onRoleClick,
 }: {
   onDeptClick: (d: Dept) => void
   onHrbpClick: (hrbpName: string) => void
@@ -679,6 +680,7 @@ function BoardView({
   personaHrbpNames?: string[]
   onHrbpLaunchCollection?: (channelsLabel: string) => void
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
+  onRoleClick?: (role: { title: string; deptName: string; employees: number; aiPotential: number; readiness: number; unrealizedValue: number; gap: number }) => void
 }) {
   // Derive convenience flags — for HRBP, use their persona-scoped state (not org-level)
   const effectiveFlagState = isHrbp && personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : wfrState.state
@@ -1340,13 +1342,14 @@ function BoardView({
             <DataTableBody>
               {allRoles.map((r) => {
                 return (
-                  <DataTableRow key={`${r.dept}-${r.title}`} onClick={() => {
-                    const d = allDeptsSorted.find(x => x.name === r.dept)
-                    if (d) onDeptClick(d)
-                  }}>
+                  <DataTableRow key={`${r.dept}-${r.title}`} style={{ cursor: 'pointer' }} onClick={() => { onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap }) }}>
                     <DataTableCell className="font-semibold">{r.title}</DataTableCell>
                     {!isHrbp && <DataTableCell className="text-[13px] text-[#475569] !max-w-[120px] truncate">{r.dept}</DataTableCell>}
-                    <DataTableCell align="right" numeric className="!w-[60px]">{r.employees.toLocaleString()}</DataTableCell>
+                    <DataTableCell align="right" numeric className="!w-[60px]">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap }) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
+                        {r.employees.toLocaleString()}
+                      </button>
+                    </DataTableCell>
                     <DataTableCell align="right">
                       <button
                         type="button"
@@ -1858,7 +1861,7 @@ export function WorkforceReadinessDashboard({
   isManager = false,
   personaHrbpNames,
 }: {
-  onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr') => void
+  onViewChange?: (view: 'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr' | 'role') => void
   autoLaunchCollection?: boolean
   /** When set, only show these departments (HRBP scoped view) */
   scopedDepartments?: string[]
@@ -1877,13 +1880,14 @@ export function WorkforceReadinessDashboard({
   const singleDeptHrbp = isHrbp && scopedDepartments?.length === 1
 
   // Auto-select view from query params (e.g. navigating back from Manager Detail breadcrumbs)
-  const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr'>(() => {
+  const [view, setView] = useState<'board' | 'dept' | 'hrbp' | 'director' | 'seniorMgr' | 'role'>(() => {
     const p = new URLSearchParams(window.location.search)
     // URL params take precedence over singleDeptHrbp default (e.g. breadcrumb back-nav)
     if (p.get('seniorMgr') && p.get('director')) return 'seniorMgr'
     if (p.get('director')) return 'director'
     if (singleDeptHrbp) return 'hrbp'
     if (p.get('hrbp')) return 'hrbp'
+    if (p.get('role') && p.get('roledept')) return 'role'
     return 'board'
   })
   const [hrbpName, setHrbpName] = useState<string | null>(() => {
@@ -1911,6 +1915,20 @@ export function WorkforceReadinessDashboard({
   const toggleHrbpRoleSort = (col: typeof hrbpRoleSort['col']) => {
     setHrbpRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
+  type RoleViewData = {
+    title: string; deptName: string; hrbpName: string | null
+    employees: number; aiPotential: number; readiness: number
+    unrealizedValue: number; gap: number; fromView: 'board' | 'hrbp'
+  }
+  const [roleViewData, setRoleViewData] = useState<RoleViewData | null>(() => {
+    const p = new URLSearchParams(window.location.search)
+    const roleTitle = p.get('role')
+    const roleDept = p.get('roledept')
+    if (!roleTitle || !roleDept) return null
+    const roleRow = getRolesForDept(roleDept).find(r => r.title === roleTitle)
+    if (!roleRow) return null
+    return { title: roleTitle, deptName: roleDept, hrbpName: null, employees: roleRow.employees, aiPotential: roleRow.aiPotential, readiness: roleRow.aiReadiness, unrealizedValue: roleRow.unrealizedValue, gap: roleRow.aiPotential - roleRow.aiReadiness, fromView: 'board' }
+  })
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }> } | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; baseReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
@@ -2059,7 +2077,7 @@ export function WorkforceReadinessDashboard({
   useState(() => {
     const url = new URL(window.location.href)
     let dirty = false
-    for (const key of ['hrbp', 'director', 'dirIdx']) {
+    for (const key of ['hrbp', 'director', 'dirIdx', 'role', 'roledept']) {
       if (url.searchParams.has(key)) { url.searchParams.delete(key); dirty = true }
     }
     if (dirty) window.history.replaceState({}, '', url.pathname + url.search + url.hash)
@@ -2698,6 +2716,11 @@ export function WorkforceReadinessDashboard({
               }
             } : undefined}
             onUnrealizedValueClick={setUvSheetData}
+            onRoleClick={(role) => {
+              setRoleViewData({ ...role, hrbpName: null, fromView: 'board' })
+              setView('role')
+              window.scrollTo(0, 0)
+            }}
           />
         )}
         {view === 'dept' && deptViewName && (() => {
@@ -3239,7 +3262,11 @@ export function WorkforceReadinessDashboard({
                               {sortedHrbpRoles.map((r) => (
                                 <DataTableRow key={r.title}>
                                   <DataTableCell className="font-semibold">{r.title}</DataTableCell>
-                                  <DataTableCell align="right" numeric className="!w-[60px]">{r.employees.toLocaleString()}</DataTableCell>
+                                  <DataTableCell align="right" numeric className="!w-[60px]">
+                                    <button type="button" onClick={() => { setRoleViewData({ title: r.title, deptName: d.name, hrbpName, employees: r.employees, aiPotential: r.aiPotential, readiness: hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap, fromView: 'hrbp' }); setView('role'); window.scrollTo(0, 0) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
+                                      {r.employees.toLocaleString()}
+                                    </button>
+                                  </DataTableCell>
                                   <DataTableCell align="right"><span style={{ fontSize: 12, fontWeight: 600, color: '#3b5bdb' }}>{r.tasks}</span></DataTableCell>
                                   <DataTableCell metric>
                                     <DeptTableSoloBar variant="readiness" pct={hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness} />
@@ -4083,6 +4110,89 @@ export function WorkforceReadinessDashboard({
                   })}
                 </DataTableBody>
               </DataTable>
+            </PersonDetailLayout>
+          )
+        })()}
+        {view === 'role' && roleViewData && (() => {
+          const { title, deptName, hrbpName: roleHrbp, employees: totalEmployees, aiPotential, readiness, unrealizedValue, gap, fromView } = roleViewData
+          const d = departments.find(x => x.name === deptName)
+          const roleForEmployees = getRolesForDept(deptName).find(r => r.title === title)
+          if (!roleForEmployees || !d) return null
+          const rawEmployees = getEmployeesForRole(roleForEmployees)
+          const allManagers = deptManagerTeams(deptName, d.employees)
+          const deptHrbpList = getDeptHrbps(deptName)
+          const enrichedEmployees = rawEmployees.map((emp) => {
+            const empHash = nh(emp.name)
+            const mgrIdx = allManagers.length > 0 ? empHash % allManagers.length : -1
+            const manager = mgrIdx >= 0 ? allManagers[mgrIdx]?.manager ?? demoManagerName(empHash % 100) : demoManagerName(empHash % 100)
+            const hrbp = roleHrbp ?? (deptHrbpList.length > 0 ? deptHrbpList[empHash % deptHrbpList.length].hrbp : 'Unassigned')
+            return { ...emp, manager, mgrIdx, hrbp, dept: deptName }
+          })
+          const displayEmployees = enrichedEmployees.slice(0, 100)
+          return (
+            <PersonDetailLayout
+              breadcrumb={
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink onClick={() => {
+                        if (fromView === 'hrbp') { setView('hrbp'); setHrbpPanelTab('roles') }
+                        else { setView('board') }
+                        setRoleViewData(null)
+                      }}>
+                        Overview
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem><BreadcrumbPage>{title}</BreadcrumbPage></BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              }
+              name={title}
+              subtitle={`${deptName} · ${totalEmployees.toLocaleString()} employees`}
+              readiness={{ value: `${readiness}%`, explainer: 'Employees in augmentable roles using AI effectively.', description: <span style={{ color: '#94a3b8' }}>{Math.max(0, totalEmployees - gap).toLocaleString()} of {totalEmployees.toLocaleString()} are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              aiPotential={{ value: `${aiPotential}%`, explainer: "How much of this role's daily work AI can support.", description: <span style={{ color: '#94a3b8' }}>{aiPotential}% AI potential across {totalEmployees.toLocaleString()} employees</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatDollar(unrealizedValue), description: 'BLS median wages × weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              gap={{ value: gap.toLocaleString(), explainer: "Employees in augmentable roles not yet AI-ready.", description: <span style={{ color: '#94a3b8' }}>{totalEmployees > 0 ? Math.round((gap / totalEmployees) * 100) : 0}% of this role needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              tableTitle={<>{totalEmployees.toLocaleString()} employees{displayEmployees.length < totalEmployees && <span style={{ fontSize: 12, fontWeight: 400, color: '#94a3b8' }}> · showing {displayEmployees.length}</span>}</>}
+              tableHint={deptName}
+              wideTable
+            >
+              <div className="wfr-dash__table-scroll">
+                <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead>Employee</DataTableHead>
+                      <DataTableHead>Department</DataTableHead>
+                      <DataTableHead>HRBP</DataTableHead>
+                      <DataTableHead>Manager</DataTableHead>
+                      <DataTableHead metric>AI adoption</DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {displayEmployees.map((emp) => (
+                      <DataTableRow key={emp.name}>
+                        <DataTableCell className="font-semibold">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <PersonAvatar name={emp.name} size={24} />
+                            {emp.name}
+                          </div>
+                        </DataTableCell>
+                        <DataTableCell className="text-[13px]">
+                          <button type="button" onClick={() => { setDeptViewName(emp.dept); setView('dept'); setRoleViewData(null); window.scrollTo(0, 0) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 600, fontSize: 'inherit' }}>{emp.dept}</button>
+                        </DataTableCell>
+                        <DataTableCell className="text-[13px]">
+                          <button type="button" onClick={() => { setHrbpName(emp.hrbp); setView('hrbp'); setRoleViewData(null); window.scrollTo(0, 0) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 600, fontSize: 'inherit' }}>{emp.hrbp}</button>
+                        </DataTableCell>
+                        <DataTableCell className="text-[13px]">
+                          <button type="button" onClick={() => { setRoleViewData(null); navigate(`/workforce/manager/${encodeURIComponent(emp.manager)}?dept=${encodeURIComponent(emp.dept)}&mgrIdx=${emp.mgrIdx}&parentHrbp=${encodeURIComponent(emp.hrbp)}`) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 600, fontSize: 'inherit' }}>{emp.manager}</button>
+                        </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} /></DataTableCell>
+                      </DataTableRow>
+                    ))}
+                  </DataTableBody>
+                </DataTable>
+              </div>
             </PersonDetailLayout>
           )
         })()}

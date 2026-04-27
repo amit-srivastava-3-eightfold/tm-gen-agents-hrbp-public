@@ -241,5 +241,20 @@ export function NavbarApp() {
     return () => document.removeEventListener('click', handler, true)
   }, [setCurrentUser])
 
+  // Clicking the WFR nav tab while already on /workforce reloads the page so React
+  // state resets to the persona's home view (same-path clicks don't trigger navigation)
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest('a[href="/workforce"]')
+      if (!link) return
+      if (!window.location.pathname.startsWith('/workforce')) return
+      e.preventDefault()
+      e.stopPropagation()
+      window.location.href = '/workforce'
+    }
+    document.addEventListener('click', handler, true)
+    return () => document.removeEventListener('click', handler, true)
+  }, [])
+
   return <Navbar {...navbarProps} />
 }
