@@ -1906,6 +1906,11 @@ export function WorkforceReadinessDashboard({
   const toggleMgrSort = (col: MgrSortCol) => {
     setMgrSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
+  const [hrbpPanelTab, setHrbpPanelTab] = useState<'managers' | 'roles'>('managers')
+  const [hrbpRoleSort, setHrbpRoleSort] = useState<{ col: 'name' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
+  const toggleHrbpRoleSort = (col: typeof hrbpRoleSort['col']) => {
+    setHrbpRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
+  }
   const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }> } | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; baseReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
@@ -3060,26 +3065,33 @@ export function WorkforceReadinessDashboard({
                 cards={hrbpOverviewCards}
                 heroCta={hrbpHeroCta}
               >
-                <div>
-                  <div className="wfr-dash__panel-head">
-                    <span className="wfr-dash__panel-title">Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></span>
+                <Tabs value={hrbpPanelTab} onValueChange={(v: string) => setHrbpPanelTab(v as 'managers' | 'roles')}>
+                  <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <TabsList>
+                      <TabsTrigger value="managers">Client managers</TabsTrigger>
+                      <TabsTrigger value="roles">Roles</TabsTrigger>
+                    </TabsList>
                     <span className="wfr-dash__panel-hint">
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        {showHrbpCollection && directors.some(dir => hrbpDirInScope(dir.name)) && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
-                            <span>In data collection</span>
+                      {hrbpPanelTab === 'roles'
+                        ? `${deptRoles.length} roles`
+                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                            {showHrbpCollection && directors.some(dir => hrbpDirInScope(dir.name)) && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                                <span>In data collection</span>
+                              </span>
+                            )}
+                            {hrbpUpskillingActive && directors.some(dir => hrbpDirInUpskilling(dir.name)) && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                                <span>In upskilling</span>
+                              </span>
+                            )}
                           </span>
-                        )}
-                        {hrbpUpskillingActive && directors.some(dir => hrbpDirInUpskilling(dir.name)) && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                            <span>In upskilling</span>
-                          </span>
-                        )}
-                      </span>
+                      }
                     </span>
                   </div>
+                  <TabsContent value="managers">
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
@@ -3190,7 +3202,63 @@ export function WorkforceReadinessDashboard({
                       })()}
                     </DataTableBody>
                   </DataTable>
-                </div>
+                  </TabsContent>
+                  <TabsContent value="roles">
+                    {(() => {
+                      const hrbpRoles = deptRoles.map(r => {
+                        const collectionDelta = hrbpCollectionComplete ? trend.delta + ((r.title.length % 3) - 1) : 0
+                        const upskillingBoost = hrbpPlansComplete ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
+                        const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
+                        return { ...r, tasks: getTasksForRole(r.title).length, measuredReadiness: measured, gap: r.aiPotential - measured }
+                      })
+                      const mul = hrbpRoleSort.dir === 'asc' ? 1 : -1
+                      const sortedHrbpRoles = [...hrbpRoles].sort((a, b) => {
+                        switch (hrbpRoleSort.col) {
+                          case 'name': return mul * a.title.localeCompare(b.title)
+                          case 'headcount': return mul * (a.employees - b.employees)
+                          case 'readiness': return mul * ((hrbpCollectionComplete ? a.measuredReadiness : a.aiReadiness) - (hrbpCollectionComplete ? b.measuredReadiness : b.aiReadiness))
+                          case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
+                          case 'gap': return mul * (a.gap - b.gap)
+                          default: return 0
+                        }
+                      })
+                      return (
+                        <div className="wfr-dash__table-scroll">
+                          <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
+                            <DataTableHeader>
+                              <DataTableRow>
+                                <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleHrbpRoleSort('name')}><span className="inline-flex items-center gap-1">Role <SortIcon sortDir={hrbpRoleSort.col === 'name' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('name')} /></span></DataTableHead>
+                                <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleHrbpRoleSort('headcount')}><span className="inline-flex items-center gap-1">Headcount <SortIcon sortDir={hrbpRoleSort.col === 'headcount' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('headcount')} /></span></DataTableHead>
+                                <DataTableHead numeric>Tasks</DataTableHead>
+                                <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'readiness' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('readiness')} /></DataTableHead>
+                                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'potential' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('potential')} /></DataTableHead>
+                                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpRoleSort.col === 'gap' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('gap')} /></DataTableHead>
+                              </DataTableRow>
+                            </DataTableHeader>
+                            <DataTableBody>
+                              {sortedHrbpRoles.map((r) => (
+                                <DataTableRow key={r.title}>
+                                  <DataTableCell className="font-semibold">{r.title}</DataTableCell>
+                                  <DataTableCell align="right" numeric className="!w-[60px]">{r.employees.toLocaleString()}</DataTableCell>
+                                  <DataTableCell align="right"><span style={{ fontSize: 12, fontWeight: 600, color: '#3b5bdb' }}>{r.tasks}</span></DataTableCell>
+                                  <DataTableCell metric>
+                                    <DeptTableSoloBar variant="readiness" pct={hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness} />
+                                  </DataTableCell>
+                                  <DataTableCell align="right">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}</button>
+                                  </DataTableCell>
+                                  <DataTableCell align="right">
+                                    <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
+                                  </DataTableCell>
+                                </DataTableRow>
+                              ))}
+                            </DataTableBody>
+                          </DataTable>
+                        </div>
+                      )
+                    })()}
+                  </TabsContent>
+                </Tabs>
                 {hrbpUpskillingDialogOpen && (() => {
                   const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))
                   const allDirScores = directors.map(dir => ({
