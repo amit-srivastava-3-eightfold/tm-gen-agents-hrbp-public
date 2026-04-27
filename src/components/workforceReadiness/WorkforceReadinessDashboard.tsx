@@ -1048,7 +1048,7 @@ function BoardView({
             <TabsList>
               <TabsTrigger value="hrbps">HRBPs</TabsTrigger>
               <TabsTrigger value="departments">Departments</TabsTrigger>
-              {isHrbp && <TabsTrigger value="roles">Roles</TabsTrigger>}
+              <TabsTrigger value="roles">Roles</TabsTrigger>
             </TabsList>
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'

@@ -18,6 +18,12 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/dev/ef-design-system && npm run build && cd demo && npm run dev"],
       "port": 5188
+    },
+    {
+      "name": "ai-coach",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && npx --yes serve /Users/tony/Dev/Eightfold/AI-Coach -l 5200 --no-clipboard"],
+      "port": 5200
     }
   ]
 }
