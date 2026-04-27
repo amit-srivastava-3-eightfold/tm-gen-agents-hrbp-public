@@ -267,7 +267,7 @@ export function ProfilePage() {
                         <td style={{ padding: '14px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             {(plan as any).href ? (
-                              <Link to={(plan as any).href} style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', textDecoration: 'none' }}>{plan.name}</Link>
+                              <Link to={(plan as any).href} onClick={() => window.scrollTo(0, 0)} style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', textDecoration: 'none' }}>{plan.name}</Link>
                             ) : (
                               <div style={{ fontWeight: 600, color: 'var(--color-secondary-blue, #3b5bdb)', cursor: 'pointer' }}>{plan.name}</div>
                             )}

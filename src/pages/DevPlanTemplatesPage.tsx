@@ -134,6 +134,7 @@ export function DevPlanTemplatesPage() {
             <Link
               key={template.name}
               to={`/my-activity/dev-plan-templates/${template.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`}
+              onClick={() => window.scrollTo(0, 0)}
               style={{
                 padding: '16px 20px',
                 borderRadius: 12,
