@@ -2297,7 +2297,9 @@ export function WorkforceReadinessDashboard({
 
   if (isManager && managerTeamData) {
     const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
-    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(wfrState.state)
+    const mgrEngHrbps = getDeptHrbps('Engineering').map(h => h.hrbp)
+    const mgrEffectiveState = wfrState.hrbpStates ? getPersonaEffectiveState(wfrState, mgrEngHrbps) : wfrState.state
+    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
     const mgrUpskillingBoost = mgrUpskillingComplete ? 16 : mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)

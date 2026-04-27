@@ -42,6 +42,11 @@ function readEffectiveWfrState(personaId: string): WfrProgramState {
     const names = getPersonaHrbpNames(personaId)
     return getPersonaEffectiveState(persisted, names)
   }
+  if (personaId === 'mateo') {
+    // Manager's team is in Engineering — track their HRBP's state, not the org aggregate
+    const engHrbps = getDeptHrbps('Engineering').map(h => h.hrbp)
+    return getPersonaEffectiveState(persisted, engHrbps)
+  }
   return computeOrgAggregateState(persisted)
 }
 

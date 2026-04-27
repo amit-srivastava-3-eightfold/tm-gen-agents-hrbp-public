@@ -108,10 +108,10 @@ export function ManagerDetailPage() {
     } catch { /* ignore */ }
     return { state: 1 }
   }, [])
-  // Use persona-aware state so HRBP sees collection status even when org aggregate is still 1
+  // Use persona-aware state so HRBP/manager sees their dept's HRBP state, not the org aggregate
   const personaHrbpNames = isHrbp ? getPersonaHrbpNames(currentUser.id) : []
-  const effectiveState = isHrbp && wfrState.hrbpStates
-    ? getPersonaEffectiveState(wfrState, personaHrbpNames)
+  const effectiveState = wfrState.hrbpStates
+    ? getPersonaEffectiveState(wfrState, isManager ? getDeptHrbps('Engineering').map(h => h.hrbp) : personaHrbpNames)
     : wfrState.state
   const { collectionActive, collectionComplete: rawCollectionComplete, upskillingActive, hrbpPlansCreated: rawHrbpPlansCreated } = deriveWfrFlags(effectiveState)
   // Gate on director scope — if this manager's director didn't participate in collection, hide upskilling data
