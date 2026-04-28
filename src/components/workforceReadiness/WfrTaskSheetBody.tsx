@@ -3,11 +3,6 @@ import { getTasksForRole } from '../../data/wfrOrgData'
 
 type DemoPhase = 'baseline' | 'calibrated' | 'upskilled'
 
-const PHASE_LABELS: Record<DemoPhase, string> = {
-  baseline: 'Baseline',
-  calibrated: 'Post-calibration',
-  upskilled: 'Post-upskilling',
-}
 
 const CALIBRATION_DELTAS: Record<string, number> = {
   'Schedule management': +10,
