@@ -14,6 +14,7 @@ const SECTIONS: NavSection[] = [
       { label: 'WFR Hero Card', path: '/components/wfr-hero-options' },
       { label: 'WFR Metric Cards', path: '/components/wfr-metric-cards' },
       { label: 'WFR Dialogs', path: '/components/wfr-dialogs' },
+      { label: 'WFR Task Sheet', path: '/components/wfr-task-sheet' },
       { label: 'Dev plans', path: '/components/dev-plans' },
     ],
   },

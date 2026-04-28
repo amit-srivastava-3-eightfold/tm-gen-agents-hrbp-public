@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { WfrTaskSheetBody } from './WfrTaskSheetBody'
 import { useNavigate } from 'react-router-dom'
 import {
   Badge, Button,
@@ -755,7 +756,6 @@ function BoardView({
   }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
-  const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
 
   const [chroUpskillingInfoOpen, setChroUpskillingInfoOpen] = useState(false)
   const [hrbpDevPlanDialogOpen, setHrbpDevPlanDialogOpen] = useState(false)
@@ -1143,7 +1143,7 @@ function BoardView({
                       )}
                     </div>
                   </DataTableCell>
-                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, unrealizedValue: row.totalUnrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.totalUnrealizedValue)}</button></DataTableCell>
+                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, unrealizedValue: row.totalUnrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.totalUnrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                   <DataTableCell align="right">
                     <div className="tabular-nums" style={{ textAlign: 'right' }}>
                       <span className="wfr-type-h6">{row.totalGap.toLocaleString()} ({row.headcount > 0 ? Math.round((row.totalGap / row.headcount) * 100) : 0}%)</span>
@@ -1223,7 +1223,7 @@ function BoardView({
                           </button>
                         </div>
                       </DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}</button></DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
                           <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
@@ -1263,7 +1263,7 @@ function BoardView({
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}</button></DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right">
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
                           <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
@@ -1354,9 +1354,11 @@ function BoardView({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}
+                        title="View tasks"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
                       >
                         {r.tasks}
+                        <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
                       </button>
                     </DataTableCell>
                     <DataTableCell metric>
@@ -1377,7 +1379,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} />
                       )}
                     </DataTableCell>
-                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}</button></DataTableCell>
+                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
                     </DataTableCell>
@@ -1454,7 +1456,7 @@ function BoardView({
       {/* Task list sheet */}
       {taskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} />
+          <div className="wfr-trend-sheet__backdrop" onClick={() => setTaskSheetRole(null)} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
               <div>
@@ -1463,154 +1465,12 @@ function BoardView({
                 </div>
                 <p className="wfr-trend-sheet__sub">{taskSheetRole.dept} — Task breakdown</p>
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null) }} aria-label="Close">
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => setTaskSheetRole(null)} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              {(() => {
-                const tasks = getTasksForRole(taskSheetRole.title)
-                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
-                const aboveCount = tasks.filter(t => t.score > 75).length
-                const belowCount = tasks.filter(t => t.score < 15).length
-                const showTrends = focusCollectionComplete
-                return (
-                  <>
-                    {/* Visual stats */}
-                    {(() => {
-                      // Only show task movement deltas when collection is complete (state >= 3)
-                      const roleHash = taskSheetRole.title.split('').reduce((h: number, c: string) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
-                      const movedToAugment = showTrends ? Math.abs(roleHash) % 3 : 0
-                      const movedToAutomate = showTrends ? Math.abs(roleHash * 7) % 2 : 0
-                      // Only show positive additions (tasks gained), not losses
-                      const augDelta = movedToAugment // tasks gained from Human
-                      const autoDelta = movedToAutomate // tasks gained from Augment
-                      const humanDelta = 0 // don't show loss
-
-                      const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; delta: number; label: string; desc: string; color: string; bg: string; border: string; activeBorder: string }[] = [
-                        { zone: 'above', count: aboveCount, delta: autoDelta, label: 'Automate', desc: 'AI runs autonomously', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
-                        { zone: 'augment', count: augCount, delta: augDelta, label: 'Augment', desc: 'Human leads, AI assists', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
-                        { zone: 'below', count: belowCount, delta: humanDelta, label: 'Human', desc: 'Requires judgment or trust', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
-                      ]
-                      return (
-                        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                          {zoneCards.map((zc) => {
-                            const isActive = taskSheetZoneFilter === zc.zone
-                            const isDimmed = taskSheetZoneFilter != null && !isActive
-                            return (
-                              <div
-                                key={zc.zone}
-                                onClick={() => setTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)}
-                                style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
-                                  {showTrends && zc.delta !== 0 && <span style={{ fontSize: 12, fontWeight: 600, color: zc.delta > 0 ? '#15803d' : '#dc2626' }}>{zc.delta > 0 ? '↑' : '↓'}{Math.abs(zc.delta)}</span>}
-                                </div>
-                                <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
-                                <div style={{ fontSize: 10, color: '#94a3b8' }}>{zc.desc}</div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )
-                    })()}
-
-                    {/* Grouped task list by Octave classification */}
-                    {(() => {
-                      // Skills associated with tasks by zone
-                      const augmentSkills: Record<string, string[]> = {
-                        'research': ['AI-assisted research', 'Data synthesis'],
-                        'draft': ['AI writing', 'Content generation'],
-                        'analys': ['Data interpretation', 'Pattern recognition'],
-                        'plan': ['AI-assisted planning', 'Scenario modeling'],
-                        'review': ['Quality evaluation', 'AI output review'],
-                        'track': ['AI analytics', 'Trend detection'],
-                        'coordinat': ['AI scheduling', 'Workflow automation'],
-                        'report': ['Automated reporting', 'Data visualization'],
-                        'forecast': ['Predictive analytics', 'AI modeling'],
-                        'screen': ['AI screening', 'Candidate matching'],
-                        'document': ['AI documentation', 'Template generation'],
-                        'budget': ['Financial modeling', 'AI forecasting'],
-                      }
-                      const automateSkills = ['Process automation', 'AI pipeline', 'Zero-touch processing']
-                      const humanSkills: Record<string, string[]> = {
-                        'negotiat': ['Persuasion', 'Relationship building'],
-                        'conflict': ['Mediation', 'Emotional intelligence'],
-                        'client': ['Trust building', 'Empathy'],
-                        'mentor': ['Coaching', 'Leadership'],
-                        'train': ['Facilitation', 'Knowledge transfer'],
-                        'strateg': ['Vision', 'Business judgment'],
-                      }
-
-                      function getSkillsForTask(task: string, zone: string): string[] {
-                        const lower = task.toLowerCase()
-                        if (zone === 'augment') {
-                          for (const [key, skills] of Object.entries(augmentSkills)) {
-                            if (lower.includes(key)) return skills
-                          }
-                          return ['AI collaboration', 'Tool fluency']
-                        }
-                        if (zone === 'above') return automateSkills.slice(0, 2)
-                        // below
-                        for (const [key, skills] of Object.entries(humanSkills)) {
-                          if (lower.includes(key)) return skills
-                        }
-                        return ['Critical thinking', 'Human judgment']
-                      }
-
-                      const groups = [
-                        { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
-                        { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
-                        { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
-                      ]
-
-                      const visibleGroups = taskSheetZoneFilter
-                        ? groups.filter(g => g.zone === taskSheetZoneFilter && g.tasks.length > 0)
-                        : groups.filter(g => g.tasks.length > 0)
-
-                      return visibleGroups.map((group) => (
-                        <div key={group.label} style={{ marginBottom: 16 }}>
-                          <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
-                              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{group.desc}</div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {group.tasks.sort((a, b) => b.score - a.score).map((t, i) => {
-                              const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
-                              const skills = getSkillsForTask(t.task, zone)
-                              // Only show trend on tasks that moved zones when collection is complete (state >= 3)
-                              const taskHash = t.task.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-                              const movedUp = showTrends && zone === 'augment' && t.score >= 15 && t.score <= 20 && Math.abs(taskHash) % 3 === 0
-                              const movedFromAug = showTrends && zone === 'above' && t.score > 75 && t.score <= 82 && Math.abs(taskHash) % 2 === 0
-                              const moved = movedUp || movedFromAug
-                              return (
-                                <div key={i} style={{ padding: '10px 12px', borderRadius: 6, border: moved ? '1px solid #bbf7d0' : '1px solid #e5e7eb', background: moved ? '#fafff9' : undefined }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
-                                    {moved && <span style={{ fontSize: 12, fontWeight: 600, color: '#15803d', marginLeft: 8 }}>↑ New</span>}
-                                  </div>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                    {skills.map((skill) => (
-                                      <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>
-                                        {skill}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))
-                    })()}
-                  </>
-                )
-              })()}
+              <WfrTaskSheetBody role={taskSheetRole} />
             </div>
           </div>
         </div>,
@@ -2125,6 +1985,7 @@ export function WorkforceReadinessDashboard({
   const [hrbpUpskillingDialogOpen, setHrbpUpskillingDialogOpen] = useState(false)
   const [hrbpUpskillingSelectedDirs, setHrbpUpskillingSelectedDirs] = useState<Set<string>>(new Set())
   const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [dashTaskSheetRole, setDashTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
 
   // State transition functions — per-HRBP aware
   const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
@@ -2243,7 +2104,6 @@ export function WorkforceReadinessDashboard({
   }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
-  const [mgrTaskSheetZoneFilter, setMgrTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
@@ -2462,9 +2322,11 @@ export function WorkforceReadinessDashboard({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }) }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}
+                        title="View tasks"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
                       >
                         {empTaskCount}
+                        <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
                       </button>
                     ) : <span style={{ color: '#cbd5e1' }}>—</span>}
                   </DataTableCell>
@@ -2559,7 +2421,7 @@ export function WorkforceReadinessDashboard({
       )}
       {mgrTaskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} />
+          <div className="wfr-trend-sheet__backdrop" onClick={() => setMgrTaskSheetRole(null)} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
               <div>
@@ -2568,87 +2430,12 @@ export function WorkforceReadinessDashboard({
                 </div>
                 <p className="wfr-trend-sheet__sub">{mgrTaskSheetRole.employeeName ? `${mgrTaskSheetRole.title} — Task breakdown` : `${mgrTaskSheetRole.dept} — Task breakdown`}</p>
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskSheetZoneFilter(null) }} aria-label="Close">
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => setMgrTaskSheetRole(null)} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              {(() => {
-                const tasks = getTasksForRole(mgrTaskSheetRole.title)
-                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
-                const aboveCount = tasks.filter(t => t.score > 75).length
-                const belowCount = tasks.filter(t => t.score < 15).length
-                const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; label: string; desc: string; color: string; bg: string; border: string; activeBorder: string }[] = [
-                  { zone: 'above', count: aboveCount, label: 'Automate', desc: 'AI runs autonomously', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
-                  { zone: 'augment', count: augCount, label: 'Augment', desc: 'Human leads, AI assists', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
-                  { zone: 'below', count: belowCount, label: 'Human', desc: 'Requires judgment or trust', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
-                ]
-                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
-                const automateSkills = ['Process automation', 'AI pipeline', 'Zero-touch processing']
-                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'train': ['Facilitation', 'Knowledge transfer'], 'strateg': ['Vision', 'Business judgment'] }
-                function getSkillsForTask(task: string, zone: string): string[] {
-                  const lower = task.toLowerCase()
-                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
-                  if (zone === 'above') return automateSkills.slice(0, 2)
-                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
-                  return ['Critical thinking', 'Human judgment']
-                }
-                const groups = [
-                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', desc: 'AI runs autonomously — data entry, routing, ticket processing', tasks: tasks.filter(t => t.score > 75) },
-                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', desc: 'Human leads, AI assists — research, drafting, analysis, scheduling', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
-                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', desc: 'Requires human presence, trust, or judgment', tasks: tasks.filter(t => t.score < 15) },
-                ]
-                const visibleGroups = mgrTaskSheetZoneFilter ? groups.filter(g => g.zone === mgrTaskSheetZoneFilter && g.tasks.length > 0) : groups.filter(g => g.tasks.length > 0)
-                return (
-                  <>
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                      {zoneCards.map((zc) => {
-                        const isActive = mgrTaskSheetZoneFilter === zc.zone
-                        const isDimmed = mgrTaskSheetZoneFilter != null && !isActive
-                        return (
-                          <div key={zc.zone} onClick={() => setMgrTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
-                            <div style={{ fontSize: 10, color: '#94a3b8' }}>{zc.desc}</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {visibleGroups.map((group) => (
-                      <div key={group.label} style={{ marginBottom: 16 }}>
-                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
-                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
-                          </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{group.desc}</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {group.tasks.sort((a, b) => b.score - a.score).map((t, i) => {
-                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
-                            const skills = getSkillsForTask(t.task, zone)
-                            return (
-                              <div key={i} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #e5e7eb' }}>
-                                <div style={{ marginBottom: 4 }}>
-                                  <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                  {skills.map((skill) => (
-                                    <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )
-              })()}
+              <WfrTaskSheetBody role={mgrTaskSheetRole} />
             </div>
           </div>
         </div>,
@@ -2813,7 +2600,7 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={row.readiness} /></DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, unrealizedValue: row.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</button></DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, unrealizedValue: row.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{row.gap.toLocaleString()} ({row.headcount > 0 ? Math.round(row.gap / row.headcount * 100) : 0}%)</span>
@@ -2851,7 +2638,7 @@ export function WorkforceReadinessDashboard({
                             </div>
                           </DataTableCell>
                           <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={mgrReadiness} /></DataTableCell>
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: mgrUnrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(mgrUnrealizedValue)}</button></DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: mgrUnrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(mgrUnrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
                               <span className="wfr-type-h6">{mgrGap.toLocaleString()} ({mgr.employees > 0 ? Math.round(mgrGap / mgr.employees * 100) : 0}%)</span>
@@ -3201,7 +2988,7 @@ export function WorkforceReadinessDashboard({
                                   )}
                                 </div>
                               </DataTableCell>
-                              <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}</button></DataTableCell>
+                              <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                               <DataTableCell align="right">
                                 <div className="tabular-nums" style={{ textAlign: 'right' }}>
                                   <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
@@ -3268,12 +3055,17 @@ export function WorkforceReadinessDashboard({
                                       {r.employees.toLocaleString()}
                                     </button>
                                   </DataTableCell>
-                                  <DataTableCell align="right"><span style={{ fontSize: 12, fontWeight: 600, color: '#3b5bdb' }}>{r.tasks}</span></DataTableCell>
+                                  <DataTableCell align="right">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setDashTaskSheetRole({ title: r.title, dept: d.name }) }} title="View tasks" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
+                                      {r.tasks}
+                                      <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
+                                    </button>
+                                  </DataTableCell>
                                   <DataTableCell metric>
                                     <DeptTableSoloBar variant="readiness" pct={hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness} />
                                   </DataTableCell>
                                   <DataTableCell align="right">
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}</button>
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button>
                                   </DataTableCell>
                                   <DataTableCell align="right">
                                     <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
@@ -3529,7 +3321,7 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}</button></DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
                               <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
@@ -3863,7 +3655,7 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, unrealizedValue: Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)) }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)))}</button></DataTableCell>
+                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, unrealizedValue: Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                             <DataTableCell align="right">
                               <div className="tabular-nums" style={{ textAlign: 'right' }}>
                                 <span className="wfr-type-h6">{notReady.toLocaleString()} ({sr.employees > 0 ? Math.round((notReady / sr.employees) * 100) : 0}%)</span>
@@ -3919,7 +3711,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}</button></DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
@@ -4098,7 +3890,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}</button></DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
@@ -4130,6 +3922,7 @@ export function WorkforceReadinessDashboard({
             return { ...emp, manager, mgrIdx, hrbp, dept: deptName }
           })
           const displayEmployees = enrichedEmployees.slice(0, 100)
+          const roleTaskCount = getTasksForRole(title).length
           return (
             <PersonDetailLayout
               breadcrumb={
@@ -4167,6 +3960,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableHead>Department</DataTableHead>
                       <DataTableHead>HRBP</DataTableHead>
                       <DataTableHead>Manager</DataTableHead>
+                      <DataTableHead numeric>Tasks</DataTableHead>
                       <DataTableHead metric>AI adoption</DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
@@ -4187,6 +3981,17 @@ export function WorkforceReadinessDashboard({
                         </DataTableCell>
                         <DataTableCell className="text-[13px]">
                           <button type="button" onClick={() => { setRoleViewData(null); navigate(`/workforce/manager/${encodeURIComponent(emp.manager)}?dept=${encodeURIComponent(emp.dept)}&mgrIdx=${emp.mgrIdx}&parentHrbp=${encodeURIComponent(emp.hrbp)}`) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#3b5bdb', fontWeight: 600, fontSize: 'inherit' }}>{emp.manager}</button>
+                        </DataTableCell>
+                        <DataTableCell align="right">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setDashTaskSheetRole({ title, dept: deptName }) }}
+                            title="View tasks"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
+                          >
+                            {roleTaskCount}
+                            <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
+                          </button>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={emp.readinessPct} /></DataTableCell>
                       </DataTableRow>
@@ -4212,6 +4017,30 @@ export function WorkforceReadinessDashboard({
 
       {/* Unrealized value breakdown sheet */}
       <UnrealizedValueSheet data={uvSheetData} onClose={() => setUvSheetData(null)} />
+
+      {/* Task sheet for role detail view */}
+      {dashTaskSheetRole && createPortal(
+        <div className="wfr-trend-sheet__root">
+          <div className="wfr-trend-sheet__backdrop" onClick={() => setDashTaskSheetRole(null)} />
+          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${dashTaskSheetRole.title}`}>
+            <div className="wfr-trend-sheet__header">
+              <div>
+                <div className="wfr-trend-sheet__title-row">
+                  <h2 className="wfr-trend-sheet__title">{dashTaskSheetRole.title}</h2>
+                </div>
+                <p className="wfr-trend-sheet__sub">{dashTaskSheetRole.dept} — Task breakdown</p>
+              </div>
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => setDashTaskSheetRole(null)} aria-label="Close">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="wfr-trend-sheet__body">
+              <WfrTaskSheetBody role={dashTaskSheetRole} />
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Metric sheet for HRBP/Director/SeniorMgr views */}
       <WorkforceMetricSheet
