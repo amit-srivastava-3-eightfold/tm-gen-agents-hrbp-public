@@ -22,6 +22,7 @@ import WfrHeroOptionsPage from './pages/WfrHeroOptionsPage'
 import DevPlansPage from './pages/DevPlansPage'
 import WfrMetricCardsPage from './pages/WfrMetricCardsPage'
 import WfrDialogsPage from './pages/WfrDialogsPage'
+import WfrTaskSheetPage from './pages/WfrTaskSheetPage'
 import { MyDevPlanPage } from './pages/MyDevPlanPage'
 import { ComponentsLayout } from './pages/ComponentsLayout'
 
@@ -51,6 +52,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="dev-plans" element={<DevPlansPage />} />
               <Route path="wfr-metric-cards" element={<WfrMetricCardsPage />} />
               <Route path="wfr-dialogs" element={<WfrDialogsPage />} />
+              <Route path="wfr-task-sheet" element={<WfrTaskSheetPage />} />
             </Route>
           </Routes>
         </BrowserRouter>
