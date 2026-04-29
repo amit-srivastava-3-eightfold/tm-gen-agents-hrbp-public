@@ -2146,6 +2146,12 @@ export function WorkforceReadinessDashboard({
       const firstName = teamFirstNames[i % teamFirstNames.length]!
       return { ...e, name: `${firstName} ${lastName}`, displayReadiness }
     })
+    // Pin the first Sarah on Josh's team to Sarah Culhane (CSM persona) so the manager
+    // dashboard shows the actual persona name + matching avatar (set in /sarah.png map below).
+    const firstSarahIdx = displayEmployees.findIndex(e => e.name.startsWith('Sarah '))
+    if (firstSarahIdx >= 0) {
+      displayEmployees[firstSarahIdx] = { ...displayEmployees[firstSarahIdx], name: 'Sarah Culhane' }
+    }
     const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
     const notReady = displayEmployees.length - readyCount
@@ -2211,7 +2217,7 @@ export function WorkforceReadinessDashboard({
       const map = new Map<string, string>()
       ;[...mgrEmployees].sort((a, b) => nh(a.name) - nh(b.name)).forEach((emp, i) => {
         if (emp.name.startsWith('Sarah ')) {
-          map.set(emp.name, '/sarah.png')
+          map.set(emp.name, '/sarah_culhane.jpg')
         } else {
           map.set(emp.name, `https://i.pravatar.cc/64?img=${ids[i % ids.length]}`)
         }

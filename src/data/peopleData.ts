@@ -338,7 +338,7 @@ export const LAURA_SHAH: PeopleProfileCardData = {
   name: 'Jaydon Torff',
   title: 'HR Business Partner • Human Resources',
   avatarType: 'photo',
-  avatarPhotoSrc: '/jaydon-torff.png',
+  avatarPhotoSrc: '/jaydon_torff.jpg',
   avatarInitials: 'JT',
   avatarColor: '#5C6BC0',
   businessUnit: 'Human Resources',

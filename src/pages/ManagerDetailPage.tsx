@@ -262,6 +262,14 @@ export function ManagerDetailPage() {
     const firstName = teamFirstNames[i % teamFirstNames.length]!
     return { ...e, name: `${firstName} ${lastName}`, readinessPct: baseReadiness, displayReadiness }
   })
+  // Pin the first Sarah on Josh Minnia's team to Sarah Culhane (CSM persona) so the
+  // CHRO/HRBP drilldown matches the manager-persona view (see WorkforceReadinessDashboard.tsx).
+  if (dept.name === 'Engineering' && parsedMgrIdx === 36) {
+    const firstSarahIdx = displayEmployees.findIndex(e => e.name.startsWith('Sarah '))
+    if (firstSarahIdx >= 0) {
+      displayEmployees[firstSarahIdx] = { ...displayEmployees[firstSarahIdx], name: 'Sarah Culhane' }
+    }
+  }
 
   const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
 
@@ -276,7 +284,7 @@ export function ManagerDetailPage() {
     }
     const map = new Map<string, string>()
     ;[...displayEmployees].sort((a, b) => nameHash(a.name) - nameHash(b.name)).forEach((emp, i) => {
-      map.set(emp.name, emp.name.startsWith('Sarah ') ? '/sarah.png' : `https://i.pravatar.cc/64?img=${ids[i % ids.length]}`)
+      map.set(emp.name, emp.name.startsWith('Sarah ') ? '/sarah_culhane.jpg' : `https://i.pravatar.cc/64?img=${ids[i % ids.length]}`)
     })
     return map
   })()
@@ -451,7 +459,7 @@ export function ManagerDetailPage() {
                     <DataTableRow>
                       <DataTableCell className="font-semibold">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <img src="/john.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          <img src="/josh-minnia.jpg" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                           <div>
                             <div>{mgr.manager}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>

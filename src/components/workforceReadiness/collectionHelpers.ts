@@ -213,7 +213,18 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
     }
   }
 
-  return teams.sort((a, b) => a.responseRate - b.responseRate)
+  const sorted = teams.sort((a, b) => a.responseRate - b.responseRate)
+
+  // Pin sorted slot 36 in Engineering to Josh Minnia (manager persona) so name & title
+  // stay consistent with src/contexts/demoUsers.ts and the manager-persona dashboard
+  // (see WorkforceReadinessDashboard.tsx — `mgrIdx = 36`). Applied post-sort because
+  // every consumer (senior-manager view, manager detail page, manager persona dashboard)
+  // indexes into the sorted array.
+  if (deptName === 'Engineering' && sorted[36]) {
+    sorted[36] = { ...sorted[36], manager: 'Josh Minnia', title: 'ML Engineering Lead' }
+  }
+
+  return sorted
 }
 
 export type ReadinessTrend = {
