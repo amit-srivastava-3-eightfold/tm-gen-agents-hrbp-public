@@ -942,7 +942,7 @@ export interface WfrCtaBarContent {
 }
 
 const RED    = 'rgba(185,28,28,0.55)'
-const YELLOW = 'rgba(245,158,11,0.85)'
+const YELLOW = 'color-mix(in srgb, var(--color-orange-50) 85%, transparent)'
 const GREEN  = 'rgba(21,128,61,0.35)'
 const BLUE   = 'rgba(59,91,219,0.35)'
 
