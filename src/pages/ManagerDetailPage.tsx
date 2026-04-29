@@ -26,7 +26,7 @@ import {
 import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, WFR_FIRST_NAMES, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
-import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
+import { deptManagerTeams, deptReadinessTrend, scaleUnrealizedValue } from '../components/workforceReadiness/collectionHelpers'
 import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffectiveState, MetricInfoDialog, type WfrPersistedState } from '../components/workforceReadiness/WorkforceReadinessDashboard'
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'

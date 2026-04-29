@@ -27,7 +27,7 @@ import {
   type RoleRowType,
 } from '../../data/wfrOrgData'
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
-import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName } from './collectionHelpers'
+import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName, scaleUnrealizedValue } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDialog'
@@ -808,7 +808,14 @@ function BoardView({
       const headcount = row.depts.reduce((s, d) => s + d.headcount, 0)
       const avgReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.readiness * d.headcount, 0) / headcount) : 0
       const avgPotential = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.aiPotential * d.headcount, 0) / headcount) : 0
-      const totalUnrealizedValue = row.depts.reduce((s, d) => { const dept = departments.find(x => x.name === d.name); return s + (dept ? Math.round(dept.unrealizedValue * d.headcount / Math.max(1, dept.employees)) : 0) }, 0)
+      const totalUnrealizedValue = row.depts.reduce((s, d) => {
+        const dept = departments.find(x => x.name === d.name)
+        if (!dept) return s
+        const baseProrated = Math.round(dept.unrealizedValue * d.headcount / Math.max(1, dept.employees))
+        // Scale by post-state readiness (calibrated + upskilling boost) so UV shrinks as adoption rises
+        const stateReadiness = Math.min(100, d.readiness + (hrbpPlansCreated ? (isHrbp ? 4 : 3) : 0))
+        return s + scaleUnrealizedValue(baseProrated, dept.aiReadiness, stateReadiness)
+      }, 0)
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
       const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
       // Headcount-weighted response rate across the HRBP's departments (for collection-active view)
@@ -942,7 +949,9 @@ function BoardView({
   const gapPeople = basePeopleInAug - ready
 
   const aiPotentialPct = effectiveRollup ? effectiveRollup.aiPotential : ORG.aiPotential
-  const orgUnrealizedValue = effectiveRollup ? effectiveRollup.unrealizedValue : departments.reduce((s, d) => s + d.unrealizedValue, 0)
+  const orgUnrealizedValueBase = effectiveRollup ? effectiveRollup.unrealizedValue : departments.reduce((s, d) => s + d.unrealizedValue, 0)
+  // Scale UV down as readiness rises (collection calibration + upskilling boost shrink the gap)
+  const orgUnrealizedValue = scaleUnrealizedValue(orgUnrealizedValueBase, rawReadinessPct, aiReadinessPct)
   const totalEmployeesHero = effectiveRollup ? effectiveRollup.totalEmployees : ORG.totalEmployees
   const hrsUnlocked = effectiveRollup ? effectiveRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
   const learnMoreDataCollection =
@@ -1192,6 +1201,7 @@ function BoardView({
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
                 const gapCount = focusCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
+                const deptUnrealized = scaleUnrealizedValue(d.unrealizedValue, d.aiReadiness, measuredReadiness)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
                 const deptHrbps = getDeptHrbps(d.name)
@@ -1223,7 +1233,7 @@ function BoardView({
                           </button>
                         </div>
                       </DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: deptUnrealized }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(deptUnrealized)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
                           <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
@@ -2155,6 +2165,7 @@ export function WorkforceReadinessDashboard({
     const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
     const notReady = displayEmployees.length - readyCount
+    // Base UV (pre-state). Consumers should scale by current readiness via scaleUnrealizedValue.
     const unrealizedValue = Math.round(dept.unrealizedValue * mgr.employees / Math.max(1, dept.employees))
     const tasksInAug = Math.round(getTasksForRole(deptRoles[0]?.title ?? '').filter(t => { const s = t.score ?? 0; return s >= 15 && s <= 75 }).length)
     const totalTasks = getTasksForRole(deptRoles[0]?.title ?? '').length
@@ -2198,6 +2209,8 @@ export function WorkforceReadinessDashboard({
     const calibratedAvgReadiness = mgrCollComplete
       ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
       : mgrReadiness
+    // Scale UV down as readiness improves (collection calibration + upskilling boost)
+    const displayUnrealized = scaleUnrealizedValue(mgrUnrealized, mgrDept.aiReadiness, calibratedAvgReadiness)
     const calibratedNotReady = mgrPlansCreated
       ? enrichedMgrEmployees.filter(e => {
           return e.displayReadiness >= 50 ? e._displayEmpReadiness < 50 : e._planPct !== 100
@@ -2233,7 +2246,7 @@ export function WorkforceReadinessDashboard({
         aiReadinessPct={displayReadinessPct}
         totalEmployees={mgrData.employees}
         headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>}
-        subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(mgrUnrealized)}</span> in unrealized value.</>}
+        subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(displayUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={mgrHeroCta}
         cards={[
@@ -2863,7 +2876,12 @@ export function WorkforceReadinessDashboard({
               justLaunched={hrbpJustLaunched}
             />
           )
-          const hrbpUnrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
+          const hrbpUnrealizedValueBase = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
+          // Estimate the state-1 baseline by removing known state deltas; scale UV by the gain.
+          // dirWeightedReadiness already includes deptTrendDelta + per-employee upskilling boosts,
+          // so subtract them to recover the pre-state baseline for proper proportional scaling.
+          const hrbpReadinessBaseline = Math.max(0, dirWeightedReadiness - deptTrendDelta - upskillingBoostBase)
+          const hrbpUnrealizedValue = scaleUnrealizedValue(hrbpUnrealizedValueBase, hrbpReadinessBaseline, dirWeightedReadiness)
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
             { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
             { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
