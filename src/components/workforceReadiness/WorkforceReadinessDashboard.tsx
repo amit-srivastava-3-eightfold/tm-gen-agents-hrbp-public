@@ -2647,7 +2647,10 @@ export function WorkforceReadinessDashboard({
                       const cal = deptMgrCalibrated[globalIdx] ?? []
                       const mgrReadiness = cal.length > 0 ? Math.round(cal.reduce((s, v) => s + v, 0) / cal.length) : d.aiReadiness
                       const mgrGap = Math.max(0, mgr.employees - Math.round(mgr.employees * mgrReadiness / 100))
-                      const mgrUnrealizedValue = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
+                      const mgrUnrealizedBase = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
+                      // Scale UV by readiness improvements: subtract trend + boost from current to recover baseline
+                      const mgrBaselineReadiness = Math.max(0, mgrReadiness - deptTrendDelta - deptBoostBase)
+                      const mgrUnrealizedValue = scaleUnrealizedValue(mgrUnrealizedBase, mgrBaselineReadiness, mgrReadiness)
                       return (
                         <DataTableRow key={mgr.manager}>
                           <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
@@ -2785,7 +2788,9 @@ export function WorkforceReadinessDashboard({
                 const cal = mgrCalibrated[dir.firstMgrIdx + i] ?? []
                 const avgR = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
                 const ready = Math.round(mgr.employees * avgR / 100)
-                return { name: mgr.manager, title: 'Team Manager', employees: mgr.employees, readiness: avgR, readyCount: ready, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }
+                const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
+                const baselineR = Math.max(0, avgR - deptTrendDelta - upskillingBoostBase)
+                return { name: mgr.manager, title: 'Team Manager', employees: mgr.employees, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
               })
             } else {
               const targetSr = Math.max(2, Math.min(5, Math.round(dir.teamManagers / 3)))
@@ -2798,7 +2803,9 @@ export function WorkforceReadinessDashboard({
                 const avgR = batchCal.length > 0 ? Math.round(batchCal.reduce((s, e) => s + e.displayReadiness, 0) / batchCal.length) : d.aiReadiness
                 const ready = Math.round(empCount * avgR / 100)
                 const srNameIdx = nameHash(dir.name) * 5 + si * 11 + dir.firstMgrIdx
-                return { name: demoManagerName(srNameIdx), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: Math.round(d.unrealizedValue * empCount / Math.max(1, d.employees)) }
+                const baseUv = Math.round(d.unrealizedValue * empCount / Math.max(1, d.employees))
+                const baselineR = Math.max(0, avgR - deptTrendDelta - upskillingBoostBase)
+                return { name: demoManagerName(srNameIdx), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
               }).filter(Boolean) as Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
             }
           }
@@ -3012,7 +3019,9 @@ export function WorkforceReadinessDashboard({
                                   )}
                                 </div>
                               </DataTableCell>
-                              <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                              {(() => { const baseUv = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, dir.readiness); return (
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          ) })()}
                               <DataTableCell align="right">
                                 <div className="tabular-nums" style={{ textAlign: 'right' }}>
                                   <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
@@ -3149,7 +3158,9 @@ export function WorkforceReadinessDashboard({
                               const checked = hrbpUpskillingSelectedDirs.has(dir.name)
                               const gap = dir.employees - dir.readyCount
                               const isPriority = priorityNames.has(dir.name)
-                              const dirUnrealized = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                              const dirUnrealizedBase = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                              const dirBaselineR = Math.max(0, (dir.readiness ?? d.aiReadiness) - deptTrendDelta - upskillingBoostBase)
+                              const dirUnrealized = scaleUnrealizedValue(dirUnrealizedBase, dirBaselineR, dir.readiness ?? d.aiReadiness)
                               return (
                                 <button key={dir.name} type="button"
                                   className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
@@ -3345,7 +3356,9 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          {(() => { const baseUv = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, dir.readiness); return (
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          ) })()}
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
                               <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
@@ -3422,7 +3435,9 @@ export function WorkforceReadinessDashboard({
                           const checked = hrbpUpskillingSelectedDirs.has(dir.name)
                           const gap = dir.employees - dir.readyCount
                           const isPriority = priorityNames.has(dir.name)
-                          const dirUnrealized = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                          const dirUnrealizedBase = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                          const dirBaselineR = Math.max(0, (dir.readiness ?? d.aiReadiness) - deptTrendDelta - upskillingBoostBase)
+                          const dirUnrealized = scaleUnrealizedValue(dirUnrealizedBase, dirBaselineR, dir.readiness ?? d.aiReadiness)
                           return (
                             <button
                               key={dir.name}
@@ -3679,7 +3694,9 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, unrealizedValue: Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                            {(() => { const baseUv = Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, sr.readiness); return (
+                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                            ) })()}
                             <DataTableCell align="right">
                               <div className="tabular-nums" style={{ textAlign: 'right' }}>
                                 <span className="wfr-type-h6">{notReady.toLocaleString()} ({sr.employees > 0 ? Math.round((notReady / sr.employees) * 100) : 0}%)</span>
@@ -3735,7 +3752,9 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        {(() => { const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, en.readiness); return (
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        ) })()}
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
@@ -3808,7 +3827,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`${seniorMgrData.title} · ${d.name} · ${srHeadcount.toLocaleString()} employees`}
               readiness={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); return { value: `${srMeasuredReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {srHeadcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatDollar(scaleUnrealizedValue(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees)), srBaseReadiness, srMeasuredReadiness)), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); const gapCount = Math.max(0, srHeadcount - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{srHeadcount > 0 ? Math.round((gapCount / srHeadcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               managerTable={{
                 title: 'Manager summary',
@@ -3914,7 +3933,9 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)) }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)))}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        {(() => { const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, en.readiness); return (
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        ) })()}
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
