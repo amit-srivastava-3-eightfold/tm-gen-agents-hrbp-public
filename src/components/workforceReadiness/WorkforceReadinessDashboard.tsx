@@ -2111,7 +2111,7 @@ export function WorkforceReadinessDashboard({
   const [mgrToast, setMgrToast] = useState<string | null>(null)
   const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null>(null)
 
-  // ─── Manager persona: compute team data for Dana Tanaka ───
+  // ─── Manager persona: compute team data for Josh Minnia ───
   const managerTeamData = useMemo(() => {
     if (!isManager) return null
     const dept = departments.find(d => d.name === 'Engineering')

@@ -451,7 +451,7 @@ export function ManagerDetailPage() {
                     <DataTableRow>
                       <DataTableCell className="font-semibold">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <img src="/dana-tanaka.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          <img src="/john.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                           <div>
                             <div>{mgr.manager}</div>
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>

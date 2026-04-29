@@ -1,7 +1,7 @@
 import { Button } from './ui/Button'
 import { useUser } from '../contexts/UserContext'
 
-const mateoAvatar = '/dana-tanaka.png'
+const mateoAvatar = '/john.png'
 const lauraAvatar = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
 const ethanAvatar = 'https://i.pravatar.cc/150?u=ethan'
 const sarahAvatar = 'https://i.pravatar.cc/150?u=sarah-chen'
