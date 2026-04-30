@@ -64,7 +64,6 @@ function ChroWorkforceReadinessTeaser() {
   let displayEmployees: number
   let heroEyebrow: string
   let rawReadiness: number = 0   // pre-program baseline for "up from X%" headline
-  let displayReady: number = 0   // AI-ready headcount at current state
 
   if (isManager) {
     const dept = departments.find(d => d.name === 'Engineering')
@@ -105,7 +104,6 @@ function ChroWorkforceReadinessTeaser() {
       displayGap = 0
       rawReadiness = dept?.aiReadiness ?? 0
     }
-    displayReady = (mgr?.employees ?? 43) - displayGap
     displayEmployees = mgr?.employees ?? 43
     heroEyebrow = `Your team · ${displayEmployees} employees`
   } else if (isHrbp) {
@@ -161,7 +159,6 @@ function ChroWorkforceReadinessTeaser() {
     }
     rawReadiness = dept?.aiReadiness ?? ORG.aiReadiness
     displayGap = Math.max(0, hrbpHeadcount - Math.round(hrbpHeadcount * displayReadiness / 100))
-    displayReady = hrbpHeadcount - displayGap
     displayEmployees = hrbpHeadcount
     heroEyebrow = `Your team · ${hrbpHeadcount.toLocaleString()} employees`
   } else {
@@ -176,7 +173,6 @@ function ChroWorkforceReadinessTeaser() {
     rawReadiness = ORG.aiReadiness
     displayReadiness = Math.min(100, ORG.aiReadiness + collectionDelta + upskillingBoost)
     displayGap = ORG.peopleInAugRoles - Math.round(ORG.peopleInAugRoles * displayReadiness / 100)
-    displayReady = ORG.peopleInAugRoles - displayGap
     displayEmployees = ORG.totalEmployees
     heroEyebrow = `${ORG.totalEmployees.toLocaleString()} employees ${EM} Q1 2026`
   }
