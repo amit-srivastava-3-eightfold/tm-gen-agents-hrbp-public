@@ -925,7 +925,7 @@ export type WfrPersona = 'chro' | 'hrbp' | 'manager'
 
 export interface WfrCtaBarContent {
   icon: string
-  label: string
+  label: string | null
   hint: string
   buttonLabel: string | null
   buttonVariant: 'primary' | 'secondary'
@@ -1068,19 +1068,23 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       icon: 'rocket_launch',
       label: 'HRBPs are creating development plans for 5,749 employees across 17 departments.',
       hint: '0 of 3 HRBPs have created development plans.',
-      buttonLabel: null,
+      buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: YELLOW,
       progress: 0,
+      whatsNextCompletedSteps: 2,
+      whatsNextInProgress: true,
     },
     hrbp: {
       icon: 'rocket_launch',
       label: 'You\'ve created development plans for 1,985 employees across 3 client managers.',
       hint: '0 of 3 client managers have reviewed and assigned plans to their teams.',
-      buttonLabel: null,
+      buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: YELLOW,
       progress: 0,
+      whatsNextCompletedSteps: 2,
+      whatsNextInProgress: true,
     },
     manager: {
       icon: 'assignment_turned_in',
@@ -1135,8 +1139,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   6: {
     chro: {
       icon: 'check_circle',
-      label: 'Upskilling complete — AI adoption scores are up across all 17 departments.',
-      hint: 'Q2 readiness cycle begins automatically. Re-survey to track continued improvement.',
+      label: 'Upskilling complete',
+      hint: 'Re-survey to track continued improvement.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: GREEN,
@@ -1148,8 +1152,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     hrbp: {
       icon: 'check_circle',
-      label: 'Upskilling complete — your teams have finished their development plans.',
-      hint: 'Q2 readiness cycle begins automatically. Re-survey to track continued improvement.',
+      label: 'Upskilling complete',
+      hint: 'Re-survey to track continued improvement.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: GREEN,
@@ -1161,8 +1165,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     manager: {
       icon: 'check_circle',
-      label: 'Upskilling complete — your team has finished their development plans.',
-      hint: 'Q2 readiness cycle begins automatically. Adoption scores will update next quarter.',
+      label: 'Upskilling complete',
+      hint: 'Adoption scores will update next quarter.',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: GREEN,
@@ -1331,7 +1335,7 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
         <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#fff' }}>{content.icon}</span>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>{content.label}</p>
+        {content.label && <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 4px', lineHeight: 1.4 }}>{content.label}</p>}
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>{content.hint}</p>
         {displayedProgress !== undefined && (
           <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', overflow: 'hidden', maxWidth: 220 }}>

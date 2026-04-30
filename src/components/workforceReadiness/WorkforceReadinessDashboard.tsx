@@ -1018,7 +1018,7 @@ function BoardView({
         <>
           <span className="wfr-dash__headline-pct wfr-text-readiness">{aiReadinessPct}%</span>
           <span className="wfr-dash__headline-text">
-            {` ${'AI adoption'} — up from ${rawReadinessPct}% before upskilling. ${ready.toLocaleString()} employees are now AI-ready.`}
+            {` ${'AI adoption'} — up from ${rawReadinessPct}% before upskilling.`}
           </span>
         </>
       ) : (
@@ -2218,6 +2218,7 @@ export function WorkforceReadinessDashboard({
       : enrichedMgrEmployees.length
     const displayNotReady = mgrCollComplete ? calibratedNotReady : mgrNotReady
     const displayReadinessPct = mgrCollComplete ? calibratedAvgReadiness : mgrReadiness
+    const mgrReadinessBaseline = Math.round(mgrReadiness + mgrTrendDelta)
     // Assign a unique pravatar photo to every team member — no duplicates
     const mgrPhotoMap = (() => {
       const ids = Array.from({ length: 70 }, (_, i) => i + 1)
@@ -2246,7 +2247,14 @@ export function WorkforceReadinessDashboard({
         aiPotentialPct={mgrDept.aiPotential}
         aiReadinessPct={displayReadinessPct}
         totalEmployees={mgrData.employees}
-        headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>}
+        headline={mgrPlansCreated ? (
+          <>
+            <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadinessPct}%</span>
+            <span className="wfr-dash__headline-text">{` AI adoption on your team — up from ${mgrReadinessBaseline}% before upskilling.`}</span>
+          </>
+        ) : (
+          <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>
+        )}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(displayUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={mgrHeroCta}
@@ -2906,7 +2914,7 @@ export function WorkforceReadinessDashboard({
                   <>
                     <span className="wfr-dash__headline-pct wfr-text-readiness">{dirWeightedReadiness}%</span>
                     <span className="wfr-dash__headline-text">
-                      {` AI adoption — up from ${hrbpReadinessBaseline}% before upskilling. ${dirReadyCount.toLocaleString()} employees are now AI-ready.`}
+                      {` AI adoption across your teams — up from ${hrbpReadinessBaseline}% before upskilling.`}
                     </span>
                   </>
                 ) : (
