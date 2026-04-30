@@ -2238,7 +2238,8 @@ export function WorkforceReadinessDashboard({
       return map
     })()
     const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? null : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : 2
-    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} /> : undefined
+    const advanceMgrToComplete = () => setWfrState(prev => advanceAllHrbps(prev, null, 6))
+    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
     return (
       <>
       <WfrOverviewLayout
