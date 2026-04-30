@@ -691,7 +691,7 @@ function BoardView({
   // Delegation is pending (some HRBP has been assigned but hasn't launched yet)
   const delegationPending = !!wfrState.hrbpStates && Object.values(wfrState.hrbpStates).some(h => h.delegated && h.state === 1)
   const chroDelegationActive = !isHrbp && delegationPending
-  const ctaDemoState: WfrDemoState | null = upskillingComplete ? null : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
+  const ctaDemoState: WfrDemoState | null = upskillingComplete ? 6 : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
   // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
   const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
@@ -1070,8 +1070,8 @@ function BoardView({
                       {(anyDelegation || focusCollectionActive || upskillingActive) && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
-                          <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
-                          <span>{focusCollectionComplete ? 'In upskilling' : 'In data collection'}</span>
+                          <span style={{ display: 'inline-block', width: 3, height: 12, background: upskillingComplete ? '#22c55e' : '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                          <span>{upskillingComplete ? 'Upskilling complete' : focusCollectionComplete ? 'In upskilling' : 'In data collection'}</span>
                         </span>
                       )}
                     </span>
@@ -1172,8 +1172,8 @@ function BoardView({
                       return <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span className="text-[11px] text-[#94a3b8]">—</span></DataTableCell>
                     }
                     const nhLocal = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-                    const plansPct = hrbpPlansCreated ? Math.min(90, 45 + (nhLocal(row.hrbp) % 45)) : 0
-                    return <UpskillingProgressCell total={row.totalGap} pct={plansPct} plansComplete={hrbpPlansCreated} nameHash={nhLocal(row.hrbp)} />
+                    const plansPct = upskillingComplete ? 100 : hrbpPlansCreated ? Math.min(90, 45 + (nhLocal(row.hrbp) % 45)) : 0
+                    return <UpskillingProgressCell total={row.totalGap} pct={plansPct} plansComplete={upskillingComplete || hrbpPlansCreated} nameHash={nhLocal(row.hrbp)} />
                   })()}
                 </DataTableRow>
               )})}
@@ -2237,7 +2237,7 @@ export function WorkforceReadinessDashboard({
       })
       return map
     })()
-    const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? null : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : 2
+    const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? 6 : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : 2
     const advanceMgrToComplete = () => setWfrState(prev => advanceAllHrbps(prev, null, 6))
     const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
     return (
@@ -2686,7 +2686,7 @@ export function WorkforceReadinessDashboard({
           if (!d) return null
           const headcount = assignment.headcount
           const hrbpEffState = getHrbpEffectiveState(wfrState, hrbpName)
-          const { collectionComplete: hrbpCollectionComplete, upskillingActive: hrbpUpskillingActive, hrbpPlansCreated: hrbpPlansComplete } = deriveWfrFlags(hrbpEffState)
+          const { collectionComplete: hrbpCollectionComplete, upskillingActive: hrbpUpskillingActive, hrbpPlansCreated: hrbpPlansComplete, upskillingComplete: hrbpUpskillingComplete } = deriveWfrFlags(hrbpEffState)
           const trend = deptReadinessTrend(d.name)
 
           // Build director-level direct reports (~8-12 per HRBP) by grouping team managers
@@ -2826,7 +2826,7 @@ export function WorkforceReadinessDashboard({
           // Mirror home page ctaDemoState exactly — use getPersonaEffectiveState so states always match
           const personaEffStateForCta = personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : hrbpEffState
           const { collectionActive: ctaCollActive, collectionComplete: ctaCollComplete, upskillingActive: ctaUpskillingActive, hrbpPlansCreated: ctaPlansCreated, upskillingComplete: ctaUpskillingComplete } = deriveWfrFlags(personaEffStateForCta)
-          const hrbpCtaDemoState: WfrDemoState | null = ctaUpskillingComplete ? null : ctaPlansCreated ? 5 : ctaUpskillingActive ? 4 : ctaCollComplete ? 3 : ctaCollActive ? 2 : hrbpDelegatedPending ? '1b' : 1
+          const hrbpCtaDemoState: WfrDemoState | null = ctaUpskillingComplete ? 6 : ctaPlansCreated ? 5 : ctaUpskillingActive ? 4 : ctaCollComplete ? 3 : ctaCollActive ? 2 : hrbpDelegatedPending ? '1b' : 1
           const hrbpHeroCta = hrbpCtaDemoState ? (
             <WfrCtaBar
               content={WFR_CTA_CONTENT[hrbpCtaDemoState]['hrbp']}
@@ -2902,9 +2902,21 @@ export function WorkforceReadinessDashboard({
                 aiPotentialPct={d.aiPotential}
                 aiReadinessPct={dirWeightedReadiness}
                 totalEmployees={headcount}
-                headline={<span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> are AI-ready.</span>}
-                subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</>}
-                pill={<><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
+                headline={hrbpPlansComplete ? (
+                  <>
+                    <span className="wfr-dash__headline-pct wfr-text-readiness">{dirWeightedReadiness}%</span>
+                    <span className="wfr-dash__headline-text">
+                      {` AI adoption — up from ${hrbpReadinessBaseline}% before upskilling. ${dirReadyCount.toLocaleString()} employees are now AI-ready.`}
+                    </span>
+                  </>
+                ) : (
+                  <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> are AI-ready.</span>
+                )}
+                subtitle={!hrbpPlansComplete ? <>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</> : undefined}
+                pill={hrbpPlansComplete
+                  ? (() => { const preReady = Math.round(headcount * hrbpReadinessBaseline / 100); const preGap = Math.max(0, headcount - preReady); const movedOut = Math.max(0, preGap - dirTotalGap); return <><span className="font-bold text-[#15803d]">{movedOut.toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{dirTotalGap.toLocaleString()}</span> remaining.</> })()
+                  : <><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
+                }
                 cards={hrbpOverviewCards}
                 heroCta={hrbpHeroCta}
               >
@@ -2926,8 +2938,8 @@ export function WorkforceReadinessDashboard({
                             )}
                             {hrbpUpskillingActive && directors.some(dir => hrbpDirInUpskilling(dir.name)) && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                                <span>In upskilling</span>
+                                <span style={{ display: 'inline-block', width: 3, height: 12, background: hrbpUpskillingComplete ? '#22c55e' : '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                                <span>{hrbpUpskillingComplete ? 'Upskilling complete' : 'In upskilling'}</span>
                               </span>
                             )}
                           </span>
@@ -3037,8 +3049,8 @@ export function WorkforceReadinessDashboard({
                               {hrbpUpskillingActive && (
                                 hrbpDirInUpskilling(dir.name) ? (() => {
                                   const nh2 = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-                                  const dirPlanPct = hrbpPlansComplete ? Math.min(90, 45 + (nh2(dir.name) % 45)) : 0
-                                  return <UpskillingProgressCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpPlansComplete} nameHash={nh2(dir.name)} />
+                                  const dirPlanPct = hrbpUpskillingComplete ? 100 : hrbpPlansComplete ? Math.min(90, 45 + (nh2(dir.name) % 45)) : 0
+                                  return <UpskillingProgressCell total={dir.employees} pct={dirPlanPct} plansComplete={hrbpUpskillingComplete || hrbpPlansComplete} nameHash={nh2(dir.name)} />
                                 })() : <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><span style={{ color: '#94a3b8' }}>—</span></DataTableCell>
                               )}
                             </DataTableRow>
@@ -3267,8 +3279,8 @@ export function WorkforceReadinessDashboard({
               tableHint={
                 (showHrbpCollection || hrbpCollectionComplete) && directors.some(dir => hrbpDirInScope(dir.name))
                   ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
-                      <span>{hrbpUpskillingActive ? 'In upskilling' : 'In data collection'}</span>
+                      <span style={{ display: 'inline-block', width: 3, height: 12, background: hrbpUpskillingComplete ? '#22c55e' : '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                      <span>{hrbpUpskillingComplete ? 'Upskilling complete' : hrbpUpskillingActive ? 'In upskilling' : 'In data collection'}</span>
                     </span>
                   : null
               }
@@ -3507,7 +3519,7 @@ export function WorkforceReadinessDashboard({
           const dirEffState = isHrbp && wfrState.hrbpStates && personaHrbpNames?.length
             ? getPersonaEffectiveState(wfrState, personaHrbpNames)
             : wfrState.state
-          const { collectionComplete: dirCollComplete, upskillingActive: dirUpskillingActive, hrbpPlansCreated: dirPlansComplete } = deriveWfrFlags(dirEffState)
+          const { collectionComplete: dirCollComplete, upskillingActive: dirUpskillingActive, hrbpPlansCreated: dirPlansComplete, upskillingComplete: dirUpskillingCompleteFlag } = deriveWfrFlags(dirEffState)
           // Gate collection/upskilling display on whether this director participated in data collection
           const dirSelectedDirs = wfrState.hrbpStates?.[directorData.parentHrbp]?.selectedDirectors
           const dirInScope = !dirSelectedDirs || dirSelectedDirs.includes(directorData.name)
@@ -3623,8 +3635,8 @@ export function WorkforceReadinessDashboard({
                     </span>
                   : (dirUpskillingActive && dirInScope)
                     ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                        <span>In upskilling</span>
+                        <span style={{ display: 'inline-block', width: 3, height: 12, background: dirUpskillingCompleteFlag ? '#22c55e' : '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                        <span>{dirUpskillingCompleteFlag ? 'Upskilling complete' : 'In upskilling'}</span>
                       </span>
                     : null
               }
@@ -3658,7 +3670,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableBody>
                       {[...seniorMgrs].sort((a, b) => { const mul = mgrSort.dir === 'asc' ? 1 : -1; switch (mgrSort.col) { case 'name': return mul * a.name.localeCompare(b.name); case 'readiness': return mul * (a.readiness - b.readiness); case 'potential': return mul * (a.employees - b.employees); case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount)); default: return 0 } }).map(sr => {
                         const notReady = sr.employees - sr.readyCount
-                        const srPlanPct = effDirPlansComplete ? Math.min(90, 45 + (nh(sr.name) % 45)) : 0
+                        const srPlanPct = dirUpskillingCompleteFlag ? 100 : effDirPlansComplete ? Math.min(90, 45 + (nh(sr.name) % 45)) : 0
                         return (
                           <DataTableRow
                             key={sr.name}
@@ -3704,7 +3716,7 @@ export function WorkforceReadinessDashboard({
                                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
                               </div>
                             </DataTableCell>
-                            {effDirCollComplete && <UpskillingProgressCell total={sr.employees} pct={srPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(sr.name)} />}
+                            {effDirCollComplete && <UpskillingProgressCell total={sr.employees} pct={srPlanPct} plansComplete={dirUpskillingCompleteFlag || effDirPlansComplete} nameHash={nh(sr.name)} />}
                           </DataTableRow>
                         )
                       })}
@@ -3728,7 +3740,7 @@ export function WorkforceReadinessDashboard({
                     const en = mgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
-                    const mgrPlanPct = effDirPlansComplete ? Math.min(90, 45 + (nh(mgr.manager) % 45)) : 0
+                    const mgrPlanPct = dirUpskillingCompleteFlag ? 100 : effDirPlansComplete ? Math.min(90, 45 + (nh(mgr.manager) % 45)) : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3762,7 +3774,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {effDirCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effDirPlansComplete} nameHash={nh(mgr.manager)} />}
+                        {effDirCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={dirUpskillingCompleteFlag || effDirPlansComplete} nameHash={nh(mgr.manager)} />}
                       </DataTableRow>
                     )
                   })}
@@ -3780,7 +3792,7 @@ export function WorkforceReadinessDashboard({
           const srEffState = isHrbp && wfrState.hrbpStates && personaHrbpNames?.length
             ? getPersonaEffectiveState(wfrState, personaHrbpNames)
             : wfrState.state
-          const { collectionComplete: srCollComplete, upskillingActive: srUpskillingActive, hrbpPlansCreated: srPlansComplete } = deriveWfrFlags(srEffState)
+          const { collectionComplete: srCollComplete, upskillingActive: srUpskillingActive, hrbpPlansCreated: srPlansComplete, upskillingComplete: srUpskillingCompleteFlag } = deriveWfrFlags(srEffState)
           // Gate on parent director's scope
           const srParentDirSelectedDirs = wfrState.hrbpStates?.[seniorMgrData.parentDirector.parentHrbp]?.selectedDirectors
           const srDirInScope = !srParentDirSelectedDirs || srParentDirSelectedDirs.includes(seniorMgrData.parentDirector.name)
@@ -3887,8 +3899,8 @@ export function WorkforceReadinessDashboard({
                     </span>
                   : (srUpskillingActive && srDirInScope)
                     ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                        <span>In upskilling</span>
+                        <span style={{ display: 'inline-block', width: 3, height: 12, background: srUpskillingCompleteFlag ? '#22c55e' : '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                        <span>{srUpskillingCompleteFlag ? 'Upskilling complete' : 'In upskilling'}</span>
                       </span>
                     : null
               }
@@ -3909,7 +3921,7 @@ export function WorkforceReadinessDashboard({
                     const en = srMgrEnriched[globalIdx]
                     if (!en) return null
                     const notReady = mgr.employees - en.readyCount
-                    const mgrPlanPct = effSrPlansComplete ? Math.min(90, 45 + (nh2(mgr.manager) % 45)) : 0
+                    const mgrPlanPct = srUpskillingCompleteFlag ? 100 : effSrPlansComplete ? Math.min(90, 45 + (nh2(mgr.manager) % 45)) : 0
                     return (
                       <DataTableRow
                         key={`${mgr.manager}-${globalIdx}`}
@@ -3943,7 +3955,7 @@ export function WorkforceReadinessDashboard({
                             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
                           </div>
                         </DataTableCell>
-                        {effSrCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
+                        {effSrCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={srUpskillingCompleteFlag || effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
                       </DataTableRow>
                     )
                   })}
