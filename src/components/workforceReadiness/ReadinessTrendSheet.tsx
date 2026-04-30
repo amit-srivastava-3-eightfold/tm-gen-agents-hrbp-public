@@ -218,7 +218,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Development plans' : 'Channel'}</span>
                 <span className="wfr-trend-sheet__stat-value">
                   {upskillingActive
-                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px 3px 6px', borderRadius: 100, background: '#eff3ff', border: '1px solid #c5d3f8', color: '#3b5bdb', fontSize: 11, fontWeight: 600, lineHeight: 1.4 }}><span className="material-symbols-outlined" style={{ fontSize: 12 }}>description</span>Development plan</span>
+                    ? 'Development plan'
                     : <><img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16, display: 'inline-block', verticalAlign: -2, marginRight: 4 }} />AI Interviews</>
                   }
                 </span>
@@ -228,7 +228,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 <span className="wfr-trend-sheet__stat-value">{upskillingActive ? 'Mar 15 – Mar 24, 2026' : 'Feb 10 – Mar 14, 2026'}</span>
               </div>
               <div className="wfr-trend-sheet__stat">
-                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Status' : managerContext ? (directReports ? 'Total employees' : 'Employees in team') : 'Employees interviewed'}</span>
+                <span className="wfr-trend-sheet__stat-label">{roleContext?.employeeName ? 'Status' : managerContext ? (directReports ? 'Total employees' : 'Employees in team') : upskillingActive ? 'Employees upskilled' : 'Employees interviewed'}</span>
                 <span className="wfr-trend-sheet__stat-value">
                   {roleContext?.employeeName
                     ? (roleContext.upskillingComplete
