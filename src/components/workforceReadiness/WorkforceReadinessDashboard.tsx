@@ -1135,7 +1135,7 @@ function BoardView({
                   </DataTableCell>
                   <DataTableCell metric>
                     <div>
-                      {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 ? (
+                      {stateNum(row.hrbpState) >= 3 && row.trendDelta !== 0 && !(upskillingComplete && row.trendDelta < 0) ? (
                         <div className="wfr-dash__readiness-with-trend">
                           <DeptTableSoloBar variant="readiness" pct={row.avgReadiness} width={90} />
                           <button type="button" className={`wfr-dash__trend-badge ${row.trendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp({ hrbpName: row.hrbp, headcount: row.headcount }); setTrendSheetDept(allDeptsSorted.find(x => x.name === row.depts[0].name) ?? null) }} title="View readiness trend details">
@@ -1225,13 +1225,17 @@ function BoardView({
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
                       <DataTableCell metric>
-                        <div className="wfr-dash__readiness-with-trend">
+                        {upskillingComplete && trend.delta < 0 ? (
                           <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
-                          <button type="button" className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp(null); setTrendSheetDept(d) }} title="View readiness trend details">
-                            <span className="wfr-dash__trend-badge-text">{trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt</span>
-                            <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
-                          </button>
-                        </div>
+                        ) : (
+                          <div className="wfr-dash__readiness-with-trend">
+                            <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
+                            <button type="button" className={`wfr-dash__trend-badge ${trend.direction === 'up' ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setTrendSheetRole(null); setTrendSheetHrbp(null); setTrendSheetDept(d) }} title="View readiness trend details">
+                              <span className="wfr-dash__trend-badge-text">{trend.direction === 'up' ? '↑' : '↓'}{Math.abs(trend.delta)}pt</span>
+                              <span className="material-symbols-outlined wfr-dash__trend-badge-icon">info</span>
+                            </button>
+                          </div>
+                        )}
                       </DataTableCell>
                       <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: deptUnrealized }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(deptUnrealized)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
@@ -3023,7 +3027,7 @@ export function WorkforceReadinessDashboard({
                               </DataTableCell>
                               <DataTableCell metric>
                                 <div>
-                                  {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) ? (
+                                  {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) && !(hrbpUpskillingComplete && deptTrendDelta < 0) ? (
                                     <div className="wfr-dash__readiness-with-trend">
                                       <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
                                       <button type="button" className={`wfr-dash__trend-badge ${deptTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setHrbpTrendSheetDir({ manager: dir.name, mgrIndex: dir.firstMgrIdx, readiness: dir.readiness, dept: d, directReports: computeDirDirectReports(dir) }) }} title="View readiness trend details">
@@ -3360,7 +3364,7 @@ export function WorkforceReadinessDashboard({
                           </DataTableCell>
                           <DataTableCell metric>
                             <div>
-                              {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) ? (
+                              {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) && !(hrbpUpskillingComplete && deptTrendDelta < 0) ? (
                                 <div className="wfr-dash__readiness-with-trend">
                                   <DeptTableSoloBar variant="readiness" pct={dir.readiness} />
                                   <button type="button" className={`wfr-dash__trend-badge ${deptTrendDelta >= 0 ? 'wfr-dash__trend-badge--up' : 'wfr-dash__trend-badge--down'}`} onClick={(e) => { e.stopPropagation(); setHrbpTrendSheetDir({ manager: dir.name, mgrIndex: dir.firstMgrIdx, readiness: dir.readiness, dept: d, directReports: computeDirDirectReports(dir) }) }} title="View readiness trend details">
