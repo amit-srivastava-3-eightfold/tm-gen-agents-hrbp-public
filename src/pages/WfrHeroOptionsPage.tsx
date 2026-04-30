@@ -62,7 +62,7 @@ export default function WfrHeroOptionsPage() {
                 eyebrow={<>49,500 employees {EM} Q1 2026</>}
                 headline={<>Only <span className="wfr-text-readiness" style={{ fontWeight: 700 }}>24%</span>{' '}<span style={{ fontWeight: 500 }}>are AI-ready.</span></>}
                 supportingText={<><strong style={{ fontWeight: 700 }}>31,920</strong> employees in augmentable roles haven't adopted AI yet.</>}
-                ctaBar={state === 6 ? undefined : <WfrCtaBar content={cta} onBarClick={state === 2 ? () => setState(3) : undefined} />}
+                ctaBar={<WfrCtaBar content={cta} onBarClick={state === 2 ? () => setState(3) : undefined} />}
               />
             </div>
           )
