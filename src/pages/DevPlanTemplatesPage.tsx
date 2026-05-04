@@ -39,7 +39,6 @@ export function DevPlanTemplatesPage() {
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
   const [search, setSearch] = useState('')
   const isHrbp = currentUser.id === 'jaydon-torff'
-  const isEmployee = currentUser.id === 'csm'
 
   const publishedCount = TEMPLATES.filter(t => t.status === 'Published').length
   const draftCount = TEMPLATES.filter(t => t.status === 'Draft').length
@@ -55,7 +54,7 @@ export function DevPlanTemplatesPage() {
       <ProductBackground
         className="dev-plan-templates-page__bg"
         variant="career-hub"
-        {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize="parent" overlayBackground>
           <HeaderToolbar>

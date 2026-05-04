@@ -37,7 +37,6 @@ function filterByRole(cards: PeopleProfileCardData[], roleLabel: string): People
 
 export function PeoplePage() {
   const { currentUser } = useUser()
-  const isEmployee = currentUser.id === 'csm'
   const isHrbp = currentUser.id === 'jaydon-torff'
   const [searchParams, setSearchParams] = useSearchParams()
   const tabFromUrl = searchParams.get('tab') || 'search'
@@ -81,7 +80,7 @@ export function PeoplePage() {
       <ProductBackground
         className="people-page__bg"
         variant="career-hub"
-        {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize="parent" overlayBackground>
           <HeaderToolbar>

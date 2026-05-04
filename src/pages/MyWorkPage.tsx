@@ -89,7 +89,7 @@ export function MyWorkPage() {
   return (
     <div className="my-work-page">
       <NavbarApp />
-      <ProductBackground className="my-work-page__bg" variant="career-hub" wavesVariant="default">
+      <ProductBackground className="my-work-page__bg" variant="career-hub" chevronsVariant="default">
         <Header variant="career-hub" chSize="parent" overlayBackground>
           <HeaderToolbar>
             <HeaderTextGroup>

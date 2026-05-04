@@ -179,7 +179,7 @@ export function MyJobsPage() {
       <ProductBackground
         style={{ position: 'relative', zIndex: 1, marginTop: 'var(--navbar-height, 60px)' }}
         variant="career-hub"
-        wavesVariant="default"
+        chevronsVariant="default"
       >
         <Header variant="career-hub" chSize="parent" overlayBackground>
           <HeaderToolbar>

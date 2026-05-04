@@ -21,7 +21,6 @@ export function MyTeamPage() {
   const [reportScope, setReportScope] = useState<'direct' | 'all'>('direct')
   const [sustainedHighPerformersFilter, setSustainedHighPerformersFilter] = useState(false)
   const isHrbp = currentUser.id === 'jaydon-torff'
-  const isEmployee = currentUser.id === 'csm'
 
   return (
     <div className="my-team-page">
@@ -30,7 +29,7 @@ export function MyTeamPage() {
       <ProductBackground
         className="my-team-page__bg"
         variant="career-hub"
-        {...(isEmployee ? { wavesVariant: 'default' as const } : isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
+        {...(isHrbp ? { hexagonsVariant: 'default' as const } : { chevronsVariant: 'default' as const })}
       >
         <Header variant="career-hub" chSize="parent" overlayBackground>
           <HeaderToolbar>
