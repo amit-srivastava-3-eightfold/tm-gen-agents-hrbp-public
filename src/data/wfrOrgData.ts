@@ -2121,8 +2121,11 @@ function computeDeptUnrealizedValue(deptName: string): number {
  * ~1 HRBP per 1,500–2,500 employees. HRBPs can cover segments of multiple departments.
  */
 export const hrbpAssignments: { hrbp: string; dept: string; headcount: number }[] = [
+  // Customer Success (3,900) → 2 HRBPs
+  { hrbp: 'Jaydon Torff', dept: 'Customer Success', headcount: 2000 },
+  { hrbp: 'Cameron Duval', dept: 'Customer Success', headcount: 1900 },
   // Engineering (10,500) → 4 HRBPs
-  { hrbp: 'Jaydon Torff', dept: 'Engineering', headcount: 3000 },
+  { hrbp: 'Blake Martinez', dept: 'Engineering', headcount: 3000 },
   { hrbp: 'Priya Thompson', dept: 'Engineering', headcount: 2800 },
   { hrbp: 'Morgan Patel', dept: 'Engineering', headcount: 2500 },
   { hrbp: 'Jamie Reyes', dept: 'Engineering', headcount: 2200 },
@@ -2133,9 +2136,6 @@ export const hrbpAssignments: { hrbp: string; dept: string; headcount: number }[
   // Operations (4,235) → 2 HRBPs
   { hrbp: 'Sam Okonkwo', dept: 'Operations', headcount: 2200 },
   { hrbp: 'Rowan Kapoor', dept: 'Operations', headcount: 2035 },
-  // Customer Success (3,900) → 2 HRBPs
-  { hrbp: 'Blake Martinez', dept: 'Customer Success', headcount: 2000 },
-  { hrbp: 'Cameron Duval', dept: 'Customer Success', headcount: 1900 },
   // Administrative (3,385) → 2 HRBPs
   { hrbp: 'Taylor Brooks', dept: 'Administrative', headcount: 1700 },
   { hrbp: 'Harper Obi', dept: 'Administrative', headcount: 1685 },

@@ -27,6 +27,18 @@ export function demoManagerName(index: number): string {
 // Keep the original list for backward compatibility (HRBP assignments, director names, etc.)
 export const DEMO_MANAGERS = FIRST_NAMES.map((_, i) => demoManagerName(i))
 
+/** Generate a manager name whose first name does not appear in `takenFirsts`.
+ *  Rolls forward from `seed` until uniqueness is found (or up to FIRST_NAMES.length attempts). */
+export function demoManagerNameUnique(seed: number, takenFirsts: Iterable<string>): string {
+  const taken = new Set([...takenFirsts])
+  for (let off = 0; off < FIRST_NAMES.length; off++) {
+    const name = demoManagerName(seed + off)
+    const first = name.split(' ')[0]!
+    if (!taken.has(first)) return name
+  }
+  return demoManagerName(seed)
+}
+
 export function deptNameHash(name: string) {
   let h = 0
   for (let i = 0; i < name.length; i++) h += name.charCodeAt(i)
@@ -222,6 +234,11 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
   // indexes into the sorted array.
   if (deptName === 'Engineering' && sorted[36]) {
     sorted[36] = { ...sorted[36], manager: 'Josh Minnia', title: 'ML Engineering Lead' }
+  }
+  // Pin Customer Success slot 24 to Josh Minnia so the CHRO/HRBP drilldown into
+  // Sarah Culhane's team (Jaydon Torff's HRBP scope) lands on Josh as her manager.
+  if (deptName === 'Customer Success' && sorted[24]) {
+    sorted[24] = { ...sorted[24], manager: 'Josh Minnia', title: 'Customer Success Manager' }
   }
 
   return sorted

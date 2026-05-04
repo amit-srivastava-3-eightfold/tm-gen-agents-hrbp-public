@@ -1,3 +1,4 @@
+import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import type { CoachPick } from '../../data/myWorkData'
 import { LiveCoachingVisual } from './LiveCoachingVisual'
 
@@ -26,17 +27,24 @@ export function CoachPickCard({ pick, onStart, onDismiss }: CoachPickCardProps) 
           </div>
         )}
         <div className="cta-row">
-          <button type="button" className="btn-primary" onClick={onStart}>
-            <span className="material-symbols-outlined">videocam</span>
+          <Button
+            variant="primary"
+            onClick={onStart}
+            leadingIcon={<span className="material-symbols-outlined" style={{ fontSize: 18 }}>videocam</span>}
+          >
             {pick.primaryCtaLabel}
-          </button>
-          <button type="button" className="btn-ghost" onClick={onDismiss}>
-            {pick.secondaryCtaLabel}
-          </button>
-          <div className="coach-steps-hint">
-            <span className="material-symbols-outlined">forum</span>
-            {pick.durationHint}
-          </div>
+          </Button>
+          {onDismiss && (
+            <Button variant="default" onClick={onDismiss}>
+              {pick.secondaryCtaLabel}
+            </Button>
+          )}
+          {pick.durationHint && (
+            <div className="coach-steps-hint">
+              <span className="material-symbols-outlined">forum</span>
+              {pick.durationHint}
+            </div>
+          )}
         </div>
       </div>
       <LiveCoachingVisual caption={pick.videoCaption} onClick={onStart} />

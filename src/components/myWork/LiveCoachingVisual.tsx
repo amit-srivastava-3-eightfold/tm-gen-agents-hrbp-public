@@ -11,7 +11,7 @@ export function LiveCoachingVisual({ onClick }: LiveCoachingVisualProps) {
     >
       <span className="live-badge">
         <span className="material-symbols-outlined agent-sparkle">auto_awesome</span>
-        Career Agent
+        Career Coach
       </span>
       <div className="video-face">
         <div className="vv-avatar-wrap">

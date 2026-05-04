@@ -15,7 +15,7 @@ export interface CoachPick {
   outcomes?: CoachPickOutcome[]
   primaryCtaLabel: string
   secondaryCtaLabel: string
-  durationHint: string
+  durationHint?: string
   videoCaption: string
 }
 

@@ -27,7 +27,7 @@ import {
   type RoleRowType,
 } from '../../data/wfrOrgData'
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
-import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName, scaleUnrealizedValue } from './collectionHelpers'
+import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName, demoManagerNameUnique, scaleUnrealizedValue } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDialog'
@@ -831,6 +831,9 @@ function BoardView({
       const trendDelta = avgReadiness - baseReadiness
       return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalUnrealizedValue, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
     }).sort((a, b) => {
+      // Pin Jaydon Torff (focus persona) to the very top
+      if (a.hrbp === 'Jaydon Torff') return -1
+      if (b.hrbp === 'Jaydon Torff') return 1
       // Pin delegated/active HRBPs to the top
       const aActive = a.hrbpDelegated || stateNum(a.hrbpState) >= 2 ? 1 : 0
       const bActive = b.hrbpDelegated || stateNum(b.hrbpState) >= 2 ? 1 : 0
@@ -995,7 +998,10 @@ function BoardView({
     if (hrbpRows.length === 0) return new Set<string>()
     const sorted = [...hrbpRows].sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
     const count = Math.max(1, Math.round(sorted.length * 0.3))
-    return new Set(sorted.slice(0, count).map(r => r.hrbp))
+    const set = new Set(sorted.slice(0, count).map(r => r.hrbp))
+    // Pin Jaydon Torff (focus persona) as priority regardless of UV ranking
+    set.add('Jaydon Torff')
+    return set
   })()
 
   const ctaButtonClick = ctaDemoState === 1 && !isHrbp
@@ -2128,10 +2134,10 @@ export function WorkforceReadinessDashboard({
   // ─── Manager persona: compute team data for Josh Minnia ───
   const managerTeamData = useMemo(() => {
     if (!isManager) return null
-    const dept = departments.find(d => d.name === 'Engineering')
+    const dept = departments.find(d => d.name === 'Customer Success')
     if (!dept) return null
     const managers = deptManagerTeams(dept.name, dept.employees)
-    const mgrIdx = 36
+    const mgrIdx = 24
     const mgr = managers[mgrIdx]
     if (!mgr) return null
     const deptRoles = getRolesForDept(dept.name)
@@ -2160,11 +2166,15 @@ export function WorkforceReadinessDashboard({
       const firstName = teamFirstNames[i % teamFirstNames.length]!
       return { ...e, name: `${firstName} ${lastName}`, displayReadiness }
     })
-    // Pin the first Sarah on Josh's team to Sarah Culhane (CSM persona) so the manager
-    // dashboard shows the actual persona name + matching avatar (set in /sarah.png map below).
-    const firstSarahIdx = displayEmployees.findIndex(e => e.name.startsWith('Sarah '))
-    if (firstSarahIdx >= 0) {
-      displayEmployees[firstSarahIdx] = { ...displayEmployees[firstSarahIdx], name: 'Sarah Culhane' }
+    // Pin the top-readiness team member to Sarah Culhane (CSM persona) so Josh's team
+    // surfaces her at the top of the default sort by AI adoption — matches her Customer
+    // Success Manager title and avatar.
+    if (displayEmployees.length > 0) {
+      let topIdx = 0
+      for (let i = 1; i < displayEmployees.length; i++) {
+        if (displayEmployees[i].displayReadiness > displayEmployees[topIdx].displayReadiness) topIdx = i
+      }
+      displayEmployees[topIdx] = { ...displayEmployees[topIdx], name: 'Sarah Culhane', title: 'Customer Success Manager' }
     }
     const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
@@ -2818,7 +2828,8 @@ export function WorkforceReadinessDashboard({
                 const srNameIdx = nameHash(dir.name) * 5 + si * 11 + dir.firstMgrIdx
                 const baseUv = Math.round(d.unrealizedValue * empCount / Math.max(1, d.employees))
                 const baselineR = Math.max(0, avgR - deptTrendDelta - upskillingBoostBase)
-                return { name: demoManagerName(srNameIdx), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
+                const takenFirsts = [dir.name.split(' ')[0]!, ...batch.map(m => m.manager.split(' ')[0]!)]
+                return { name: demoManagerNameUnique(srNameIdx, takenFirsts), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
               }).filter(Boolean) as Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
             }
           }
@@ -3282,7 +3293,7 @@ export function WorkforceReadinessDashboard({
                 </Breadcrumb>
               )}
               name={hrbpName ?? ''}
-              subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} of ${d.employees.toLocaleString()} employees`}
+              subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} employees`}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               readiness={{ value: `${dirWeightedReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, headcount - dirTotalGap).toLocaleString()} of {headcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
@@ -3666,7 +3677,8 @@ export function WorkforceReadinessDashboard({
                   const avgR = batchEnriched.length > 0 ? Math.round(batchEnriched.reduce((s, e) => s + e.readiness * e.mgr.employees, 0) / empCount) : d.aiReadiness
                   const ready = batchEnriched.reduce((s, e) => s + e.readyCount, 0)
                   const srNameIdx = nh(directorData.name) * 5 + si * 11 + directorData.mgrIdxStart
-                  return { name: demoManagerName(srNameIdx), title: SR_TITLES[si % SR_TITLES.length], employees: empCount, readiness: avgR, readyCount: ready, batchStart: si * perSr, batchCount: batch.length }
+                  const takenFirsts = [directorData.name.split(' ')[0]!, ...batch.map(m => m.manager.split(' ')[0]!)]
+                  return { name: demoManagerNameUnique(srNameIdx, takenFirsts), title: SR_TITLES[si % SR_TITLES.length], employees: empCount, readiness: avgR, readyCount: ready, batchStart: si * perSr, batchCount: batch.length }
                 }).filter(Boolean) as { name: string; title: string; employees: number; readiness: number; readyCount: number; batchStart: number; batchCount: number }[]
                 return (
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>

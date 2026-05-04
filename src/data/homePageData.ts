@@ -154,7 +154,7 @@ const CHRO_MENTOR: HomeMentor = {
 
 const CSM_MENTOR: HomeMentor = {
   name: 'Jaydon Torff',
-  role: 'HR Business Partner, Engineering',
+  role: 'HR Business Partner, Customer Success',
   avatarSrc: '/jaydon_torff.jpg',
   matchText: 'Your HRBP, strong in AI adoption',
   matchCount: 0,

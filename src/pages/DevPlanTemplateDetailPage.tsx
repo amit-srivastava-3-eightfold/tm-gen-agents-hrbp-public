@@ -4,9 +4,45 @@ import { Button, CourseObjectCard, Progress } from '@tonyh-2-eightfold/ef-design
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { buildLevels, LevelCard, type CoachTask, type LevelState } from '../components/workforceReadiness/DevPlanSheet'
-import { CoachSessionPanel } from '../components/myWork/CoachSessionPanel'
+import { CoachSessionPanel, type CoachTurn } from '../components/myWork/CoachSessionPanel'
+import { CoachPickCard } from '../components/myWork/CoachPickCard'
+import type { CoachPick } from '../data/myWorkData'
+import '../components/myWork/myWork.css'
 import './DevPlanTemplateDetailPage.css'
 import '../components/workforceReadiness/DevPlanSheet.css'
+
+const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
+  { speaker: 'ai', text: "Hi Sarah — I'm your AI Coach. I've reviewed the plan from your interview. Want me to walk you through it?" },
+  { speaker: 'sarah', text: 'Yeah, please.' },
+  { speaker: 'ai', text: 'Three core modules, one optional. Each one ties to something specific from your interview.' },
+  { speaker: 'ai', text: '[Module 1: AI-Assisted QBR Storytelling](#dev-plan-step-1) — drafts your QBR commentary from the data you already pull. You said this was the biggest time sink.' },
+  { speaker: 'ai', text: '[Module 2: Call-to-Recap Automation](#dev-plan-step-2) — turns your live call notes into a Salesforce-ready recap.' },
+  { speaker: 'ai', text: '[Module 3: Account Research Synthesis](#dev-plan-step-3) — one prompt that produces an exec brief from the sources you already use.' },
+  { speaker: 'ai', text: 'Optional: [Prompt Engineering Foundations](#dev-plan-step-4) — take it first if you want the underlying skill, or skip it.' },
+  { speaker: 'sarah', text: 'Time commitment?' },
+  { speaker: 'ai', text: 'Two hours per module over two weeks. Eight weeks total, four to six hours of actual learning time. The rest is just doing your normal work with the new approach.' },
+  { speaker: 'sarah', text: "What's in each module?" },
+  { speaker: 'ai', text: 'A short video, a written guide with prompt templates you can copy, and a practice exercise.' },
+  { speaker: 'sarah', text: 'I tried Otter for Module 2 stuff a year ago and dropped it. Why is this different?' },
+  { speaker: 'ai', text: 'Otter made you read a full transcript to find what mattered. This works from your notes, not a transcript, and outputs in your Salesforce template format. If it still feels like more work after week one, we drop it.' },
+  { speaker: 'sarah', text: 'What about the judgment calls — when to escalate a usage drop? Anything for that?' },
+  { speaker: 'ai', text: "No, deliberately. That's built from rep volume, not training. The plan frees up time so more of it goes into the calls where that judgment gets sharper." },
+  { speaker: 'sarah', text: "Okay. I'll start with Module 1." },
+  { speaker: 'ai', text: "Good pick. I'll mark it active. Ask me anything as you go — questions on the material, feedback on a draft, prompt adjustments if the output isn't landing." },
+  { speaker: 'sarah', text: 'Will do.' },
+]
+
+const DEV_PLAN_COACH_PICK: CoachPick = {
+  eyebrow: 'Weekly check-in',
+  quip:
+    "Hey {firstName} — let's check in. How's the plan landing this week?",
+  headline: 'Check in with your Career Coach.',
+  desc: 'Quick conversation about how the plan is going.',
+  body: 'A quick chat with John to talk through what you tried this week, what got in the way, and what to focus on next.',
+  primaryCtaLabel: 'Start check-in',
+  secondaryCtaLabel: '',
+  videoCaption: 'How are things going this week?',
+}
 
 interface TemplateData {
   name: string
@@ -24,21 +60,21 @@ interface TemplateData {
 
 const TEMPLATE_DATA: Record<string, TemplateData> = {
   'ai-powered-customer-success': {
-    name: 'AI-Powered Customer Success',
-    description: 'Equip Customer Success Managers with AI tools to automate health score monitoring, generate QBR insights, and use predictive analytics for churn prevention.',
+    name: 'AI for Customer Success',
+    description: 'Three core modules — QBR storytelling, call-to-recap automation, and account research synthesis — plus an optional Prompt Engineering Foundations primer. Each module ties to a specific time sink Sarah called out in her discovery interview, with a short video, a written guide of prompt templates, and one practice exercise.',
     status: 'Published',
-    createdBy: 'Jaydon Torff',
+    createdBy: 'Workforce Readiness',
     role: 'Customer Success Manager',
-    duration: 6,
+    duration: 8,
     businessUnit: 'Customer Success',
     jobFunction: 'Account Management',
     location: 'All',
-    skills: ['AI-assisted research', 'Prompt engineering', 'AI tool fluency', 'Data interpretation with AI', 'AI-powered forecasting', 'Critical evaluation of AI output'],
+    skills: ['AI-assisted commentary', 'Prompt engineering', 'AI tool fluency', 'Account research synthesis', 'Critical evaluation of AI output'],
     courses: [
-      { title: 'AI for Business Professionals', provider: 'University of Pennsylvania', duration: '4 weeks at 3 hours a week', level: 'Beginner', free: true },
-      { title: 'Generative AI with Large Language Models', provider: 'DeepLearning.AI', duration: '16 hours to complete', level: 'Intermediate', free: true },
-      { title: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '18 hours to complete', level: 'Beginner', free: true },
-      { title: 'AI-Powered Customer Workflows', provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Intermediate', free: false },
+      { title: 'AI-Assisted QBR Storytelling', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
+      { title: 'Call-to-Recap Automation', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
+      { title: 'Account Research Synthesis', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
+      { title: 'Prompt Engineering Foundations (Optional)', provider: 'Vanderbilt University', duration: '2 hrs', level: 'Beginner', free: true },
     ],
   },
   'ai-upskilling-support-specialist': {
@@ -143,6 +179,9 @@ export function DevPlanTemplateDetailPage() {
     : 'AI Augmentation Template'
   const template = explicitTemplate ?? { ...DEFAULT_TEMPLATE, name: derivedName, role: derivedName.replace('Ai Upskilling ', '') }
   const isAlreadyPublished = template.status === 'Published'
+  // Templates that should render the rich curriculum layout (modules + AI score) for employees,
+  // not the courses-grid layout used for generic templates.
+  const useCurriculumLayout = !!templateId && (templateId.includes('ai-upskilling') || templateId === 'ai-powered-customer-success')
   const [activeTab, setActiveTab] = useState<'employees' | 'details' | 'assign'>(isEmployee ? 'details' : isAlreadyPublished ? 'assign' : 'details')
   const [published, setPublished] = useState(isAlreadyPublished)
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
@@ -223,6 +262,17 @@ export function DevPlanTemplateDetailPage() {
           )}
         </div>
 
+        {/* Coaching banner — employee view only */}
+        {isEmployee && (
+          <div style={{ marginBottom: 24 }}>
+            <CoachPickCard
+              pick={DEV_PLAN_COACH_PICK}
+              firstName={currentUser.name.split(' ')[0]}
+              onStart={() => setCoachSession({ id: 'dev-plan-pick', text: DEV_PLAN_COACH_PICK.headline, sessionTitle: DEV_PLAN_COACH_PICK.headline, sessionDesc: DEV_PLAN_COACH_PICK.desc })}
+            />
+          </div>
+        )}
+
         {/* Plan stats row — hidden for employees */}
         {published && !isEmployee && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -301,7 +351,7 @@ export function DevPlanTemplateDetailPage() {
             {/* Left sidebar */}
             <div>
               {/* Completion progress — employee only, hidden for AI upskilling (score bar handles it) */}
-              {isEmployee && !templateId?.includes('ai-upskilling') && (() => {
+              {isEmployee && !useCurriculumLayout && (() => {
                 const isComplete = template.status === 'Published'
                 const pct = isComplete ? 100 : 0
                 const done = isComplete ? template.courses.length : 0
@@ -332,7 +382,10 @@ export function DevPlanTemplateDetailPage() {
                 {(isEmployee ? [
                   { label: 'Description', value: template.description },
                   { label: 'Relevant role', value: template.role },
-                  ...(templateId?.includes('ai-upskilling') ? [
+                  ...(templateId === 'ai-powered-customer-success' ? [
+                    { label: 'Estimated effort', value: '8 hours' },
+                    { label: 'Target duration', value: '8 weeks' },
+                  ] : templateId?.includes('ai-upskilling') ? [
                     { label: 'Estimated effort', value: '50 hours' },
                     { label: 'Target duration', value: '6 weeks' },
                   ] : [
@@ -369,7 +422,7 @@ export function DevPlanTemplateDetailPage() {
               )}
 
               {/* Progress summary — employee only, hidden for AI upskilling */}
-              {isEmployee && !templateId?.includes('ai-upskilling') && (
+              {isEmployee && !useCurriculumLayout && (
                 <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {[
                     { label: 'Skills', count: template.skills.length, progress: 0, total: template.skills.length, unit: 'learned' },
@@ -395,7 +448,7 @@ export function DevPlanTemplateDetailPage() {
             </div>
 
             {/* Right content — Section */}
-            <div>{templateId?.includes('ai-upskilling') ? (() => {
+            <div>{useCurriculumLayout ? (() => {
                 const firstName = currentUser.name.split(' ')[0]
                 // Read WFR state to determine plan completion
                 let wfrState = 1
@@ -443,7 +496,7 @@ export function DevPlanTemplateDetailPage() {
                     )}
 
                     {/* AI Adoption Score — horizontal bar */}
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
+                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 16 }}>AI Adoption Score</div>
                       {/* Score + bar row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 12 }}>
@@ -476,7 +529,7 @@ export function DevPlanTemplateDetailPage() {
                         {planComplete ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                             <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#15803d' }}>check_circle</span>
-                            <span style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>All 4 steps completed · +{totalPlanPts} pts earned</span>
+                            <span style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>All 4 modules completed · +{totalPlanPts} pts earned</span>
                           </div>
                         ) : (
                           <>
@@ -495,20 +548,21 @@ export function DevPlanTemplateDetailPage() {
                     </div>
 
                     {/* Curriculum */}
-                    <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
+                    <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} modules</div>
                     {levels.map(level => {
                       const state: LevelState = planComplete ? 'recognized' : level.id === 1 ? 'current' : 'locked'
                       return (
-                        <LevelCard
-                          key={level.id}
-                          level={{ ...level, name: `Step ${level.id}: ${level.name}` }}
-                          state={state}
-                          xpPct={0}
-                          isAssigned={planComplete}
-                          expanded={expandedLevels.has(level.id)}
-                          onToggle={() => setExpandedLevels(prev => { const next = new Set(prev); next.has(level.id) ? next.delete(level.id) : next.add(level.id); return next })}
-                          onCoachTask={task => setCoachSession(task)}
-                        />
+                        <div key={level.id} id={`dev-plan-step-${level.id}`} style={{ scrollMarginTop: 120 }}>
+                          <LevelCard
+                            level={{ ...level, name: `Module ${level.id}: ${level.name}` }}
+                            state={state}
+                            xpPct={0}
+                            isAssigned={planComplete}
+                            expanded={expandedLevels.has(level.id)}
+                            onToggle={() => setExpandedLevels(prev => { const next = new Set(prev); next.has(level.id) ? next.delete(level.id) : next.add(level.id); return next })}
+                            onCoachTask={task => setCoachSession(task)}
+                          />
+                        </div>
                       )
                     })}
 
@@ -774,6 +828,8 @@ export function DevPlanTemplateDetailPage() {
         onClose={() => setCoachSession(null)}
         sessionTitle={coachSession?.sessionTitle}
         sessionDesc={coachSession?.sessionDesc}
+        script={coachSession?.id === 'dev-plan-pick' ? DEV_PLAN_COACH_SCRIPT : undefined}
+        planName={template.name}
       />
     </div>
   )

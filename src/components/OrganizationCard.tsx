@@ -33,10 +33,10 @@ export function OrganizationCard() {
         <div className="org-card__section">
           <h4 className="org-card__section-title">Reports to</h4>
           <div className="org-card__person">
-            <div className="org-card__avatar org-card__avatar--initials" style={{ background: '#1565C0' }}>AK</div>
+            <img src="/josh-minnia.jpg" alt="" className="org-card__avatar org-card__avatar--photo" />
             <div className="org-card__person-info">
-              <span className="org-card__person-name">Alex Nakamura</span>
-              <span className="org-card__person-title">Senior Manager, Engineering</span>
+              <span className="org-card__person-name">Josh Minnia</span>
+              <span className="org-card__person-title">Customer Success Manager</span>
             </div>
           </div>
         </div>

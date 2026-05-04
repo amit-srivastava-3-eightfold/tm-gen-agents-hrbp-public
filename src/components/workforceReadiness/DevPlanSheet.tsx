@@ -26,6 +26,8 @@ export interface CoachTask {
   text: string
   sessionTitle: string
   sessionDesc: string
+  /** Optional identifier so consumers can branch on which task spawned the panel. */
+  id?: string
 }
 
 export interface LevelDef {
@@ -243,7 +245,104 @@ function getCompletedDate(name: string, levelId: number): string {
 
 
 
+// CSM-specific curriculum — mirrors the AI Coach discovery interview.
+// Used when the employee's title matches the Customer Success Manager pattern.
+const CSM_LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
+  {
+    id: 1,
+    name: 'AI-Assisted QBR Storytelling',
+    xpLabel: 'QBR XP',
+    outcome: 'Generate QBR commentary directly from the data you already pull — turn variance trends and ticket history into a defensible first draft you can edit, not stare at a blank slide.',
+    tasks: [
+      { text: 'Draft QBR commentary on one of your live accounts using the prompt template', description: 'Pick an upcoming QBR. Pull your usual Looker exports, drop them into the prompt template, and let AI write a first-pass narrative. Edit for voice and accuracy — don\'t expect perfection from the first run.' },
+      { text: 'Compare the AI draft to your last hand-written QBR — note what saved time and what needed rewriting', description: 'A simple side-by-side note is enough. Where did AI nail the framing? Where did you have to rewrite? These observations sharpen the prompt for the next quarter.' },
+    ],
+    coachTask: {
+      text: 'Walk through your first AI-drafted QBR with your coach',
+      sessionTitle: 'AI-Assisted QBR Storytelling — Session 1',
+      sessionDesc: 'Bring the AI draft and your edits. Your coach will help you tune the prompt for your accounts and surface patterns you can reuse next quarter.',
+    },
+    totalHours: 2,
+    adoptionPts: 4,
+  },
+  {
+    id: 2,
+    name: 'Call-to-Recap Automation',
+    xpLabel: 'Recap XP',
+    outcome: 'Turn your live call notes into a Salesforce-ready follow-up email in minutes — without staring at a transcript or starting from a blank template.',
+    tasks: [
+      { text: 'Run the recap workflow on three customer calls this week', description: 'Use your normal in-call note style. After the call, paste the notes into the prompt and review the generated recap. Send it from Salesforce after a quick edit.' },
+      { text: 'Tune the prompt so the output matches your Salesforce template format', description: 'Tighten the structure: action items, owners, dates. Save the refined prompt to your account playbook so the next call doesn\'t restart from scratch.' },
+    ],
+    coachTask: {
+      text: 'Refine the recap prompt with your coach',
+      sessionTitle: 'Call-to-Recap Automation — Session 2',
+      sessionDesc: 'Bring three recent recaps and any feedback from customers. Your coach will help you tighten the format and lock in a workflow that survives a busy week.',
+    },
+    totalHours: 2,
+    adoptionPts: 5,
+  },
+  {
+    id: 3,
+    name: 'Account Research Synthesis',
+    xpLabel: 'Research XP',
+    outcome: 'Build an exec brief in one prompt by pulling CRM history, usage data, LinkedIn context, and recent news into a single ready-to-read summary.',
+    tasks: [
+      { text: 'Generate an exec brief for an upcoming renewal call', description: 'Use the synthesis prompt against your CRM activity, the usage analytics module, and a quick LinkedIn check. Aim for a one-page brief you could hand to a colleague cold.' },
+      { text: 'Spot-check what AI got right vs. what you needed to add manually', description: 'AI synthesis is fastest when you know exactly where it tends to miss. Make a short list of what you added — that\'s your manual oversight muscle.' },
+    ],
+    coachTask: {
+      text: 'Review your first exec brief with your coach',
+      sessionTitle: 'Account Research Synthesis — Session 3',
+      sessionDesc: 'Bring an AI-generated brief alongside your edits. Your coach will help you sharpen the prompt and identify where AI synthesis is reliable vs. where you still need to look.',
+    },
+    totalHours: 2,
+    adoptionPts: 4,
+  },
+  {
+    id: 4,
+    name: 'Prompt Engineering Foundations',
+    xpLabel: 'Foundations XP',
+    outcome: 'Optional but useful — build the underlying skill that makes every other AI workflow sharper. Clear, structured prompts get usable output the first time.',
+    tasks: [
+      { text: 'Rewrite one of your existing prompts using the structured framework', description: 'Take a prompt you already use (QBR draft, recap, research) and restructure it: role + context + task + format. Compare the output to your old prompt.' },
+      { text: 'Save your top three prompts to your account playbook', description: 'Document the prompt, when to use it, and one gotcha you learned. This is how individual wins become a team\'s shared toolkit.' },
+    ],
+    coachTask: {
+      text: 'Review your prompt library with your coach',
+      sessionTitle: 'Prompt Engineering Foundations — Optional Session',
+      sessionDesc: 'Bring the prompts you\'ve been using and want to share. Your coach will help you spot patterns and turn them into reusable templates.',
+    },
+    totalHours: 2,
+    adoptionPts: 2,
+  },
+]
+
+const CSM_LEVEL_COURSES: Record<number, Course[]> = {
+  1: [
+    { name: 'AI-Assisted QBR Storytelling', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Short video walkthrough plus a written guide of prompt templates for turning Looker exports, support tickets, and renewal context into a defensible QBR narrative.' },
+  ],
+  2: [
+    { name: 'Call-to-Recap Automation', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Workflow guide for going from in-call notes to a Salesforce-ready follow-up email — including prompt templates that match common CSM call formats.' },
+  ],
+  3: [
+    { name: 'Account Research Synthesis', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'One-prompt synthesis for renewal prep and new exec outreach. Pulls CRM activity, usage trends, and external context into a single executive brief.' },
+  ],
+  4: [
+    { name: 'Prompt Engineering Foundations', provider: 'Vanderbilt University', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Optional primer on writing clearer, more structured prompts — covers role, context, task, and format conventions that translate across every AI workflow.' },
+  ],
+}
+
+const CSM_TITLE_PATTERN = /customer success|csm|account manager/i
+
 export function buildLevels(employee: DevPlanSheetProps['employee']): LevelDef[] {
+  const isCsm = CSM_TITLE_PATTERN.test(employee?.title ?? '')
+  if (isCsm) {
+    return CSM_LEVEL_BASE.map(base => ({
+      ...base,
+      courses: CSM_LEVEL_COURSES[base.id] ?? [],
+    }))
+  }
   const roleWord = employee?.title?.split(' ')[0] ?? 'Business'
   return LEVEL_BASE.map(base => ({
     ...base,
@@ -424,7 +523,7 @@ export function LevelCard({
       {isCurrent && isAssigned && (
         <div className="dev-plan-sheet__xp">
           <div className="dev-plan-sheet__xp-header">
-            <span className="dev-plan-sheet__xp-label">Step progress</span>
+            <span className="dev-plan-sheet__xp-label">Module progress</span>
             <span className="dev-plan-sheet__xp-pct">
               {isAssigned ? `${xpPct}%` : '—'}
             </span>
@@ -481,7 +580,7 @@ export function LevelCard({
         <div className="dev-plan-sheet__gate">
           <div className="dev-plan-sheet__gate-info">
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>lock</span>
-            Complete Step {level.id - 1} to unlock
+            Complete Module {level.id - 1} to unlock
           </div>
         </div>
       )}
@@ -640,7 +739,7 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned, inline, view
             {planComplete ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 13, color: '#15803d' }}>check_circle</span>
-                <span style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>All 4 steps completed · +{totalAdoptionPts} pts earned</span>
+                <span style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>All 4 modules completed · +{totalAdoptionPts} pts earned</span>
               </div>
             ) : (
               <>
@@ -680,7 +779,7 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned, inline, view
         {/* Curriculum */}
         {showCurriculum && (
           <>
-            <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} steps</div>
+            <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} modules</div>
             {levels.map(level => {
               const state = getLevelState(level.id)
               return (

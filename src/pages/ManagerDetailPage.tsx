@@ -270,6 +270,15 @@ export function ManagerDetailPage() {
       displayEmployees[firstSarahIdx] = { ...displayEmployees[firstSarahIdx], name: 'Sarah Culhane' }
     }
   }
+  // Customer Success slot 24 = Josh Minnia (pinned in collectionHelpers.ts) — pin
+  // Sarah Culhane as the top team member here so her path lands under Josh as manager.
+  if (dept.name === 'Customer Success' && parsedMgrIdx === 24 && displayEmployees.length > 0) {
+    let topIdx = 0
+    for (let i = 1; i < displayEmployees.length; i++) {
+      if (displayEmployees[i].displayReadiness > displayEmployees[topIdx].displayReadiness) topIdx = i
+    }
+    displayEmployees[topIdx] = { ...displayEmployees[topIdx], name: 'Sarah Culhane', title: 'Customer Success Manager' }
+  }
 
   const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
 
