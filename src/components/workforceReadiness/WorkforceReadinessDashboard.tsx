@@ -3364,7 +3364,7 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
+                          {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
                           <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
                           <DataTableCell align="right">
@@ -3445,7 +3445,7 @@ export function WorkforceReadinessDashboard({
                           const isPriority = priorityNames.has(dir.name)
                           const dirHrsBase2 = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees))
                           const dirBaselineR = Math.max(0, (dir.readiness ?? d.aiReadiness) - deptTrendDelta - upskillingBoostBase)
-                          const dirUnrealized = scaleHrsUnlocked(dirHrsBase2, dirBaselineR, dir.readiness ?? d.aiReadiness)
+                          const dirHrsUnlocked2 = scaleHrsUnlocked(dirHrsBase2, dirBaselineR, dir.readiness ?? d.aiReadiness)
                           return (
                             <button
                               key={dir.name}
@@ -3703,7 +3703,7 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            {(() => { const baseHrs = Math.round(d.hrsUnlocked * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, sr.readiness); return (
+                            {(() => { const baseHrs = Math.round(d.hrsUnlocked * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, sr.readiness); return (
                             <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                             ) })()}
                             <DataTableCell align="right">
@@ -3761,7 +3761,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
+                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
                         <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
                         <DataTableCell align="right">
@@ -3942,7 +3942,7 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
+                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
                         <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
                         <DataTableCell align="right">
