@@ -1875,6 +1875,14 @@ export function formatDollar(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
+/** Format weekly hours unlocked for display: 30k hrs/wk, 6.0k hrs/wk, 88 hrs/wk */
+export function formatHours(hrs: number): string {
+  if (hrs == null || isNaN(hrs)) return '0 hrs/wk'
+  if (hrs >= 10_000) return `${Math.round(hrs / 1_000)}k hrs/wk`
+  if (hrs >= 1_000) return `${(hrs / 1_000).toFixed(1)}k hrs/wk`
+  return `${hrs.toLocaleString()} hrs/wk`
+}
+
 /** Compute aiPotential from task data per Octave: Tasks in Augmentation Zone / Total Tasks × 100 */
 function computeAiPotential(title: string): number {
   const tasks = tasksByRole[title]
@@ -1891,7 +1899,9 @@ export function getRolesForDept(name: string): RoleRowType[] {
   // Override hardcoded aiPotential with computed value from task data
   return raw.map((r) => {
     const aiPotential = computeAiPotential(r.title)
-    return { ...r, aiPotential, unrealizedValue: computeUnrealizedValue({ ...r, aiPotential }) }
+    const unrealizedValue = computeUnrealizedValue({ ...r, aiPotential })
+    const hrsUnlocked = Math.round(r.employees * Math.max(0, 100 - r.aiReadiness) / 100 * ORG.hrsPerPersonWeek)
+    return { ...r, aiPotential, unrealizedValue, hrsUnlocked }
   })
 }
 
@@ -2115,6 +2125,15 @@ function computeDeptUnrealizedValue(deptName: string): number {
   return roles.reduce((sum, r) => sum + r.unrealizedValue, 0)
 }
 
+/** Weekly hours AI can unlock for people in the transformation gap for this dept. */
+function computeDeptHrsUnlocked(d: { employees: number; aiReadiness: number }): number {
+  const denom = ORG.departments.reduce((s, dep) => s + dep.employees, 0)
+  const aug = denom > 0 ? Math.round((ORG.peopleInAugRoles * d.employees) / denom) : 0
+  const ready = Math.round((aug * d.aiReadiness) / 100)
+  const gap = Math.max(0, aug - ready)
+  return Math.round(gap * ORG.hrsPerPersonWeek)
+}
+
 /** Departments with aiPotential computed from task data (Octave formula). */
 /**
  * HRBP assignments — multiple HRBPs per large department.
@@ -2205,9 +2224,10 @@ export const departments: Dept[] = ORG.departments.map((d) => ({
   ...d,
   aiPotential: computeDeptAiPotential(d.name),
   unrealizedValue: computeDeptUnrealizedValue(d.name),
+  hrsUnlocked: computeDeptHrsUnlocked(d),
 })) as unknown as Dept[]
 
-export type Dept = (typeof ORG.departments)[number] & { unrealizedValue: number }
+export type Dept = (typeof ORG.departments)[number] & { unrealizedValue: number; hrsUnlocked: number }
 export type RoleRowType = {
   title: string
   employees: number
@@ -2215,6 +2235,7 @@ export type RoleRowType = {
   aiReadiness: number
   medianHourlyWage: number
   unrealizedValue: number
+  hrsUnlocked: number
 }
 
 

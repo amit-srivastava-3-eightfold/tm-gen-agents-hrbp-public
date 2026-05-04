@@ -111,7 +111,7 @@ export function PersonDetailLayout({
               <MetricCard
                 variant="potential"
                 icon="auto_awesome"
-                label="Unrealized value"
+                label="Productivity hours"
                 value={potential.value}
                 description={potential.description}
                 hint={potential.hint}

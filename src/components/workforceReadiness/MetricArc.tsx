@@ -95,7 +95,7 @@ function MetricArcSmall({ potential, readiness, showLegend, showInteriorLabels }
         <div className="mt-1 flex gap-3.5">
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-potential)]" />
-            <span className="wfr-type-caption-sb wfr-text-potential">Unrealized value</span>
+            <span className="wfr-type-caption-sb wfr-text-potential">Productivity hours</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-sm bg-[var(--wfr-readiness)]" />

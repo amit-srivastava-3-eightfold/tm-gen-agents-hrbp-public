@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, Stepper, StepperList, StepperItem, StepperTrigger, StepperIndicator, StepperTitle, StepperSeparator, Tabs, TabsList, TabsTrigger, DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, hrbpAssignments, deptGapHeadcount, formatDollar } from '../../data/wfrOrgData'
+import { departments, hrbpAssignments, deptGapHeadcount, formatHours } from '../../data/wfrOrgData'
 import './FocusFirstLaunchDialog.css'
 
 export type FocusAssignOwner = 'hrbp' | 'self'
@@ -55,9 +55,9 @@ const uniqueHrbps = (() => {
     const avgPotential = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiPotential * d.employees, 0) / totalHc) : 0
     const avgReadiness = totalHc > 0 ? Math.round(deptObjs.reduce((s, d) => s + d.aiReadiness * d.employees, 0) / totalHc) : 0
     const priorityScore = (avgPotential - avgReadiness) * (avgPotential - avgReadiness) / 100
-    const totalUnrealizedValue = deptObjs.reduce((s, d) => s + d.unrealizedValue, 0)
-    return { ...row, avgPotential, avgReadiness, priorityScore, totalUnrealizedValue }
-  }).sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
+    const totalHrsUnlocked = deptObjs.reduce((s, d) => s + d.hrsUnlocked, 0)
+    return { ...row, avgPotential, avgReadiness, priorityScore, totalHrsUnlocked }
+  }).sort((a, b) => b.totalHrsUnlocked - a.totalHrsUnlocked)
 })()
 
 // Top ~30% of HRBPs by priority score get the Priority tag
@@ -290,14 +290,14 @@ export function FocusFirstLaunchDialog({
                           </DataTableHead>
                           <DataTableHead>Manager</DataTableHead>
                           <DataTableHead numeric>AI adoption</DataTableHead>
-                          <DataTableHead numeric>Unrealized value</DataTableHead>
+                          <DataTableHead numeric>Productivity hours</DataTableHead>
                           <DataTableHead numeric>Transformation gap</DataTableHead>
                         </DataTableRow>
                       </DataTableHeader>
                       <DataTableBody>
                         {dirs.map((dir) => {
                           const dirNotReady = dir.employees - (dir.readyCount ?? 0)
-                          const dirUnrealized = dir.employees > 0 && hrbpDept ? Math.round(hrbpDept.unrealizedValue * dir.employees / Math.max(1, hrbpDept.employees)) : 0
+                          const dirHrsUnlocked = dir.employees > 0 && hrbpDept ? Math.round(hrbpDept.hrsUnlocked * dir.employees / Math.max(1, hrbpDept.employees)) : 0
                           return (
                             <DataTableRow key={dir.name} onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))} style={{ cursor: 'pointer', ...(hrbpSelectedDirs[dir.name] ? { background: '#eef2ff' } : {}) }}>
                               <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
@@ -314,7 +314,7 @@ export function FocusFirstLaunchDialog({
                                 </span>
                               </DataTableCell>
                               <DataTableCell align="right">{dir.readiness ?? 0}%</DataTableCell>
-                              <DataTableCell align="right">{formatDollar(dirUnrealized)}</DataTableCell>
+                              <DataTableCell align="right">{formatHours(dirHrsUnlocked)}</DataTableCell>
                               <DataTableCell align="right">{dirNotReady.toLocaleString()} ({dir.employees > 0 ? Math.round((dirNotReady / dir.employees) * 100) : 0}%)</DataTableCell>
                             </DataTableRow>
                           )
@@ -481,7 +481,7 @@ export function FocusFirstLaunchDialog({
                               </DataTableHead>
                               <DataTableHead>HRBP</DataTableHead>
                               <DataTableHead numeric>AI adoption</DataTableHead>
-                              <DataTableHead numeric>Unrealized value</DataTableHead>
+                              <DataTableHead numeric>Productivity hours</DataTableHead>
                               <DataTableHead numeric>Transformation gap</DataTableHead>
                             </DataTableRow>
                           </DataTableHeader>
@@ -489,7 +489,7 @@ export function FocusFirstLaunchDialog({
                             {uniqueHrbps.map((h) => {
                               const hDept = departments.find(dd => dd.name === h.depts[0])
                               const hReadiness = hDept?.aiReadiness ?? 0
-                              const hUnrealized = hDept ? Math.round(hDept.unrealizedValue * h.headcount / Math.max(1, hDept.employees)) : 0
+                              const hHrsUnlocked = hDept ? Math.round(hDept.hrsUnlocked * h.headcount / Math.max(1, hDept.employees)) : 0
                               const hGap = hDept ? Math.round(deptGapHeadcount(hDept) * h.headcount / Math.max(1, hDept.employees)) : 0
                               return (
                                 <DataTableRow key={h.hrbp} onClick={() => setSelectedHrbps((prev) => ({ ...prev, [h.hrbp]: !prev[h.hrbp] }))} style={{ cursor: 'pointer', ...(selectedHrbps[h.hrbp] ? { background: '#eef2ff' } : {}) }}>
@@ -507,7 +507,7 @@ export function FocusFirstLaunchDialog({
                                     </span>
                                   </DataTableCell>
                                   <DataTableCell align="right">{hReadiness}%</DataTableCell>
-                                  <DataTableCell align="right">{formatDollar(hUnrealized)}</DataTableCell>
+                                  <DataTableCell align="right">{formatHours(hHrsUnlocked)}</DataTableCell>
                                   <DataTableCell align="right">{hGap.toLocaleString()} ({h.headcount > 0 ? Math.round((hGap / h.headcount) * 100) : 0}%)</DataTableCell>
                                 </DataTableRow>
                               )
@@ -530,7 +530,7 @@ export function FocusFirstLaunchDialog({
                               </DataTableHead>
                               <DataTableHead>Department</DataTableHead>
                               <DataTableHead numeric>AI adoption</DataTableHead>
-                              <DataTableHead numeric>Unrealized value</DataTableHead>
+                              <DataTableHead numeric>Productivity hours</DataTableHead>
                               <DataTableHead numeric>Transformation gap</DataTableHead>
                             </DataTableRow>
                           </DataTableHeader>
@@ -544,7 +544,7 @@ export function FocusFirstLaunchDialog({
                                   </DataTableCell>
                                   <DataTableCell className="font-semibold">{d.name}</DataTableCell>
                                   <DataTableCell align="right">{d.aiReadiness}%</DataTableCell>
-                                  <DataTableCell align="right">{formatDollar(d.unrealizedValue)}</DataTableCell>
+                                  <DataTableCell align="right">{formatHours(d.hrsUnlocked)}</DataTableCell>
                                   <DataTableCell align="right">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</DataTableCell>
                                 </DataTableRow>
                               )

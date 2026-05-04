@@ -244,14 +244,13 @@ export function deptManagerTeams(deptName: string, totalEmployees: number, deptR
   return sorted
 }
 
-/** Scale an unrealized-value figure so it shrinks proportionally with readiness gains.
- *  Pre-collection, readiness is the base estimate, so UV is the base. As collection
- *  calibration + upskilling boosts push readiness up, the remaining gap shrinks, and
- *  UV scales by (currentGap / baseGap). */
-export function scaleUnrealizedValue(baseUv: number, baseReadinessPct: number, currentReadinessPct: number): number {
+/** Scale a productivity-hours figure so it shrinks proportionally with readiness gains.
+ *  As collection calibration + upskilling boosts push readiness up, the remaining gap
+ *  shrinks and hours scale by (currentGap / baseGap). */
+export function scaleHrsUnlocked(baseHrs: number, baseReadinessPct: number, currentReadinessPct: number): number {
   const baseGap = Math.max(1, 100 - baseReadinessPct)
   const currentGap = Math.max(0, 100 - currentReadinessPct)
-  return Math.round(baseUv * currentGap / baseGap)
+  return Math.round(baseHrs * currentGap / baseGap)
 }
 
 export type ReadinessTrend = {

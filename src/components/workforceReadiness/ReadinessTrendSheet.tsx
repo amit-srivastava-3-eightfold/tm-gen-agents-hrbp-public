@@ -1,7 +1,7 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { formatDollar, getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
+import { formatHours, getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
 import type { UnrealizedValueSheetData } from './UnrealizedValueSheet'
 import {
   deptManagerTeams,
@@ -28,8 +28,8 @@ export interface ReadinessTrendSheetProps {
   /** Whether data collection is complete — controls whether trends/deltas are shown */
   collectionComplete?: boolean
   /** Pre-computed direct report rows to show in the manager-context table (replaces employee list) */
-  directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
-  /** Called when a user clicks an unrealized value figure to open the breakdown sheet */
+  directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; hrsUnlocked: number }>
+  /** Called when a user clicks a productivity hours figure to open the breakdown sheet */
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }
 
@@ -360,7 +360,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                   <div className="wfr-trend-sheet__teams-header">
                     <span className="wfr-trend-sheet__teams-th wfr-trend-sheet__teams-th--name">Manager</span>
                     <span className="wfr-trend-sheet__teams-th" style={{ width: 130, paddingLeft: 16 }}>Team AI adoption</span>
-                    <span className="wfr-trend-sheet__teams-th" style={{ width: 100, textAlign: 'right' }}>Unrealized value</span>
+                    <span className="wfr-trend-sheet__teams-th" style={{ width: 100, textAlign: 'right' }}>Productivity hours</span>
                     <span className="wfr-trend-sheet__teams-th" style={{ width: 110, textAlign: 'right' }}>Gap</span>
                   </div>
                   {directReports.map((row) => {
@@ -390,9 +390,9 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                         </div>
                         <div style={{ width: 100, textAlign: 'right' }}>
                           {onUnrealizedValueClick ? (
-                            <button type="button" onClick={() => onUnrealizedValueClick({ label: row.name, subtitle: `${dept.name} · Manager · ${row.employees.toLocaleString()} employees`, aiPotential: dept.aiPotential, headcount: row.employees, unrealizedValue: row.unrealizedValue })} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</button>
+                            <button type="button" onClick={() => onUnrealizedValueClick({ label: row.name, subtitle: `${dept.name} · Manager · ${row.employees.toLocaleString()} employees`, aiPotential: dept.aiPotential, headcount: row.employees, hrsUnlocked: row.hrsUnlocked })} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 700, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.hrsUnlocked)}</button>
                           ) : (
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.hrsUnlocked)}</span>
                           )}
                         </div>
                         <div style={{ width: 110, textAlign: 'right' }}>

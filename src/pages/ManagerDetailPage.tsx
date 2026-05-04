@@ -23,7 +23,7 @@ import {
   DataTableHead,
   DataTableCell,
 } from '@tonyh-2-eightfold/ef-design-system'
-import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatDollar, getTasksForRole, WFR_FIRST_NAMES, type RoleRowType } from '../data/wfrOrgData'
+import { departments, getRolesForDept, getEmployeesForRole, getDeptHrbps, formatHours, getTasksForRole, WFR_FIRST_NAMES, type RoleRowType } from '../data/wfrOrgData'
 import { DEMO_MANAGERS } from '../components/workforceReadiness/collectionHelpers'
 import { PersonDetailLayout } from '../components/workforceReadiness/PersonDetailLayout'
 import { deptManagerTeams, deptReadinessTrend } from '../components/workforceReadiness/collectionHelpers'
@@ -282,7 +282,7 @@ export function ManagerDetailPage() {
     displayEmployees[topIdx] = { ...displayEmployees[topIdx], name: 'Sarah Culhane', title: 'Customer Success Manager' }
   }
 
-  const mgrUnrealizedValue = Math.round(dept.unrealizedValue * employees.length / Math.max(1, dept.employees))
+  const mgrHrsUnlocked = Math.round(dept.hrsUnlocked * employees.length / Math.max(1, dept.employees))
 
   // Assign unique photos — same logic as manager persona, Sarah uses her persona photo
   const empPhotoMap = (() => {
@@ -445,7 +445,7 @@ export function ManagerDetailPage() {
               tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
               onLearnMore: () => setMetricInfoOpen(true),
             }}
-            potential={{ value: formatDollar(mgrUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
+            potential={{ value: formatHours(mgrHrsUnlocked), description: <><span>Weekly hours AI can unlock across employees in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
             gap={{
               value: notReady.toLocaleString(),
               explainer: `People in augmentable roles who aren't yet AI-ready.`,

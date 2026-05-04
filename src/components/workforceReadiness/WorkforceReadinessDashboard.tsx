@@ -21,13 +21,13 @@ import {
   getDeptHrbps,
   getHrbpDepts,
   hrbpAssignments,
-  formatDollar,
+  formatHours,
   WFR_FIRST_NAMES,
   type Dept,
   type RoleRowType,
 } from '../../data/wfrOrgData'
 // import { CollectionProgressPanel } from './CollectionProgressPanel'
-import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName, demoManagerNameUnique, scaleUnrealizedValue } from './collectionHelpers'
+import { deptReadinessTrend, deptManagerTeams, DEMO_MANAGERS, demoManagerName, demoManagerNameUnique, scaleHrsUnlocked } from './collectionHelpers'
 import './CollectionProgressPanel.css'
 import { FocusFirstModule, WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona, type FocusCollectionLaunchSummary } from './FocusFirstModule'
 import { FocusFirstLaunchDialog, type HrbpDirector } from './FocusFirstLaunchDialog'
@@ -681,7 +681,7 @@ function BoardView({
   personaHrbpNames?: string[]
   onHrbpLaunchCollection?: (channelsLabel: string) => void
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
-  onRoleClick?: (role: { title: string; deptName: string; employees: number; aiPotential: number; readiness: number; unrealizedValue: number; gap: number }) => void
+  onRoleClick?: (role: { title: string; deptName: string; employees: number; aiPotential: number; readiness: number; hrsUnlocked: number; gap: number }) => void
 }) {
   // Derive convenience flags — for HRBP, use their persona-scoped state (not org-level)
   const effectiveFlagState = isHrbp && personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : wfrState.state
@@ -781,7 +781,7 @@ function BoardView({
         case 'hrbp': return mul * hrbpOf(a).localeCompare(hrbpOf(b))
         case 'headcount': return mul * (a.employees - b.employees)
         case 'readiness': return mul * (a.aiReadiness - b.aiReadiness)
-        case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
+        case 'potential': return mul * (a.hrsUnlocked - b.hrsUnlocked)
         case 'gap': return mul * (deptGapHeadcount(a) - deptGapHeadcount(b))
         default: return 0
       }
@@ -809,13 +809,13 @@ function BoardView({
       const headcount = row.depts.reduce((s, d) => s + d.headcount, 0)
       const avgReadiness = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.readiness * d.headcount, 0) / headcount) : 0
       const avgPotential = headcount > 0 ? Math.round(row.depts.reduce((s, d) => s + d.aiPotential * d.headcount, 0) / headcount) : 0
-      const totalUnrealizedValue = row.depts.reduce((s, d) => {
+      const totalHrsUnlocked = row.depts.reduce((s, d) => {
         const dept = departments.find(x => x.name === d.name)
         if (!dept) return s
-        const baseProrated = Math.round(dept.unrealizedValue * d.headcount / Math.max(1, dept.employees))
-        // Scale by post-state readiness (calibrated + upskilling boost) so UV shrinks as adoption rises
+        const baseProrated = Math.round(dept.hrsUnlocked * d.headcount / Math.max(1, dept.employees))
+        // Scale by post-state readiness (calibrated + upskilling boost) so hours shrink as adoption rises
         const stateReadiness = Math.min(100, d.readiness + (hrbpPlansCreated ? (isHrbp ? 4 : 3) : 0))
-        return s + scaleUnrealizedValue(baseProrated, dept.aiReadiness, stateReadiness)
+        return s + scaleHrsUnlocked(baseProrated, dept.aiReadiness, stateReadiness)
       }, 0)
       const totalGap = row.depts.reduce((s, d) => s + d.gap, 0)
       const hrbpState = getHrbpEffectiveState(wfrState, row.hrbp)
@@ -830,7 +830,7 @@ function BoardView({
         return s + (dept?.aiReadiness ?? d2.readiness) * d2.headcount
       }, 0) / headcount) : 0
       const trendDelta = avgReadiness - baseReadiness
-      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalUnrealizedValue, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
+      return { hrbp: row.hrbp, depts: row.depts, headcount, avgReadiness, avgPotential, totalHrsUnlocked, totalGap, hrbpState, responseRate, hrbpDelegated, trendDelta }
     }).sort((a, b) => {
       // Pin Jaydon Torff (focus persona) to the very top
       if (a.hrbp === 'Jaydon Torff') return -1
@@ -843,7 +843,7 @@ function BoardView({
       switch (hrbpSort.col) {
         case 'hrbp': return mul * a.hrbp.localeCompare(b.hrbp)
         case 'readiness': return mul * (a.avgReadiness - b.avgReadiness)
-        case 'potential': return mul * (a.totalUnrealizedValue - b.totalUnrealizedValue)
+        case 'potential': return mul * (a.totalHrsUnlocked - b.totalHrsUnlocked)
         case 'gap': return mul * (a.totalGap - b.totalGap)
         default: return 0
       }
@@ -852,7 +852,7 @@ function BoardView({
 
   // All roles across org for the Roles tab
   const allRoles = useMemo(() => {
-    const roles: { title: string; dept: string; employees: number; tasks: number; aiReadiness: number; measuredReadiness: number; aiPotential: number; unrealizedValue: number; gap: number }[] = []
+    const roles: { title: string; dept: string; employees: number; tasks: number; aiReadiness: number; measuredReadiness: number; aiPotential: number; hrsUnlocked: number; gap: number }[] = []
     for (const d of allDeptsSorted) {
       const trend = deptReadinessTrend(d.name)
       for (const r of getRolesForDept(d.name)) {
@@ -860,7 +860,7 @@ function BoardView({
         const collectionDelta = focusCollectionComplete ? trend.delta + ((r.title.length % 3) - 1) : 0
         const upskillingBoost = hrbpPlansCreated ? Math.round(5 + ((r.aiPotential - r.aiReadiness) / 100) * 15 + (r.title.length % 4)) : 0
         const measured = Math.max(0, Math.min(100, r.aiReadiness + collectionDelta + upskillingBoost))
-        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, unrealizedValue: r.unrealizedValue, gap: r.aiPotential - measured })
+        roles.push({ title: r.title, dept: d.name, employees: r.employees, tasks: getTasksForRole(r.title).length, aiReadiness: r.aiReadiness, measuredReadiness: measured, aiPotential: r.aiPotential, hrsUnlocked: r.hrsUnlocked, gap: r.aiPotential - measured })
       }
     }
     const mul = roleSort.dir === 'asc' ? 1 : -1
@@ -870,7 +870,7 @@ function BoardView({
         case 'dept': return mul * a.dept.localeCompare(b.dept)
         case 'headcount': return mul * (a.employees - b.employees)
         case 'readiness': return mul * ((focusCollectionComplete ? a.measuredReadiness : a.aiReadiness) - (focusCollectionComplete ? b.measuredReadiness : b.aiReadiness))
-        case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
+        case 'potential': return mul * (a.hrsUnlocked - b.hrsUnlocked)
         case 'gap': return mul * (a.gap - b.gap)
         default: return 0
       }
@@ -953,9 +953,9 @@ function BoardView({
   const gapPeople = basePeopleInAug - ready
 
   const aiPotentialPct = effectiveRollup ? effectiveRollup.aiPotential : ORG.aiPotential
-  const orgUnrealizedValueBase = effectiveRollup ? effectiveRollup.unrealizedValue : departments.reduce((s, d) => s + d.unrealizedValue, 0)
-  // Scale UV down as readiness rises (collection calibration + upskilling boost shrink the gap)
-  const orgUnrealizedValue = scaleUnrealizedValue(orgUnrealizedValueBase, rawReadinessPct, aiReadinessPct)
+  const orgHrsUnlockedBase = effectiveRollup ? effectiveRollup.hrsUnlocked : departments.reduce((s, d) => s + d.hrsUnlocked, 0)
+  // Scale hours down as readiness rises (collection calibration + upskilling boost shrink the gap)
+  const orgHrsUnlocked = scaleHrsUnlocked(orgHrsUnlockedBase, rawReadinessPct, aiReadinessPct)
   const totalEmployeesHero = effectiveRollup ? effectiveRollup.totalEmployees : ORG.totalEmployees
   const hrsUnlocked = effectiveRollup ? effectiveRollup.hrsUnlocked : Math.round(gapPeople * ORG.hrsPerPersonWeek)
   const learnMoreDataCollection =
@@ -984,10 +984,10 @@ function BoardView({
     },
     {
       id: 'potential' as const,
-      label: 'Unrealized value',
-      val: formatDollar(orgUnrealizedValue),
-      icon: 'auto_awesome',
-      l1: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{aiPotentialPct}% AI potential across {totalEmployeesHero.toLocaleString()} employees</span></>,
+      label: 'Productivity hours',
+      val: formatHours(orgHrsUnlocked),
+      icon: 'schedule',
+      l1: <><span>Weekly hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{aiPotentialPct}% AI potential across {totalEmployeesHero.toLocaleString()} employees</span></>,
       delta: null,
       deltaUp: true,
     },
@@ -997,7 +997,7 @@ function BoardView({
   // Fallback to top 30% by gap if no rows exceed threshold (ensures at least some are flagged)
   const hrbpPrioritySet = (() => {
     if (hrbpRows.length === 0) return new Set<string>()
-    const sorted = [...hrbpRows].sort((a, b) => b.totalUnrealizedValue - a.totalUnrealizedValue)
+    const sorted = [...hrbpRows].sort((a, b) => b.totalHrsUnlocked - a.totalHrsUnlocked)
     const count = Math.max(1, Math.round(sorted.length * 0.3))
     const set = new Set(sorted.slice(0, count).map(r => r.hrbp))
     // Pin Jaydon Torff (focus persona) as priority regardless of UV ranking
@@ -1035,7 +1035,7 @@ function BoardView({
           Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> are AI-ready.
         </span>
       )}
-      subtitle={!hrbpPlansCreated ? <>Your org has <span className="font-bold wfr-text-potential">{formatDollar(orgUnrealizedValue)}</span> in unrealized value. You're capturing less than a third of it.</> : undefined}
+      subtitle={!hrbpPlansCreated ? <>Your org has <span className="font-bold wfr-text-potential">{formatHours(orgHrsUnlocked)}</span> in weekly productivity hours waiting to be unlocked.</> : undefined}
       pill={hrbpPlansCreated
         ? <><span className="font-bold text-[#15803d]">{(preCollectionGap - gapPeople).toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{gapPeople.toLocaleString()}</span> remaining.</>
         : <><strong style={{ fontWeight: 700 }}>{gapPeople.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
@@ -1097,7 +1097,7 @@ function BoardView({
                 <DataTableHead style={{ width: '22%', cursor: 'pointer' }} onClick={() => toggleHrbpSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={hrbpSort.col === 'hrbp' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead style={{ width: '16%' }}>Departments</DataTableHead>
                 <DataTableHead metric style={{ width: '14%' }}><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'readiness' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric style={{ width: '16%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: '16%' }}><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
                 <DataTableHead numeric style={{ width: '18%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpSort.col === 'gap' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('gap')} /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
                 {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '18%' }}>Upskilling progress</DataTableHead>}
@@ -1161,7 +1161,7 @@ function BoardView({
                       )}
                     </div>
                   </DataTableCell>
-                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, unrealizedValue: row.totalUnrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.totalUnrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, hrsUnlocked: row.totalHrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.totalHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                   <DataTableCell align="right">
                     <div className="tabular-nums" style={{ textAlign: 'right' }}>
                       <span className="wfr-type-h6">{row.totalGap.toLocaleString()} ({row.headcount > 0 ? Math.round((row.totalGap / row.headcount) * 100) : 0}%)</span>
@@ -1201,7 +1201,7 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
@@ -1210,7 +1210,7 @@ function BoardView({
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
                 const gapCount = focusCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
-                const deptUnrealized = scaleUnrealizedValue(d.unrealizedValue, d.aiReadiness, measuredReadiness)
+                const deptHrsUnlocked = scaleHrsUnlocked(d.hrsUnlocked, d.aiReadiness, measuredReadiness)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
                 const deptHrbps = getDeptHrbps(d.name)
@@ -1246,7 +1246,7 @@ function BoardView({
                           </div>
                         )}
                       </DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: deptUnrealized }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(deptUnrealized)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: deptHrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(deptHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
                           <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
@@ -1267,7 +1267,7 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1286,7 +1286,7 @@ function BoardView({
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, unrealizedValue: d.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(d.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: d.hrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(d.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       <DataTableCell align="right">
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
                           <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
@@ -1307,7 +1307,7 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
@@ -1329,7 +1329,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
                       </DataTableCell>
                       <DataTableCell align="right">
-                        <span className="wfr-type-h6 tabular-nums">{formatDollar(d.unrealizedValue)}</span>
+                        <span className="wfr-type-h6 tabular-nums">{formatHours(d.hrsUnlocked)}</span>
                       </DataTableCell>
                       <DataTableCell align="right">
                         <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -1357,7 +1357,7 @@ function BoardView({
                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('headcount')}><span className="inline-flex items-center gap-1">Headcount <SortIcon sortDir={roleSort.col === 'headcount' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('headcount')} /></span></DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'readiness' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
+                <DataTableHead numeric><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={roleSort.col === 'gap' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('gap')} /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>
@@ -1365,11 +1365,11 @@ function BoardView({
             <DataTableBody>
               {allRoles.map((r) => {
                 return (
-                  <DataTableRow key={`${r.dept}-${r.title}`} style={{ cursor: 'pointer' }} onClick={() => { onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap }) }}>
+                  <DataTableRow key={`${r.dept}-${r.title}`} style={{ cursor: 'pointer' }} onClick={() => { onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, hrsUnlocked: r.hrsUnlocked, gap: r.gap }) }}>
                     <DataTableCell className="font-semibold">{r.title}</DataTableCell>
                     {!isHrbp && <DataTableCell className="text-[13px] text-[#475569] !max-w-[120px] truncate">{r.dept}</DataTableCell>}
                     <DataTableCell align="right" numeric className="!w-[60px]">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap }) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, hrsUnlocked: r.hrsUnlocked, gap: r.gap }) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
                         {r.employees.toLocaleString()}
                       </button>
                     </DataTableCell>
@@ -1402,7 +1402,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} />
                       )}
                     </DataTableCell>
-                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     <DataTableCell align="right">
                       <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
                     </DataTableCell>
@@ -1801,7 +1801,7 @@ export function WorkforceReadinessDashboard({
   type RoleViewData = {
     title: string; deptName: string; hrbpName: string | null
     employees: number; aiPotential: number; readiness: number
-    unrealizedValue: number; gap: number; fromView: 'board' | 'hrbp'
+    hrsUnlocked: number; gap: number; fromView: 'board' | 'hrbp'
   }
   const [roleViewData, setRoleViewData] = useState<RoleViewData | null>(() => {
     const p = new URLSearchParams(window.location.search)
@@ -1810,9 +1810,9 @@ export function WorkforceReadinessDashboard({
     if (!roleTitle || !roleDept) return null
     const roleRow = getRolesForDept(roleDept).find(r => r.title === roleTitle)
     if (!roleRow) return null
-    return { title: roleTitle, deptName: roleDept, hrbpName: null, employees: roleRow.employees, aiPotential: roleRow.aiPotential, readiness: roleRow.aiReadiness, unrealizedValue: roleRow.unrealizedValue, gap: roleRow.aiPotential - roleRow.aiReadiness, fromView: 'board' }
+    return { title: roleTitle, deptName: roleDept, hrbpName: null, employees: roleRow.employees, aiPotential: roleRow.aiPotential, readiness: roleRow.aiReadiness, hrsUnlocked: roleRow.hrsUnlocked, gap: roleRow.aiPotential - roleRow.aiReadiness, fromView: 'board' }
   })
-  const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }> } | null>(null)
+  const [hrbpTrendSheetDir, setHrbpTrendSheetDir] = useState<{ manager: string; mgrIndex: number; readiness: number; dept: Dept; directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; hrsUnlocked: number }> } | null>(null)
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number; baseReadiness?: number; employeeName?: string; upskillingComplete?: boolean } | null>(null)
   const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
@@ -2183,17 +2183,16 @@ export function WorkforceReadinessDashboard({
     const avgReadiness = displayEmployees.length > 0 ? Math.round(displayEmployees.reduce((s, e) => s + e.displayReadiness, 0) / displayEmployees.length) : 0
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
     const notReady = displayEmployees.length - readyCount
-    // Base UV (pre-state). Consumers should scale by current readiness via scaleUnrealizedValue.
-    const unrealizedValue = Math.round(dept.unrealizedValue * mgrEmployees.length / Math.max(1, dept.employees))
+    const mgrHrsUnlockedBase = Math.round(dept.hrsUnlocked * mgr.employees / Math.max(1, dept.employees))
     const tasksInAug = Math.round(getTasksForRole(deptRoles[0]?.title ?? '').filter(t => { const s = t.score ?? 0; return s >= 15 && s <= 75 }).length)
     const totalTasks = getTasksForRole(deptRoles[0]?.title ?? '').length
-    return { mgr, employees: displayEmployees, dept, avgReadiness, readyCount, notReady, unrealizedValue, tasksInAug, totalTasks }
+    return { mgr, employees: displayEmployees, dept, avgReadiness, readyCount, notReady, mgrHrsUnlockedBase, tasksInAug, totalTasks }
   }, [isManager])
 
   if (isManager && managerTeamData) {
-    const { employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
-    const mgrEffectiveState = wfrState.hrbpStates?.['Jaydon Torff']?.state ?? wfrState.state
-    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
+    const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, mgrHrsUnlockedBase, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
+    const mgrEffectiveState = wfrState.hrbpStates ? getPersonaEffectiveState(wfrState, ['Jaydon Torff']) : wfrState.state
+    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
     const mgrUpskillingBoost = mgrUpskillingComplete ? 16 : mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
@@ -2227,8 +2226,7 @@ export function WorkforceReadinessDashboard({
     const calibratedAvgReadiness = mgrCollComplete
       ? Math.min(100, Math.round(enrichedMgrEmployees.reduce((s, e) => s + e._displayEmpReadiness, 0) / Math.max(1, enrichedMgrEmployees.length)))
       : mgrReadiness
-    // Scale UV down as readiness improves (collection calibration + upskilling boost)
-    const displayUnrealized = scaleUnrealizedValue(mgrUnrealized, mgrDept.aiReadiness, calibratedAvgReadiness)
+    const displayMgrHrsUnlocked = scaleHrsUnlocked(mgrHrsUnlockedBase, mgrDept.aiReadiness, calibratedAvgReadiness)
     const calibratedNotReady = mgrPlansCreated
       ? enrichedMgrEmployees.filter(e => {
           return e.displayReadiness >= 50 ? e._displayEmpReadiness < 50 : e._planPct !== 100
@@ -2273,7 +2271,7 @@ export function WorkforceReadinessDashboard({
         ) : (
           <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>
         )}
-        subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(displayUnrealized)}</span> in unrealized value.</>}
+        subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatHours(displayMgrHrsUnlocked)}</span> in weekly productivity hours to unlock.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={mgrHeroCta}
         cards={[]}
@@ -2555,7 +2553,7 @@ export function WorkforceReadinessDashboard({
           })
 
           // Compute per-HRBP metrics via manager slicing
-          type DeptHrbpRow = { hrbp: string; headcount: number; readiness: number; gap: number; unrealizedValue: number; mgrStartIdx: number; mgrCount: number }
+          type DeptHrbpRow = { hrbp: string; headcount: number; readiness: number; gap: number; hrsUnlocked: number; mgrStartIdx: number; mgrCount: number }
           const deptHrbpRows: DeptHrbpRow[] = []
           let deptMgrStart = 0
           for (const { hrbp, headcount } of deptHrbpList) {
@@ -2570,8 +2568,8 @@ export function WorkforceReadinessDashboard({
               ? Math.round(calibrated.reduce((s, v) => s + v, 0) / calibrated.length)
               : (deptCollComplete ? d.aiReadiness + deptTrendDelta : d.aiReadiness)
             const gap = Math.max(0, headcount - Math.round(headcount * readiness / 100))
-            const unrealizedValue = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
-            deptHrbpRows.push({ hrbp, headcount, readiness, gap, unrealizedValue, mgrStartIdx: deptMgrStart, mgrCount: slicedIdxs.length })
+            const hrsUnlocked = Math.round(d.hrsUnlocked * headcount / Math.max(1, d.employees))
+            deptHrbpRows.push({ hrbp, headcount, readiness, gap, hrsUnlocked, mgrStartIdx: deptMgrStart, mgrCount: slicedIdxs.length })
             deptMgrStart += slicedIdxs.length
           }
 
@@ -2594,7 +2592,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`Department · ${d.employees.toLocaleString()} employees`}
               readiness={(() => { const readyCount = Math.round(d.employees * d.aiReadiness / 100); return { value: `${d.aiReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {d.employees.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this department's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(d.unrealizedValue), description: <>The annual productivity value waiting to be captured.</>, onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatHours(d.hrsUnlocked), description: <>Weekly hours AI can unlock for people in the transformation gap.</>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={(() => { const readyCount = Math.round(d.employees * d.aiReadiness / 100); const gapCount = Math.max(0, d.employees - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}% of this department needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               tableTitle={multiHrbp ? `${deptHrbpList.length} HR Business Partners` : 'Team managers'}
               tableHint={multiHrbp ? 'Click an HRBP to see their team' : `${deptHrbpRows[0]?.hrbp ?? ''} · ${(deptHrbpRows[0]?.headcount ?? 0).toLocaleString()} employees`}
@@ -2606,7 +2604,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableRow>
                       <DataTableHead style={{ width: '28%' }}>HRBP</DataTableHead>
                       <DataTableHead metric style={{ width: '22%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '28%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
@@ -2620,7 +2618,7 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={row.readiness} /></DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, unrealizedValue: row.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(row.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, hrsUnlocked: row.hrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
                             <span className="wfr-type-h6">{row.gap.toLocaleString()} ({row.headcount > 0 ? Math.round(row.gap / row.headcount * 100) : 0}%)</span>
@@ -2638,7 +2636,7 @@ export function WorkforceReadinessDashboard({
                     <DataTableRow>
                       <DataTableHead style={{ width: '32%' }}>Manager</DataTableHead>
                       <DataTableHead metric style={{ width: '24%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
+                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
@@ -2648,10 +2646,9 @@ export function WorkforceReadinessDashboard({
                       const cal = deptMgrCalibrated[globalIdx] ?? []
                       const mgrReadiness = cal.length > 0 ? Math.round(cal.reduce((s, v) => s + v, 0) / cal.length) : d.aiReadiness
                       const mgrGap = Math.max(0, mgr.employees - Math.round(mgr.employees * mgrReadiness / 100))
-                      const mgrUnrealizedBase = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
-                      // Scale UV by readiness improvements: subtract trend + boost from current to recover baseline
+                      const mgrHrsBase = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees))
                       const mgrBaselineReadiness = Math.max(0, mgrReadiness - deptTrendDelta - deptBoostBase)
-                      const mgrUnrealizedValue = scaleUnrealizedValue(mgrUnrealizedBase, mgrBaselineReadiness, mgrReadiness)
+                      const mgrHrsUnlocked = scaleHrsUnlocked(mgrHrsBase, mgrBaselineReadiness, mgrReadiness)
                       return (
                         <DataTableRow key={mgr.manager}>
                           <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
@@ -2661,7 +2658,7 @@ export function WorkforceReadinessDashboard({
                             </div>
                           </DataTableCell>
                           <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={mgrReadiness} /></DataTableCell>
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: mgrUnrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(mgrUnrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: mgrHrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(mgrHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
                               <span className="wfr-type-h6">{mgrGap.toLocaleString()} ({mgr.employees > 0 ? Math.round(mgrGap / mgr.employees * 100) : 0}%)</span>
@@ -2789,9 +2786,9 @@ export function WorkforceReadinessDashboard({
                 const cal = mgrCalibrated[dir.firstMgrIdx + i] ?? []
                 const avgR = cal.length > 0 ? Math.round(cal.reduce((s, e) => s + e.displayReadiness, 0) / cal.length) : d.aiReadiness
                 const ready = Math.round(mgr.employees * avgR / 100)
-                const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees))
+                const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees))
                 const baselineR = Math.max(0, avgR - deptTrendDelta - upskillingBoostBase)
-                return { name: mgr.manager, title: 'Team Manager', employees: mgr.employees, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
+                return { name: mgr.manager, title: 'Team Manager', employees: mgr.employees, readiness: avgR, readyCount: ready, hrsUnlocked: scaleHrsUnlocked(baseHrs, baselineR, avgR) }
               })
             } else {
               const targetSr = Math.max(2, Math.min(5, Math.round(dir.teamManagers / 3)))
@@ -2804,11 +2801,11 @@ export function WorkforceReadinessDashboard({
                 const avgR = batchCal.length > 0 ? Math.round(batchCal.reduce((s, e) => s + e.displayReadiness, 0) / batchCal.length) : d.aiReadiness
                 const ready = Math.round(empCount * avgR / 100)
                 const srNameIdx = nameHash(dir.name) * 5 + si * 11 + dir.firstMgrIdx
-                const baseUv = Math.round(d.unrealizedValue * empCount / Math.max(1, d.employees))
+                const baseHrs = Math.round(d.hrsUnlocked * empCount / Math.max(1, d.employees))
                 const baselineR = Math.max(0, avgR - deptTrendDelta - upskillingBoostBase)
                 const takenFirsts = [dir.name.split(' ')[0]!, ...batch.map(m => m.manager.split(' ')[0]!)]
-                return { name: demoManagerNameUnique(srNameIdx, takenFirsts), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, unrealizedValue: scaleUnrealizedValue(baseUv, baselineR, avgR) }
-              }).filter(Boolean) as Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; unrealizedValue: number }>
+                return { name: demoManagerNameUnique(srNameIdx, takenFirsts), title: SR_TITLES_TS[si % SR_TITLES_TS.length], employees: empCount, readiness: avgR, readyCount: ready, hrsUnlocked: scaleHrsUnlocked(baseHrs, baselineR, avgR) }
+              }).filter(Boolean) as Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; hrsUnlocked: number }>
             }
           }
 
@@ -2885,15 +2882,12 @@ export function WorkforceReadinessDashboard({
               justLaunched={hrbpJustLaunched}
             />
           )
-          const hrbpUnrealizedValueBase = Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))
-          // Estimate the state-1 baseline by removing known state deltas; scale UV by the gain.
-          // dirWeightedReadiness already includes deptTrendDelta + per-employee upskilling boosts,
-          // so subtract them to recover the pre-state baseline for proper proportional scaling.
+          const hrbpHrsUnlockedBase = Math.round(d.hrsUnlocked * headcount / Math.max(1, d.employees))
           const hrbpReadinessBaseline = Math.max(0, dirWeightedReadiness - deptTrendDelta - upskillingBoostBase)
-          const hrbpUnrealizedValue = scaleUnrealizedValue(hrbpUnrealizedValueBase, hrbpReadinessBaseline, dirWeightedReadiness)
+          const hrbpHrsUnlocked = scaleHrsUnlocked(hrbpHrsUnlockedBase, hrbpReadinessBaseline, dirWeightedReadiness)
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
             { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
-            { id: 'potential', icon: 'auto_awesome', label: 'Unrealized value', value: formatDollar(hrbpUnrealizedValue), description: <><span>The annual productivity value waiting to be captured.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
+            { id: 'potential', icon: 'schedule', label: 'Productivity hours', value: formatHours(hrbpHrsUnlocked), description: <><span>Weekly hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{d.aiPotential}% AI potential across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -2913,7 +2907,7 @@ export function WorkforceReadinessDashboard({
                 ) : (
                   <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> are AI-ready.</span>
                 )}
-                subtitle={!hrbpPlansComplete ? <>Your team has <span className="font-bold wfr-text-potential">{formatDollar(hrbpUnrealizedValue)}</span> in unrealized value.</> : undefined}
+                subtitle={!hrbpPlansComplete ? <>Your team has <span className="font-bold wfr-text-potential">{formatHours(hrbpHrsUnlocked)}</span> in weekly productivity hours to unlock.</> : undefined}
                 pill={hrbpPlansComplete
                   ? (() => { const preReady = Math.round(headcount * hrbpReadinessBaseline / 100); const preGap = Math.max(0, headcount - preReady); const movedOut = Math.max(0, preGap - dirTotalGap); return <><span className="font-bold text-[#15803d]">{movedOut.toLocaleString()}</span> employees moved out of the gap through development plans — <span className="font-bold text-[#b91c1c]">{dirTotalGap.toLocaleString()}</span> remaining.</> })()
                   : <><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
@@ -2953,7 +2947,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
                         <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity hours <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                         {showHrbpCollection && <DataCollectionHead />}
                         {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
@@ -2975,12 +2969,12 @@ export function WorkforceReadinessDashboard({
                           switch (mgrSort.col) {
                             case 'name': return mul * a.name.localeCompare(b.name)
                             case 'readiness': return mul * (a.readiness - b.readiness)
-                            case 'potential': return mul * (Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees)) - Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees)))
+                            case 'potential': return mul * (Math.round(d.hrsUnlocked * a.employees / Math.max(1, d.employees)) - Math.round(d.hrsUnlocked * b.employees / Math.max(1, d.employees)))
                             case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount))
                             default: return 0
                           }
                         })
-                        const dirScores = sortedDirs.map(dir => ({ key: dir.name, score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)) }))
+                        const dirScores = sortedDirs.map(dir => ({ key: dir.name, score: Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)) }))
                         const dirScoresSorted = [...dirScores].sort((a, b) => b.score - a.score)
                         const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
                         const dirPrioritySet = new Set(dirScoresSorted.slice(0, dirPriorityCount).map(r => r.key))
@@ -3033,8 +3027,8 @@ export function WorkforceReadinessDashboard({
                                   )}
                                 </div>
                               </DataTableCell>
-                              {(() => { const baseUv = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, dir.readiness); return (
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                              {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
                               <DataTableCell align="right">
                                 <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3075,7 +3069,7 @@ export function WorkforceReadinessDashboard({
                           case 'name': return mul * a.title.localeCompare(b.title)
                           case 'headcount': return mul * (a.employees - b.employees)
                           case 'readiness': return mul * ((hrbpCollectionComplete ? a.measuredReadiness : a.aiReadiness) - (hrbpCollectionComplete ? b.measuredReadiness : b.aiReadiness))
-                          case 'potential': return mul * (a.unrealizedValue - b.unrealizedValue)
+                          case 'potential': return mul * (a.hrsUnlocked - b.hrsUnlocked)
                           case 'gap': return mul * (a.gap - b.gap)
                           default: return 0
                         }
@@ -3089,7 +3083,7 @@ export function WorkforceReadinessDashboard({
                                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleHrbpRoleSort('headcount')}><span className="inline-flex items-center gap-1">Headcount <SortIcon sortDir={hrbpRoleSort.col === 'headcount' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('headcount')} /></span></DataTableHead>
                                 <DataTableHead numeric>Tasks</DataTableHead>
                                 <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'readiness' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('readiness')} /></DataTableHead>
-                                <DataTableHead numeric><MetricHeaderLabel label="Unrealized value" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'potential' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('potential')} /></DataTableHead>
+                                <DataTableHead numeric><MetricHeaderLabel label="Productivity hours" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'potential' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('potential')} /></DataTableHead>
                                 <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpRoleSort.col === 'gap' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('gap')} /></DataTableHead>
                               </DataTableRow>
                             </DataTableHeader>
@@ -3098,7 +3092,7 @@ export function WorkforceReadinessDashboard({
                                 <DataTableRow key={r.title}>
                                   <DataTableCell className="font-semibold">{r.title}</DataTableCell>
                                   <DataTableCell align="right" numeric className="!w-[60px]">
-                                    <button type="button" onClick={() => { setRoleViewData({ title: r.title, deptName: d.name, hrbpName, employees: r.employees, aiPotential: r.aiPotential, readiness: hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness, unrealizedValue: r.unrealizedValue, gap: r.gap, fromView: 'hrbp' }); setView('role'); window.scrollTo(0, 0) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
+                                    <button type="button" onClick={() => { setRoleViewData({ title: r.title, deptName: d.name, hrbpName, employees: r.employees, aiPotential: r.aiPotential, readiness: hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness, hrsUnlocked: r.hrsUnlocked, gap: r.gap, fromView: 'hrbp' }); setView('role'); window.scrollTo(0, 0) }} style={{ color: '#3b5bdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontVariantNumeric: 'tabular-nums', fontSize: 'inherit' }}>
                                       {r.employees.toLocaleString()}
                                     </button>
                                   </DataTableCell>
@@ -3112,7 +3106,7 @@ export function WorkforceReadinessDashboard({
                                     <DeptTableSoloBar variant="readiness" pct={hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness} />
                                   </DataTableCell>
                                   <DataTableCell align="right">
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, unrealizedValue: r.unrealizedValue }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(r.unrealizedValue)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button>
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button>
                                   </DataTableCell>
                                   <DataTableCell align="right">
                                     <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
@@ -3130,13 +3124,13 @@ export function WorkforceReadinessDashboard({
                   const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))
                   const allDirScores = directors.map(dir => ({
                     dir,
-                    score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
+                    score: Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)),
                   })).sort((a, b) => b.score - a.score)
                   const priorityCount = Math.max(1, Math.round(allDirScores.length * 0.3))
                   const priorityNames = new Set(allDirScores.slice(0, priorityCount).map(r => r.dir.name))
                   const sortedDirs = eligibleDirs.sort((a, b) => {
-                    const scoreA = Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees))
-                    const scoreB = Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees))
+                    const scoreA = Math.round(d.hrsUnlocked * a.employees / Math.max(1, d.employees))
+                    const scoreB = Math.round(d.hrsUnlocked * b.employees / Math.max(1, d.employees))
                     return scoreB - scoreA
                   })
                   const selectedCount = hrbpUpskillingSelectedDirs.size
@@ -3165,16 +3159,16 @@ export function WorkforceReadinessDashboard({
                               >{selectedCount === sortedDirs.length ? '✓' : ''}</span>
                               <span style={{ flex: 1 }}>Manager</span>
                               <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
-                              <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                              <span style={{ width: 90, textAlign: 'right' }}>Prod. hours</span>
                               <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
                             </div>
                             {sortedDirs.map(dir => {
                               const checked = hrbpUpskillingSelectedDirs.has(dir.name)
                               const gap = dir.employees - dir.readyCount
                               const isPriority = priorityNames.has(dir.name)
-                              const dirUnrealizedBase = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                              const dirHrsBase = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees))
                               const dirBaselineR = Math.max(0, (dir.readiness ?? d.aiReadiness) - deptTrendDelta - upskillingBoostBase)
-                              const dirUnrealized = scaleUnrealizedValue(dirUnrealizedBase, dirBaselineR, dir.readiness ?? d.aiReadiness)
+                              const dirHrsUnlocked = scaleHrsUnlocked(dirHrsBase, dirBaselineR, dir.readiness ?? d.aiReadiness)
                               return (
                                 <button key={dir.name} type="button"
                                   className={`wfr-focus-launch__dept-row ${checked ? 'wfr-focus-launch__dept-row--on' : ''}`}
@@ -3190,7 +3184,7 @@ export function WorkforceReadinessDashboard({
                                     {isPriority && <PriorityTooltip tooltip="Top 30% by unrealized value — recommended to start here for most impact"><span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span></PriorityTooltip>}
                                   </span>
                                   <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
-                                  <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
+                                  <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatHours(dirHrsUnlocked)}</span>
                                   <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gap.toLocaleString()} ({dir.employees > 0 ? Math.round((gap / dir.employees) * 100) : 0}%)</span>
                                 </button>
                               )
@@ -3274,7 +3268,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`HRBP · ${d.name} · ${headcount.toLocaleString()} employees`}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               readiness={{ value: `${dirWeightedReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{Math.max(0, headcount - dirTotalGap).toLocaleString()} of {headcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * headcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatHours(Math.round(d.hrsUnlocked * headcount / Math.max(1, d.employees))), description: 'Weekly hours AI can unlock for people in the gap', onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={{ value: dirTotalGap.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{headcount > 0 ? Math.round((dirTotalGap / headcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               tableTitle={<>Client managers <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{directors.length}</span></>}
               tableHint={
@@ -3291,7 +3285,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity hours <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {showHrbpCollection && <DataCollectionHead />}
                     {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
@@ -3310,14 +3304,14 @@ export function WorkforceReadinessDashboard({
                       switch (mgrSort.col) {
                         case 'name': return mul * a.name.localeCompare(b.name)
                         case 'readiness': return mul * (a.readiness - b.readiness)
-                        case 'potential': return mul * (Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees)) - Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees)))
+                        case 'potential': return mul * (Math.round(d.hrsUnlocked * a.employees / Math.max(1, d.employees)) - Math.round(d.hrsUnlocked * b.employees / Math.max(1, d.employees)))
                         case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount))
                         default: return 0
                       }
                     })
                     const dirScores = sortedDirs.map(dir => ({
                       key: dir.name,
-                      score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
+                      score: Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)),
                     }))
                     const dirScoresSorted = [...dirScores].sort((a, b) => b.score - a.score)
                     const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
@@ -3370,8 +3364,8 @@ export function WorkforceReadinessDashboard({
                               )}
                             </div>
                           </DataTableCell>
-                          {(() => { const baseUv = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, dir.readiness); return (
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
                           <DataTableCell align="right">
                             <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3405,13 +3399,13 @@ export function WorkforceReadinessDashboard({
               // Priority is based on ALL directors (same as table), not just eligible subset
               const allDirScores = directors.map(dir => ({
                 dir,
-                score: Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees)),
+                score: Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)),
               })).sort((a, b) => b.score - a.score)
               const priorityCount = Math.max(1, Math.round(allDirScores.length * 0.3))
               const priorityNames = new Set(allDirScores.slice(0, priorityCount).map(r => r.dir.name))
               const sortedDirs = eligibleDirs.sort((a, b) => {
-                const scoreA = Math.round(d.unrealizedValue * a.employees / Math.max(1, d.employees))
-                const scoreB = Math.round(d.unrealizedValue * b.employees / Math.max(1, d.employees))
+                const scoreA = Math.round(d.hrsUnlocked * a.employees / Math.max(1, d.employees))
+                const scoreB = Math.round(d.hrsUnlocked * b.employees / Math.max(1, d.employees))
                 return scoreB - scoreA
               })
               const selectedCount = hrbpUpskillingSelectedDirs.size
@@ -3442,16 +3436,16 @@ export function WorkforceReadinessDashboard({
                           >{selectedCount === sortedDirs.length ? '✓' : ''}</span>
                           <span style={{ flex: 1 }}>Manager</span>
                           <span style={{ width: 80, textAlign: 'right' }}>AI adoption</span>
-                          <span style={{ width: 90, textAlign: 'right' }}>Unrealized value</span>
+                          <span style={{ width: 90, textAlign: 'right' }}>Prod. hours</span>
                           <span style={{ width: 120, textAlign: 'right' }}>Transformation gap</span>
                         </div>
                         {sortedDirs.map(dir => {
                           const checked = hrbpUpskillingSelectedDirs.has(dir.name)
                           const gap = dir.employees - dir.readyCount
                           const isPriority = priorityNames.has(dir.name)
-                          const dirUnrealizedBase = Math.round(d.unrealizedValue * dir.employees / Math.max(1, d.employees))
+                          const dirHrsBase2 = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees))
                           const dirBaselineR = Math.max(0, (dir.readiness ?? d.aiReadiness) - deptTrendDelta - upskillingBoostBase)
-                          const dirUnrealized = scaleUnrealizedValue(dirUnrealizedBase, dirBaselineR, dir.readiness ?? d.aiReadiness)
+                          const dirUnrealized = scaleHrsUnlocked(dirHrsBase2, dirBaselineR, dir.readiness ?? d.aiReadiness)
                           return (
                             <button
                               key={dir.name}
@@ -3470,7 +3464,7 @@ export function WorkforceReadinessDashboard({
                                 {isPriority && <PriorityTooltip tooltip="Top 30% by unrealized value — recommended to start here for most impact"><span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span></PriorityTooltip>}
                               </span>
                               <span style={{ width: 80, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{dir.readiness ?? 0}%</span>
-                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatDollar(dirUnrealized)}</span>
+                              <span style={{ width: 90, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{formatHours(dirHrsUnlocked2)}</span>
                               <span style={{ width: 120, textAlign: 'right', fontSize: 12, color: '#475569', fontWeight: 600 }}>{gap.toLocaleString()} ({dir.employees > 0 ? Math.round((gap / dir.employees) * 100) : 0}%)</span>
                             </button>
                           )
@@ -3571,7 +3565,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`${directorData.title} · ${d.name} · ${dirHeadcount.toLocaleString()} employees`}
               readiness={(() => { const readyCount = Math.round(dirHeadcount * dirMeasuredReadiness / 100); return { value: `${dirMeasuredReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {dirHeadcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(Math.round(d.unrealizedValue * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatHours(Math.round(d.hrsUnlocked * dirHeadcount / Math.max(1, d.employees))), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={(() => { const readyCount = Math.round(dirHeadcount * dirMeasuredReadiness / 100); const gapCount = Math.max(0, dirHeadcount - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{dirHeadcount > 0 ? Math.round((gapCount / dirHeadcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               managerTable={{
                 title: 'Manager summary',
@@ -3664,7 +3658,7 @@ export function WorkforceReadinessDashboard({
                       <DataTableRow>
                         <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
                         <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity hours <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                         <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                         {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
@@ -3709,8 +3703,8 @@ export function WorkforceReadinessDashboard({
                                 ) : <DeptTableSoloBar variant="readiness" pct={sr.readiness} />}
                               </div>
                             </DataTableCell>
-                            {(() => { const baseUv = Math.round(d.unrealizedValue * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, sr.readiness); return (
-                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                            {(() => { const baseHrs = Math.round(d.hrsUnlocked * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, sr.readiness); return (
+                            <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                             ) })()}
                             <DataTableCell align="right">
                               <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3731,7 +3725,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity hours <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
@@ -3767,8 +3761,8 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        {(() => { const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, en.readiness); return (
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3842,7 +3836,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`${seniorMgrData.title} · ${d.name} · ${srHeadcount.toLocaleString()} employees`}
               readiness={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); return { value: `${srMeasuredReadiness}%`, explainer: `Employees in augmentable roles using AI effectively.`, description: <span style={{ color: '#94a3b8' }}>{readyCount.toLocaleString()} of {srHeadcount.toLocaleString()} employees in augmentable roles are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               aiPotential={{ value: `${d.aiPotential}%`, explainer: `How much of this team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>{d.aiPotential}% AI potential across {d.employees.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(scaleUnrealizedValue(Math.round(d.unrealizedValue * srHeadcount / Math.max(1, d.employees)), srBaseReadiness, srMeasuredReadiness)), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatHours(scaleHrsUnlocked(Math.round(d.hrsUnlocked * srHeadcount / Math.max(1, d.employees)), srBaseReadiness, srMeasuredReadiness)), description: 'BLS median wages \u00d7 weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={(() => { const readyCount = Math.round(srHeadcount * srMeasuredReadiness / 100); const gapCount = Math.max(0, srHeadcount - readyCount); return { value: gapCount.toLocaleString(), explainer: `People in augmentable roles who aren't yet AI-ready.`, description: <span style={{ color: '#94a3b8' }}>{srHeadcount > 0 ? Math.round((gapCount / srHeadcount) * 100) : 0}% of this team needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) } })()}
               managerTable={{
                 title: 'Manager summary',
@@ -3912,7 +3906,7 @@ export function WorkforceReadinessDashboard({
                   <DataTableRow>
                     <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
                     <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Unrealized value <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity hours <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
                     {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
@@ -3948,8 +3942,8 @@ export function WorkforceReadinessDashboard({
                             ) : <DeptTableSoloBar variant="readiness" pct={en.readiness} />}
                           </div>
                         </DataTableCell>
-                        {(() => { const baseUv = Math.round(d.unrealizedValue * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledUv = scaleUnrealizedValue(baseUv, baselineR, en.readiness); return (
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, unrealizedValue: scaledUv }) }} title="View unrealized value" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatDollar(scaledUv)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                        {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledUv = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity hours" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
                         <DataTableCell align="right">
                           <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3967,7 +3961,7 @@ export function WorkforceReadinessDashboard({
           )
         })()}
         {view === 'role' && roleViewData && (() => {
-          const { title, deptName, hrbpName: roleHrbp, employees: totalEmployees, aiPotential, readiness, unrealizedValue, gap, fromView } = roleViewData
+          const { title, deptName, hrbpName: roleHrbp, employees: totalEmployees, aiPotential, readiness, hrsUnlocked: roleHrsUnlocked, gap, fromView } = roleViewData
           const d = departments.find(x => x.name === deptName)
           const roleForEmployees = getRolesForDept(deptName).find(r => r.title === title)
           if (!roleForEmployees || !d) return null
@@ -4006,7 +4000,7 @@ export function WorkforceReadinessDashboard({
               subtitle={`${deptName} · ${totalEmployees.toLocaleString()} employees`}
               readiness={{ value: `${readiness}%`, explainer: 'Employees in augmentable roles using AI effectively.', description: <span style={{ color: '#94a3b8' }}>{Math.max(0, totalEmployees - gap).toLocaleString()} of {totalEmployees.toLocaleString()} are AI-ready</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               aiPotential={{ value: `${aiPotential}%`, explainer: "How much of this role's daily work AI can support.", description: <span style={{ color: '#94a3b8' }}>{aiPotential}% AI potential across {totalEmployees.toLocaleString()} employees</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
-              potential={{ value: formatDollar(unrealizedValue), description: 'BLS median wages × weekly hours unlocked', onLearnMore: () => setDashMetricInfoOpen(true) }}
+              potential={{ value: formatHours(roleHrsUnlocked), description: 'Weekly hours AI can unlock for people in the gap', onLearnMore: () => setDashMetricInfoOpen(true) }}
               gap={{ value: gap.toLocaleString(), explainer: "Employees in augmentable roles not yet AI-ready.", description: <span style={{ color: '#94a3b8' }}>{totalEmployees > 0 ? Math.round((gap / totalEmployees) * 100) : 0}% of this role needs upskilling</span>, onLearnMore: () => setDashMetricInfoOpen(true) }}
               tableTitle={<>{totalEmployees.toLocaleString()} employees{displayEmployees.length < totalEmployees && <span style={{ fontSize: 12, fontWeight: 400, color: '#94a3b8' }}> · showing {displayEmployees.length}</span>}</>}
               tableHint={deptName}
