@@ -7,6 +7,7 @@ import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
 import { Button as DsButton, ProductBackground, StatCard } from '@tonyh-2-eightfold/ef-design-system'
+import { WaveBackground } from '../components/WaveBackground'
 import { OpenTo } from '../components/OpenTo'
 import { AboutCard } from '../components/AboutCard'
 import { MentorshipTab } from '../components/MentorshipTab'
@@ -56,9 +57,15 @@ export function ProfilePage() {
   return (
     <div className="profile-page">
       <NavbarApp />
-      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
-        <header className="profile-page__header" />
-      </ProductBackground>
+      {currentUser.id === 'csm' ? (
+        <WaveBackground variant="profile">
+          <header className="profile-page__header" />
+        </WaveBackground>
+      ) : (
+        <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
+          <header className="profile-page__header" />
+        </ProductBackground>
+      )}
       <main className="profile-page__main">
         <div className="profile-page__content-zone">
           <div className="profile-page__content grid grid-cols-12 gap-6">

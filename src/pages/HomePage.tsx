@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
+import { WaveBackground } from '../components/WaveBackground'
 import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
@@ -318,36 +319,46 @@ export function HomePage() {
   return (
     <div className="home-page">
       <NavbarApp />
-      <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
-      <header className="home-page__header">
-        <div className="home-page__hero">
-          <div className="home-page__avatar-wrap">
-            {avatarSrc ? (
-              <img
-                src={avatarSrc}
-                alt=""
-                className="home-page__avatar"
-              />
-            ) : (
-              <div
-                className="home-page__avatar home-page__avatar--initials"
-                style={currentUser.avatarColor ? { background: currentUser.avatarColor } : undefined}
-              >
-                {currentUser.avatarInitials}
+      {(() => {
+        const heroContent = (
+          <header className="home-page__header">
+            <div className="home-page__hero">
+              <div className="home-page__avatar-wrap">
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    alt=""
+                    className="home-page__avatar"
+                  />
+                ) : (
+                  <div
+                    className="home-page__avatar home-page__avatar--initials"
+                    style={currentUser.avatarColor ? { background: currentUser.avatarColor } : undefined}
+                  >
+                    {currentUser.avatarInitials}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="home-page__title-group">
-            <h1 className="home-page__greeting">
-              Hi {firstName}
-            </h1>
-            <p className="home-page__subtitle">
-              Welcome to your Career Hub
-            </p>
-          </div>
-        </div>
-      </header>
-      </ProductBackground>
+              <div className="home-page__title-group">
+                <h1 className="home-page__greeting">
+                  Hi {firstName}
+                </h1>
+                <p className="home-page__subtitle">
+                  Welcome to your Career Hub
+                </p>
+              </div>
+            </div>
+          </header>
+        )
+        if (currentUser.id === 'csm') {
+          return <WaveBackground variant="profile">{heroContent}</WaveBackground>
+        }
+        return (
+          <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
+            {heroContent}
+          </ProductBackground>
+        )
+      })()}
       <main className="home-page__main">
         <div className="home-page__layout grid grid-cols-12 gap-6">
           <div className="home-page__sidebar col-span-4">
