@@ -1,4 +1,4 @@
-/** Slide-in sheet showing how the Productivity Hours figure is calculated. */
+/** Slide-in sheet showing how the Productivity Potential figure is calculated. */
 import { useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { formatHours, ORG } from '../../data/wfrOrgData'
@@ -50,7 +50,7 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
   return createPortal(
     <div className="wfr-trend-sheet__root">
       <div className="wfr-trend-sheet__backdrop" onClick={onClose} />
-      <div className="wfr-trend-sheet" role="dialog" aria-label={`${label} productivity hours breakdown`}>
+      <div className="wfr-trend-sheet" role="dialog" aria-label={`${label} productivity potential breakdown`}>
         {/* Header */}
         <div className="wfr-trend-sheet__header">
           <div>
@@ -71,7 +71,7 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
           <div style={{ padding: '20px', borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#16a34a' }}>schedule</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Productivity Hours</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Productivity Potential</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <span style={{ fontSize: 36, fontWeight: 700, color: '#0f172a', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatHours(hrsUnlocked)}</span>

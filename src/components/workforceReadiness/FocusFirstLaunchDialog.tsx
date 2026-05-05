@@ -290,7 +290,7 @@ export function FocusFirstLaunchDialog({
                           </DataTableHead>
                           <DataTableHead>Manager</DataTableHead>
                           <DataTableHead numeric>AI adoption</DataTableHead>
-                          <DataTableHead numeric>Productivity hours</DataTableHead>
+                          <DataTableHead numeric>Productivity potential</DataTableHead>
                           <DataTableHead numeric>Transformation gap</DataTableHead>
                         </DataTableRow>
                       </DataTableHeader>
@@ -481,7 +481,7 @@ export function FocusFirstLaunchDialog({
                               </DataTableHead>
                               <DataTableHead>HRBP</DataTableHead>
                               <DataTableHead numeric>AI adoption</DataTableHead>
-                              <DataTableHead numeric>Productivity hours</DataTableHead>
+                              <DataTableHead numeric>Productivity potential</DataTableHead>
                               <DataTableHead numeric>Transformation gap</DataTableHead>
                             </DataTableRow>
                           </DataTableHeader>
@@ -530,7 +530,7 @@ export function FocusFirstLaunchDialog({
                               </DataTableHead>
                               <DataTableHead>Department</DataTableHead>
                               <DataTableHead numeric>AI adoption</DataTableHead>
-                              <DataTableHead numeric>Productivity hours</DataTableHead>
+                              <DataTableHead numeric>Productivity potential</DataTableHead>
                               <DataTableHead numeric>Transformation gap</DataTableHead>
                             </DataTableRow>
                           </DataTableHeader>

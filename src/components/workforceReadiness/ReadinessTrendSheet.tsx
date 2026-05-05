@@ -29,7 +29,7 @@ export interface ReadinessTrendSheetProps {
   collectionComplete?: boolean
   /** Pre-computed direct report rows to show in the manager-context table (replaces employee list) */
   directReports?: Array<{ name: string; title: string; employees: number; readiness: number; readyCount: number; hrsUnlocked: number }>
-  /** Called when a user clicks a productivity hours figure to open the breakdown sheet */
+  /** Called when a user clicks a productivity potential figure to open the breakdown sheet */
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
 }
 
@@ -360,7 +360,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                   <div className="wfr-trend-sheet__teams-header">
                     <span className="wfr-trend-sheet__teams-th wfr-trend-sheet__teams-th--name">Manager</span>
                     <span className="wfr-trend-sheet__teams-th" style={{ width: 130, paddingLeft: 16 }}>Team AI adoption</span>
-                    <span className="wfr-trend-sheet__teams-th" style={{ width: 100, textAlign: 'right' }}>Productivity hours</span>
+                    <span className="wfr-trend-sheet__teams-th" style={{ width: 100, textAlign: 'right' }}>Productivity potential</span>
                     <span className="wfr-trend-sheet__teams-th" style={{ width: 110, textAlign: 'right' }}>Gap</span>
                   </div>
                   {directReports.map((row) => {

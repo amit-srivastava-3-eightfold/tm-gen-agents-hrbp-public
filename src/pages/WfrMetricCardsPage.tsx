@@ -52,7 +52,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '40k hrs/yr',
         description: (
           <>
@@ -95,7 +95,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '36k hrs/yr',
         description: (
           <>
@@ -151,7 +151,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '7.8M hrs/yr',
         description: (
           <>
@@ -200,7 +200,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '6.6M hrs/yr',
         description: (
           <>
@@ -250,7 +250,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '520k hrs/yr',
         description: (
           <>
@@ -293,7 +293,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
       {
         variant: 'potential',
         icon: 'schedule',
-        label: 'Productivity hours',
+        label: 'Productivity potential',
         value: '458k hrs/yr',
         description: (
           <>
