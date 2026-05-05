@@ -46,7 +46,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '41%',
         explainer: 'How much of your team\'s daily work AI is capable of supporting.',
-        description: <span style={{ color: '#94a3b8' }}>41% AI potential across 240 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 240 employees</span>,
         onLearnMore: () => {},
       },
       {
@@ -57,7 +57,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>41% AI potential across 240 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 240 employees</span>
           </>
         ),
         onLearnMore: () => {},
@@ -89,7 +89,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '41%',
         explainer: 'How much of your team\'s daily work AI is capable of supporting.',
-        description: <span style={{ color: '#94a3b8' }}>41% AI potential across 240 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 240 employees</span>,
         onLearnMore: () => {},
       },
       {
@@ -100,7 +100,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>41% AI potential across 240 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 240 employees</span>
           </>
         ),
         onLearnMore: () => {},
@@ -139,7 +139,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '48%',
         explainer: `How much of your organization's daily work AI is capable of supporting.`,
-        description: <span style={{ color: '#94a3b8' }}>48% AI potential across 49,500 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 49,500 employees</span>,
         tag: (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
@@ -156,7 +156,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>48% AI potential across 49,500 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 49,500 employees</span>
           </>
         ),
         onLearnMore: () => {},
@@ -188,7 +188,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '48%',
         explainer: `How much of your organization's daily work AI is capable of supporting.`,
-        description: <span style={{ color: '#94a3b8' }}>48% AI potential across 49,500 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 49,500 employees</span>,
         tag: (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
@@ -205,7 +205,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>48% AI potential across 49,500 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 49,500 employees</span>
           </>
         ),
         onLearnMore: () => {},
@@ -244,7 +244,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '44%',
         explainer: 'How much of your team\'s daily work AI is capable of supporting.',
-        description: <span style={{ color: '#94a3b8' }}>44% AI potential across 3,200 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 3,200 employees</span>,
         onLearnMore: () => {},
       },
       {
@@ -255,7 +255,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>44% AI potential across 3,200 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 3,200 employees</span>
           </>
         ),
         onLearnMore: () => {},
@@ -287,7 +287,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         label: 'AI potential',
         value: '44%',
         explainer: 'How much of your team\'s daily work AI is capable of supporting.',
-        description: <span style={{ color: '#94a3b8' }}>44% AI potential across 3,200 employees</span>,
+        description: <span style={{ color: '#94a3b8' }}>Across 3,200 employees</span>,
         onLearnMore: () => {},
       },
       {
@@ -298,7 +298,7 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         description: (
           <>
             <span>Annual hours AI can unlock across employees in the transformation gap.</span>
-            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>44% AI potential across 3,200 employees</span>
+            <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across 3,200 employees</span>
           </>
         ),
         onLearnMore: () => {},

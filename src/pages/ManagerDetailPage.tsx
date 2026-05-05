@@ -441,11 +441,11 @@ export function ManagerDetailPage() {
             aiPotential={{
               value: `${dept.aiPotential}%`,
               explainer: `How much of this team's daily work AI is capable of supporting.`,
-              description: <span style={{ color: '#94a3b8' }}>{dept.aiPotential}% AI potential across {employees.length} employees</span>,
+              description: <span style={{ color: '#94a3b8' }}>Across {employees.length} employees</span>,
               tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
               onLearnMore: () => setMetricInfoOpen(true),
             }}
-            potential={{ value: formatHours(mgrHrsUnlocked), description: <><span>Weekly hours AI can unlock across employees in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>{dept.aiPotential}% AI potential across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
+            potential={{ value: formatHours(mgrHrsUnlocked), description: <><span>Annual hours AI can unlock across employees in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {employees.length.toLocaleString()} employees</span></>, onLearnMore: () => setMetricInfoOpen(true) }}
             gap={{
               value: notReady.toLocaleString(),
               explainer: `People in augmentable roles who aren't yet AI-ready.`,
