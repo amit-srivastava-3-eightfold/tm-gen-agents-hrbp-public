@@ -840,7 +840,7 @@ export function DevPlanTemplateDetailPage() {
           onClick={() => setVideoPosterOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: 32 }}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', maxWidth: 960, width: '100%', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', background: '#000' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', maxWidth: 1920, width: '100%', aspectRatio: '1086 / 440', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
             <button
               type="button"
               onClick={() => setVideoPosterOpen(false)}
@@ -849,7 +849,7 @@ export function DevPlanTemplateDetailPage() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
             </button>
-            <img src="/precall-prep-poster.svg" alt="Pre-Call Prep with Claude for CSMs — video poster" style={{ display: 'block', width: '100%', height: 'auto' }} />
+            <img src="/precall-prep-poster.svg" alt="Pre-Call Prep with Claude for CSMs — video poster" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
       )}
