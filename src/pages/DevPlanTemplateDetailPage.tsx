@@ -12,24 +12,12 @@ import './DevPlanTemplateDetailPage.css'
 import '../components/workforceReadiness/DevPlanSheet.css'
 
 const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
-  { speaker: 'ai', text: "Hi Sarah — I'm your AI Coach. I've reviewed the plan from your interview. Want me to walk you through it?" },
-  { speaker: 'sarah', text: 'Yeah, please.' },
-  { speaker: 'ai', text: 'Three core modules, one optional. Each one ties to something specific from your interview.' },
-  { speaker: 'ai', text: '[Module 1: AI-Assisted Pre-Call Prep](#dev-plan-step-1) — generates a one-page brief before every customer call. You said walking in cold was the biggest source of friction.' },
-  { speaker: 'ai', text: '[Module 2: Call-to-Recap Automation](#dev-plan-step-2) — turns your live call notes into a Salesforce-ready recap.' },
-  { speaker: 'ai', text: '[Module 3: Account Research Synthesis](#dev-plan-step-3) — one prompt that produces an exec brief from the sources you already use.' },
-  { speaker: 'ai', text: 'Optional: [Prompt Engineering Foundations](#dev-plan-step-4) — take it first if you want the underlying skill, or skip it.' },
-  { speaker: 'sarah', text: 'Time commitment?' },
-  { speaker: 'ai', text: 'Two hours per module over two weeks. Eight weeks total, four to six hours of actual learning time. The rest is just doing your normal work with the new approach.' },
-  { speaker: 'sarah', text: "What's in each module?" },
-  { speaker: 'ai', text: 'A short video, a written guide with prompt templates you can copy, and a practice exercise.' },
-  { speaker: 'sarah', text: 'I tried Otter for Module 2 stuff a year ago and dropped it. Why is this different?' },
-  { speaker: 'ai', text: 'Otter made you read a full transcript to find what mattered. This works from your notes, not a transcript, and outputs in your Salesforce template format. If it still feels like more work after week one, we drop it.' },
-  { speaker: 'sarah', text: 'What about the judgment calls — when to escalate a usage drop? Anything for that?' },
-  { speaker: 'ai', text: "No, deliberately. That's built from rep volume, not training. The plan frees up time so more of it goes into the calls where that judgment gets sharper." },
-  { speaker: 'sarah', text: "Okay. I'll start with Module 1." },
-  { speaker: 'ai', text: "Good pick. I'll mark it active. Ask me anything as you go — questions on the material, feedback on a draft, prompt adjustments if the output isn't landing." },
-  { speaker: 'sarah', text: 'Will do.' },
+  { speaker: 'ai', text: "Today we're working on pre-call prep — specifically how to use Claude to make it sharper and faster. Walk me through what your prep looks like now." },
+  { speaker: 'sarah', text: "I open Gainsight, scroll the timeline, glance at the last call notes, try to remember what we said we'd follow up on. Maybe peek at LinkedIn if there's a new attendee. I have ten to fifteen calls a week and I'm usually doing this five minutes before." },
+  { speaker: 'ai', text: "That's pretty standard, and it's exactly the kind of work Claude should be doing for you, not you doing for yourself. Reading notes is recall. Spotting what's missing, what they'll push on, what question you haven't thought to ask — that's where you actually earn your seat in the room." },
+  { speaker: 'sarah', text: 'Okay, so what does that look like?' },
+  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: Pre-Call Prep with Claude for CSMs (6 min). Watch it tonight, but let me give you the gist now." },
+  { speaker: 'ai', text: "First, instead of skimming notes, build a pre-call brief. Paste your last two or three call summaries, the customer's stated goals, and any open action items into Claude. Ask for three things — what's the most likely outcome they want from this call, what are two or three things they might push on, and what's one question you should ask that you probably wouldn't think of. That last one is the gold. Claude's value isn't summarizing what you already know — it's surfacing what you don't." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
