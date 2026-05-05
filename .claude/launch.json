@@ -24,6 +24,18 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && npx --yes serve /Users/tony/Dev/Eightfold/AI-Coach -l 5200 --no-clipboard"],
       "port": 5200
+    },
+    {
+      "name": "employee-dev",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/dev/employee && npm run dev -- --port 5174"],
+      "port": 5174
+    },
+    {
+      "name": "career-coach",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && npx --yes serve /Users/tony/dev/CareerCoachUI -l 5201 --no-clipboard"],
+      "port": 5201
     }
   ]
 }
