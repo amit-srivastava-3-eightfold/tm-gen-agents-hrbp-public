@@ -15,7 +15,7 @@ const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
   { speaker: 'ai', text: "Hi Sarah — I'm your AI Coach. I've reviewed the plan from your interview. Want me to walk you through it?" },
   { speaker: 'sarah', text: 'Yeah, please.' },
   { speaker: 'ai', text: 'Three core modules, one optional. Each one ties to something specific from your interview.' },
-  { speaker: 'ai', text: '[Module 1: AI-Assisted QBR Storytelling](#dev-plan-step-1) — drafts your QBR commentary from the data you already pull. You said this was the biggest time sink.' },
+  { speaker: 'ai', text: '[Module 1: AI-Assisted Pre-Call Prep](#dev-plan-step-1) — generates a one-page brief before every customer call. You said walking in cold was the biggest source of friction.' },
   { speaker: 'ai', text: '[Module 2: Call-to-Recap Automation](#dev-plan-step-2) — turns your live call notes into a Salesforce-ready recap.' },
   { speaker: 'ai', text: '[Module 3: Account Research Synthesis](#dev-plan-step-3) — one prompt that produces an exec brief from the sources you already use.' },
   { speaker: 'ai', text: 'Optional: [Prompt Engineering Foundations](#dev-plan-step-4) — take it first if you want the underlying skill, or skip it.' },
@@ -61,7 +61,7 @@ interface TemplateData {
 const TEMPLATE_DATA: Record<string, TemplateData> = {
   'ai-powered-customer-success': {
     name: 'AI for Customer Success',
-    description: 'Three core modules — QBR storytelling, call-to-recap automation, and account research synthesis — plus an optional Prompt Engineering Foundations primer. Each module ties to a specific time sink Sarah called out in her discovery interview, with a short video, a written guide of prompt templates, and one practice exercise.',
+    description: 'Three core modules — pre-call prep, call-to-recap automation, and account research synthesis — plus an optional Prompt Engineering Foundations primer. Each module ties to a specific time sink Sarah called out in her discovery interview, with a short video, a written guide of prompt templates, and one practice exercise.',
     status: 'Published',
     createdBy: 'Workforce Readiness',
     role: 'Customer Success Manager',
@@ -69,9 +69,9 @@ const TEMPLATE_DATA: Record<string, TemplateData> = {
     businessUnit: 'Customer Success',
     jobFunction: 'Account Management',
     location: 'All',
-    skills: ['AI-assisted commentary', 'Prompt engineering', 'AI tool fluency', 'Account research synthesis', 'Critical evaluation of AI output'],
+    skills: ['AI-assisted call prep', 'Prompt engineering', 'AI tool fluency', 'Account research synthesis', 'Critical evaluation of AI output'],
     courses: [
-      { title: 'AI-Assisted QBR Storytelling', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
+      { title: 'AI-Assisted Pre-Call Prep', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Call-to-Recap Automation', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Account Research Synthesis', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Prompt Engineering Foundations (Optional)', provider: 'Vanderbilt University', duration: '2 hrs', level: 'Beginner', free: true },

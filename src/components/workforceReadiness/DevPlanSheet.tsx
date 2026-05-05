@@ -250,17 +250,17 @@ function getCompletedDate(name: string, levelId: number): string {
 const CSM_LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
   {
     id: 1,
-    name: 'AI-Assisted QBR Storytelling',
-    xpLabel: 'QBR XP',
-    outcome: 'Generate QBR commentary directly from the data you already pull — turn variance trends and ticket history into a defensible first draft you can edit, not stare at a blank slide.',
+    name: 'AI-Assisted Pre-Call Prep',
+    xpLabel: 'Prep XP',
+    outcome: 'Walk into every customer call with a one-page brief generated in 60 seconds — usage trends, open tickets, recent product changes, and the questions you\'d otherwise scramble to find.',
     tasks: [
-      { text: 'Draft QBR commentary on one of your live accounts using the prompt template', description: 'Pick an upcoming QBR. Pull your usual Looker exports, drop them into the prompt template, and let AI write a first-pass narrative. Edit for voice and accuracy — don\'t expect perfection from the first run.' },
-      { text: 'Compare the AI draft to your last hand-written QBR — note what saved time and what needed rewriting', description: 'A simple side-by-side note is enough. Where did AI nail the framing? Where did you have to rewrite? These observations sharpen the prompt for the next quarter.' },
+      { text: 'Generate a pre-call brief for three customer calls this week using the prompt template', description: 'Pick three upcoming calls — a renewal, an exec check-in, and a routine pulse. Run the prep prompt against your CRM activity, usage analytics, and recent tickets. Read the brief instead of opening five tabs.' },
+      { text: 'Compare each AI brief to your usual prep notes — flag what it surfaced that you would have missed', description: 'A few notes per call is enough. Where did AI catch a usage drop or contract detail you\'d have skimmed past? Those moments are why this scales — and they sharpen the prompt for the next call.' },
     ],
     coachTask: {
-      text: 'Walk through your first AI-drafted QBR with your coach',
-      sessionTitle: 'AI-Assisted QBR Storytelling — Session 1',
-      sessionDesc: 'Bring the AI draft and your edits. Your coach will help you tune the prompt for your accounts and surface patterns you can reuse next quarter.',
+      text: 'Walk through your first AI-generated pre-call brief with your coach',
+      sessionTitle: 'AI-Assisted Pre-Call Prep — Session 1',
+      sessionDesc: 'Bring an upcoming call and the AI brief. Your coach will help you tune the prompt for your accounts and lock in a workflow that holds up on a busy week.',
     },
     totalHours: 2,
     adoptionPts: 4,
@@ -305,7 +305,7 @@ const CSM_LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
     xpLabel: 'Foundations XP',
     outcome: 'Optional but useful — build the underlying skill that makes every other AI workflow sharper. Clear, structured prompts get usable output the first time.',
     tasks: [
-      { text: 'Rewrite one of your existing prompts using the structured framework', description: 'Take a prompt you already use (QBR draft, recap, research) and restructure it: role + context + task + format. Compare the output to your old prompt.' },
+      { text: 'Rewrite one of your existing prompts using the structured framework', description: 'Take a prompt you already use (pre-call brief, recap, research) and restructure it: role + context + task + format. Compare the output to your old prompt.' },
       { text: 'Save your top three prompts to your account playbook', description: 'Document the prompt, when to use it, and one gotcha you learned. This is how individual wins become a team\'s shared toolkit.' },
     ],
     coachTask: {
@@ -320,7 +320,7 @@ const CSM_LEVEL_BASE: Omit<LevelDef, 'courses'>[] = [
 
 const CSM_LEVEL_COURSES: Record<number, Course[]> = {
   1: [
-    { name: 'AI-Assisted QBR Storytelling', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Short video walkthrough plus a written guide of prompt templates for turning Looker exports, support tickets, and renewal context into a defensible QBR narrative.' },
+    { name: 'AI-Assisted Pre-Call Prep', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Workflow guide for generating a one-page customer call brief from CRM activity, usage analytics, and support ticket history — with prompt templates for renewal calls, escalations, exec QBRs, and routine check-ins.' },
   ],
   2: [
     { name: 'Call-to-Recap Automation', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true, description: 'Workflow guide for going from in-call notes to a Salesforce-ready follow-up email — including prompt templates that match common CSM call formats.' },
