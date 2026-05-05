@@ -16,7 +16,7 @@ const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
   { speaker: 'sarah', text: "Open Gainsight, scroll the timeline, glance at last call notes, check LinkedIn if there's a new attendee. I'm usually doing this five minutes before." },
   { speaker: 'ai', text: "That's recall, not prep. Claude should be doing that part for you — your job is spotting what's missing, what they'll push on, the question you haven't thought to ask." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
-  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: [Pre-Call Prep with Claude for CSMs](video:precall-prep). Watch it tonight, but let me give you the gist now." },
+  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: [Pre-Call Prep with Claude for CSMs](video:precall-prep). Let me give you the gist now." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
