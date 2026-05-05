@@ -13,10 +13,10 @@ import '../components/workforceReadiness/DevPlanSheet.css'
 
 const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
   { speaker: 'ai', text: 'Walk me through what your prep looks like now.' },
-  { speaker: 'sarah', text: "I open Gainsight, scroll the timeline, glance at the last call notes, try to remember what we said we'd follow up on. Maybe peek at LinkedIn if there's a new attendee. I have ten to fifteen calls a week and I'm usually doing this five minutes before." },
-  { speaker: 'ai', text: "That's pretty standard, and it's exactly the kind of work Claude should be doing for you, not you doing for yourself. Reading notes is recall. Spotting what's missing, what they'll push on, what question you haven't thought to ask — that's where you actually earn your seat in the room." },
+  { speaker: 'sarah', text: "Open Gainsight, scroll the timeline, glance at last call notes, check LinkedIn if there's a new attendee. I'm usually doing this five minutes before." },
+  { speaker: 'ai', text: "That's recall, not prep. Claude should be doing that part for you — your job is spotting what's missing, what they'll push on, the question you haven't thought to ask." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
-  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: Pre-Call Prep with Claude for CSMs (6 min). Watch it tonight, but let me give you the gist now." },
+  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: Pre-Call Prep with Claude for CSMs. Watch it tonight, but let me give you the gist now." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
