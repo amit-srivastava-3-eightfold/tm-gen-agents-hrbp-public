@@ -13,8 +13,8 @@ import '../components/workforceReadiness/DevPlanSheet.css'
 
 const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
   { speaker: 'ai', text: "Let's take something concrete — before a customer call, how do you usually get ready? Walk me through what your pre-call prep looks like now." },
-  { speaker: 'sarah', text: "I open Gainsight, scroll the timeline, glance at last call notes, check LinkedIn if there's a new attendee. I'm usually doing this five minutes before." },
-  { speaker: 'ai', text: "That's recall, not prep. Claude should be doing that part for you — your job is spotting what's missing, what they'll push on, the question you haven't thought to ask." },
+  { speaker: 'sarah', text: "Honestly, I just open Gainsight, scroll through the timeline, take a quick look at last call notes, maybe check LinkedIn if there's someone new. It's all pretty quick — like right before the call." },
+  { speaker: 'ai', text: "Got it — that's mostly pulling together context. Ideally, that's the part Claude should be handling for you — so you can focus on what's missing, what they might push on, and the question you haven't thought to ask yet." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
   { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: [Pre-Call Prep with Claude for CSMs](video:precall-prep). Watch it tonight, but let me give you the gist now." },
 ]
