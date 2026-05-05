@@ -12,12 +12,11 @@ import './DevPlanTemplateDetailPage.css'
 import '../components/workforceReadiness/DevPlanSheet.css'
 
 const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
-  { speaker: 'ai', text: "Today we're working on pre-call prep — specifically how to use Claude to make it sharper and faster. Walk me through what your prep looks like now." },
+  { speaker: 'ai', text: 'Walk me through what your prep looks like now.' },
   { speaker: 'sarah', text: "I open Gainsight, scroll the timeline, glance at the last call notes, try to remember what we said we'd follow up on. Maybe peek at LinkedIn if there's a new attendee. I have ten to fifteen calls a week and I'm usually doing this five minutes before." },
   { speaker: 'ai', text: "That's pretty standard, and it's exactly the kind of work Claude should be doing for you, not you doing for yourself. Reading notes is recall. Spotting what's missing, what they'll push on, what question you haven't thought to ask — that's where you actually earn your seat in the room." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
   { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: Pre-Call Prep with Claude for CSMs (6 min). Watch it tonight, but let me give you the gist now." },
-  { speaker: 'ai', text: "First, instead of skimming notes, build a pre-call brief. Paste your last two or three call summaries, the customer's stated goals, and any open action items into Claude. Ask for three things — what's the most likely outcome they want from this call, what are two or three things they might push on, and what's one question you should ask that you probably wouldn't think of. That last one is the gold. Claude's value isn't summarizing what you already know — it's surfacing what you don't." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
