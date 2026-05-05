@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, CourseObjectCard, Progress } from '@tonyh-2-eightfold/ef-design-system'
 import { NavbarApp } from '../components/Navbar'
@@ -16,7 +16,7 @@ const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
   { speaker: 'sarah', text: "Open Gainsight, scroll the timeline, glance at last call notes, check LinkedIn if there's a new attendee. I'm usually doing this five minutes before." },
   { speaker: 'ai', text: "That's recall, not prep. Claude should be doing that part for you — your job is spotting what's missing, what they'll push on, the question you haven't thought to ask." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
-  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: [Pre-Call Prep with Claude for CSMs](#dev-plan-step-1). Watch it tonight, but let me give you the gist now." },
+  { speaker: 'ai', text: "Three plays — and there's a walkthrough in your learning library that shows the full flow end to end: [Pre-Call Prep with Claude for CSMs](video:precall-prep). Watch it tonight, but let me give you the gist now." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
@@ -177,6 +177,14 @@ export function DevPlanTemplateDetailPage() {
   const [activeUnlock, setActiveUnlock] = useState<'doors' | 'risk' | 'skills' | null>(null)
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
   const [coachSession, setCoachSession] = useState<CoachTask | null>(null)
+  const [videoPosterOpen, setVideoPosterOpen] = useState(false)
+
+  useEffect(() => {
+    if (!videoPosterOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setVideoPosterOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [videoPosterOpen])
 
   return (
     <div>
@@ -817,7 +825,35 @@ export function DevPlanTemplateDetailPage() {
         sessionDesc={coachSession?.sessionDesc}
         script={coachSession?.id === 'dev-plan-pick' ? DEV_PLAN_COACH_SCRIPT : undefined}
         planName={template.name}
+        onLinkClick={(href) => {
+          if (href === 'video:precall-prep') {
+            setVideoPosterOpen(true)
+            return true
+          }
+          return false
+        }}
       />
+      {videoPosterOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pre-Call Prep with Claude for CSMs"
+          onClick={() => setVideoPosterOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: 32 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', maxWidth: 960, width: '100%', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', background: '#000' }}>
+            <button
+              type="button"
+              onClick={() => setVideoPosterOpen(false)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 18, border: 'none', background: 'rgba(15, 23, 42, 0.7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+            </button>
+            <img src="/precall-prep-poster.svg" alt="Pre-Call Prep with Claude for CSMs — video poster" style={{ display: 'block', width: '100%', height: 'auto' }} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

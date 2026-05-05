@@ -14,13 +14,16 @@ interface CoachSessionPanelProps {
   script?: CoachTurn[]
   /** Optional plan name shown under the "Career Coach" header (e.g. an IDP name). */
   planName?: string
+  /** Intercept a transcript link click. Return true to suppress the default
+   *  close-and-scroll behavior — useful for opening a modal instead. */
+  onLinkClick?: (href: string) => boolean
 }
 
 function fmtTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
-export function CoachSessionPanel({ open, onClose, sessionTitle = 'Coaching session', sessionDesc = '', script, planName }: CoachSessionPanelProps) {
+export function CoachSessionPanel({ open, onClose, sessionTitle = 'Coaching session', sessionDesc = '', script, planName, onLinkClick }: CoachSessionPanelProps) {
   const [mode, setMode] = useState<'default' | 'conversation'>('default')
   const [elapsed, setElapsed] = useState(0)
   const [turnIdx, setTurnIdx] = useState(0)
@@ -196,9 +199,11 @@ export function CoachSessionPanel({ open, onClose, sessionTitle = 'Coaching sess
                   let key = 0
                   while ((m = re.exec(text)) !== null) {
                     if (m.index > lastIdx) parts.push(text.slice(lastIdx, m.index))
+                    const label = m[1]
+                    const href = m[2]
                     parts.push(
-                      <a key={`l-${key++}`} href={m[2]} className="cs-t-link" onClick={(e) => { e.preventDefault(); onClose(); setTimeout(() => { const el = document.querySelector(m![2]); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 280) }}>
-                        {m[1]}
+                      <a key={`l-${key++}`} href={href} className="cs-t-link" onClick={(e) => { e.preventDefault(); if (onLinkClick?.(href)) return; onClose(); setTimeout(() => { const el = document.querySelector(href); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 280) }}>
+                        {label}
                         <span className="material-symbols-outlined cs-t-link-icon">arrow_outward</span>
                       </a>
                     )
