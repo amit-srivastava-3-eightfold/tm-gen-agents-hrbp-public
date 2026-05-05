@@ -840,7 +840,7 @@ export function DevPlanTemplateDetailPage() {
           onClick={() => setVideoPosterOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: 32 }}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(1086px, 95vw)', aspectRatio: '1086 / 440', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(680px, 95vw)', aspectRatio: '680 / 382', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
             <button
               type="button"
               onClick={() => setVideoPosterOpen(false)}
