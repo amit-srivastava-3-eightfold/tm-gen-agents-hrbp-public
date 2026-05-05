@@ -262,26 +262,26 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
             </div>
           </div>
 
-          {/* Unrealized Value card */}
+          {/* Productivity Potential card */}
           <div style={{ border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '20px 16px', background: '#eef2ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#6366f1', background: 'rgba(99,102,241,0.12)', borderRadius: 8, padding: 5 }}>auto_awesome</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>Unrealized Value</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#6366f1', background: 'rgba(99,102,241,0.12)', borderRadius: 8, padding: 5 }}>schedule</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#6366f1' }}>Productivity Potential</span>
             </div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 8px' }}>The annual productivity value waiting to be captured.</h3>
-            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 14px' }}>We score every role's tasks for AI augmentability using 7 research sources, then value the unlockable hours at BLS median wages.</p>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 8px' }}>Annual hours AI can help reclaim for people in the transformation gap.</h3>
+            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 14px' }}>For each augmentable task we multiply weekly hours by its AI task score and a 60% realization rate, then sum across gap employees and annualize.</p>
             <div style={{ borderTop: '1px solid rgba(99,102,241,0.15)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>AI Potential %</strong> — share of role tasks in the augmentation zone, scored across 7 research sources.</span>
+                <span><strong style={{ color: '#0f172a' }}>Hours unlocked</strong> — augmentable task-hours × AI task score × 60% realization rate.</span>
               </div>
               <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>Hours unlocked</strong> — augmentable task-hours × 60% realization rate (McKinsey 2023).</span>
+                <span><strong style={{ color: '#0f172a' }}>60% realization</strong> — McKinsey 2023 midpoint; accounts for oversight, edge cases, and ramp-up time.</span>
               </div>
               <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>Dollar value</strong> — hours unlocked × BLS median wage × 52 weeks.</span>
+                <span><strong style={{ color: '#0f172a' }}>Scope</strong> — counts only employees in the transformation gap, not total headcount.</span>
               </div>
             </div>
           </div>
@@ -2071,12 +2071,11 @@ export function WorkforceReadinessDashboard({
 
   const startUpskilling = useCallback((summary: UpskillingLaunchSummary) => {
     setWfrState(prev => {
-      const next = advanceAllHrbps(prev, 3 as WfrProgramState, 4)
+      const next = advanceAllHrbps(prev, 3 as WfrProgramState, 5)
       return { ...next, upskillingLaunchSummary: summary }
     })
-    const deptCount = summary.departmentNames.length
     const empCount = summary.totalEmployees.toLocaleString()
-    setSnackbar(`Upskilling launched for ${deptCount} department${deptCount === 1 ? '' : 's'} · ${empCount} employees`)
+    setSnackbar(`Development plans generated — upskilling underway for ${empCount} employees`)
     setTimeout(() => setSnackbar(null), 4000)
   }, [setWfrState])
 
@@ -2144,8 +2143,8 @@ export function WorkforceReadinessDashboard({
     const rawEmps = getEmployeesForRole({ title: dept.name, employees: dept.employees, aiReadiness: dept.aiReadiness, aiPotential: dept.aiPotential } as unknown as Parameters<typeof getEmployeesForRole>[0])
     const allDeptEmps = rawEmps.map((e, i) => ({ ...e, title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined }))
     const cumStart = managers.slice(0, mgrIdx).reduce((s, m) => s + m.employees, 0)
-    const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length))
-    // Build a team-local shuffled first-name list so all 43 employees get unique first names
+    const mgrEmployees = allDeptEmps.slice(cumStart, Math.min(cumStart + mgr.employees, allDeptEmps.length)).slice(0, 8)
+    // Build a team-local shuffled first-name list so all team members get unique first names
     const fnMulberry = (s: number) => { let t = (s + 0x6d2b79f5) >>> 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
     const teamFirstNames = [...WFR_FIRST_NAMES] as string[]
     let fnSeed = (mgrIdx * 2654435761) >>> 0
@@ -2180,7 +2179,7 @@ export function WorkforceReadinessDashboard({
     const readyCount = displayEmployees.filter(e => e.displayReadiness >= 50).length
     const notReady = displayEmployees.length - readyCount
     // Base UV (pre-state). Consumers should scale by current readiness via scaleUnrealizedValue.
-    const unrealizedValue = Math.round(dept.unrealizedValue * mgr.employees / Math.max(1, dept.employees))
+    const unrealizedValue = Math.round(dept.unrealizedValue * mgrEmployees.length / Math.max(1, dept.employees))
     const tasksInAug = Math.round(getTasksForRole(deptRoles[0]?.title ?? '').filter(t => { const s = t.score ?? 0; return s >= 15 && s <= 75 }).length)
     const totalTasks = getTasksForRole(deptRoles[0]?.title ?? '').length
     return { mgr, employees: displayEmployees, dept, avgReadiness, readyCount, notReady, unrealizedValue, tasksInAug, totalTasks }
@@ -2260,7 +2259,7 @@ export function WorkforceReadinessDashboard({
       <WfrOverviewLayout
         aiPotentialPct={mgrDept.aiPotential}
         aiReadinessPct={displayReadinessPct}
-        totalEmployees={mgrData.employees}
+        totalEmployees={mgrEmployees.length}
         headline={mgrPlansCreated ? (
           <>
             <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadinessPct}%</span>
@@ -2279,7 +2278,7 @@ export function WorkforceReadinessDashboard({
             icon: 'bolt',
             value: `${mgrDept.aiPotential}%`,
             explainer: `How much of your team's daily work AI is capable of supporting.`,
-            description: <span style={{ color: '#94a3b8' }}>{mgrDept.aiPotential}% AI potential across {mgrData.employees} employees</span>,
+            description: <span style={{ color: '#94a3b8' }}>Across {mgrEmployees.length} employees</span>,
             tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
           },
           {
@@ -2288,7 +2287,7 @@ export function WorkforceReadinessDashboard({
             icon: 'psychology',
             value: `${displayReadinessPct}%`,
             explainer: `Share of your team in augmentable roles who are actively using AI.`,
-            description: <span style={{ color: '#94a3b8' }}>{mgrData.employees - displayNotReady} of {mgrData.employees} employees are AI-ready</span>,
+            description: <span style={{ color: '#94a3b8' }}>{mgrEmployees.length - displayNotReady} of {mgrEmployees.length} employees are AI-ready</span>,
           },
           {
             id: 'gap',

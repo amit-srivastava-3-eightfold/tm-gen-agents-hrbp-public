@@ -203,7 +203,10 @@ export function ManagerDetailPage() {
       ? managers[mgrIdx]
       : managers.find(m => m.manager === managerName)
     if (topMgr) {
-      const employeesWithManager = buildManagerEmps(topMgr)
+      let employeesWithManager = buildManagerEmps(topMgr)
+      if (dept.name === 'Customer Success' && mgrIdx === 24) {
+        employeesWithManager = employeesWithManager.slice(0, 8)
+      }
       return { mgr: topMgr, employees: employeesWithManager, parentManager: null as string | null, parentMgrIdx: null as number | null }
     }
 
@@ -457,15 +460,17 @@ export function ManagerDetailPage() {
                 <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                   <DataTableHeader>
                     <DataTableRow>
-                      <DataTableHead style={{ width: '42%' }}>Manager</DataTableHead>
+                      <DataTableHead style={{ width: '20%' }}>Manager</DataTableHead>
+                      <DataTableHead style={{ width: '12%' }} />
+                      <DataTableHead style={{ width: '6%' }} />
                       <DataTableHead metric style={{ width: '20%' }}>AI adoption</DataTableHead>
-                      <DataTableHead numeric style={{ width: '12%' }}>Transformation gap</DataTableHead>
-                      {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '16%' }}>Upskilling</DataTableHead>}
+                      <DataTableHead numeric style={{ width: '16%' }}>Transformation gap</DataTableHead>
+                      {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '26%' }}>Upskilling</DataTableHead>}
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
                     <DataTableRow>
-                      <DataTableCell className="font-semibold">
+                      <td colSpan={3} className="px-5 py-3 align-middle text-sm font-semibold text-foreground">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <img src="/josh-minnia.jpg" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                           <div>
@@ -473,7 +478,7 @@ export function ManagerDetailPage() {
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title} · {dept.name}</div>
                           </div>
                         </div>
-                      </DataTableCell>
+                      </td>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={avgReadiness} /></DataTableCell>
                       <DataTableCell align="right">
                         <span style={{ color: avgReadiness >= 50 ? '#15803d' : '#dc2626', fontWeight: 600 }}>{avgReadiness >= 50 ? 'AI-ready' : 'Not AI-ready'}</span>
@@ -519,10 +524,10 @@ export function ManagerDetailPage() {
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead style={{ width: '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
-                <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
+                <DataTableHead style={{ width: '12%' }}>Role</DataTableHead>
                 <DataTableHead numeric style={{ width: '6%' }}>Tasks</DataTableHead>
                 <DataTableHead metric style={{ width: '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
-                <DataTableHead numeric style={{ width: '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: '16%' }}>Transformation gap</DataTableHead>
                 {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: upskillingInScope ? '26%' : undefined, cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
