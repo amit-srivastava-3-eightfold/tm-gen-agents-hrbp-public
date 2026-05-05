@@ -53,10 +53,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '776 hrs/wk',
+        value: '40k hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>41% AI potential across 240 employees</span>
           </>
         ),
@@ -96,10 +96,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '700 hrs/wk',
+        value: '36k hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>41% AI potential across 240 employees</span>
           </>
         ),
@@ -152,10 +152,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '150k hrs/wk',
+        value: '7.8M hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>48% AI potential across 49,500 employees</span>
           </>
         ),
@@ -201,10 +201,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '127k hrs/wk',
+        value: '6.6M hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>48% AI potential across 49,500 employees</span>
           </>
         ),
@@ -251,10 +251,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '10.0k hrs/wk',
+        value: '520k hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>44% AI potential across 3,200 employees</span>
           </>
         ),
@@ -294,10 +294,10 @@ const CARD_DATA: Record<PersonaKey, Record<StateKey, Parameters<typeof MetricCar
         variant: 'potential',
         icon: 'schedule',
         label: 'Productivity hours',
-        value: '8.8k hrs/wk',
+        value: '458k hrs/yr',
         description: (
           <>
-            <span>Weekly hours AI can unlock across employees in the transformation gap.</span>
+            <span>Annual hours AI can unlock across employees in the transformation gap.</span>
             <span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>44% AI potential across 3,200 employees</span>
           </>
         ),

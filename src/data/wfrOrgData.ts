@@ -1875,12 +1875,15 @@ export function formatDollar(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
-/** Format weekly hours unlocked for display: 30k hrs/wk, 6.0k hrs/wk, 88 hrs/wk */
+/** Format hours unlocked for display, annualized: 6.8M hrs/yr, 281k hrs/yr, 208 hrs/yr.
+ *  Input is weekly hours (matches stored hrsUnlocked field); output multiplies by 52. */
 export function formatHours(hrs: number): string {
-  if (hrs == null || isNaN(hrs)) return '0 hrs/wk'
-  if (hrs >= 10_000) return `${Math.round(hrs / 1_000)}k hrs/wk`
-  if (hrs >= 1_000) return `${(hrs / 1_000).toFixed(1)}k hrs/wk`
-  return `${hrs.toLocaleString()} hrs/wk`
+  if (hrs == null || isNaN(hrs)) return '0 hrs/yr'
+  const annual = hrs * 52
+  if (annual >= 1_000_000) return `${(annual / 1_000_000).toFixed(1)}M hrs/yr`
+  if (annual >= 10_000) return `${Math.round(annual / 1_000)}k hrs/yr`
+  if (annual >= 1_000) return `${(annual / 1_000).toFixed(1)}k hrs/yr`
+  return `${Math.round(annual).toLocaleString()} hrs/yr`
 }
 
 /** Compute aiPotential from task data per Octave: Tasks in Augmentation Zone / Total Tasks × 100 */

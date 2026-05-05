@@ -15,7 +15,7 @@ export interface UnrealizedValueSheetData {
   aiPotential: number
   /** Headcount in scope */
   headcount: number
-  /** Pre-computed weekly hours unlocked */
+  /** Pre-computed weekly hours unlocked (display annualizes via formatHours) */
   hrsUnlocked: number
 }
 
@@ -43,8 +43,9 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
 
   const { label, subtitle, aiPotential, headcount, hrsUnlocked } = data
 
-  const hrsPerPerson = parseFloat((ORG.hrsPerPersonWeek * (aiPotential / ORG.aiPotential)).toFixed(1))
-  const gapPeople = hrsPerPerson > 0 ? Math.round(hrsUnlocked / hrsPerPerson) : 0
+  const hrsPerPersonWeek = parseFloat((ORG.hrsPerPersonWeek * (aiPotential / ORG.aiPotential)).toFixed(1))
+  const hrsPerPersonYear = Math.round(hrsPerPersonWeek * 52)
+  const gapPeople = hrsPerPersonWeek > 0 ? Math.round(hrsUnlocked / hrsPerPersonWeek) : 0
 
   return createPortal(
     <div className="wfr-trend-sheet__root">
@@ -76,7 +77,7 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
               <span style={{ fontSize: 36, fontWeight: 700, color: '#0f172a', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatHours(hrsUnlocked)}</span>
             </div>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>
-              Weekly hours AI can unlock — across {headcount.toLocaleString()} employees in the transformation gap
+              Annual hours AI can unlock — across {headcount.toLocaleString()} employees in the transformation gap
             </div>
           </div>
 
@@ -101,9 +102,9 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Augmentable hours / person</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>{ORG.hrsPerPersonWeek} hrs org baseline × ({aiPotential}% ÷ {ORG.aiPotential}% org avg) — includes 60% realization rate</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>{ORG.hrsPerPersonWeek} hrs/wk org baseline × ({aiPotential}% ÷ {ORG.aiPotential}% org avg) × 52 wks — includes 60% realization rate</div>
                   </div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{hrsPerPerson} hrs<span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>/wk</span></div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{hrsPerPersonYear.toLocaleString()} hrs<span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>/yr</span></div>
                 </div>
               </div>
 
@@ -124,12 +125,12 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
           <div style={{ padding: '14px 16px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formula</div>
             <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.8, fontVariantNumeric: 'tabular-nums' }}>
-              {hrsPerPerson} hrs/person × {gapPeople.toLocaleString()} people in gap
+              {hrsPerPersonYear.toLocaleString()} hrs/person/yr × {gapPeople.toLocaleString()} people in gap
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '1px solid #e2e8f0' }}>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>=</span>
               <span style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{formatHours(hrsUnlocked)}</span>
-              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 'auto' }}>({hrsPerPerson} hrs/person)</span>
+              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 'auto' }}>({hrsPerPersonYear.toLocaleString()} hrs/person/yr)</span>
             </div>
           </div>
 
@@ -139,7 +140,7 @@ export function UnrealizedValueSheet({ data, onClose }: Props) {
             {[
               'AI Potential is a 7-signal composite: GenAI Task Analysis (22%), WorkBank Observed Exposure — Massenkoff & McCrory 2026 (22%), 24-Study Meta-Analysis (16%), Frey-Osborne (12%), GPTs-are-GPTs (12%), BLS Skills Framework (8%), BLS Employment Trend (8%)',
               '60% realization rate applied to augmentable hours (McKinsey 2023: 50–70% achievable range)',
-              'Hours represent weekly capacity freed when people in the gap reach AI-readiness',
+              'Hours represent annual capacity freed when people in the gap reach AI-readiness',
               'Updates quarterly as AI adoption scores improve from data collection',
             ].map((note) => (
               <div key={note} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
