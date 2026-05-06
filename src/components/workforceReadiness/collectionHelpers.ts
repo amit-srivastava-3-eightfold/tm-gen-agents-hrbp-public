@@ -8,7 +8,7 @@ const FIRST_NAMES = [
   'Sasha', 'Robin', 'Ari', 'Elliot', 'Remi', 'Mika', 'Tatum', 'Phoenix',
 ]
 const LAST_NAMES = [
-  'Thompson', 'Rivera', 'Kim', 'Okonkwo', 'Culhane', 'Patel', 'Nguyen', 'Brooks',
+  'Thompson', 'Rivera', 'Kim', 'Okonkwo', 'Warren', 'Patel', 'Nguyen', 'Brooks',
   'Washington', 'Reyes', 'Nakamura', 'Sullivan', 'Martinez', 'Johansson', 'Kapoor', 'Andersson',
   'Obi', 'Duval', 'Petrov', 'Chang', 'Tanaka', 'Osei', 'Larsson', 'Montoya',
   'Choi', 'Adeyemi', 'Moreau', 'Gupta', 'Ferreira', 'Kowalski', 'Santos', 'Cohen',

@@ -217,12 +217,12 @@ export function FocusFirstCollectionCard({
         <div className="wfr-ra-card__cta-row">
           <div>
             <p className="wfr-ra-card__cta-text">
-              Data collection is complete. Create development plans for <strong>{gapCount.toLocaleString()}</strong> employees{topRoles.length > 0 && <> — prioritize {topRoles.map((r, i) => (<span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>))}</>}.
+              AI interviews complete — development plans are being generated for <strong>{gapCount.toLocaleString()}</strong> employees{topRoles.length > 0 && <> starting with {topRoles.map((r, i) => (<span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>))}</>}.
             </p>
-            <p className="wfr-ra-card__hint">Assign development plans to your client managers so they can enroll their teams.</p>
+            <p className="wfr-ra-card__hint">Personalized development plans are being automatically generated from each employee's AI interview.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
-            Start upskilling&nbsp;→
+            What's next?
           </Button>
         </div>
       </div>
@@ -379,17 +379,17 @@ export function FocusFirstCollectionCard({
           <div className="wfr-ra-card__cta-row">
             <div>
               <p className="wfr-ra-card__cta-text">
-                Upskill <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
+                AI interviews complete — development plans are being generated for <strong>{gapCount.toLocaleString()}</strong> employees — prioritize{' '}
                 {topRoles.map((r, i) => (
                   <span key={r.title}><strong>{r.title}</strong>{i < topRoles.length - 1 ? (i === topRoles.length - 2 ? ' and ' : ', ') : ''}</span>
                 ))}.
               </p>
               <p className="wfr-ra-card__hint">
-                Choose teams and assign development plans to {'close adoption gaps'}.
+                Personalized development plans are being automatically generated from each employee's AI interview.
               </p>
             </div>
             <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
-              Start upskilling&nbsp;→
+              What's next?
             </Button>
           </div>
         </div>
@@ -460,9 +460,9 @@ export function FocusFirstCollectionCard({
         <div className="wfr-ra-card__cta-row">
           <div>
             <p className="wfr-ra-card__cta-text">
-              Based on AI Coaching, you can improve productivity across <strong>{scopeLabel}</strong> by <strong>{(remainingGapPeople * ORG.hrsPerPersonWeek * 50).toLocaleString()} hours/year</strong> by upskilling <strong>{remainingGapPeople.toLocaleString()}</strong> employees.
+              AI interviews complete — development plans are being generated for <strong>{remainingGapPeople.toLocaleString()}</strong> employees across <strong>{scopeLabel}</strong>.
             </p>
-            <p className="wfr-ra-card__hint">Create development plans to close adoption gaps across {scopeLabel}.</p>
+            <p className="wfr-ra-card__hint">Personalized development plans are being automatically generated from each employee's AI interview.</p>
           </div>
           <Button type="button" variant="primary" className="shrink-0" onClick={onStartUpskilling}>
             What's next?
@@ -506,10 +506,10 @@ export function FocusFirstCollectionCard({
       {!showGreen && (
         <p className="wfr-ra-card__cta-text" style={{ marginTop: 8 }}>
           {launchSummary?.delegated
-            ? <><strong>{launchSummary.scopeLabel}</strong>'s collection is underway — survey responses are rolling in from their teams.</>
+            ? <><strong>{launchSummary.scopeLabel}</strong>'s AI interviews are underway.</>
             : launchSummary
-              ? <>Collection is underway for <strong>{launchSummary.scopeLabel}</strong> — survey responses are rolling in.</>
-              : <>Responses are rolling in — check back as participation grows.</>}
+              ? <>AI interviews are underway for <strong>{launchSummary.scopeLabel}</strong>.</>
+              : <>AI interviews are underway.</> }
         </p>
       )}
 
@@ -532,8 +532,8 @@ export function FocusFirstCollectionCard({
           {showGreen
             ? 'Sample threshold reached!'
             : isFilling
-              ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
-              : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} sampled${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+              ? `${Math.round(snapshot.respondedCount * (animPct / snapshot.orgResponseRate)).toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} interviewed${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
+              : `${snapshot.respondedCount.toLocaleString()} of ${snapshot.sampleTarget.toLocaleString()} interviewed${attentionScope === 'dept' && deptName ? ` in ${deptName}` : ''}`
           }
         </span>
       </div>
@@ -755,7 +755,7 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  {delegatorName ?? 'The CHRO'} has kicked off AI data collection for your team. Launch collection to sharpen adoption scores and surface upskilling priorities for your people.
+                  {delegatorName ?? 'The CHRO'} has kicked off AI data collection interviews for your team. Launch interviews to sharpen adoption scores and surface upskilling priorities for your people.
                 </p>
               </div>
               <Button
@@ -781,10 +781,10 @@ function FocusFirstModuleBoard({
             <div className="wfr-ra-card__cta-row">
               <div>
                 <p className="wfr-ra-card__cta-text">
-                  Data collection has been delegated to <strong>{chroDelegationScopeLabel ?? 'HRBPs'}</strong>. Waiting for them to launch collection for their teams.
+                  AI data collection interviews have been delegated to <strong>{chroDelegationScopeLabel ?? 'HRBPs'}</strong>. Waiting for them to launch interviews for their teams.
                 </p>
                 <p className="wfr-ra-card__hint">
-                  Each HRBP will choose when to start — progress will appear here as teams respond.
+                  Each HRBP will choose when to start — progress will appear here as employees are interviewed.
                 </p>
               </div>
             </div>
@@ -957,18 +957,18 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
       accent: RED,
     },
     hrbp: {
-      icon: 'insights',
-      label: 'Review estimated AI adoption across your team.',
-      hint: 'Your CHRO has visibility into org-wide scores — explore your team\'s data below.',
-      buttonLabel: null,
+      icon: 'manage_accounts',
+      label: 'Scores are estimated today — use this time to get ahead on skill gaps and retention risks.',
+      hint: 'Your team data is available now — explore gaps and risks before your next planning cycle.',
+      buttonLabel: 'Review skill gaps →',
       buttonVariant: 'secondary',
       accent: BLUE,
     },
     manager: {
-      icon: 'insights',
-      label: 'AI adoption scores for your team are based on estimates.',
-      hint: 'Scores will improve once data collection runs across your organization.',
-      buttonLabel: null,
+      icon: 'assignment',
+      label: 'Build development plans for your team today.',
+      hint: 'Development planning works independently of AI adoption scores.',
+      buttonLabel: 'Start a development plan →',
       buttonVariant: 'secondary',
       accent: BLUE,
     },
@@ -976,7 +976,7 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   '1b': {
     chro: {
       icon: 'send',
-      label: 'Data collection delegated to HRBPs — waiting for them to launch.',
+      label: 'AI data collection interviews delegated to HRBPs — waiting for them to launch.',
       hint: 'Jaydon Torff and 2 other HRBPs have been assigned. Track their progress below.',
       buttonLabel: null,
       buttonVariant: 'secondary',
@@ -987,9 +987,9 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     hrbp: {
       icon: 'flag',
-      label: 'Your CHRO has kicked off AI data collection for your team.',
-      hint: 'Launch collection to sharpen adoption scores and surface upskilling priorities for your people.',
-      buttonLabel: 'Launch collection →',
+      label: 'Your CHRO has kicked off AI data collection interviews for your team.',
+      hint: 'Launch interviews to sharpen adoption scores and surface upskilling priorities for your people.',
+      buttonLabel: 'Launch AI interviews →',
       buttonVariant: 'primary',
       accent: RED,
     },
@@ -1005,8 +1005,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   2: {
     chro: {
       icon: 'sync',
-      label: 'Jaydon Torff\'s collection is underway — survey responses are rolling in.',
-      hint: '34 of 96 sampled · 35% response rate',
+      label: 'Jaydon Torff\'s AI interviews are underway.',
+      hint: '34 of 96 interviewed · 35% completion rate',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
@@ -1017,8 +1017,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     hrbp: {
       icon: 'sync',
-      label: 'Your collection is underway — survey responses are rolling in.',
-      hint: '34 of 96 sampled · 35% response rate',
+      label: 'Your AI interviews are underway.',
+      hint: '34 of 96 interviewed · 35% completion rate',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
@@ -1026,8 +1026,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     manager: {
       icon: 'sync',
-      label: 'Your team is being surveyed — responses are rolling in.',
-      hint: '12 of 28 sampled · 43% response rate',
+      label: 'Your team\'s AI interviews are underway.',
+      hint: '12 of 28 interviewed · 43% completion rate',
       buttonLabel: null,
       buttonVariant: 'secondary',
       accent: YELLOW,
@@ -1037,8 +1037,8 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
   3: {
     chro: {
       icon: 'check_circle',
-      label: 'Collection complete — HRBPs will now build AI-powered dev plans for 5,749 employees.',
-      hint: 'Each HRBP uses AI to generate role-specific development plans tailored to their team\'s gaps.',
+      label: 'Collection complete — personalized development plans are being generated.',
+      hint: 'Each employee\'s AI interview is automatically generating a role-specific development plan.',
       buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: GREEN,
@@ -1046,17 +1046,17 @@ export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarC
     },
     hrbp: {
       icon: 'check_circle',
-      label: 'Collection complete — ready to upskill 1,985 employees across your teams.',
-      hint: 'Assign development plans to your client managers so they can enroll their teams.',
-      buttonLabel: 'Start upskilling →',
-      buttonVariant: 'primary',
+      label: 'Collection complete — development plans are being generated for your teams.',
+      hint: 'Each employee\'s AI interview is automatically generating their personalized development plan.',
+      buttonLabel: 'What\'s next?',
+      buttonVariant: 'secondary',
       accent: GREEN,
       progress: 100,
     },
     manager: {
       icon: 'check_circle',
-      label: 'Collection complete — development plans are being prepared for your team.',
-      hint: 'Your HRBP will assign plans to you shortly. You\'ll be notified when they\'re ready.',
+      label: 'Collection complete — your development plan is being generated.',
+      hint: 'Your personalized development plan was created from your AI interview and will be ready shortly.',
       buttonLabel: 'What\'s next?',
       buttonVariant: 'secondary',
       accent: GREEN,

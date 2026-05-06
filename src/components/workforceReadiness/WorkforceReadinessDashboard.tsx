@@ -65,7 +65,7 @@ function PersonAvatar({ name, size = 28, src }: { name: string; size?: number; s
   const h = nh(name)
   const parts = name.split(' ')
   const initials = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
-  const photoSrc = src ?? (h % 5 < 2 ? AVATAR_PHOTOS[h % AVATAR_PHOTOS.length] : undefined)
+  const photoSrc = src ?? (h % 5 < 2 ? AVATAR_PHOTOS[(h >> 1) % AVATAR_PHOTOS.length] : undefined)
   if (photoSrc) {
     return <img src={photoSrc} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
@@ -693,6 +693,7 @@ function BoardView({
   const chroDelegationActive = !isHrbp && delegationPending
   const ctaDemoState: WfrDemoState | null = upskillingComplete ? 6 : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
+  const navigate = useNavigate()
   // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
   const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
     if (!isHrbp || !personaHrbpNames?.length || !delegationPending) return []
@@ -1004,7 +1005,9 @@ function BoardView({
     return set
   })()
 
-  const ctaButtonClick = ctaDemoState === 1 && !isHrbp
+  const ctaButtonClick = ctaDemoState === 1 && isHrbp
+    ? () => document.querySelector('.wfr-dash__panel-head')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    : ctaDemoState === 1 && !isHrbp
     ? () => { setOpenMetric(null); setFocusLaunchOpen(true) }
     : ctaDemoState === '1b' && isHrbp
       ? () => { setOpenMetric(null); setFocusLaunchOpen(true) }
@@ -1984,6 +1987,8 @@ export function WorkforceReadinessDashboard({
         if (parsed.state === 5 || parsed.state === 6) return parsed
         // Preserve delegation state (hrbpStates) so HRBPs see the delegation CTA across navigation
         if (parsed.hrbpStates && Object.keys(parsed.hrbpStates).length > 0) return parsed
+        // Manager always restores persisted state — home page and WFR page must stay in sync
+        if (isManager) return parsed
       }
     } catch { /* ignore */ }
     return { state: 1 }
@@ -2187,8 +2192,8 @@ export function WorkforceReadinessDashboard({
 
   if (isManager && managerTeamData) {
     const { employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, unrealizedValue: mgrUnrealized, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
-    const mgrEffectiveState = wfrState.hrbpStates ? getPersonaEffectiveState(wfrState, ['Jaydon Torff']) : wfrState.state
-    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
+    const mgrEffectiveState = wfrState.hrbpStates?.['Jaydon Torff']?.state ?? wfrState.state
+    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
     const mgrUpskillingBoost = mgrUpskillingComplete ? 16 : mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)
@@ -2251,9 +2256,9 @@ export function WorkforceReadinessDashboard({
       })
       return map
     })()
-    const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? 6 : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : 2
+    const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? 6 : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : mgrCollActive ? 2 : 1
     const advanceMgrToComplete = () => setWfrState(prev => advanceAllHrbps(prev, null, 6))
-    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
+    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 1 ? () => navigate('/my-activity/dev-plan-templates') : mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
     return (
       <>
       <WfrOverviewLayout
