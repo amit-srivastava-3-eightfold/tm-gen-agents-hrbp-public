@@ -1,7 +1,7 @@
 import { useUser } from '../contexts/UserContext'
 import type { UserCardData, RiskTag } from './UserCard'
 import { UserCard } from './UserCard'
-import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
+import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS, CHRO_USER_CARDS, CHRO_ALL_REPORTS_CARDS } from '../data/teamData'
 
 interface UserCardListProps {
   /** 'direct' = direct reports only; 'all' = all reports in chain (direct + indirect) */
@@ -67,8 +67,9 @@ export function UserCardList({
 }: UserCardListProps) {
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'jaydon-torff'
-  const directCards = isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS
-  const allCards = isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS
+  const isChro = currentUser.id === 'chro'
+  const directCards = isLaura ? LAURA_USER_CARDS : isChro ? CHRO_USER_CARDS : MATEO_USER_CARDS
+  const allCards = isLaura ? LAURA_ALL_REPORTS_CARDS : isChro ? CHRO_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS
   let cards: UserCardData[] = reportScope === 'all' ? allCards : directCards
 
   const getEffectiveRiskTags = (c: UserCardData) => riskTagOverrides[c.id] ?? c.riskTags

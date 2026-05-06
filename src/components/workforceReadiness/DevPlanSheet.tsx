@@ -452,6 +452,7 @@ export function LevelCard({
   onToggle,
   completedAt,
   onCoachTask,
+  showPts = true,
 }: {
   level: LevelDef
   state: LevelState
@@ -461,6 +462,7 @@ export function LevelCard({
   onToggle: () => void
   completedAt?: string
   onCoachTask?: (task: CoachTask) => void
+  showPts?: boolean
 }) {
   const isCurrent = state === 'current'
   const isRecognized = state === 'recognized'
@@ -508,9 +510,9 @@ export function LevelCard({
           </div>
         </div>
 
-        <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${isRecognized ? 'credited' : isLocked ? 'locked' : 'current'}`}>
+        {showPts && <span className={`dev-plan-sheet__level-pts-chip dev-plan-sheet__level-pts-chip--${isRecognized ? 'credited' : isLocked ? 'locked' : 'current'}`}>
           {isRecognized ? `+${level.adoptionPts} pts credited` : `+${level.adoptionPts} pts`}
-        </span>
+        </span>}
 
         {(isRecognized || isLocked) && (
           <span className={`material-symbols-outlined dev-plan-sheet__level-chevron${expanded ? ' dev-plan-sheet__level-chevron--open' : ''}`}>
@@ -688,14 +690,15 @@ export function DevPlanSheet({ employee, open, onClose, isAssigned, inline, view
       {showBanner && (
         <div style={{ margin: '16px 24px 0', borderRadius: 14, overflow: 'hidden', background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative', flexShrink: 0 }}>
           <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          <div style={{ position: 'relative', padding: '20px 20px 16px', display: 'flex', gap: 14 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#fbbf24' }}>emoji_events</span>
+          <div style={{ position: 'relative', padding: '20px 20px 16px', display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div style={{ flexShrink: 0, width: 72, height: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 10 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#fbbf24' }}>emoji_events</span>
+              <span style={{ fontSize: 18, fontWeight: 900, color: '#fbbf24', letterSpacing: '-0.02em', lineHeight: 1 }}>+{totalAdoptionPts}</span>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>Plan complete</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.5 }}>
-                AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalAdoptionPts} pts</strong> — {selfView ? 'you are' : `${firstName} is`} now AI-ready.
+                AI adoption score increased — {selfView ? 'you are' : `${firstName} is`} now AI-ready.
               </div>
             </div>
           </div>

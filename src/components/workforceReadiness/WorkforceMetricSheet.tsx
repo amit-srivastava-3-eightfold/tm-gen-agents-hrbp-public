@@ -87,31 +87,34 @@ export function WorkforceMetricSheet({
           {metric === 'potential' && (
             <>
               <p>
-                We break every role into its tasks and score each one for how much AI can help. Tasks where AI can
-                meaningfully assist but humans still lead (the 15{EN}75% range) count toward this number. Tasks that
-                should be fully automated or where AI can&apos;t help are excluded.
+                For every role, we identify the tasks in the augmentation zone {EM} where AI can meaningfully help but
+                humans still lead {EM} and estimate the weekly hours spent on each. Each task&apos;s hours are multiplied
+                by its AI task score, then by a <strong>60% realization rate</strong> (the McKinsey 2023 midpoint for
+                what&apos;s practically achievable). The result is hours per person per week that AI can help reclaim.
+                Multiply by headcount in the gap, annualize, and you get the Productivity Potential figure.
+              </p>
+              <p>
+                The 60% factor accounts for implementation lag, task variability, and the fact that AI assistance speeds
+                up work rather than eliminating it entirely. The remaining 40% covers human oversight, edge cases, and
+                ramp-up time.
               </p>
               {dataCollection ? (
                 <p>
                   {dataCollection.delegated ? (
                     <>
-                      HRBPs are running this for <strong>{dataCollection.scopeLabel}</strong>. Task scores here still
-                      reflect org-wide role research; as delegates launch <strong>{dataCollection.channelsLabel}</strong>,
-                      you can prioritize follow-up where measured workflow signal is lightest.
+                      This figure is scoped to <strong>{dataCollection.scopeLabel}</strong>. As HRBPs complete data
+                      collection with <strong>{dataCollection.channelsLabel}</strong>, measured task-hour distributions
+                      will sharpen the estimate.
                     </>
                   ) : (
                     <>
-                      You launched <strong>{dataCollection.channelsLabel}</strong> for{' '}
-                      <strong>{dataCollection.scopeLabel}</strong>. Summary task counts on the overview are scaled to that
-                      population; deeper task mix will sharpen as responses arrive.
+                      This figure reflects <strong>{dataCollection.scopeLabel}</strong>. Hours will be refined as{' '}
+                      <strong>{dataCollection.channelsLabel}</strong> responses come in and measured task durations
+                      replace role-average estimates.
                     </>
                   )}
                 </p>
               ) : null}
-              <p>
-                Scores are based on 8 independent research sources including real-world AI adoption data, academic
-                studies, and government labor statistics {EM} not a single model&apos;s opinion.
-              </p>
               <Button
                 type="button"
                 variant="ghost"

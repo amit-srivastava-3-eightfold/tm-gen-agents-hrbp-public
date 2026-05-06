@@ -117,6 +117,41 @@ const TEMPLATE_DATA: Record<string, TemplateData> = {
       { title: 'Technical Strategy and Vision', provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Advanced', free: false },
     ],
   },
+  'data-driven-customer-success': {
+    name: 'Data-Driven Customer Success',
+    description: 'Build the data fluency and analytical skills to identify at-risk accounts, forecast renewals, and turn usage signals into proactive customer conversations — before issues become escalations.',
+    status: 'Published',
+    createdBy: 'Workforce Readiness',
+    role: 'Customer Success Manager',
+    duration: 8,
+    businessUnit: 'Customer Success',
+    jobFunction: 'Account Management',
+    location: 'All',
+    skills: ['Usage analytics', 'Churn prediction', 'Renewal forecasting', 'Health scoring', 'Data storytelling', 'Proactive outreach'],
+    courses: [
+      { title: 'Data Analysis for Customer Success', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Beginner', free: true },
+      { title: 'Forecasting Renewals with Usage Data', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Intermediate', free: true },
+      { title: 'Health Scoring & Early Warning Systems', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Intermediate', free: true },
+      { title: 'Data Storytelling for Customer Teams', provider: 'LinkedIn Learning', duration: '3 hrs', level: 'Beginner', free: false },
+    ],
+  },
+  'executive-presence-influence': {
+    name: 'Executive Presence & Influence',
+    description: 'Develop the communication and influence skills to lead executive business reviews, navigate difficult conversations, and build trust with senior stakeholders — turning relationships into long-term partnerships.',
+    status: 'Published',
+    createdBy: 'Alex Nakamura',
+    role: 'Customer Success Manager',
+    duration: 6,
+    businessUnit: 'Customer Success',
+    jobFunction: 'Account Management',
+    location: 'All',
+    skills: ['Executive communication', 'EBR facilitation', 'Stakeholder influence', 'Difficult conversations', 'Strategic storytelling', 'C-suite relationship building'],
+    courses: [
+      { title: 'Executive Business Reviews That Land', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Intermediate', free: true },
+      { title: 'Influencing Without Authority', provider: 'Coursera', duration: '4 hrs', level: 'Intermediate', free: true },
+      { title: 'Difficult Conversations for Customer Teams', provider: 'LinkedIn Learning', duration: '3 hrs', level: 'Intermediate', free: false },
+    ],
+  },
   'ai-upskilling-engineering-lead': {
     name: 'AI Upskilling — Engineering Lead',
     description: 'Build AI-augmented engineering workflows — from AI-assisted code review and architecture analysis to using LLMs for documentation, incident response, and technical decision-making.',
@@ -168,7 +203,8 @@ export function DevPlanTemplateDetailPage() {
   const isAlreadyPublished = template.status === 'Published'
   // Templates that should render the rich curriculum layout (modules + AI score) for employees,
   // not the courses-grid layout used for generic templates.
-  const useCurriculumLayout = !!templateId && (templateId.includes('ai-upskilling') || templateId === 'ai-powered-customer-success')
+  const useCurriculumLayout = isEmployee && !!templateId
+  const isAiPlan = templateId === 'ai-powered-customer-success' || !!templateId?.includes('ai-upskilling')
   const [activeTab, setActiveTab] = useState<'employees' | 'details' | 'assign'>(isEmployee ? 'details' : isAlreadyPublished ? 'assign' : 'details')
   const [published, setPublished] = useState(isAlreadyPublished)
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
@@ -178,6 +214,20 @@ export function DevPlanTemplateDetailPage() {
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set())
   const [coachSession, setCoachSession] = useState<CoachTask | null>(null)
   const [videoPosterOpen, setVideoPosterOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editedName, setEditedName] = useState(template.name)
+  const [editedDescription, setEditedDescription] = useState(template.description)
+
+  const currentModuleName = (() => {
+    if (!useCurriculumLayout || !isEmployee) return undefined
+    let wfrStateVal = 1
+    try { wfrStateVal = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}').state ?? 1 } catch {}
+    const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
+    const planComplete = wfrStateVal >= 5 && Math.abs(h) % 4 === 0
+    if (planComplete) return undefined
+    const lvls = buildLevels({ name: currentUser.name, title: currentUser.title, readinessPct: 48, displayReadiness: 48, planPct: 0 })
+    return lvls[0] ? `Module 1: ${lvls[0].name}` : undefined
+  })()
 
   useEffect(() => {
     if (!videoPosterOpen) return
@@ -217,12 +267,28 @@ export function DevPlanTemplateDetailPage() {
                   )}
                   <div>
                     <div style={{ fontSize: 14, color: '#64748b' }}>{currentUser.name}</div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>{template.name}</h1>
+                    {editMode ? (
+                      <input
+                        value={editedName}
+                        onChange={e => setEditedName(e.target.value)}
+                        autoFocus
+                        style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, border: '1.5px solid #6366f1', borderRadius: 6, padding: '3px 8px', outline: 'none', width: 360 }}
+                      />
+                    ) : (
+                      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>{editedName}</h1>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Button variant="outline" size="sm" leadingIcon={<span className="material-symbols-outlined" style={{ fontSize: 16 }}>shortcut</span>}>Share</Button>
-                  <Button variant="outline" size="sm" leadingIcon={<span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>}>Edit</Button>
+                  {editMode ? (
+                    <>
+                      <Button variant="primary" size="sm" onClick={() => setEditMode(false)}>Save</Button>
+                      <Button variant="outline" size="sm" onClick={() => { setEditedName(template.name); setEditedDescription(template.description); setEditMode(false) }}>Cancel</Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" size="sm" leadingIcon={<span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>} onClick={() => setEditMode(true)}>Edit</Button>
+                  )}
                   <Button variant="outline" size="sm" leadingIcon={<span className="material-symbols-outlined" style={{ fontSize: 16 }}>description</span>} badge={1}>Notes</Button>
                   <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', fontSize: 22, padding: 4 }}>⋮</button>
                 </div>
@@ -257,12 +323,13 @@ export function DevPlanTemplateDetailPage() {
           )}
         </div>
 
-        {/* Coaching banner — employee view only */}
-        {isEmployee && (
+        {/* Coaching banner — AI plans only */}
+        {isEmployee && isAiPlan && (
           <div style={{ marginBottom: 24 }}>
             <CoachPickCard
               pick={DEV_PLAN_COACH_PICK}
               firstName={currentUser.name.split(' ')[0]}
+              moduleName={currentModuleName}
               onStart={() => setCoachSession({ id: 'dev-plan-pick', text: DEV_PLAN_COACH_PICK.headline, sessionTitle: DEV_PLAN_COACH_PICK.headline, sessionDesc: DEV_PLAN_COACH_PICK.desc })}
             />
           </div>
@@ -375,7 +442,7 @@ export function DevPlanTemplateDetailPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {(isEmployee ? [
-                  { label: 'Description', value: template.description },
+                  { label: 'Description', value: editedDescription },
                   { label: 'Relevant role', value: template.role },
                   ...(templateId === 'ai-powered-customer-success' ? [
                     { label: 'Estimated effort', value: '8 hours' },
@@ -398,7 +465,16 @@ export function DevPlanTemplateDetailPage() {
                 ]).map((field) => (
                   <div key={field.label}>
                     <div style={{ fontSize: 12, color: '#64748b' }}>{field.label}</div>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: field.value === 'Not specified' ? '#94a3b8' : '#0f172a' }}>{field.value}</div>
+                    {editMode && field.label === 'Description' ? (
+                      <textarea
+                        value={editedDescription}
+                        onChange={e => setEditedDescription(e.target.value)}
+                        rows={5}
+                        style={{ fontSize: 14, width: '100%', padding: '6px 8px', border: '1.5px solid #6366f1', borderRadius: 6, resize: 'vertical', outline: 'none', color: '#0f172a', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box' }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 14, fontWeight: 500, color: field.value === 'Not specified' ? '#94a3b8' : '#0f172a' }}>{field.value}</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -448,9 +524,8 @@ export function DevPlanTemplateDetailPage() {
                 // Read WFR state to determine plan completion
                 let wfrState = 1
                 try { wfrState = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}').state ?? 1 } catch {}
-                // Employee's plan is complete when WFR state >= 5 and their hash gives 100%
-                // For Sarah Culhane (the employee persona), use a fixed planPct based on state
-                const planComplete = wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })()
+                // AI plan completion derives from WFR state; all other plans are always complete for the employee view
+                const planComplete = templateId !== 'ai-powered-customer-success' || (wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })())
                 const basePct = 48
                 const totalPlanPts = 14
                 const currentPct = planComplete ? basePct + totalPlanPts : basePct
@@ -464,34 +539,29 @@ export function DevPlanTemplateDetailPage() {
                 ]
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                    {/* Completion banner */}
-                    {planComplete && (
+                    {/* Completion banner — AI plans only */}
+                    {isAiPlan && planComplete && (
                       <div style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 20, background: 'linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%)', color: '#fff', position: 'relative' }}>
                         {/* Subtle pattern overlay */}
                         <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-                        <div style={{ position: 'relative', padding: '24px 24px 20px', display: 'flex', gap: 16 }}>
-                          {/* Trophy icon */}
-                          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 26, color: '#fbbf24' }}>emoji_events</span>
+                        <div style={{ position: 'relative', padding: '24px 24px 20px', display: 'flex', gap: 16, alignItems: 'center' }}>
+                          {/* Trophy + pts badge */}
+                          <div style={{ flexShrink: 0, width: 80, height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', borderRadius: 12 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#fbbf24' }}>emoji_events</span>
+                            <span style={{ fontSize: 20, fontWeight: 900, color: '#fbbf24', letterSpacing: '-0.02em', lineHeight: 1 }}>+{totalPlanPts}</span>
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.01em' }}>Plan complete</div>
                             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4, lineHeight: 1.5 }}>
-                              Your AI adoption score increased by <strong style={{ color: '#fff' }}>+{totalPlanPts} pts</strong> — you're now AI-ready. Keep the momentum going.
-                            </div>
-                            <div style={{ marginTop: 14 }}>
-                              <Button variant="default" size="sm">
-                                <span className="material-symbols-outlined" style={{ fontSize: 15, marginRight: 4 }}>arrow_forward</span>
-                                Create next plan
-                              </Button>
+                              Your AI adoption score increased — you're now AI-ready. Keep the momentum going.
                             </div>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* AI Adoption Score — horizontal bar */}
-                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
+                    {/* AI Adoption Score — AI plans only */}
+                    {isAiPlan && <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 16 }}>AI Adoption Score</div>
                       {/* Score + bar row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 12 }}>
@@ -540,7 +610,7 @@ export function DevPlanTemplateDetailPage() {
                           </>
                         )}
                       </div>
-                    </div>
+                    </div>}
 
                     {/* Curriculum */}
                     <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} modules</div>
@@ -556,13 +626,14 @@ export function DevPlanTemplateDetailPage() {
                             expanded={expandedLevels.has(level.id)}
                             onToggle={() => setExpandedLevels(prev => { const next = new Set(prev); next.has(level.id) ? next.delete(level.id) : next.add(level.id); return next })}
                             onCoachTask={task => setCoachSession(task)}
+                            showPts={isAiPlan}
                           />
                         </div>
                       )
                     })}
 
-                    {/* Unlocks — uses DevPlanSheet CSS classes */}
-                    <div className="dev-plan-sheet__unlocks">
+                    {/* Unlocks */}
+                    {<div className="dev-plan-sheet__unlocks">
                       <div className="dev-plan-sheet__unlocks-heading">What completing this plan unlocks for {firstName}</div>
                       <div className="dev-plan-sheet__unlocks-badges">
                         {unlocks.map(({ id, value, label, detail, color, gid }) => {
@@ -617,7 +688,7 @@ export function DevPlanTemplateDetailPage() {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </div>}
                   </div>
                 )
               })() : (

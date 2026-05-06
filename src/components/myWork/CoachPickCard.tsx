@@ -7,15 +7,16 @@ interface CoachPickCardProps {
   firstName: string
   onStart: () => void
   onDismiss?: () => void
+  moduleName?: string
 }
 
-export function CoachPickCard({ pick, onStart, onDismiss }: CoachPickCardProps) {
+export function CoachPickCard({ pick, onStart, onDismiss, moduleName }: CoachPickCardProps) {
   return (
     <section className="pick">
       <div>
         {pick.eyebrow && <div className="pick-eyebrow">{pick.eyebrow}</div>}
         <h2>{pick.headline}</h2>
-        <p>{pick.body}</p>
+        <p>{pick.body}{moduleName && <> You're currently on <strong>{moduleName}</strong>.</>}</p>
         {pick.outcomes && pick.outcomes.length > 0 && (
           <div className="pick-outcomes">
             {pick.outcomes.map((o) => (

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useUser } from '../contexts/UserContext'
-import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS } from '../data/teamData'
+import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS, CHRO_USER_CARDS, CHRO_ALL_REPORTS_CARDS } from '../data/teamData'
 import {
   Select,
   SelectTrigger,
@@ -19,56 +19,42 @@ import { EditSkillAssessmentsSheet } from './EditSkillAssessmentsSheet'
 /** Unique role titles across the team (from team data) */
 const ROLES_FOR_TEAM: string[] = (() => {
   const titles = new Set<string>()
-  ;[...MATEO_USER_CARDS, ...LAURA_USER_CARDS].forEach((c) => titles.add(c.title))
+  ;[...MATEO_USER_CARDS, ...LAURA_USER_CARDS, ...CHRO_USER_CARDS].forEach((c) => titles.add(c.title))
   return Array.from(titles).sort()
 })()
 
-/* Totals = 14 direct reports; current = how many have the skill (gaps = need it by role, strengths = have it) */
+/* Totals = 8 direct reports; current = how many have the skill (gaps = need it by role, strengths = have it) */
 const MATEO_SKILL_GAPS = [
-  { name: 'Value Proposition', current: 5, total: 14 },
-  { name: 'Product Demos', current: 4, total: 14 },
-  { name: 'Objection Handling', current: 3, total: 14 },
-  { name: 'CRM Systems', current: 6, total: 14 },
-  { name: 'API Integration', current: 2, total: 14 },
-  { name: 'Technical Sales', current: 7, total: 14 },
-  { name: 'Enterprise Sales', current: 3, total: 14 },
-  { name: 'Contract Negotiation', current: 6, total: 14 },
-  { name: 'Discovery Calls', current: 4, total: 14 },
-  { name: 'Competitive Positioning', current: 5, total: 14 },
-  { name: 'Proof of Concept', current: 3, total: 14 },
-  { name: 'Solution Scoping', current: 6, total: 14 },
-  { name: 'Stakeholder Mapping', current: 4, total: 14 },
-  { name: 'Proposal Writing', current: 5, total: 14 },
+  { name: 'AI-assisted workflows', current: 4, total: 14 },
+  { name: 'Renewal forecasting', current: 5, total: 14 },
+  { name: 'Churn risk analysis', current: 5, total: 14 },
+  { name: 'Data-driven QBRs', current: 6, total: 14 },
+  { name: 'Expansion selling', current: 6, total: 14 },
+  { name: 'Escalation management', current: 7, total: 14 },
+  { name: 'Executive alignment', current: 8, total: 14 },
+  { name: 'Product depth', current: 9, total: 14 },
 ]
 
 const MATEO_SKILL_STRENGTHS = [
-  { name: 'Solution Architecture', current: 12, total: 14 },
-  { name: 'Sales Enablement', current: 10, total: 14 },
-  { name: 'Technical Discovery', current: 11, total: 14 },
+  { name: 'CRM proficiency', current: 14, total: 14 },
   { name: 'Communication', current: 14, total: 14 },
-  { name: 'API Integration', current: 5, total: 14 },
-  { name: 'Product Demos', current: 9, total: 14 },
-  { name: 'Value Proposition', current: 8, total: 14 },
-  { name: 'Technical Sales', current: 10, total: 14 },
-  { name: 'CRM Systems', current: 11, total: 14 },
-  { name: 'Objection Handling', current: 7, total: 14 },
-  { name: 'Contract Negotiation', current: 8, total: 14 },
-  { name: 'Enterprise Sales', current: 6, total: 14 },
+  { name: 'Account relationship management', current: 11, total: 14 },
+  { name: 'Customer advocacy', current: 10, total: 14 },
+  { name: 'Onboarding execution', current: 9, total: 14 },
+  { name: 'QBR facilitation', current: 8, total: 14 },
+  { name: 'Stakeholder management', current: 7, total: 14 },
+  { name: 'Data analysis', current: 6, total: 14 },
+  { name: 'Technical troubleshooting', current: 5, total: 14 },
 ]
 
 const MATEO_SKILL_INTERESTS = [
-  { name: 'Solutions Architecture', count: 9 },
-  { name: 'Sales Engineering', count: 11 },
-  { name: 'Technical Sales', count: 8 },
+  { name: 'AI-assisted workflows', count: 11 },
+  { name: 'Revenue Operations', count: 9 },
+  { name: 'Customer Success Operations', count: 8 },
+  { name: 'Account Management Leadership', count: 7 },
   { name: 'Product Management', count: 5 },
-  { name: 'Cross-Functional Team Leadership', count: 6 },
-  { name: 'Cloud Architecture', count: 7 },
-  { name: 'Customer Success', count: 4 },
-  { name: 'Partner Management', count: 3 },
-  { name: 'Solution Consulting', count: 10 },
-  { name: 'Data & Analytics', count: 5 },
-  { name: 'Enterprise Architecture', count: 4 },
-  { name: 'Pre-Sales Leadership', count: 2 },
+  { name: 'Data & Analytics', count: 4 },
+  { name: 'Cross-Functional Team Leadership', count: 3 },
 ]
 
 /* Laura's supported employees: 12 direct; totals = 12 */
@@ -119,7 +105,39 @@ const LAURA_SKILL_INTERESTS = [
   { name: 'Workforce Strategy', count: 4 },
 ]
 
-const MATEO_TAB_COUNTS = { direct: 14, all: 28 }
+const MATEO_TAB_COUNTS = { direct: 8, all: 8 }
+
+/* CHRO — 6 VP-level direct reports */
+const CHRO_SKILL_GAPS = [
+  { name: 'AI-driven talent strategy' },
+  { name: 'Workforce analytics' },
+  { name: 'Skills-based organization design' },
+  { name: 'Organizational network analysis' },
+  { name: 'Change management at scale' },
+  { name: 'Executive coaching' },
+]
+
+const CHRO_SKILL_STRENGTHS = [
+  { name: 'Executive communication' },
+  { name: 'People analytics' },
+  { name: 'Organizational design' },
+  { name: 'Culture & employee experience' },
+  { name: 'Talent acquisition strategy' },
+  { name: 'Total rewards strategy' },
+  { name: 'Talent management' },
+  { name: 'HR technology leadership' },
+  { name: 'Coaching' },
+]
+
+const CHRO_SKILL_INTERESTS = [
+  { name: 'AI workforce transformation' },
+  { name: 'Skills-based organization' },
+  { name: 'People analytics & AI' },
+  { name: 'Future of work' },
+  { name: 'Talent marketplace' },
+]
+
+const CHRO_TAB_COUNTS = { direct: 6, all: 6 }
 
 const LAURA_TAB_COUNTS = { direct: 12, all: 48 }
 
@@ -276,10 +294,11 @@ export function SkillAnalysisSection({
 }: SkillAnalysisSectionProps) {
   const { currentUser } = useUser()
   const isLaura = currentUser.id === 'jaydon-torff'
+  const isChro = currentUser.id === 'chro'
 
   const cardsForScope = scope === 'all'
-    ? (isLaura ? LAURA_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS)
-    : (isLaura ? LAURA_USER_CARDS : MATEO_USER_CARDS)
+    ? (isLaura ? LAURA_ALL_REPORTS_CARDS : isChro ? CHRO_ALL_REPORTS_CARDS : MATEO_ALL_REPORTS_CARDS)
+    : (isLaura ? LAURA_USER_CARDS : isChro ? CHRO_USER_CARDS : MATEO_USER_CARDS)
 
   const [viewFilter, setViewFilter] = useState<ViewFilterValue>('gaps')
   const [selectedSkillGap, setSelectedSkillGap] = useState<string | null>(null)
@@ -314,7 +333,7 @@ export function SkillAnalysisSection({
 
   /* Gaps: bar = people (in role) who have the gap; right = people whose role requires this skill. When top Skills filter is set, only show those skills. */
   const skillGaps = useMemo(() => {
-    const gapNames = isLaura ? LAURA_SKILL_GAPS.map((s) => s.name) : MATEO_SKILL_GAPS.map((s) => s.name)
+    const gapNames = isLaura ? LAURA_SKILL_GAPS.map((s) => s.name) : isChro ? CHRO_SKILL_GAPS.map((s) => s.name) : MATEO_SKILL_GAPS.map((s) => s.name)
     const namesToShow = selectedSkills.length > 0 ? gapNames.filter((n) => selectedSkills.includes(n)) : gapNames
     const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_GAP[name] ?? []
     const list = namesToShow.map((name) => {
@@ -330,7 +349,7 @@ export function SkillAnalysisSection({
 
   /* For Gaps analysis view: strengths with current/total bar (role-based). When top Skills filter is set, only show those skills. */
   const skillStrengths = useMemo(() => {
-    const strengthNames = isLaura ? LAURA_SKILL_STRENGTHS.map((s) => s.name) : MATEO_SKILL_STRENGTHS.map((s) => s.name)
+    const strengthNames = isLaura ? LAURA_SKILL_STRENGTHS.map((s) => s.name) : isChro ? CHRO_SKILL_STRENGTHS.map((s) => s.name) : MATEO_SKILL_STRENGTHS.map((s) => s.name)
     const namesToShow = selectedSkills.length > 0 ? strengthNames.filter((n) => selectedSkills.includes(n)) : strengthNames
     const rolesFor = (name: string) => ROLES_REQUIRING_SKILL_STRENGTH[name] ?? []
     const list = namesToShow.map((name) => {
@@ -345,7 +364,7 @@ export function SkillAnalysisSection({
 
   /* For Gaps analysis view: skill interests with count. When top Skills filter is set, only show those skills (if they appear in interests). */
   const skillInterestsSortedByCount = useMemo(() => {
-    const interestNames = isLaura ? LAURA_SKILL_INTERESTS.map((s) => s.name) : MATEO_SKILL_INTERESTS.map((s) => s.name)
+    const interestNames = isLaura ? LAURA_SKILL_INTERESTS.map((s) => s.name) : isChro ? CHRO_SKILL_INTERESTS.map((s) => s.name) : MATEO_SKILL_INTERESTS.map((s) => s.name)
     const namesToShow = selectedSkills.length > 0 ? interestNames.filter((n) => selectedSkills.includes(n)) : interestNames
     const list = namesToShow.map((name) => ({
       name,
@@ -392,7 +411,7 @@ export function SkillAnalysisSection({
     })
   }, [cardsForCards, skillProficiencies])
 
-  const tabCounts = isLaura ? LAURA_TAB_COUNTS : MATEO_TAB_COUNTS
+  const tabCounts = isLaura ? LAURA_TAB_COUNTS : isChro ? CHRO_TAB_COUNTS : MATEO_TAB_COUNTS
 
   const filteredResultsCount = useMemo(() => {
     let list = cardsForScope
