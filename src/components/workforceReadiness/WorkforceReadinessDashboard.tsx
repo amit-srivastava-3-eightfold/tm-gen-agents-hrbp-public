@@ -2271,33 +2271,7 @@ export function WorkforceReadinessDashboard({
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatDollar(displayUnrealized)}</span> in unrealized value.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
         heroCta={mgrHeroCta}
-        cards={[
-          {
-            id: 'ai-potential',
-            label: 'AI potential',
-            icon: 'bolt',
-            value: `${mgrDept.aiPotential}%`,
-            explainer: `How much of your team's daily work AI is capable of supporting.`,
-            description: <span style={{ color: '#94a3b8' }}>Across {mgrEmployees.length} employees</span>,
-            tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>,
-          },
-          {
-            id: 'readiness',
-            label: 'AI readiness',
-            icon: 'psychology',
-            value: `${displayReadinessPct}%`,
-            explainer: `Share of your team in augmentable roles who are actively using AI.`,
-            description: <span style={{ color: '#94a3b8' }}>{mgrEmployees.length - displayNotReady} of {mgrEmployees.length} employees are AI-ready</span>,
-          },
-          {
-            id: 'gap',
-            label: 'Transformation gap',
-            icon: 'trending_up',
-            value: displayNotReady.toLocaleString(),
-            explainer: `Employees in augmentable roles who haven't adopted AI yet.`,
-            description: <span style={{ color: '#94a3b8' }}>Need upskilling to reach AI-ready threshold</span>,
-          },
-        ]}
+        cards={[]}
       >
         <div>
           {false && null /* CTA card moved to beforeCards */}
