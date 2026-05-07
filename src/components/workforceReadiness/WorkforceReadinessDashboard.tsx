@@ -1492,7 +1492,7 @@ function BoardView({
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={taskSheetRole} />
+              <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} />
             </div>
           </div>
         </div>,
@@ -2452,7 +2452,7 @@ export function WorkforceReadinessDashboard({
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={mgrTaskSheetRole} />
+              <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} />
             </div>
           </div>
         </div>,
@@ -4089,7 +4089,7 @@ export function WorkforceReadinessDashboard({
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={dashTaskSheetRole} />
+              <WfrTaskSheetBody role={dashTaskSheetRole} phase={(() => { const f = deriveWfrFlags(wfrState.state); return f.hrbpPlansCreated ? 'upskilled' : f.collectionComplete ? 'calibrated' : 'baseline' })()} />
             </div>
           </div>
         </div>,
