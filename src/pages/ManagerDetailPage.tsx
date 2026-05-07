@@ -572,8 +572,9 @@ export function ManagerDetailPage() {
                     </DataTableCell>
                     <DataTableCell align="right">
                       {empTaskCount > 0 && emp.title ? (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: emp.title!, dept: deptName, employeeName: emp.name }) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 12, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer' }}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: emp.title!, dept: deptName, employeeName: emp.name }) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
                           {empTaskCount}
+                          <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
                         </button>
                       ) : <span style={{ color: '#cbd5e1' }}>—</span>}
                     </DataTableCell>
