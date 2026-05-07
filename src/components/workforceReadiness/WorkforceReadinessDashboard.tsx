@@ -2031,13 +2031,13 @@ export function WorkforceReadinessDashboard({
   const advanceHrbpToCollection = useCallback((hrbpName: string, channelsLabel: string, selectedDirectors?: string[]) => {
     hrbpJustLaunchedSet.add(hrbpName)
     setWfrState(prev => {
-      if (!prev.hrbpStates?.[hrbpName]) return prev
+      const existing = prev.hrbpStates?.[hrbpName]
+      const newEntry: HrbpState = existing
+        ? { ...existing, state: 2, channelsLabel, selectedDirectors }
+        : { state: 2, departments: [], delegated: false, channelsLabel, selectedDirectors }
       const next: WfrPersistedState = {
         ...prev,
-        hrbpStates: {
-          ...prev.hrbpStates,
-          [hrbpName]: { ...prev.hrbpStates[hrbpName], state: 2, channelsLabel, selectedDirectors },
-        },
+        hrbpStates: { ...(prev.hrbpStates ?? {}), [hrbpName]: newEntry },
       }
       next.state = computeOrgAggregateState(next)
       return next
@@ -2076,7 +2076,7 @@ export function WorkforceReadinessDashboard({
 
   const startUpskilling = useCallback((summary: UpskillingLaunchSummary) => {
     setWfrState(prev => {
-      const next = advanceAllHrbps(prev, 3 as WfrProgramState, 5)
+      const next = advanceAllHrbps(prev, 3 as WfrProgramState, 4 as WfrProgramState)
       return { ...next, upskillingLaunchSummary: summary }
     })
     const empCount = summary.totalEmployees.toLocaleString()
@@ -2829,6 +2829,7 @@ export function WorkforceReadinessDashboard({
             <WfrCtaBar
               content={WFR_CTA_CONTENT[hrbpCtaDemoState]['hrbp']}
               onButtonClick={
+                hrbpCtaDemoState === 1 ? () => setFocusLaunchOpen(true) :
                 hrbpCtaDemoState === '1b' ? () => setFocusLaunchOpen(true) :
                 hrbpCtaDemoState === 3 ? () => {
                   const inScope = directors.filter(dir => hrbpDirInScope(dir.name)).map(dir => dir.name)
@@ -2878,7 +2879,7 @@ export function WorkforceReadinessDashboard({
               chroDelegationActive={!isHrbp && hrbpDelegatedPending}
               chroDelegationScopeLabel={hrbpName ?? undefined}
               gapPeopleOverride={dirTotalGap}
-              suppressInternalDialog={isHrbp && hrbpDelegatedPending}
+              suppressInternalDialog={isHrbp}
               justLaunched={hrbpJustLaunched}
             />
           )
@@ -3221,7 +3222,7 @@ export function WorkforceReadinessDashboard({
                 })()}
               </WfrOverviewLayout>
               {hrbpFocusFirstModule}
-              {hrbpDelegatedPending && (
+              {(hrbpDelegatedPending || hrbpCtaDemoState === 1) && (
                 <FocusFirstLaunchDialog
                   open={focusLaunchOpen}
                   onOpenChange={setFocusLaunchOpen}

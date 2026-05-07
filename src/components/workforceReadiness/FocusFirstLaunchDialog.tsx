@@ -40,6 +40,12 @@ export interface FocusFirstLaunchDialogProps {
   hrbpDirectors?: HrbpDirector[]
 }
 
+const CHANNEL_OPTIONS = [
+  { id: 'profile-updates', label: 'Profile updates', desc: 'Employees update their skill profiles directly — no interviews required.', icon: 'manage_accounts' },
+  { id: 'surveys', label: 'Surveys', desc: 'Short structured questionnaires sent to employees on a schedule.', icon: 'poll' },
+  { id: 'ai-interviews', label: 'AI Interviews', desc: 'Conversational AI agent interviews each employee about their role and AI usage.', icon: 'smart_toy', recommended: true },
+]
+
 // Unique HRBPs with their departments, headcount, and priority score
 const uniqueHrbps = (() => {
   const map = new Map<string, { hrbp: string; depts: string[]; headcount: number }>()
@@ -115,6 +121,7 @@ export function FocusFirstLaunchDialog({
   hrbpDirectors,
 }: FocusFirstLaunchDialogProps) {
   const [step, setStep] = useState(1)
+  const [selectedChannel, setSelectedChannel] = useState<string>('ai-interviews')
   const [assignOwner, setAssignOwner] = useState<FocusAssignOwner>('hrbp')
   const [scopeBy, setScopeBy] = useState<'hrbps' | 'departments'>('hrbps')
   const [selectedDepts, setSelectedDepts] = useState<Record<string, boolean>>({})
@@ -137,6 +144,7 @@ export function FocusFirstLaunchDialog({
       } else {
         setHrbpSelectedDirs({})
       }
+      setSelectedChannel('ai-interviews')
     }
   }, [open, hrbpDirectors])
 
@@ -215,7 +223,7 @@ export function FocusFirstLaunchDialog({
   const handleNext = () => setStep(step + 1)
   const handleBack = () => setStep(step - 1)
 
-  // ─── HRBP mode: 2-step dialog (select teams → review + launch) ───
+  // ─── HRBP mode: 3-step dialog (select teams → channels → review + launch) ───
   if (hrbpMode) {
     const hrbpDept = _defaultScope ? departments.find(dd => dd.name === _defaultScope) : null
     const rawDirs = hrbpDirectors ?? []
@@ -227,7 +235,9 @@ export function FocusFirstLaunchDialog({
     const hrbpAllSelected = hrbpSelCount === dirs.length
     const hrbpSelectedEmps = dirs.filter(d => hrbpSelectedDirs[d.name]).reduce((s, d) => s + d.employees, 0)
     const hrbpStep = step // reuse existing step state
-    const hrbpIsReview = hrbpStep === 2
+    const hrbpIsChannels = hrbpStep === 2
+    const hrbpIsReview = hrbpStep === 3
+    const channelsLabel = CHANNEL_OPTIONS.find(c => c.id === selectedChannel)?.label ?? 'None'
     const hrbpTeamLabel = hrbpSelCount === dirs.length
       ? `All ${dirs.length} teams`
       : hrbpSelCount === 1
@@ -250,7 +260,7 @@ export function FocusFirstLaunchDialog({
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
                 </Dialog.Close>
               </div>
-              <Stepper value={hrbpStep - 1} size="sm" className="mt-3 mb-4" style={{ maxWidth: 260 }}>
+              <Stepper value={hrbpStep - 1} size="sm" className="mt-3 mb-4" style={{ maxWidth: 360 }}>
                 <StepperList>
                   <StepperItem step={0}>
                     <StepperTrigger>
@@ -260,6 +270,13 @@ export function FocusFirstLaunchDialog({
                   </StepperItem>
                   <StepperSeparator />
                   <StepperItem step={1}>
+                    <StepperTrigger>
+                      <StepperIndicator />
+                      <StepperTitle>Channels</StepperTitle>
+                    </StepperTrigger>
+                  </StepperItem>
+                  <StepperSeparator />
+                  <StepperItem step={2}>
                     <StepperTrigger>
                       <StepperIndicator />
                       <StepperTitle>Review</StepperTitle>
@@ -325,7 +342,41 @@ export function FocusFirstLaunchDialog({
                 </>
               )}
 
-              {/* Step 2: Review */}
+              {/* Step 2: Channels */}
+              {hrbpIsChannels && (
+                <>
+                  <h2 className="wfr-focus-launch__title">How should we collect data?</h2>
+                  <p className="wfr-focus-launch__sub">Choose a collection method for your teams.</p>
+                  <div className="wfr-focus-launch__options" style={{ gap: 10 }}>
+                    {CHANNEL_OPTIONS.map((ch) => {
+                      const selected = selectedChannel === ch.id
+                      return (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          className={`wfr-focus-launch__option ${selected ? 'wfr-focus-launch__option--selected' : ''}`}
+                          onClick={() => setSelectedChannel(ch.id)}
+                          style={{ alignItems: 'flex-start', gap: 12 }}
+                        >
+                          <span className="wfr-focus-launch__radio" style={{ marginTop: 2, flexShrink: 0 }}>
+                            {selected ? <span className="wfr-focus-launch__radio-dot" /> : null}
+                          </span>
+                          <span className="wfr-focus-launch__option-text">
+                            <span className="wfr-focus-launch__option-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 16, color: selected ? 'var(--wfr-potential-text, #6366f1)' : '#94a3b8' }}>{ch.icon}</span>
+                              {ch.label}
+                              {ch.recommended && <span style={{ fontSize: 10, fontWeight: 600, color: '#0369a1', background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: 8, padding: '1px 7px' }}>Recommended</span>}
+                            </span>
+                            <span className="wfr-focus-launch__option-desc">{ch.desc}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Step 3: Review */}
               {hrbpIsReview && (
                 <>
                   <h2 className="wfr-focus-launch__title">Ready to launch</h2>
@@ -341,11 +392,9 @@ export function FocusFirstLaunchDialog({
                     <div className="wfr-focus-launch__review-row">
                       <div>
                         <p className="wfr-focus-launch__review-k">Collection method</p>
-                        <p className="wfr-focus-launch__review-v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <img src="/ai-agent-icon.svg" alt="" style={{ width: 16, height: 16 }} />
-                          AI Agent Interviews
-                        </p>
+                        <p className="wfr-focus-launch__review-v">{channelsLabel}</p>
                       </div>
+                      <button type="button" className="wfr-focus-launch__edit" onClick={() => setStep(2)}>Edit</button>
                     </div>
                   </div>
                 </>
@@ -355,12 +404,12 @@ export function FocusFirstLaunchDialog({
               {hrbpStep === 1 ? (
                 <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
               ) : (
-                <Button type="button" variant="secondary" onClick={() => setStep(1)}>Back</Button>
+                <Button type="button" variant="secondary" onClick={() => setStep(hrbpStep - 1)}>Back</Button>
               )}
               {hrbpIsReview ? (
-                <Button type="button" variant="primary" onClick={() => { onHrbpLaunch?.('AI Agent Interviews', dirs.filter(d => hrbpSelectedDirs[d.name]).map(d => d.name)); onOpenChange(false) }}>Launch →</Button>
+                <Button type="button" variant="primary" onClick={() => { onHrbpLaunch?.(channelsLabel, dirs.filter(d => hrbpSelectedDirs[d.name]).map(d => d.name)); onOpenChange(false) }}>Launch →</Button>
               ) : (
-                <Button type="button" variant="primary" onClick={() => setStep(2)} disabled={hrbpSelCount === 0}>Next →</Button>
+                <Button type="button" variant="primary" onClick={() => setStep(hrbpStep + 1)} disabled={hrbpStep === 1 ? hrbpSelCount === 0 : !selectedChannel}>Next →</Button>
               )}
             </div>
           </Dialog.Content>
