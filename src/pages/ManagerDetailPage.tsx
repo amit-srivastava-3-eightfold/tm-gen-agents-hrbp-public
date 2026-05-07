@@ -523,12 +523,12 @@ export function ManagerDetailPage() {
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
-                <DataTableHead style={{ width: '22%' }}>Role</DataTableHead>
+                <DataTableHead style={{ width: '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead style={{ width: '20%' }}>Role</DataTableHead>
                 <DataTableHead numeric style={{ width: '6%' }}>Tasks</DataTableHead>
-                <DataTableHead metric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
-                <DataTableHead numeric style={{ width: '14%' }}>Transformation gap</DataTableHead>
-                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: upskillingInScope ? '22%' : undefined, cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
+                <DataTableHead metric style={{ width: '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('readiness')}><span className="inline-flex items-center gap-1">AI adoption <SortIcon sortDir={empSort.col === 'readiness' ? empSort.dir : null} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: '16%' }}>Transformation gap</DataTableHead>
+                {upskillingInScope && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: upskillingInScope ? '26%' : undefined, cursor: 'pointer' }} onClick={() => toggleEmpSort('upskilling')}><span className="inline-flex items-center gap-1">Upskilling <SortIcon sortDir={empSort.col === 'upskilling' ? empSort.dir : null} /></span></DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
