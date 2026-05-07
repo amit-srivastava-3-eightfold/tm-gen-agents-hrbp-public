@@ -693,7 +693,6 @@ function BoardView({
   const chroDelegationActive = !isHrbp && delegationPending
   const ctaDemoState: WfrDemoState | null = upskillingComplete ? 6 : hrbpPlansCreated ? 5 : upskillingActive ? 4 : focusCollectionComplete ? 3 : focusCollectionActive ? 2 : delegationPending ? '1b' : 1
   const ctaPersona: WfrPersona = isHrbp ? 'hrbp' : 'chro'
-  const navigate = useNavigate()
   // Pre-compute directors for HRBP board-view launch dialog (mirrors detail view, no readiness calibration needed at state 1b)
   const hrbpBoardDirectors = useMemo((): HrbpDirector[] => {
     if (!isHrbp || !personaHrbpNames?.length || !delegationPending) return []
@@ -2190,9 +2189,9 @@ export function WorkforceReadinessDashboard({
   }, [isManager])
 
   if (isManager && managerTeamData) {
-    const { mgr: mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, mgrHrsUnlockedBase, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
+    const { mgr: _mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, mgrHrsUnlockedBase, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
     const mgrEffectiveState = wfrState.hrbpStates ? getPersonaEffectiveState(wfrState, ['Jaydon Torff']) : wfrState.state
-    const { collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
+    const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
     const mgrUpskillingBoost = mgrUpskillingComplete ? 16 : mgrPlansCreated ? 6 : 0
     const engInScope = !wfrState.upskillingLaunchSummary || wfrState.upskillingLaunchSummary.departmentNames.includes(mgrDept.name)

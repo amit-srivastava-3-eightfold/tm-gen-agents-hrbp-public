@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { EM, EN, ORG } from '../../data/wfrOrgData'
+import { EM, ORG } from '../../data/wfrOrgData'
 import './WorkforceMetricSheet.css'
 
 export type WorkforceMetricSheetId = 'potential' | 'readiness' | 'gap'
