@@ -12,11 +12,11 @@ import './DevPlanTemplateDetailPage.css'
 import '../components/workforceReadiness/DevPlanSheet.css'
 
 const DEV_PLAN_COACH_SCRIPT: CoachTurn[] = [
-  { speaker: 'ai', text: "Let's take something concrete — before a customer call, how do you usually get ready? Walk me through what your pre-call prep looks like now." },
-  { speaker: 'sarah', text: "Honestly, I just open Gainsight, scroll through the timeline, take a quick look at last call notes, maybe check LinkedIn if there's someone new. It's all pretty quick — like right before the call." },
-  { speaker: 'ai', text: "Got it — that's mostly pulling together context. Ideally, that's the part Claude should be handling for you — so you can focus on what's missing, what they might push on, and the question you haven't thought to ask yet." },
+  { speaker: 'ai', text: "Let's take something concrete — when you build a QBR, walk me through what that looks like today." },
+  { speaker: 'sarah', text: "I open our QBR template in Slides, jump into Looker for renewal numbers and usage trends, screenshot what I need. The hardest part is the commentary — pulling the data is mechanical, the storytelling takes forever every quarter." },
+  { speaker: 'ai', text: "Got it — and the storytelling is exactly where Claude should be drafting for you. The data extraction is fine, you do that. But the narrative — why usage moved, what's at risk, where to lean in on expansion — Claude can give you a defensible first draft you edit, instead of you starting from a blank slide." },
   { speaker: 'sarah', text: 'Okay, so what does that look like?' },
-  { speaker: 'ai', text: "Think of it as three simple plays. There's a full walkthrough in your learning library — [Pre-Call Prep with Claude for CSMs](video:precall-prep)." },
+  { speaker: 'ai', text: "Think of it as three simple plays. There's a full walkthrough in your learning library — [AI-Assisted QBR Storytelling for CSMs](video:precall-prep)." },
 ]
 
 const DEV_PLAN_COACH_PICK: CoachPick = {
@@ -48,7 +48,7 @@ interface TemplateData {
 const TEMPLATE_DATA: Record<string, TemplateData> = {
   'ai-powered-customer-success': {
     name: 'AI for Customer Success',
-    description: 'Three core modules — pre-call prep, call-to-recap automation, and account research synthesis — plus an optional Prompt Engineering Foundations primer. Each module ties to a specific time sink Sarah called out in her discovery interview, with a short video, a written guide of prompt templates, and one practice exercise.',
+    description: 'Three core modules — QBR storytelling, call-to-recap automation, and account research synthesis — plus an optional Prompt Engineering Foundations primer. Each module ties to a specific time sink Sarah called out in her discovery interview, with a short video, a written guide of prompt templates, and one practice exercise.',
     status: 'Published',
     createdBy: 'Workforce Readiness',
     role: 'Customer Success Manager',
@@ -58,7 +58,7 @@ const TEMPLATE_DATA: Record<string, TemplateData> = {
     location: 'All',
     skills: ['AI-assisted call prep', 'Prompt engineering', 'AI tool fluency', 'Account research synthesis', 'Critical evaluation of AI output'],
     courses: [
-      { title: 'AI-Assisted Pre-Call Prep', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
+      { title: 'AI-Assisted QBR Storytelling', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Call-to-Recap Automation', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Account Research Synthesis', provider: 'Eightfold Academy', duration: '2 hrs', level: 'Beginner', free: true },
       { title: 'Prompt Engineering Foundations (Optional)', provider: 'Vanderbilt University', duration: '2 hrs', level: 'Beginner', free: true },
@@ -908,7 +908,7 @@ export function DevPlanTemplateDetailPage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Pre-Call Prep with Claude for CSMs"
+          aria-label="AI-Assisted QBR Storytelling for CSMs"
           onClick={() => setVideoPosterOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: 32 }}
         >
@@ -921,7 +921,7 @@ export function DevPlanTemplateDetailPage() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
             </button>
-            <img src="/precall-prep-poster.svg" alt="Pre-Call Prep with Claude for CSMs — video poster" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src="/precall-prep-poster.svg" alt="AI-Assisted QBR Storytelling for CSMs — video poster" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
       )}
