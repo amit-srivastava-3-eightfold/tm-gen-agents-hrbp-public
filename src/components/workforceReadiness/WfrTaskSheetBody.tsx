@@ -68,7 +68,111 @@ const AUGMENT_SKILL_KEYWORDS: [string, string[]][] = [
   ['process', ['Workflow automation', 'SOP generation']],
 ]
 
-const AUTOMATE_SKILLS = ['Zero-touch processing', 'AI pipeline', 'Process automation']
+const AUTOMATE_SKILL_KEYWORDS: [string, string[]][] = [
+  // Financial
+  ['invoic', ['Invoice automation', 'Payment processing']],
+  ['payroll', ['Payroll automation', 'Compliance checks']],
+  ['commission', ['Commission engine', 'Incentive automation']],
+  ['transact', ['Transaction processing', 'Payment automation']],
+  ['expense', ['Expense processing', 'Receipt automation']],
+  ['journal entr', ['Journal automation', 'Ledger sync']],
+  ['revenue recogn', ['Revenue automation', 'Financial pipeline']],
+  ['tax', ['Tax filing automation', 'Compliance pipeline']],
+  ['benefit', ['Benefits automation', 'Deduction processing']],
+  ['capex', ['CapEx automation', 'Budget tracking']],
+  // Data & records (specific before broad)
+  ['form data', ['Form processing', 'Data extraction']],
+  ['data entry', ['Data extraction', 'Record sync']],
+  ['data val', ['Validation pipeline', 'Quality checks']],
+  ['data hyg', ['Data cleansing', 'Quality pipeline']],
+  ['data qual', ['Quality monitoring', 'Data pipeline']],
+  ['data rec', ['Reconciliation engine', 'Audit pipeline']],
+  ['data migr', ['Migration pipeline', 'ETL automation']],
+  ['data agg', ['Aggregation pipeline', 'Data sync']],
+  ['crm', ['CRM automation', 'Record sync']],
+  ['hris', ['HRIS automation', 'Data sync']],
+  ['data', ['Data pipeline', 'Quality automation']],
+  // Communication
+  ['email', ['Inbox automation', 'Smart routing']],
+  ['outreach', ['Outreach automation', 'Sequence execution']],
+  ['outbound', ['Outbound automation', 'Campaign execution']],
+  ['call rout', ['Call routing', 'Smart escalation']],
+  // Reporting & analytics
+  ['kpi', ['KPI tracking', 'Metric automation']],
+  ['dashboard', ['Dashboard automation', 'Live metrics']],
+  ['sql report', ['Query automation', 'Report pipeline']],
+  ['report', ['Report automation', 'Data pipeline']],
+  ['forecast', ['Forecast engine', 'Prediction pipeline']],
+  ['analytic', ['Analytics pipeline', 'Insight extraction']],
+  ['survey', ['Survey automation', 'Response analysis']],
+  ['market research', ['Research automation', 'Intelligence pipeline']],
+  ['health score', ['Health scoring', 'Alert pipeline']],
+  // Documents & content
+  ['format', ['Template automation', 'Layout rendering']],
+  ['template', ['Template generation', 'Content automation']],
+  ['contract', ['Contract automation', 'Clause extraction']],
+  ['proposal', ['Proposal generation', 'Template automation']],
+  ['ad copy', ['Ad generation', 'Copy automation']],
+  ['seo', ['SEO automation', 'Content optimization']],
+  ['course creat', ['Content automation', 'Course generation']],
+  ['document', ['Doc automation', 'Content indexing']],
+  ['archive', ['Archive automation', 'Retrieval pipeline']],
+  ['index', ['Index pipeline', 'File automation']],
+  // Compliance & legal
+  ['complianc', ['Compliance automation', 'Audit trail']],
+  ['trademark', ['IP tracking', 'Filing automation']],
+  ['regulat', ['Regulation tracking', 'Change alerts']],
+  ['rfx', ['RFx automation', 'Response generation']],
+  ['po proc', ['PO automation', 'Procurement processing']],
+  // Testing, CI & monitoring (specific before broad)
+  ['unit test', ['Test synthesis', 'CI automation']],
+  ['test plan', ['Test planning', 'QA automation']],
+  ['ci/', ['CI/CD automation', 'Pipeline execution']],
+  ['ci pip', ['CI automation', 'Pipeline execution']],
+  ['test', ['Test automation', 'Quality pipeline']],
+  ['monitor', ['Monitoring automation', 'Alert engine']],
+  ['alert', ['Alert automation', 'Incident routing']],
+  ['slo', ['SLO monitoring', 'Uptime tracking']],
+  ['sla', ['SLA automation', 'Compliance monitoring']],
+  ['patch schedul', ['Patch automation', 'Update scheduling']],
+  ['patch', ['Patch automation', 'Update scheduling']],
+  ['dependency', ['Dependency scanning', 'Update tracking']],
+  ['version', ['Version tracking', 'Release automation']],
+  ['deployment', ['Deploy automation', 'Release pipeline']],
+  ['automation script', ['Script automation', 'Process orchestration']],
+  ['app store', ['App submission', 'Store automation']],
+  // Logistics & inventory
+  ['inventor', ['Inventory automation', 'Stock tracking']],
+  ['shipment', ['Logistics tracking', 'Shipping automation']],
+  ['travel', ['Travel automation', 'Booking engine']],
+  ['supply', ['Procurement automation', 'Order processing']],
+  ['order track', ['Order tracking', 'Fulfillment automation']],
+  ['order', ['Order automation', 'Fulfillment pipeline']],
+  ['fuel', ['Fleet tracking', 'Logistics automation']],
+  // HR & people
+  ['headcount', ['Headcount analytics', 'Workforce automation']],
+  ['onboard', ['Onboarding automation', 'Task assignment']],
+  ['ats', ['ATS automation', 'Candidate routing']],
+  ['desk', ['Space automation', 'Access management']],
+  // Sales & marketing
+  ['campaign', ['Campaign automation', 'Audience targeting']],
+  ['audience', ['Segmentation engine', 'Targeting automation']],
+  ['keyword', ['Keyword automation', 'SEO tooling']],
+  ['bid optim', ['Bid automation', 'Campaign optimization']],
+  ['bid', ['Bid automation', 'Campaign pipeline']],
+  ['deal reg', ['Deal automation', 'CRM sync']],
+  ['ticket', ['Ticket automation', 'Smart routing']],
+  ['vendor', ['Vendor automation', 'Procurement pipeline']],
+  ['media monitor', ['Media monitoring', 'Alert automation']],
+  ['media', ['Media automation', 'Alert pipeline']],
+  ['brand approv', ['Approval routing', 'Brand automation']],
+  // General
+  ['schedul', ['Scheduling automation', 'Calendar engine']],
+  ['performance profil', ['Profiling automation', 'Analysis pipeline']],
+  ['wireframe', ['Wireframe generation', 'Design automation']],
+  ['pipeline', ['Pipeline automation', 'Orchestration engine']],
+  ['script', ['Script automation', 'Process orchestration']],
+]
 
 const HUMAN_SKILL_KEYWORDS: [string, string[]][] = [
   ['negotiat', ['Persuasion', 'Relationship building']],
@@ -85,7 +189,12 @@ const HUMAN_SKILL_KEYWORDS: [string, string[]][] = [
 
 function getSkills(taskName: string, zone: 'above' | 'augment' | 'below'): string[] {
   const lower = taskName.toLowerCase()
-  if (zone === 'above') return AUTOMATE_SKILLS.slice(0, 2)
+  if (zone === 'above') {
+    for (const [kw, skills] of AUTOMATE_SKILL_KEYWORDS) {
+      if (lower.includes(kw)) return skills
+    }
+    return ['Workflow automation', 'Zero-touch execution']
+  }
   if (zone === 'augment') {
     for (const [kw, skills] of AUGMENT_SKILL_KEYWORDS) {
       if (lower.includes(kw)) return skills
