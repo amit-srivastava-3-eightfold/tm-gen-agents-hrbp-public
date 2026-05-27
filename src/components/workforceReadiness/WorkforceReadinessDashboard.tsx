@@ -644,6 +644,62 @@ export function DeptTableSoloBar({
   )
 }
 
+// ── Task Intelligence helpers ────────────────────────────────────────────────
+
+const TASK_CATEGORY_KEYWORDS: [string, string[]][] = [
+  ['Customer interaction', ['customer', 'client', 'account', 'service', 'support', 'prospect', 'crm']],
+  ['Communication', ['email', 'communicat', 'stakeholder', 'meeting', 'presentation', 'correspon', 'feedback', 'brief']],
+  ['Process management', ['process', 'compliance', 'tracking', 'schedule', 'coordinat', 'workflow', 'procurement', 'inventory', 'vendor', 'exception', 'transaction']],
+  ['Documentation', ['document', 'documentat', 'format', 'draft', 'write', 'content', 'template', 'report', 'generat']],
+  ['Data & analytics', ['data', 'analy', 'insight', 'metric', 'forecast', 'model', 'research', 'query', 'dashbo']],
+  ['Planning & strategy', ['plan', 'strateg', 'roadmap', 'budget', 'resource', 'priorit', 'portfolio', 'objective']],
+  ['Technical implementation', ['code', 'software', 'system', 'api', 'implement', 'develop', 'program', 'deploy', 'architect', 'debug', 'configur', 'integrat']],
+  ['Quality assurance', ['quality', 'qa', 'validat', 'verify', 'inspect', 'monitor', 'audit', 'review', 'test']],
+  ['Training & development', ['train', 'mentor', 'coach', 'learning', 'onboard', 'skill', 'career']],
+]
+
+function categorizeTmTask(taskName: string): string {
+  const lower = taskName.toLowerCase()
+  for (const [cat, kws] of TASK_CATEGORY_KEYWORDS) {
+    if (kws.some(kw => lower.includes(kw))) return cat
+  }
+  return 'Other'
+}
+
+type TmItem = { name: string; value: number; pct: number }
+type TmNode = TmItem & { x: number; y: number; w: number; h: number }
+
+function layoutTreemap(items: TmItem[], rect: { x: number; y: number; w: number; h: number }): TmNode[] {
+  if (items.length === 0) return []
+  if (items.length === 1) return [{ ...items[0], ...rect }]
+  const total = items.reduce((s, i) => s + i.value, 0)
+  let cum = 0
+  let splitIdx = items.length - 1
+  for (let i = 0; i < items.length - 1; i++) {
+    cum += items[i].value
+    if (cum / total >= 0.5) { splitIdx = i + 1; break }
+  }
+  const leftShare = items.slice(0, splitIdx).reduce((s, i) => s + i.value, 0) / total
+  if (rect.w >= rect.h) {
+    const lw = Math.round(rect.w * leftShare)
+    return [
+      ...layoutTreemap(items.slice(0, splitIdx), { x: rect.x, y: rect.y, w: lw, h: rect.h }),
+      ...layoutTreemap(items.slice(splitIdx), { x: rect.x + lw, y: rect.y, w: rect.w - lw, h: rect.h }),
+    ]
+  }
+  const th = Math.round(rect.h * leftShare)
+  return [
+    ...layoutTreemap(items.slice(0, splitIdx), { x: rect.x, y: rect.y, w: rect.w, h: th }),
+    ...layoutTreemap(items.slice(splitIdx), { x: rect.x, y: rect.y + th, w: rect.w, h: rect.h - th }),
+  ]
+}
+
+const TM_COLORS = ['#6366f1', '#818cf8', '#818cf8', '#a5b4fc', '#a5b4fc', '#c7d2fe', '#c7d2fe', '#dde5ff', '#dde5ff', '#eef2ff']
+const TM_W = 1000
+const TM_H = 380
+
+// ────────────────────────────────────────────────────────────────────────────
+
 function BoardView({
   onDeptClick,
   onHrbpClick,
@@ -741,7 +797,8 @@ function BoardView({
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
   const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
-  const [boardTab, setBoardTab] = useState<'hrbps' | 'roles' | 'departments'>('hrbps')
+  const [boardTab, setBoardTab] = useState<'hrbps' | 'roles' | 'departments' | 'intelligence'>('hrbps')
+  const [hoveredOpp, setHoveredOpp] = useState<number | null>(null)
   const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
   const toggleDeptSort = (col: typeof deptSort['col']) => {
     setDeptSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'hrbp' ? 'asc' : 'desc' })
@@ -755,6 +812,7 @@ function BoardView({
     setRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'dept' ? 'asc' : 'desc' })
   }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [taskSheetTab, setTaskSheetTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
 
   const [chroUpskillingInfoOpen, setChroUpskillingInfoOpen] = useState(false)
@@ -876,6 +934,67 @@ function BoardView({
     })
   }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete, roleSort])
 
+  // Cross-role task intelligence — shared tasks, high-exposure tasks, consolidation opps
+  const taskIntelData = useMemo(() => {
+    type Entry = { depts: Set<string>; roles: Set<string>; headcount: number; scores: number[] }
+    const map = new Map<string, Entry>()
+    for (const role of allRoles) {
+      const tasks = getTasksForRole(role.title)
+      for (const t of tasks) {
+        if (!map.has(t.task)) map.set(t.task, { depts: new Set(), roles: new Set(), headcount: 0, scores: [] })
+        const e = map.get(t.task)!
+        e.depts.add(role.dept)
+        e.roles.add(role.title)
+        e.headcount += role.employees
+        e.scores.push(t.score)
+      }
+    }
+    const all = Array.from(map.entries()).map(([name, e]) => ({
+      name,
+      deptCount: e.depts.size,
+      roleCount: e.roles.size,
+      headcount: e.headcount,
+      avgScore: Math.round(e.scores.reduce((s, v) => s + v, 0) / e.scores.length),
+    }))
+    const shared = all.filter(t => t.roleCount >= 2)
+    const highExposure = all.filter(t => t.avgScore >= 70)
+    const opps = [...shared].sort((a, b) => b.headcount - a.headcount).slice(0, 15)
+    const maxHC = Math.max(...opps.map(t => t.headcount), 1)
+
+    // Affected headcount: unique employees in roles that share ≥2 tasks with other roles
+    // (requires meaningful overlap, not just one generic task)
+    const sharedNames = new Set(shared.map(t => t.name))
+    let affectedHC = 0
+    const seenRoleKeys = new Set<string>()
+    for (const role of allRoles) {
+      const key = `${role.dept}::${role.title}`
+      if (seenRoleKeys.has(key)) continue
+      seenRoleKeys.add(key)
+      const roleTasks = getTasksForRole(role.title)
+      const overlapCount = roleTasks.filter(t => sharedNames.has(t.task)).length
+      if (overlapCount >= 2) affectedHC += role.employees
+    }
+    // Est. FTE savings: hours unlocked via task consolidation / 40h week
+    const avgSharedScore = shared.length > 0
+      ? shared.reduce((s, t) => s + t.avgScore, 0) / shared.length
+      : 0
+    // Assume consolidated tasks represent ~4h/week per affected employee on average
+    const fteSavings = Math.round(affectedHC * (avgSharedScore / 100) * 4 / 40 * 10) / 10
+
+    // Category breakdown for treemap
+    const catMap = new Map<string, number>()
+    for (const t of all) {
+      const cat = categorizeTmTask(t.name)
+      catMap.set(cat, (catMap.get(cat) ?? 0) + t.headcount)
+    }
+    const catTotal = Math.max(1, Array.from(catMap.values()).reduce((s, v) => s + v, 0))
+    const categories: TmItem[] = Array.from(catMap.entries())
+      .map(([name, value]) => ({ name, value, pct: Math.round((value / catTotal) * 100) }))
+      .filter(c => c.pct > 0)
+      .sort((a, b) => b.value - a.value)
+
+    return { shared, highExposure, opps, maxHC, categories, affectedHC, fteSavings }
+  }, [allRoles])
 
   // Top 3 departments by gap for opportunity tags in complete state
   const topGapDeptRanks = useMemo(() => {
@@ -1060,7 +1179,7 @@ function BoardView({
           dataCollection={learnMoreDataCollection}
         />
 
-      <Tabs value={boardTab} onValueChange={(v: string) => setBoardTab(v as 'hrbps' | 'roles' | 'departments')}>
+      <Tabs value={boardTab} onValueChange={(v: string) => setBoardTab(v as 'hrbps' | 'roles' | 'departments' | 'intelligence')}>
 
         {(!isHrbp || (scopedDepartments && scopedDepartments.length > 1)) && (
           <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1068,22 +1187,25 @@ function BoardView({
               <TabsTrigger value="hrbps">HRBPs</TabsTrigger>
               <TabsTrigger value="departments">Departments</TabsTrigger>
               <TabsTrigger value="roles">Roles</TabsTrigger>
+              <TabsTrigger value="intelligence">Task intelligence</TabsTrigger>
             </TabsList>
             <span className="wfr-dash__panel-hint">
               {boardTab === 'roles'
                 ? `${allRoles.length} roles across ${allDeptsSorted.length} departments`
-                : boardTab === 'hrbps'
-                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                      <span>{hrbpRows.length} HRBPs across {allDeptsSorted.length} departments</span>
-                      {(anyDelegation || focusCollectionActive || upskillingActive) && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
-                          <span style={{ display: 'inline-block', width: 3, height: 12, background: upskillingComplete ? '#22c55e' : '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
-                          <span>{upskillingComplete ? 'Upskilling complete' : focusCollectionComplete ? 'In upskilling' : 'In data collection'}</span>
-                        </span>
-                      )}
-                    </span>
-                  : `Click to drill down`}
+                : boardTab === 'intelligence'
+                  ? `${allRoles.length} roles · task signal breakdown`
+                  : boardTab === 'hrbps'
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                        <span>{hrbpRows.length} HRBPs across {allDeptsSorted.length} departments</span>
+                        {(anyDelegation || focusCollectionActive || upskillingActive) && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ display: 'inline-block', width: 1, height: 10, background: '#cbd5e1', flexShrink: 0 }} />
+                            <span style={{ display: 'inline-block', width: 3, height: 12, background: upskillingComplete ? '#22c55e' : '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
+                            <span>{upskillingComplete ? 'Upskilling complete' : focusCollectionComplete ? 'In upskilling' : 'In data collection'}</span>
+                          </span>
+                        )}
+                      </span>
+                    : `Click to drill down`}
             </span>
           </div>
         )}
@@ -1460,6 +1582,175 @@ function BoardView({
           </div>
         </TabsContent>
 
+        <TabsContent value="intelligence">
+          <div style={{ padding: '20px 0 32px' }}>
+
+            {/* Hero stat cards */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+              <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Affected headcount
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Employees in roles that share 2 or more tasks with other roles">info</span>
+                </div>
+                <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{taskIntelData.affectedHC.toLocaleString()}</div>
+                <div className="wfr-type-caption" style={{ marginTop: 4 }}>Unique employees with overlapping tasks</div>
+              </div>
+              <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Est. FTE savings
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Estimated full-time equivalents recoverable via task consolidation">info</span>
+                </div>
+                <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{taskIntelData.fteSavings.toLocaleString()}</div>
+                <div className="wfr-type-caption" style={{ marginTop: 4 }}>Full-time equivalents via consolidation</div>
+              </div>
+              <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Shared tasks
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks that appear in 2 or more roles across the org">info</span>
+                </div>
+                <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{taskIntelData.shared.length}</div>
+                <div className="wfr-type-caption" style={{ marginTop: 4 }}>Across {allDeptsSorted.length} departments</div>
+              </div>
+              <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  High AI potential tasks
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks with 70%+ AI automation score">info</span>
+                </div>
+                <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{taskIntelData.highExposure.length}</div>
+                <div className="wfr-type-caption" style={{ marginTop: 4 }}>70%+ automation score</div>
+              </div>
+            </div>
+
+            {/* Top task consolidation opportunities — bar chart + treemap side by side */}
+            <div style={{ display: 'flex', gap: 28, marginBottom: 32, alignItems: 'stretch' }}>
+
+              {/* Left: bar chart */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                  Top task consolidation opportunities
+                  <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount reach)</span>
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {taskIntelData.opps.map((t, i) => {
+                    const pct = Math.round((t.headcount / taskIntelData.maxHC) * 100)
+                    const barColor = t.avgScore >= 70 ? '#6366f1' : t.avgScore >= 50 ? '#818cf8' : t.avgScore >= 35 ? '#a5b4fc' : '#c7d2fe'
+                    const isWide = pct > 30
+                    const label = `${t.deptCount} depts | ${t.avgScore}% potential | ${t.headcount.toLocaleString()} HC`
+                    const hovered = hoveredOpp === i
+                    return (
+                      <div
+                        key={i}
+                        onMouseEnter={() => setHoveredOpp(i)}
+                        onMouseLeave={() => setHoveredOpp(null)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}
+                      >
+                        <div className="wfr-type-caption" style={{ width: 160, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{t.name}</div>
+                        <div style={{ flex: 1, height: 22, position: 'relative', overflow: 'visible' }}>
+                          <div style={{ position: 'absolute', inset: 0, background: '#f1f5f9', borderRadius: 3 }} />
+                          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3 }} />
+                          {hovered && (
+                            <div style={{
+                              position: 'absolute', top: '50%', padding: '3px 8px', borderRadius: 5,
+                              whiteSpace: 'nowrap', zIndex: 10, fontSize: 11, fontWeight: 500,
+                              background: '#1e293b', color: '#fff',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.2)', pointerEvents: 'none',
+                              ...(pct >= 70
+                                ? { right: 4, transform: 'translateY(-50%)' }
+                                : isWide
+                                  ? { left: `${pct}%`, transform: 'translate(-100%, -50%)' }
+                                  : { left: `calc(${pct}% + 4px)`, transform: 'translateY(-50%)' }
+                              ),
+                            }}>
+                              {label}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Right: treemap */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                  Task categories
+                  <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount)</span>
+                </h3>
+                {(() => {
+                  const nodes = layoutTreemap(taskIntelData.categories, { x: 0, y: 0, w: TM_W, h: TM_H })
+                  return (
+                    <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                      {nodes.map((node, i) => {
+                        const col = TM_COLORS[i] ?? '#eef2ff'
+                        const isDark = i < 3
+                        const gap = 2
+                        const xPct = (node.x + gap) / TM_W * 100
+                        const yPct = (node.y + gap) / TM_H * 100
+                        const wPct = Math.max(0, node.w - gap * 2) / TM_W * 100
+                        const hPct = Math.max(0, node.h - gap * 2) / TM_H * 100
+                        const tooSmall = node.w / TM_W < 0.12 || node.h / TM_H < 0.12
+                        return (
+                          <div key={node.name} title={`${node.name}: ${node.pct}%`} style={{
+                            position: 'absolute',
+                            left: `${xPct}%`, top: `${yPct}%`,
+                            width: `${wPct}%`, height: `${hPct}%`,
+                            background: col, borderRadius: 4,
+                            padding: '10px 12px', boxSizing: 'border-box', overflow: 'hidden',
+                          }}>
+                            {!tooSmall && (
+                              <>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#fff' : '#3730a3', lineHeight: 1.3, marginBottom: 2 }}>{node.name}</div>
+                                <div style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.75)' : '#4f46e5' }}>{node.pct}%</div>
+                              </>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+              </div>
+
+            </div>
+
+            {/* Priority Consolidation Targets — DS DataTable */}
+            <div>
+              <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 12px', color: '#0f172a' }}>Priority consolidation targets</h3>
+              <DataTable bordered style={{ width: '100%' }}>
+                <DataTableHeader>
+                  <DataTableRow>
+                    <DataTableHead>Task</DataTableHead>
+                    <DataTableHead style={{ textAlign: 'right' }}>Depts</DataTableHead>
+                    <DataTableHead style={{ textAlign: 'right' }}>Roles</DataTableHead>
+                    <DataTableHead metric>AI potential</DataTableHead>
+                    <DataTableHead>Opportunity</DataTableHead>
+                  </DataTableRow>
+                </DataTableHeader>
+                <DataTableBody>
+                  {taskIntelData.opps.map((t, i) => {
+                    const opp = t.avgScore >= 70
+                      ? 'Automate centrally — high AI potential across teams'
+                      : t.avgScore >= 45
+                        ? 'Augment with shared AI tooling to reduce duplication'
+                        : 'Consolidate process — shared improvement opportunity'
+                    return (
+                      <DataTableRow key={i}>
+                        <DataTableCell>{t.name}</DataTableCell>
+                        <DataTableCell align="right">{t.deptCount}</DataTableCell>
+                        <DataTableCell align="right">{t.roleCount}</DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={t.avgScore} /></DataTableCell>
+                        <DataTableCell>{opp}</DataTableCell>
+                      </DataTableRow>
+                    )
+                  })}
+                </DataTableBody>
+              </DataTable>
+            </div>
+
+          </div>
+        </TabsContent>
+
       </Tabs>
 
       {/* Readiness trend detail sheet — opens when clicking a trend badge in complete state */}
@@ -1478,21 +1769,30 @@ function BoardView({
       {/* Task list sheet */}
       {taskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => setTaskSheetRole(null)} />
+          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
               <div>
                 <div className="wfr-trend-sheet__title-row">
                   <h2 className="wfr-trend-sheet__title">{taskSheetRole.title}</h2>
                 </div>
-                <p className="wfr-trend-sheet__sub">{taskSheetRole.dept} — Task breakdown</p>
+                <p className="wfr-trend-sheet__sub">{taskSheetRole.dept}</p>
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => setTaskSheetRole(null)} aria-label="Close">
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} />
+              {/* Tab pills */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+                {(['all', 'classification', 'source'] as const).map(tab => (
+                  <button key={tab} type="button" onClick={() => setTaskSheetTab(tab)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${taskSheetTab === tab ? '#6366f1' : '#e2e8f0'}`, background: taskSheetTab === tab ? '#eef2ff' : 'transparent', color: taskSheetTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: taskSheetTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
+                  </button>
+                ))}
+              </div>
+              <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode={taskSheetTab} />
             </div>
           </div>
         </div>,
@@ -1792,7 +2092,10 @@ export function WorkforceReadinessDashboard({
   const toggleMgrSort = (col: MgrSortCol) => {
     setMgrSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
-  const [hrbpPanelTab, setHrbpPanelTab] = useState<'managers' | 'roles'>('managers')
+  const [hrbpPanelTab, setHrbpPanelTab] = useState<'managers' | 'roles' | 'intelligence'>('managers')
+  const [mgrPanelTab, setMgrPanelTab] = useState<'team' | 'intelligence'>('team')
+  const [hoveredOppHrbp, setHoveredOppHrbp] = useState<number | null>(null)
+  const [hoveredOppMgr, setHoveredOppMgr] = useState<number | null>(null)
   const [hrbpRoleSort, setHrbpRoleSort] = useState<{ col: 'name' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
   const toggleHrbpRoleSort = (col: typeof hrbpRoleSort['col']) => {
     setHrbpRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
@@ -2010,8 +2313,98 @@ export function WorkforceReadinessDashboard({
   const [hrbpUpskillingSelectedDirs, setHrbpUpskillingSelectedDirs] = useState<Set<string>>(new Set())
   const [snackbar, setSnackbar] = useState<string | null>(null)
   const [dashTaskSheetRole, setDashTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [dashTaskBodyTab, setDashTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
+  // HRBP task-sheet edit state
+  const [dashTaskEditing, setDashTaskEditing] = useState(false)
+  const [dashTaskAdded, setDashTaskAdded] = useState<{ task: string; score: number; description?: string }[]>([])
+  const [dashTaskRemoved, setDashTaskRemoved] = useState<Set<string>>(new Set())
+  const [dashDraftAdded, setDashDraftAdded] = useState<{ task: string; score: number; description?: string }[]>([])
+  const [dashDraftRemoved, setDashDraftRemoved] = useState<Set<string>>(new Set())
+  const [dashTaskAddOpen, setDashTaskAddOpen] = useState(false)
+  const [dashTaskAddStep, setDashTaskAddStep] = useState<'describe' | 'generating' | 'suggested'>('describe')
+  const [dashTaskDescription, setDashTaskDescription] = useState('')
+  const [dashTaskTitle, setDashTaskTitle] = useState('')
+  const [dashTaskDescSuggestion, setDashTaskDescSuggestion] = useState('')
+  const [dashTaskScore, setDashTaskScore] = useState(45)
+  const [dashTaskToast, setDashTaskToast] = useState<{ msg: string; prevAdded: { task: string; score: number; description?: string }[]; prevRemoved: Set<string> } | null>(null)
 
   // State transition functions — per-HRBP aware
+  // ── HRBP task-sheet edit functions ──────────────────────────────────────
+  function resetDashTaskAdd() {
+    setDashTaskAddOpen(false); setDashTaskAddStep('describe')
+    setDashTaskDescription(''); setDashTaskTitle(''); setDashTaskDescSuggestion(''); setDashTaskScore(45)
+  }
+  function closeDashTaskSheet() {
+    setDashTaskSheetRole(null); setDashTaskEditing(false)
+    setDashTaskAdded([]); setDashTaskRemoved(new Set())
+    setDashDraftAdded([]); setDashDraftRemoved(new Set())
+    setDashTaskBodyTab('classification')
+    resetDashTaskAdd()
+  }
+  function removeDashTask(taskName: string) {
+    setDashDraftRemoved(prev => { const s = new Set(prev); s.has(taskName) ? s.delete(taskName) : s.add(taskName); return s })
+  }
+  function addDashTask(taskName: string, score = 50, description?: string) {
+    if (!taskName.trim()) return
+    setDashDraftAdded(prev => [...prev, { task: taskName.trim(), score, ...(description ? { description } : {}) }])
+  }
+  function generateDashSuggestion() {
+    if (!dashTaskDescription.trim()) return
+    setDashTaskAddStep('generating')
+    setTimeout(() => {
+      const lower = dashTaskDescription.toLowerCase()
+      const highAI = ['automat', 'generat', 'schedul', 'extract', 'parse', 'format', 'convert', 'process', 'log', 'notif', 'sync', 'fetch', 'export', 'compil']
+      const lowAI = ['mentor', 'negotiat', 'mediating', 'trust', 'relationship', 'judgment', 'strateg', 'decision', 'counsel', 'facilitat', 'lead', 'vision', 'inspir']
+      const hasHigh = highAI.some(k => lower.includes(k)); const hasLow = lowAI.some(k => lower.includes(k))
+      const score = hasHigh && !hasLow ? Math.floor(62 + Math.random() * 13) : hasLow && !hasHigh ? Math.floor(18 + Math.random() * 18) : Math.floor(38 + Math.random() * 22)
+      const actionP: [RegExp, string, number][] = [[/\bpull\s*request|\bprs?\b|\bpr\b/, 'PR Review', 10],[/\bcode\s+review/, 'Code Review', 10],[/\bquality\s+assurance|\bqa\b/, 'Quality Assurance', 9],[/\bunit\s+test|integration\s+test/, 'Test Authoring', 9],[/\bonboard/, 'Onboarding', 8],[/\bapprov/, 'Approval', 7],[/\breview|audit|inspect/, 'Review', 6],[/\banalyz|analysis/, 'Analysis', 6],[/\bmonitor|track(?:ing)?/, 'Monitoring', 6],[/\bdocument/, 'Documentation', 6],[/\bdeploy/, 'Deployment', 6],[/\bdebugg|troubleshoot/, 'Debugging', 6],[/\bschedul|coordinat/, 'Coordination', 5],[/\bforecast|predict/, 'Forecasting', 5],[/\bplan(?:ning)?/, 'Planning', 5],[/\btrain|coach/, 'Training', 5],[/\bautomati?on?\b|automat/, 'Automation', 5],[/\bresearch|investigat/, 'Research', 5],[/\breport(?:ing)?/, 'Reporting', 5],[/\bdevelop|build(?:ing)?/, 'Development', 4],[/\bdesign/, 'Design', 4],[/\btest(?:ing)?/, 'Testing', 4],[/\bmanag(?:e|ing)?/, 'Management', 3],[/\bimpleme?nt/, 'Implementation', 3],[/\bcreat/, 'Creation', 3]]
+      const subjectP: [RegExp, string, number][] = [[/\bpull\s*request|\bprs?\b/, 'PR', 10],[/\bcode\b|\bcodebase|\brepo\b/, 'Code', 9],[/\bsprint\b|\bticket|\bstory\b|\bbacklog/, 'Sprint', 9],[/\bincident|\boutage|\bpostmortem/, 'Incident', 8],[/\bbug\b|\bdefect|\bcrash\b/, 'Bug', 8],[/\bcandidate|\brecruit|\bhiring|\bhire\b|\binterview/, 'Candidate', 8],[/\bsecurity|\bcompliance|\baudit\b|\brisk\b/, 'Compliance', 7],[/\bperformanc|\bmetric|\bkpi\b|\bokr\b/, 'Performance', 7],[/\bbudget|\bfinanc|\bcost\b|\bspend\b/, 'Budget', 7],[/\bstakeholder|\bexecutive|\bleadership/, 'Stakeholder', 6],[/\bemployee|\bstaff\b|\bonboarding|\btalent\b/, 'Employee', 6],[/\bproduct\b|\bfeature\b|\broadmap\b/, 'Product', 6],[/\bcustomer|\bclient\b/, 'Client', 6],[/\bdata\b|\bdataset|\bdatabase/, 'Data', 5],[/\bproject\b|\bmilestone\b/, 'Project', 5],[/\binfrastructure|\bsystem\b|\bplatform\b/, 'System', 5],[/\bprocess\b|\bworkflow|\bprocedure/, 'Process', 4],[/\btest\b|\btests\b/, 'Test', 4]]
+      let title = ''
+      for (const [pat, label, weight] of actionP) { if (weight >= 9 && pat.test(lower)) { title = label; break } }
+      if (!title) {
+        let action = ''; let aw = 0; let subject = ''; let sw = 0
+        for (const [pat, label, weight] of actionP) { if (weight > aw && pat.test(lower)) { action = label; aw = weight } }
+        for (const [pat, label, weight] of subjectP) { if (weight > sw && pat.test(lower)) { subject = label; sw = weight } }
+        if (subject && action && subject.toLowerCase() !== action.toLowerCase()) title = `${subject} ${action}`
+        else if (action) title = action
+        else if (subject) title = `${subject} Management`
+        else { const stop = new Set(['and','the','a','an','of','for','with','to','in','on','at','by','or','that','this']); const words = dashTaskDescription.trim().split(/\s+/).filter(w => !stop.has(w.toLowerCase()) && w.length > 2); title = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') }
+      }
+      let desc = dashTaskDescription.trim()
+      if (!desc.endsWith('.') && !desc.endsWith('?') && !desc.endsWith('!')) desc += '.'
+      desc = desc.charAt(0).toUpperCase() + desc.slice(1)
+      setDashTaskTitle(title); setDashTaskDescSuggestion(desc); setDashTaskScore(score)
+      setDashTaskAddStep('suggested')
+    }, 1400)
+  }
+  function saveDashTask() {
+    const prevAdded = dashTaskAdded; const prevRemoved = dashTaskRemoved
+    const removedCount = [...dashDraftRemoved].filter(n => !dashDraftAdded.some(t => t.task === n)).length
+    const addedCount = dashDraftAdded.filter(t => !dashDraftRemoved.has(t.task)).length
+    setDashTaskAdded(prev => [...prev, ...dashDraftAdded.filter(t => !dashDraftRemoved.has(t.task))])
+    setDashTaskRemoved(prev => new Set([...prev, ...dashDraftRemoved]))
+    setDashDraftAdded([]); setDashDraftRemoved(new Set())
+    setDashTaskEditing(false); resetDashTaskAdd()
+    const parts = [removedCount > 0 ? `${removedCount} removed` : '', addedCount > 0 ? `${addedCount} added` : ''].filter(Boolean)
+    setDashTaskToast({ msg: parts.length > 0 ? `Role tasks updated — ${parts.join(', ')}` : 'No changes made', prevAdded, prevRemoved })
+  }
+  function cancelDashTask() {
+    setDashDraftAdded([]); setDashDraftRemoved(new Set())
+    setDashTaskEditing(false); resetDashTaskAdd()
+  }
+  function revertDashTask() {
+    if (!dashTaskToast) return
+    setDashTaskAdded(dashTaskToast.prevAdded); setDashTaskRemoved(dashTaskToast.prevRemoved)
+    setDashTaskToast(null)
+  }
+  const dashAugmentSkills: Record<string, string[]> = { research: ['AI-assisted research', 'Data synthesis'], draft: ['AI writing', 'Content generation'], analys: ['Data interpretation', 'Pattern recognition'], plan: ['AI-assisted planning', 'Scenario modeling'], review: ['Quality evaluation', 'AI output review'], track: ['AI analytics', 'Trend detection'], coordinat: ['AI scheduling', 'Workflow automation'], report: ['Automated reporting', 'Data visualization'], forecast: ['Predictive analytics', 'AI modeling'], screen: ['AI screening', 'Candidate matching'], document: ['AI documentation', 'Template generation'], budget: ['Financial modeling', 'AI forecasting'] }
+  function getDashSkillsForTask(task: string, zone: string): string[] {
+    const lower = task.toLowerCase()
+    if (zone === 'augment') { for (const [key, skills] of Object.entries(dashAugmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
+    if (zone === 'above') return ['Process automation', 'AI pipeline']
+    return ['Critical thinking', 'Human judgment']
+  }
+
   const advanceToCollection = useCallback((summary: FocusCollectionLaunchSummary) => {
     if (summary.delegated && summary.selectedHrbpNames?.length) {
       // Delegation: set HRBPs to state 1 (pending launch) — they must each launch themselves
@@ -2127,6 +2520,40 @@ export function WorkforceReadinessDashboard({
   }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
+  const [mgrTaskSheetView, setMgrTaskSheetView] = useState<'role' | 'employee'>('employee')
+  const [mgrEmpTaskOverrides, setMgrEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
+  const [mgrTaskEditing, setMgrTaskEditing] = useState(false)
+  const [mgrTaskAddOpen, setMgrTaskAddOpen] = useState(false)
+  const [mgrTaskAddInput, setMgrTaskAddInput] = useState('')
+
+  function getMgrEmpTasks(employeeName: string, roleTasks: { task: string; score: number }[]) {
+    const ov = mgrEmpTaskOverrides.get(employeeName)
+    if (!ov) return { tasks: roleTasks, addedNames: new Set<string>() }
+    const tasks = [...roleTasks.filter(t => !ov.removed.has(t.task)), ...ov.added]
+    return { tasks, addedNames: new Set(ov.added.map(t => t.task)) }
+  }
+  function removeMgrEmpTask(employeeName: string, taskName: string) {
+    setMgrEmpTaskOverrides(prev => {
+      const next = new Map(prev)
+      const ov = next.get(employeeName) ?? { added: [], removed: new Set<string>() }
+      if (ov.added.some(t => t.task === taskName)) {
+        next.set(employeeName, { ...ov, added: ov.added.filter(t => t.task !== taskName) })
+      } else {
+        const removed = new Set(ov.removed); removed.add(taskName)
+        next.set(employeeName, { ...ov, removed })
+      }
+      return next
+    })
+  }
+  function addMgrEmpTask(employeeName: string, taskName: string) {
+    if (!taskName.trim()) return
+    setMgrEmpTaskOverrides(prev => {
+      const next = new Map(prev)
+      const ov = next.get(employeeName) ?? { added: [], removed: new Set<string>() }
+      next.set(employeeName, { ...ov, added: [...ov.added, { task: taskName.trim(), score: 50 }] })
+      return next
+    })
+  }
   const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
@@ -2190,6 +2617,51 @@ export function WorkforceReadinessDashboard({
 
   if (isManager && managerTeamData) {
     const { mgr: _mgrData, employees: mgrEmployees, dept: mgrDept, avgReadiness: mgrReadiness, notReady: mgrNotReady, mgrHrsUnlockedBase, tasksInAug: _mgrTasksInAug, totalTasks: _mgrTotalTasks } = managerTeamData
+
+    // Task intelligence scoped to this manager's department
+    const mgrTaskIntelData = (() => {
+      const mgrDeptRoles = getRolesForDept(mgrDept.name)
+      type Entry = { depts: Set<string>; roles: Set<string>; headcount: number; scores: number[] }
+      const map = new Map<string, Entry>()
+      for (const r of mgrDeptRoles) {
+        const tasks = getTasksForRole(r.title)
+        for (const t of tasks) {
+          if (!map.has(t.task)) map.set(t.task, { depts: new Set(), roles: new Set(), headcount: 0, scores: [] })
+          const e = map.get(t.task)!
+          e.depts.add(mgrDept.name)
+          e.roles.add(r.title)
+          e.headcount += r.employees
+          e.scores.push(t.score)
+        }
+      }
+      const all = Array.from(map.entries()).map(([name, e]) => ({
+        name, deptCount: e.depts.size, roleCount: e.roles.size, headcount: e.headcount,
+        avgScore: Math.round(e.scores.reduce((s, v) => s + v, 0) / e.scores.length),
+      }))
+      const shared = all.filter(t => t.roleCount >= 2)
+      const highExposure = all.filter(t => t.avgScore >= 70)
+      const opps = [...shared].sort((a, b) => b.headcount - a.headcount).slice(0, 15)
+      const maxHC = Math.max(...opps.map(t => t.headcount), 1)
+      const sharedNames = new Set(shared.map(t => t.name))
+      let affectedHC = 0
+      const seenRoleKeys = new Set<string>()
+      for (const r of mgrDeptRoles) {
+        if (seenRoleKeys.has(r.title)) continue
+        seenRoleKeys.add(r.title)
+        const overlapCount = getTasksForRole(r.title).filter(t => sharedNames.has(t.task)).length
+        if (overlapCount >= 2) affectedHC += r.employees
+      }
+      const avgSharedScore = shared.length > 0 ? shared.reduce((s, t) => s + t.avgScore, 0) / shared.length : 0
+      const fteSavings = Math.round(affectedHC * (avgSharedScore / 100) * 4 / 40 * 10) / 10
+      const catMap = new Map<string, number>()
+      for (const t of all) { const cat = categorizeTmTask(t.name); catMap.set(cat, (catMap.get(cat) ?? 0) + t.headcount) }
+      const catTotal = Math.max(1, Array.from(catMap.values()).reduce((s, v) => s + v, 0))
+      const categories: TmItem[] = Array.from(catMap.entries())
+        .map(([name, value]) => ({ name, value, pct: Math.round((value / catTotal) * 100) }))
+        .filter(c => c.pct > 0).sort((a, b) => b.value - a.value)
+      return { shared, highExposure, opps, maxHC, categories, affectedHC, fteSavings, deptRoleCount: mgrDeptRoles.length }
+    })()
+
     const mgrEffectiveState = wfrState.hrbpStates ? getPersonaEffectiveState(wfrState, ['Jaydon Torff']) : wfrState.state
     const { collectionActive: mgrCollActive, collectionComplete: mgrCollComplete, upskillingActive: mgrUpskillingActive, hrbpPlansCreated: mgrPlansCreated, upskillingComplete: mgrUpskillingComplete } = deriveWfrFlags(mgrEffectiveState)
     const mgrTrendDelta = mgrCollComplete ? deptReadinessTrend(mgrDept.name).delta : 0
@@ -2275,21 +2747,26 @@ export function WorkforceReadinessDashboard({
         heroCta={mgrHeroCta}
         cards={[]}
       >
-        <div>
-          {false && null /* CTA card moved to beforeCards */}
-          <div className="wfr-dash__panel-head">
-            <span className="wfr-dash__panel-title">Team members <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontSize: 11, fontWeight: 600, borderRadius: 8, padding: '1px 7px', marginLeft: 4, verticalAlign: 'middle' }}>{mgrEmployees.length}</span></span>
+        <Tabs value={mgrPanelTab} onValueChange={(v: string) => setMgrPanelTab(v as 'team' | 'intelligence')}>
+          <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <TabsList>
+              <TabsTrigger value="team">Team members</TabsTrigger>
+              <TabsTrigger value="intelligence">Task intelligence</TabsTrigger>
+            </TabsList>
             <span className="wfr-dash__panel-hint">
-              {mgrCollComplete
-                ? mgrUpskillingActive
-                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
-                      <span>{mgrUpskillingComplete ? 'Upskilling complete' : 'Upskilling in progress'}</span>
-                    </span>
-                  : null
-                : null}
+              {mgrPanelTab === 'intelligence'
+                ? `${mgrTaskIntelData.shared.length} shared tasks`
+                : mgrCollComplete
+                  ? mgrUpskillingActive
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ display: 'inline-block', width: 3, height: 12, background: '#6366f1', borderRadius: 2, flexShrink: 0 }} />
+                        <span>{mgrUpskillingComplete ? 'Upskilling complete' : 'Upskilling in progress'}</span>
+                      </span>
+                    : null
+                  : null}
             </span>
           </div>
+          <TabsContent value="team">
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
@@ -2338,7 +2815,7 @@ export function WorkforceReadinessDashboard({
                     {empTaskCount > 0 && emp.title ? (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }) }}
+                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }); setMgrTaskSheetView('employee'); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
                         title="View tasks"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
                       >
@@ -2407,7 +2884,171 @@ export function WorkforceReadinessDashboard({
               })}
             </DataTableBody>
           </DataTable>
-        </div>
+          </TabsContent>
+
+          {/* Task Intelligence tab for manager */}
+          <TabsContent value="intelligence">
+            <div style={{ padding: '20px 0 32px' }}>
+              {/* Hero stat cards */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+                <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                  <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Affected headcount
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Employees in roles that share 2 or more tasks with other roles">info</span>
+                  </div>
+                  <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{mgrTaskIntelData.affectedHC.toLocaleString()}</div>
+                  <div className="wfr-type-caption" style={{ marginTop: 4 }}>Unique employees with overlapping tasks</div>
+                </div>
+                <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                  <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Est. FTE savings
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Estimated full-time equivalents recoverable via task consolidation">info</span>
+                  </div>
+                  <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{mgrTaskIntelData.fteSavings.toLocaleString()}</div>
+                  <div className="wfr-type-caption" style={{ marginTop: 4 }}>Full-time equivalents via consolidation</div>
+                </div>
+                <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                  <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Shared tasks
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks that appear in 2 or more roles across your departments">info</span>
+                  </div>
+                  <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{mgrTaskIntelData.shared.length}</div>
+                  <div className="wfr-type-caption" style={{ marginTop: 4 }}>Across {mgrTaskIntelData.deptRoleCount} roles in {mgrDept.name}</div>
+                </div>
+                <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                  <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    High AI potential tasks
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks with 70%+ AI automation score">info</span>
+                  </div>
+                  <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{mgrTaskIntelData.highExposure.length}</div>
+                  <div className="wfr-type-caption" style={{ marginTop: 4 }}>70%+ automation score</div>
+                </div>
+              </div>
+
+              {/* Bar chart + treemap */}
+              <div style={{ display: 'flex', gap: 28, marginBottom: 32, alignItems: 'stretch' }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                    Top task consolidation opportunities
+                    <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount reach)</span>
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {mgrTaskIntelData.opps.map((t, i) => {
+                      const pct = Math.round((t.headcount / mgrTaskIntelData.maxHC) * 100)
+                      const barColor = t.avgScore >= 70 ? '#6366f1' : t.avgScore >= 50 ? '#818cf8' : t.avgScore >= 35 ? '#a5b4fc' : '#c7d2fe'
+                      const isWide = pct > 30
+                      const label = `${t.deptCount} depts | ${t.avgScore}% potential | ${t.headcount.toLocaleString()} HC`
+                      const hovered = hoveredOppMgr === i
+                      return (
+                        <div key={i}
+                          onMouseEnter={() => setHoveredOppMgr(i)}
+                          onMouseLeave={() => setHoveredOppMgr(null)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}
+                        >
+                          <div className="wfr-type-caption" style={{ width: 160, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{t.name}</div>
+                          <div style={{ flex: 1, height: 22, position: 'relative', overflow: 'visible' }}>
+                            <div style={{ position: 'absolute', inset: 0, background: '#f1f5f9', borderRadius: 3 }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3 }} />
+                            {hovered && (
+                              <div style={{
+                                position: 'absolute', top: '50%', padding: '3px 8px', borderRadius: 5,
+                                whiteSpace: 'nowrap', zIndex: 10, fontSize: 11, fontWeight: 500,
+                                background: '#1e293b', color: '#fff',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)', pointerEvents: 'none',
+                                ...(pct >= 70
+                                  ? { right: 4, transform: 'translateY(-50%)' }
+                                  : isWide
+                                    ? { left: `${pct}%`, transform: 'translate(-100%, -50%)' }
+                                    : { left: `calc(${pct}% + 4px)`, transform: 'translateY(-50%)' }
+                                ),
+                              }}>
+                                {label}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                    Task categories
+                    <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount)</span>
+                  </h3>
+                  {(() => {
+                    const nodes = layoutTreemap(mgrTaskIntelData.categories, { x: 0, y: 0, w: TM_W, h: TM_H })
+                    return (
+                      <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                        {nodes.map((node, i) => {
+                          const col = TM_COLORS[i] ?? '#eef2ff'
+                          const isDark = i < 3
+                          const gap = 2
+                          const xPct = (node.x + gap) / TM_W * 100
+                          const yPct = (node.y + gap) / TM_H * 100
+                          const wPct = Math.max(0, node.w - gap * 2) / TM_W * 100
+                          const hPct = Math.max(0, node.h - gap * 2) / TM_H * 100
+                          const tooSmall = node.w / TM_W < 0.12 || node.h / TM_H < 0.12
+                          return (
+                            <div key={node.name} title={`${node.name}: ${node.pct}%`} style={{
+                              position: 'absolute',
+                              left: `${xPct}%`, top: `${yPct}%`,
+                              width: `${wPct}%`, height: `${hPct}%`,
+                              background: col, borderRadius: 4,
+                              padding: '10px 12px', boxSizing: 'border-box', overflow: 'hidden',
+                            }}>
+                              {!tooSmall && (
+                                <>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#fff' : '#3730a3', lineHeight: 1.3, marginBottom: 2 }}>{node.name}</div>
+                                  <div style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.75)' : '#4f46e5' }}>{node.pct}%</div>
+                                </>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+
+              {/* Priority consolidation targets table */}
+              <div>
+                <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 12px', color: '#0f172a' }}>Priority consolidation targets</h3>
+                <DataTable bordered style={{ width: '100%' }}>
+                  <DataTableHeader>
+                    <DataTableRow>
+                      <DataTableHead>Task</DataTableHead>
+                      <DataTableHead style={{ textAlign: 'right' }}>Depts</DataTableHead>
+                      <DataTableHead style={{ textAlign: 'right' }}>Roles</DataTableHead>
+                      <DataTableHead metric>AI potential</DataTableHead>
+                      <DataTableHead>Opportunity</DataTableHead>
+                    </DataTableRow>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {mgrTaskIntelData.opps.map((t, i) => {
+                      const opp = t.avgScore >= 70
+                        ? 'Automate centrally — high AI potential across teams'
+                        : t.avgScore >= 45
+                          ? 'Augment with shared AI tooling to reduce duplication'
+                          : 'Consolidate process — shared improvement opportunity'
+                      return (
+                        <DataTableRow key={i}>
+                          <DataTableCell>{t.name}</DataTableCell>
+                          <DataTableCell align="right">{t.deptCount}</DataTableCell>
+                          <DataTableCell align="right">{t.roleCount}</DataTableCell>
+                          <DataTableCell metric><DeptTableSoloBar variant="potential" pct={t.avgScore} /></DataTableCell>
+                          <DataTableCell>{opp}</DataTableCell>
+                        </DataTableRow>
+                      )
+                    })}
+                  </DataTableBody>
+                </DataTable>
+              </div>
+            </div>
+          </TabsContent>
+
+        </Tabs>
       </WfrOverviewLayout>
       {mgrAssignConfirmOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2438,21 +3079,147 @@ export function WorkforceReadinessDashboard({
       )}
       {mgrTaskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => setMgrTaskSheetRole(null)} />
+          <div className="wfr-trend-sheet__backdrop" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}</h2>
+                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName ? mgrTaskSheetRole.employeeName : mgrTaskSheetRole.title}</h2>
                 </div>
-                <p className="wfr-trend-sheet__sub">{mgrTaskSheetRole.employeeName ? `${mgrTaskSheetRole.title} — Task breakdown` : `${mgrTaskSheetRole.dept} — Task breakdown`}</p>
+                <p className="wfr-trend-sheet__sub">{mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName ? mgrTaskSheetRole.title : mgrTaskSheetRole.dept}</p>
+                {mgrTaskSheetRole.employeeName && (
+                  <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
+                    {(['employee', 'role'] as const).map(v => (
+                      <button key={v} type="button" onClick={() => { setMgrTaskSheetView(v); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
+                        style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: mgrTaskSheetView === v ? '#fff' : 'transparent', color: mgrTaskSheetView === v ? '#0f172a' : '#64748b', boxShadow: mgrTaskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                        {v === 'employee' ? 'Employee' : 'Role'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => setMgrTaskSheetRole(null)} aria-label="Close">
+              {mgrTaskSheetRole.employeeName && mgrTaskSheetView === 'employee' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+                  {mgrTaskEditing && (
+                    <button type="button" onClick={() => setMgrTaskAddOpen(o => !o)}
+                      title="Add task"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskAddOpen ? '#eef2ff' : '#fff', color: mgrTaskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
+                    </button>
+                  )}
+                  <button type="button" onClick={() => { setMgrTaskEditing(e => !e); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
+                    title={mgrTaskEditing ? 'Done editing' : 'Edit tasks'}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskEditing ? '#eef2ff' : '#fff', color: mgrTaskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+                  </button>
+                </div>
+              )}
+              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} />
+              {mgrTaskSheetView === 'role' || !mgrTaskSheetRole.employeeName ? (
+                <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} />
+              ) : (() => {
+                const roleTasks = getTasksForRole(mgrTaskSheetRole.title)
+                const { tasks, addedNames } = getMgrEmpTasks(mgrTaskSheetRole.employeeName, roleTasks)
+                const empName = mgrTaskSheetRole.employeeName
+                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
+                const aboveCount = tasks.filter(t => t.score > 75).length
+                const belowCount = tasks.filter(t => t.score < 15).length
+                const zoneCards = [
+                  { zone: 'above' as const, count: aboveCount, label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
+                  { zone: 'augment' as const, count: augCount, label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
+                  { zone: 'below' as const, count: belowCount, label: 'Human', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
+                ]
+                const [mgrZoneFilter, setMgrZoneFilter] = [null as 'augment' | 'above' | 'below' | null, (_: unknown) => {}]
+                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
+                const automateSkills = ['Process automation', 'AI pipeline']
+                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'strateg': ['Vision', 'Business judgment'] }
+                function getSkillsForTask(task: string, zone: string): string[] {
+                  const lower = task.toLowerCase()
+                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
+                  if (zone === 'above') return automateSkills
+                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
+                  return ['Critical thinking', 'Human judgment']
+                }
+                const groups = [
+                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', tasks: tasks.filter(t => t.score > 75) },
+                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
+                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', tasks: tasks.filter(t => t.score < 15) },
+                ]
+                void mgrZoneFilter; void setMgrZoneFilter
+                return (
+                  <>
+                    {mgrTaskEditing && mgrTaskAddOpen && (
+                      <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#f8faff', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input type="text" value={mgrTaskAddInput} onChange={e => setMgrTaskAddInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && mgrTaskAddInput.trim()) { addMgrEmpTask(empName, mgrTaskAddInput); setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }
+                            if (e.key === 'Escape') { setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }
+                          }}
+                          placeholder="Task name…" autoFocus
+                          style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #c7d2fe', fontSize: 13, outline: 'none', background: 'transparent' }} />
+                        <button type="button" onClick={() => { if (mgrTaskAddInput.trim()) { addMgrEmpTask(empName, mgrTaskAddInput); setMgrTaskAddInput(''); setMgrTaskAddOpen(false) } }}
+                          style={{ padding: '5px 12px', borderRadius: 6, background: '#3b5bdb', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Add</button>
+                        <button type="button" onClick={() => { setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }}
+                          style={{ padding: '5px 10px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', border: 'none', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      {zoneCards.map((zc) => (
+                        <div key={zc.zone} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: `1px solid ${zc.border}`, background: zc.bg }}>
+                          <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
+                          <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {groups.filter(g => g.tasks.length > 0).map((group) => (
+                      <div key={group.label} style={{ marginBottom: 16 }}>
+                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
+                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
+                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
+                            const skills = getSkillsForTask(t.task, zone)
+                            const isAdded = addedNames.has(t.task)
+                            return (
+                              <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: isAdded ? `1px solid ${group.border}` : '1px solid #e5e7eb', background: isAdded ? group.bg : undefined, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
+                                    {isAdded && <span style={{ fontSize: 10, fontWeight: 600, color: group.color, background: group.bg, border: `1px solid ${group.border}`, borderRadius: 4, padding: '1px 5px' }}>Added</span>}
+                                  </div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {skills.map((skill) => (
+                                      <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                                {mgrTaskEditing && (
+                                  <button type="button" onClick={() => removeMgrEmpTask(mgrTaskSheetRole!.employeeName!, t.task)}
+                                    style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: 2, borderRadius: 4, lineHeight: 1, marginTop: 1 }}
+                                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                                    onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}
+                                    title="Remove task">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
             </div>
           </div>
         </div>,
@@ -2732,6 +3499,59 @@ export function WorkforceReadinessDashboard({
           const deptTrendDelta = hrbpCollectionComplete ? trend.delta : 0
           const upskillingBoostBase = hrbpPlansComplete ? (isHrbp ? 10 : 8) : 0
           const deptRoles = getRolesForDept(d.name)
+
+          // Task intelligence scoped to this HRBP's department
+          const hrbpTaskIntelData = (() => {
+            type Entry = { depts: Set<string>; roles: Set<string>; headcount: number; scores: number[] }
+            const map = new Map<string, Entry>()
+            for (const r of deptRoles) {
+              const tasks = getTasksForRole(r.title)
+              for (const t of tasks) {
+                if (!map.has(t.task)) map.set(t.task, { depts: new Set(), roles: new Set(), headcount: 0, scores: [] })
+                const e = map.get(t.task)!
+                e.depts.add(d.name)
+                e.roles.add(r.title)
+                e.headcount += r.employees
+                e.scores.push(t.score)
+              }
+            }
+            const all = Array.from(map.entries()).map(([name, e]) => ({
+              name,
+              deptCount: e.depts.size,
+              roleCount: e.roles.size,
+              headcount: e.headcount,
+              avgScore: Math.round(e.scores.reduce((s, v) => s + v, 0) / e.scores.length),
+            }))
+            const shared = all.filter(t => t.roleCount >= 2)
+            const highExposure = all.filter(t => t.avgScore >= 70)
+            const opps = [...shared].sort((a, b) => b.headcount - a.headcount).slice(0, 15)
+            const maxHC = Math.max(...opps.map(t => t.headcount), 1)
+            const sharedNames = new Set(shared.map(t => t.name))
+            let affectedHC = 0
+            const seenRoleKeys = new Set<string>()
+            for (const r of deptRoles) {
+              const key = `${d.name}::${r.title}`
+              if (seenRoleKeys.has(key)) continue
+              seenRoleKeys.add(key)
+              const roleTasks = getTasksForRole(r.title)
+              const overlapCount = roleTasks.filter(t => sharedNames.has(t.task)).length
+              if (overlapCount >= 2) affectedHC += r.employees
+            }
+            const avgSharedScore = shared.length > 0 ? shared.reduce((s, t) => s + t.avgScore, 0) / shared.length : 0
+            const fteSavings = Math.round(affectedHC * (avgSharedScore / 100) * 4 / 40 * 10) / 10
+            const catMap = new Map<string, number>()
+            for (const t of all) {
+              const cat = categorizeTmTask(t.name)
+              catMap.set(cat, (catMap.get(cat) ?? 0) + t.headcount)
+            }
+            const catTotal = Math.max(1, Array.from(catMap.values()).reduce((s, v) => s + v, 0))
+            const categories: TmItem[] = Array.from(catMap.entries())
+              .map(([name, value]) => ({ name, value, pct: Math.round((value / catTotal) * 100) }))
+              .filter(c => c.pct > 0)
+              .sort((a, b) => b.value - a.value)
+            return { shared, highExposure, opps, maxHC, categories, affectedHC, fteSavings }
+          })()
+
           const rawEmps = getEmployeesForRole({ title: d.name, employees: d.employees, aiReadiness: d.aiReadiness, aiPotential: d.aiPotential } as RoleRowType)
           const allDeptEmps = rawEmps.map((e, i) => ({ ...e, title: deptRoles.length > 0 ? deptRoles[i % deptRoles.length].title : undefined }))
           // Build calibrated employees per team manager
@@ -2915,16 +3735,19 @@ export function WorkforceReadinessDashboard({
                 cards={hrbpOverviewCards}
                 heroCta={hrbpHeroCta}
               >
-                <Tabs value={hrbpPanelTab} onValueChange={(v: string) => setHrbpPanelTab(v as 'managers' | 'roles')}>
+                <Tabs value={hrbpPanelTab} onValueChange={(v: string) => setHrbpPanelTab(v as 'managers' | 'roles' | 'intelligence')}>
                   <div className="wfr-dash__panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <TabsList>
                       <TabsTrigger value="managers">Client managers</TabsTrigger>
                       <TabsTrigger value="roles">Roles</TabsTrigger>
+                      <TabsTrigger value="intelligence">Task intelligence</TabsTrigger>
                     </TabsList>
                     <span className="wfr-dash__panel-hint">
                       {hrbpPanelTab === 'roles'
                         ? `${deptRoles.length} roles`
-                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                        : hrbpPanelTab === 'intelligence'
+                          ? `${hrbpTaskIntelData.shared.length} shared tasks`
+                          : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                             {showHrbpCollection && directors.some(dir => hrbpDirInScope(dir.name)) && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 <span style={{ display: 'inline-block', width: 3, height: 12, background: '#3b5bdb', borderRadius: 2, flexShrink: 0 }} />
@@ -3119,6 +3942,169 @@ export function WorkforceReadinessDashboard({
                       )
                     })()}
                   </TabsContent>
+
+                  {/* Task Intelligence tab for HRBP */}
+                  <TabsContent value="intelligence">
+                    <div style={{ padding: '20px 0 32px' }}>
+                      {/* Hero stat cards */}
+                      <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+                        <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                          <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Affected headcount
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Employees in roles that share 2 or more tasks with other roles">info</span>
+                          </div>
+                          <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{hrbpTaskIntelData.affectedHC.toLocaleString()}</div>
+                          <div className="wfr-type-caption" style={{ marginTop: 4 }}>Unique employees with overlapping tasks</div>
+                        </div>
+                        <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                          <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Est. FTE savings
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Estimated full-time equivalents recoverable via task consolidation">info</span>
+                          </div>
+                          <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{hrbpTaskIntelData.fteSavings.toLocaleString()}</div>
+                          <div className="wfr-type-caption" style={{ marginTop: 4 }}>Full-time equivalents via consolidation</div>
+                        </div>
+                        <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                          <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Shared tasks
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks that appear in 2 or more roles across your departments">info</span>
+                          </div>
+                          <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{hrbpTaskIntelData.shared.length}</div>
+                          <div className="wfr-type-caption" style={{ marginTop: 4 }}>Across {deptRoles.length} roles in {d.name}</div>
+                        </div>
+                        <div style={{ flex: 1, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                          <div className="wfr-type-caption-sb" style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            High AI potential tasks
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', cursor: 'default' }} title="Tasks with 70%+ AI automation score">info</span>
+                          </div>
+                          <div className="wfr-type-h4" style={{ lineHeight: 1 }}>{hrbpTaskIntelData.highExposure.length}</div>
+                          <div className="wfr-type-caption" style={{ marginTop: 4 }}>70%+ automation score</div>
+                        </div>
+                      </div>
+
+                      {/* Bar chart + treemap */}
+                      <div style={{ display: 'flex', gap: 28, marginBottom: 32, alignItems: 'stretch' }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                          <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                            Top task consolidation opportunities
+                            <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount reach)</span>
+                          </h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            {hrbpTaskIntelData.opps.map((t, i) => {
+                              const pct = Math.round((t.headcount / hrbpTaskIntelData.maxHC) * 100)
+                              const barColor = t.avgScore >= 70 ? '#6366f1' : t.avgScore >= 50 ? '#818cf8' : t.avgScore >= 35 ? '#a5b4fc' : '#c7d2fe'
+                              const isWide = pct > 30
+                              const label = `${t.deptCount} depts | ${t.avgScore}% potential | ${t.headcount.toLocaleString()} HC`
+                              const hovered = hoveredOppHrbp === i
+                              return (
+                                <div key={i}
+                                  onMouseEnter={() => setHoveredOppHrbp(i)}
+                                  onMouseLeave={() => setHoveredOppHrbp(null)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}
+                                >
+                                  <div className="wfr-type-caption" style={{ width: 160, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{t.name}</div>
+                                  <div style={{ flex: 1, height: 22, position: 'relative', overflow: 'visible' }}>
+                                    <div style={{ position: 'absolute', inset: 0, background: '#f1f5f9', borderRadius: 3 }} />
+                                    <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3 }} />
+                                    {hovered && (
+                                      <div style={{
+                                        position: 'absolute', top: '50%', padding: '3px 8px', borderRadius: 5,
+                                        whiteSpace: 'nowrap', zIndex: 10, fontSize: 11, fontWeight: 500,
+                                        background: '#1e293b', color: '#fff',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)', pointerEvents: 'none',
+                                        ...(pct >= 70
+                                          ? { right: 4, transform: 'translateY(-50%)' }
+                                          : isWide
+                                            ? { left: `${pct}%`, transform: 'translate(-100%, -50%)' }
+                                            : { left: `calc(${pct}% + 4px)`, transform: 'translateY(-50%)' }
+                                        ),
+                                      }}>
+                                        {label}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                          <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 16px', color: '#0f172a' }}>
+                            Task categories
+                            <span className="wfr-type-caption" style={{ marginLeft: 6, fontWeight: 400 }}>(by headcount)</span>
+                          </h3>
+                          {(() => {
+                            const nodes = layoutTreemap(hrbpTaskIntelData.categories, { x: 0, y: 0, w: TM_W, h: TM_H })
+                            return (
+                              <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                                {nodes.map((node, i) => {
+                                  const col = TM_COLORS[i] ?? '#eef2ff'
+                                  const isDark = i < 3
+                                  const gap = 2
+                                  const xPct = (node.x + gap) / TM_W * 100
+                                  const yPct = (node.y + gap) / TM_H * 100
+                                  const wPct = Math.max(0, node.w - gap * 2) / TM_W * 100
+                                  const hPct = Math.max(0, node.h - gap * 2) / TM_H * 100
+                                  const tooSmall = node.w / TM_W < 0.12 || node.h / TM_H < 0.12
+                                  return (
+                                    <div key={node.name} title={`${node.name}: ${node.pct}%`} style={{
+                                      position: 'absolute',
+                                      left: `${xPct}%`, top: `${yPct}%`,
+                                      width: `${wPct}%`, height: `${hPct}%`,
+                                      background: col, borderRadius: 4,
+                                      padding: '10px 12px', boxSizing: 'border-box', overflow: 'hidden',
+                                    }}>
+                                      {!tooSmall && (
+                                        <>
+                                          <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#fff' : '#3730a3', lineHeight: 1.3, marginBottom: 2 }}>{node.name}</div>
+                                          <div style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.75)' : '#4f46e5' }}>{node.pct}%</div>
+                                        </>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Priority consolidation targets table */}
+                      <div>
+                        <h3 className="wfr-type-body2" style={{ fontWeight: 700, margin: '0 0 12px', color: '#0f172a' }}>Priority consolidation targets</h3>
+                        <DataTable bordered style={{ width: '100%' }}>
+                          <DataTableHeader>
+                            <DataTableRow>
+                              <DataTableHead>Task</DataTableHead>
+                              <DataTableHead style={{ textAlign: 'right' }}>Depts</DataTableHead>
+                              <DataTableHead style={{ textAlign: 'right' }}>Roles</DataTableHead>
+                              <DataTableHead metric>AI potential</DataTableHead>
+                              <DataTableHead>Opportunity</DataTableHead>
+                            </DataTableRow>
+                          </DataTableHeader>
+                          <DataTableBody>
+                            {hrbpTaskIntelData.opps.map((t, i) => {
+                              const opp = t.avgScore >= 70
+                                ? 'Automate centrally — high AI potential across teams'
+                                : t.avgScore >= 45
+                                  ? 'Augment with shared AI tooling to reduce duplication'
+                                  : 'Consolidate process — shared improvement opportunity'
+                              return (
+                                <DataTableRow key={i}>
+                                  <DataTableCell>{t.name}</DataTableCell>
+                                  <DataTableCell align="right">{t.deptCount}</DataTableCell>
+                                  <DataTableCell align="right">{t.roleCount}</DataTableCell>
+                                  <DataTableCell metric><DeptTableSoloBar variant="potential" pct={t.avgScore} /></DataTableCell>
+                                  <DataTableCell>{opp}</DataTableCell>
+                                </DataTableRow>
+                              )
+                            })}
+                          </DataTableBody>
+                        </DataTable>
+                      </div>
+                    </div>
+                  </TabsContent>
+
                 </Tabs>
                 {hrbpUpskillingDialogOpen && (() => {
                   const eligibleDirs = directors.filter(dir => hrbpDirInScope(dir.name))
@@ -4072,26 +5058,150 @@ export function WorkforceReadinessDashboard({
       {/* Unrealized value breakdown sheet */}
       <UnrealizedValueSheet data={uvSheetData} onClose={() => setUvSheetData(null)} />
 
-      {/* Task sheet for role detail view */}
+      {/* Task sheet for HRBP role detail view — with admin edit capability */}
       {dashTaskSheetRole && createPortal(
         <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => setDashTaskSheetRole(null)} />
+          <div className="wfr-trend-sheet__backdrop" onClick={closeDashTaskSheet} />
           <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${dashTaskSheetRole.title}`}>
             <div className="wfr-trend-sheet__header">
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="wfr-trend-sheet__title-row">
                   <h2 className="wfr-trend-sheet__title">{dashTaskSheetRole.title}</h2>
                 </div>
-                <p className="wfr-trend-sheet__sub">{dashTaskSheetRole.dept} — Task breakdown</p>
+                <p className="wfr-trend-sheet__sub">{dashTaskSheetRole.dept}</p>
               </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => setDashTaskSheetRole(null)} aria-label="Close">
+              {!dashTaskEditing && (
+                <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+                </button>
+              )}
+              {dashTaskEditing && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+                  <button type="button" onClick={() => { dashTaskAddOpen ? resetDashTaskAdd() : setDashTaskAddOpen(true) }} title="Add task"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${dashTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: dashTaskAddOpen ? '#eef2ff' : '#fff', color: dashTaskAddOpen ? '#4338ca' : '#64748b', padding: 0 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
+                  </button>
+                  <button type="button" onClick={cancelDashTask}
+                    style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', fontSize: 12, fontWeight: 500, fontFamily: 'inherit' }}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={saveDashTask}
+                    style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>
+                    Save
+                  </button>
+                </div>
+              )}
+              <button type="button" className="wfr-trend-sheet__close" onClick={closeDashTaskSheet} aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="wfr-trend-sheet__body">
-              <WfrTaskSheetBody role={dashTaskSheetRole} phase={(() => { const f = deriveWfrFlags(wfrState.state); return f.hrbpPlansCreated ? 'upskilled' : f.collectionComplete ? 'calibrated' : 'baseline' })()} />
+              {/* Tab pills */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+                {(['all', 'classification', 'source'] as const).map(tab => (
+                  <button key={tab} type="button" onClick={() => setDashTaskBodyTab(tab)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${dashTaskBodyTab === tab ? '#6366f1' : '#e2e8f0'}`, background: dashTaskBodyTab === tab ? '#eef2ff' : 'transparent', color: dashTaskBodyTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: dashTaskBodyTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
+                  </button>
+                ))}
+              </div>
+              {/* AI add-task panel (amber theme) */}
+              {dashTaskEditing && dashTaskAddOpen && (
+                <div style={{ marginBottom: 24, padding: '12px', borderRadius: 8, border: '1px solid #fde68a', background: '#fffbeb' }}>
+                  {dashTaskAddStep === 'describe' && (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#92400e' }}>auto_awesome</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Describe the task</span>
+                      </div>
+                      <textarea value={dashTaskDescription} onChange={e => setDashTaskDescription(e.target.value)}
+                        placeholder="What does this task involve? What's the main outcome?" autoFocus rows={3}
+                        onKeyDown={e => { if (e.key === 'Escape') resetDashTaskAdd() }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 13, outline: 'none', background: 'rgba(255,255,255,0.6)', resize: 'none', fontFamily: 'inherit', color: '#1e293b', boxSizing: 'border-box', display: 'block' }} />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                        <button type="button" onClick={resetDashTaskAdd} style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Cancel</button>
+                        <button type="button" onClick={generateDashSuggestion} disabled={!dashTaskDescription.trim()}
+                          style={{ padding: '5px 12px', borderRadius: 6, background: '#92400e', color: '#fff', border: 'none', cursor: dashTaskDescription.trim() ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', opacity: dashTaskDescription.trim() ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>auto_awesome</span>Suggest
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {dashTaskAddStep === 'generating' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#d97706' }}>auto_awesome</span>
+                      <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>Analyzing description…</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 14, color: '#b45309', letterSpacing: 2 }}>· · ·</span>
+                    </div>
+                  )}
+                  {dashTaskAddStep === 'suggested' && (() => {
+                    const zone = dashTaskScore > 75 ? 'above' : dashTaskScore >= 15 ? 'augment' : 'below'
+                    const skills = getDashSkillsForTask(dashTaskTitle, zone)
+                    const zoneMeta = zone === 'above' ? { label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' } : zone === 'augment' ? { label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' } : { label: 'Human', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb' }
+                    return (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#92400e' }}>auto_awesome</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>AI suggestion</span>
+                          </div>
+                          <span style={{ padding: '2px 8px', borderRadius: 10, background: zoneMeta.bg, border: `1px solid ${zoneMeta.border}`, fontSize: 11, fontWeight: 600, color: zoneMeta.color }}>{zoneMeta.label} ≈{dashTaskScore}%</span>
+                        </div>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>Title</div>
+                          <input type="text" value={dashTaskTitle} onChange={e => setDashTaskTitle(e.target.value)}
+                            style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 13, outline: 'none', background: 'rgba(255,255,255,0.7)', fontFamily: 'inherit', color: '#1e293b', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>Description</div>
+                          <textarea value={dashTaskDescSuggestion} onChange={e => setDashTaskDescSuggestion(e.target.value)} rows={2}
+                            style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.7)', resize: 'none', fontFamily: 'inherit', color: '#475569', lineHeight: 1.5, boxSizing: 'border-box', display: 'block' }} />
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6 }}>Expected skills</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {skills.map(s => <span key={s} style={{ padding: '2px 8px', borderRadius: 10, background: '#f1f5f9', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 500, color: '#475569' }}>{s}</span>)}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                          <button type="button" onClick={resetDashTaskAdd} style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Cancel</button>
+                          <button type="button" onClick={() => { setDashTaskTitle(''); setDashTaskDescSuggestion(''); setDashTaskAddStep('describe') }} style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Retry</button>
+                          <button type="button" onClick={() => { if (!dashTaskTitle.trim()) return; addDashTask(dashTaskTitle, dashTaskScore, dashTaskDescSuggestion || undefined); resetDashTaskAdd() }}
+                            disabled={!dashTaskTitle.trim()}
+                            style={{ padding: '5px 12px', borderRadius: 6, background: '#92400e', color: '#fff', border: 'none', cursor: dashTaskTitle.trim() ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', opacity: dashTaskTitle.trim() ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>Add task
+                          </button>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+              <WfrTaskSheetBody
+                role={dashTaskSheetRole}
+                phase={(() => { const f = deriveWfrFlags(wfrState.state); return f.hrbpPlansCreated ? 'upskilled' : f.collectionComplete ? 'calibrated' : 'baseline' })()}
+                viewMode={dashTaskBodyTab}
+                adminEditing={dashTaskEditing}
+                adminAdded={[...dashTaskAdded, ...dashDraftAdded]}
+                adminRemoved={dashTaskRemoved}
+                pendingRemoved={dashDraftRemoved}
+                draftAddedNames={new Set(dashDraftAdded.map(t => t.task))}
+                onAdminRemove={removeDashTask}
+              />
             </div>
           </div>
+        </div>,
+        document.body,
+      )}
+      {dashTaskToast && createPortal(
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: '#fff', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.18)', fontSize: 13, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#86efac' }}>check_circle</span>
+          <span style={{ fontWeight: 500 }}>{dashTaskToast.msg}</span>
+          <button type="button" onClick={revertDashTask} style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>Revert</button>
+          <button type="button" onClick={() => setDashTaskToast(null)} style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 2, borderRadius: 4, lineHeight: 1 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+          </button>
         </div>,
         document.body,
       )}
