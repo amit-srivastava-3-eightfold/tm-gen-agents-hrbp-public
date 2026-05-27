@@ -8,6 +8,7 @@ import {
   deptReadinessTrend,
   deptCollectionRowDemo,
 } from './collectionHelpers'
+import { WfrTaskSheetBody, type DemoPhase } from './WfrTaskSheetBody'
 import './ReadinessTrendSheet.css'
 
 const BODY_ATTR = 'data-wfr-trend-sheet-open'
@@ -34,11 +35,11 @@ export interface ReadinessTrendSheetProps {
 }
 
 export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true, directReports, onUnrealizedValueClick }: ReadinessTrendSheetProps) {
-  const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
+  const [bodyTab, setBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
 
-  // Reset filter when sheet closes or role changes
+  // Reset tab when sheet closes or role changes
   useEffect(() => {
-    setZoneFilter(null)
+    setBodyTab('classification')
   }, [open, roleContext?.title])
 
   useLayoutEffect(() => {
@@ -107,7 +108,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
   const sheetSub = roleContext?.employeeName
     ? `${roleContext.title} — AI adoption change`
     : roleContext
-      ? `${roleContext.dept} — Task-level readiness`
+      ? roleContext.dept
       : managerContext
         ? `${dept.name} — Direct report readiness`
         : hrbpContext
@@ -168,8 +169,8 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
         {/* Body */}
         <div className="wfr-trend-sheet__body">
 
-          {/* ── Unified AI Adoption card ─────────────────────────────────── */}
-          <div style={{ padding: '20px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+          {/* ── Unified AI Adoption card — hidden for pure role task-breakdown view ── */}
+          {!(roleContext && !roleContext.employeeName) && <div style={{ padding: '20px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#1999ac' }}>school</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Adoption</span>
@@ -199,20 +200,20 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* ── Description ─────────────────────────────────────────────── */}
-          <p className="wfr-trend-sheet__summary">
+          {!(roleContext && !roleContext.employeeName) && <p className="wfr-trend-sheet__summary">
             {upskillingActive
               ? <>Readiness improved through <strong>development plans</strong> — employees completed AI courses and applied new skills to augmentable tasks.</>
               : data.showTrends
                 ? <>Employees reported how they perform each augmentable task — <strong>Manual</strong>, <strong>AI-assisted</strong>, or <strong>Mostly AI</strong>. Responses are time-weighted by weekly hours per task.</>
                 : <>Baseline readiness estimate based on employee skill profiles. Launch data collection to get measured task-level scores.</>
             }
-          </p>
+          </p>}
 
           {/* ── Stats row ────────────────────────────────────────────────── */}
-          {data.showTrends && (
+          {!(roleContext && !roleContext.employeeName) && data.showTrends && (
             <div className="wfr-trend-sheet__stats">
               <div className="wfr-trend-sheet__stat">
                 <span className="wfr-trend-sheet__stat-label">{upskillingActive ? 'Development plans' : 'Channel'}</span>
@@ -249,105 +250,39 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
             // Role context: task breakdown
             (() => {
               const tasks = getTasksForRole(roleContext.title)
-              const roleHash = roleContext.title.split('').reduce((h2: number, c: string) => ((h2 << 5) - h2 + c.charCodeAt(0)) | 0, 0)
-              const movedToAugment = data.showTrends ? 1 + (Math.abs(roleHash) % 2) : 0
-              const movedToAutomate = data.showTrends ? (Math.abs(roleHash * 7) % 2) : 0
-              const augDelta = movedToAugment
-              const autoDelta = movedToAutomate
-              const augmentSkills: Record<string, string[]> = {
-                'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'],
-                'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'],
-                'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'],
-                'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'],
-                'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'],
-                'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'],
-              }
-              function getSkills(task: string, zone: string): string[] {
-                const lower = task.toLowerCase()
-                if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
-                if (zone === 'above') return ['Process automation', 'AI pipeline']
-                return ['Critical thinking', 'Human judgment']
-              }
+              const phase: DemoPhase = upskillingActive ? 'upskilled' : collectionComplete ? 'calibrated' : 'baseline'
               const augTasks = tasks.filter(t => taskZone(t.score) === 'augment')
               const upskilledCount = upskillingActive ? Math.ceil(augTasks.length * 0.6) : 0
-              const uniqueSkills = new Set<string>(); augTasks.forEach(t => getSkills(t.task, 'augment').forEach(s => uniqueSkills.add(s)))
+              const augSkillMap: Record<string, string[]> = { research: ['AI-assisted research', 'Data synthesis'], draft: ['AI writing', 'Content generation'], analys: ['Data interpretation', 'Pattern recognition'], plan: ['AI-assisted planning', 'Scenario modeling'], review: ['Quality evaluation', 'AI output review'], track: ['AI analytics', 'Trend detection'], coordinat: ['AI scheduling', 'Workflow automation'], report: ['Automated reporting', 'Data visualization'], forecast: ['Predictive analytics', 'AI modeling'], screen: ['AI screening', 'Candidate matching'], document: ['AI documentation', 'Template generation'], budget: ['Financial modeling', 'AI forecasting'] }
+              const uniqueSkills = new Set<string>()
+              augTasks.forEach(t => { const lower = t.task.toLowerCase(); for (const [k, s] of Object.entries(augSkillMap)) { if (lower.includes(k)) { s.forEach(x => uniqueSkills.add(x)); break } } })
               const skillsLearnedCount = upskillingActive ? Math.ceil(uniqueSkills.size * 0.5) : 0
-              type ZoneKey = 'augment' | 'above' | 'below'
-              const groups = upskillingActive
-                ? [
-                    { zone: 'augment' as ZoneKey, label: 'Tasks augmented', color: '#475569', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#475569', count: upskilledCount, delta: 0 },
-                    { zone: 'above' as ZoneKey, label: 'Skills learned', color: '#475569', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#475569', count: skillsLearnedCount, delta: 0 },
-                  ]
-                : [
-                    { zone: 'above' as ZoneKey, label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1', count: tasks.filter(t => taskZone(t.score) === 'above').length, delta: autoDelta },
-                    { zone: 'augment' as ZoneKey, label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d', count: tasks.filter(t => taskZone(t.score) === 'augment').length, delta: augDelta },
-                    { zone: 'below' as ZoneKey, label: 'Human', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b', count: tasks.filter(t => taskZone(t.score) === 'below').length, delta: 0 },
-                  ]
-              const augTasksSorted = tasks.filter(t => taskZone(t.score) === 'augment').sort((a, b) => a.score - b.score)
-              const autoTasksSorted = tasks.filter(t => taskZone(t.score) === 'above').sort((a, b) => a.score - b.score)
-              const movedAugTasks = new Set(augTasksSorted.slice(0, movedToAugment).map(t => t.task))
-              const movedAutoTasks = new Set(autoTasksSorted.slice(0, movedToAutomate).map(t => t.task))
-              const zoneGroups = [
-                { zone: 'above' as ZoneKey, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', tasks: tasks.filter(t => taskZone(t.score) === 'above') },
-                { zone: 'augment' as ZoneKey, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', tasks: tasks.filter(t => taskZone(t.score) === 'augment') },
-                { zone: 'below' as ZoneKey, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', tasks: tasks.filter(t => taskZone(t.score) === 'below') },
-              ]
-              const visibleZoneGroups = zoneFilter ? zoneGroups.filter(g => g.zone === zoneFilter && g.tasks.length > 0) : zoneGroups.filter(g => g.tasks.length > 0)
               return (
                 <>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1a212e', margin: '16px 0 8px' }}>{upskillingActive ? 'Upskilling progress' : 'Tasks'}</h3>
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                    {groups.map((g) => {
-                      const isActive = zoneFilter === g.zone
-                      const isDimmed = zoneFilter != null && !isActive
-                      return (
-                        <div key={g.label} onClick={() => setZoneFilter(prev => prev === g.zone ? null : g.zone)}
-                          style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${g.activeBorder}` : `1px solid ${g.border}`, background: g.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s' }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 22, fontWeight: 700, color: g.color }}>{g.count}</span>
-                            {g.delta !== 0 && (
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d', padding: '3px 8px', borderRadius: 99, background: '#f0fdf4', border: '1px solid #bbf7d0', lineHeight: 1.2 }}>
-                                ↑{g.delta}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: g.color }}>{g.label}</div>
+                  {upskillingActive && (
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      {[{ label: 'Tasks augmented', count: upskilledCount }, { label: 'Skills learned', count: skillsLearnedCount }].map(g => (
+                        <div key={g.label} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
+                          <span style={{ fontSize: 22, fontWeight: 700, color: '#475569' }}>{g.count}</span>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{g.label}</div>
                         </div>
-                      )
-                    })}
-                  </div>
-                  {visibleZoneGroups.map((group) => (
-                    <div key={group.label} style={{ marginBottom: 16 }}>
-                      <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
-                          <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
-                          const zone = taskZone(t.score)
-                          const skills = getSkills(t.task, zone)
-                          const moved = data.showTrends && ((zone === 'augment' && movedAugTasks.has(t.task)) || (zone === 'above' && movedAutoTasks.has(t.task)))
-                          return (
-                            <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: moved ? '1px solid #bbf7d0' : '1px solid #e5e7eb', background: moved ? '#fafff9' : undefined }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontSize: 13, fontWeight: 500, color: '#1a212e' }}>{t.task}</span>
-                                {moved && <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', marginLeft: 8, padding: '2px 8px', borderRadius: 99, background: '#f0fdf4', border: '1px solid #bbf7d0', whiteSpace: 'nowrap' }}>{zone === 'augment' ? '↑ from Human' : '↑ from Augment'}</span>}
-                              </div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                {skills.map((skill) => (
-                                  <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                    {(['all', 'classification', 'source'] as const).map(tab => (
+                      <button key={tab} type="button" onClick={() => setBodyTab(tab)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${bodyTab === tab ? '#6366f1' : '#e2e8f0'}`, background: bodyTab === tab ? '#eef2ff' : 'transparent', color: bodyTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: bodyTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        {tab === 'all' ? (
+                          <>
+                            All tasks
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 9, padding: '0 5px', background: bodyTab === 'all' ? '#6366f1' : '#e2e8f0', color: bodyTab === 'all' ? '#fff' : '#64748b', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>{tasks.length}</span>
+                          </>
+                        ) : tab === 'classification' ? 'By classification' : 'By source'}
+                      </button>
+                    ))}
+                  </div>
+                  <WfrTaskSheetBody role={{ title: roleContext.title }} phase={phase} viewMode={bodyTab} />
                 </>
               )
             })()
