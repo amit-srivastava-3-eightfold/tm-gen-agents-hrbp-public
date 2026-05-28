@@ -2585,17 +2585,13 @@ export function WorkforceReadinessDashboard({
   const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null>(null)
 
   // ─── Manager persona: pending role-task updates pushed by super admin ───
-  const MGR_TASK_UPDATES_KEY = 'tm:mgr-task-updates-applied-v1'
-  const [mgrTaskUpdatesApplied, setMgrTaskUpdatesApplied] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem(MGR_TASK_UPDATES_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) return new Set(parsed as string[])
-      }
-    } catch {}
-    return new Set()
-  })
+  // Demo-only: state resets on each page load so managers always see the
+  // pending-updates entry state. Applies persist only within the session.
+  const [mgrTaskUpdatesApplied, setMgrTaskUpdatesApplied] = useState<Set<string>>(new Set())
+  // Clear any stale persisted state from prior versions
+  useEffect(() => {
+    try { localStorage.removeItem('tm:mgr-task-updates-applied-v1') } catch {}
+  }, [])
   const [mgrUpdatesModalOpen, setMgrUpdatesModalOpen] = useState(false)
   const [mgrModalSelected, setMgrModalSelected] = useState<Set<string>>(new Set())
   function toggleMgrModalEmp(key: string) {
@@ -2609,7 +2605,6 @@ export function WorkforceReadinessDashboard({
     setMgrTaskUpdatesApplied(prev => {
       const next = new Set(prev)
       for (const { roleTitle, name } of entries) next.add(`${roleTitle}::${name}`)
-      try { localStorage.setItem(MGR_TASK_UPDATES_KEY, JSON.stringify(Array.from(next))) } catch {}
       return next
     })
     setMgrToast(`Task changes applied to ${entries.length} team member${entries.length === 1 ? '' : 's'}`)
