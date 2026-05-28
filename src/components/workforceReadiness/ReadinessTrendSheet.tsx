@@ -1,6 +1,5 @@
 /** Slide-in sheet showing data collection results that drove a department's AI readiness change. */
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { formatHours, getEmployeesForRole, getRolesForDept, getTasksForRole, taskZone, wfrDemoDeptResponseRate, type Dept, type RoleRowType } from '../../data/wfrOrgData'
 import type { UnrealizedValueSheetData } from './UnrealizedValueSheet'
 import {
@@ -9,9 +8,8 @@ import {
   deptCollectionRowDemo,
 } from './collectionHelpers'
 import { WfrTaskSheetBody, type DemoPhase } from './WfrTaskSheetBody'
+import { WfrSheet } from './WfrSheet'
 import './ReadinessTrendSheet.css'
-
-const BODY_ATTR = 'data-wfr-trend-sheet-open'
 
 export interface ReadinessTrendSheetProps {
   open: boolean
@@ -41,20 +39,6 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
   useEffect(() => {
     setBodyTab('classification')
   }, [open, roleContext?.title])
-
-  useLayoutEffect(() => {
-    if (open) document.body.setAttribute(BODY_ATTR, 'true')
-    return () => document.body.removeAttribute(BODY_ATTR)
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   const data = useMemo(() => {
     if (!dept) return null
@@ -149,25 +133,14 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
     )
   }
 
-  return createPortal(
-    <div className="wfr-trend-sheet__root">
-      <div className="wfr-trend-sheet__backdrop" onClick={onClose} />
-      <div className="wfr-trend-sheet" role="dialog" aria-label={`${sheetTitle} readiness trend`}>
-        {/* Header */}
-        <div className="wfr-trend-sheet__header">
-          <div>
-            <div className="wfr-trend-sheet__title-row">
-              <h2 className="wfr-trend-sheet__title">{sheetTitle}</h2>
-            </div>
-            <p className="wfr-trend-sheet__sub">{sheetSub}</p>
-          </div>
-          <button type="button" className="wfr-trend-sheet__close" onClick={onClose} aria-label="Close">
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="wfr-trend-sheet__body">
+  return (
+    <WfrSheet
+      open
+      onClose={onClose}
+      title={sheetTitle}
+      subtitle={sheetSub}
+      ariaLabel={`${sheetTitle} readiness trend`}
+    >
 
           {/* ── Unified AI Adoption card — hidden for pure role task-breakdown view ── */}
           {!(roleContext && !roleContext.employeeName) && <div style={{ padding: '20px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 16 }}>
@@ -411,9 +384,6 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>,
-    document.body,
+    </WfrSheet>
   )
 }

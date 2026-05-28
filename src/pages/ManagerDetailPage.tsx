@@ -31,6 +31,10 @@ import { deriveWfrFlags, DeptTableSoloBar, getHrbpEffectiveState, getPersonaEffe
 import { getPersonaHrbpNames } from '../data/wfrOrgData'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from '../components/workforceReadiness/WorkforceMetricSheet'
 import { DevPlanSheet } from '../components/workforceReadiness/DevPlanSheet'
+import { WfrSheet } from '../components/workforceReadiness/WfrSheet'
+import { ManagerEmployeeTaskView } from '../components/workforceReadiness/ManagerEmployeeTaskView'
+import { TaskSheetBodyTabs } from '../components/workforceReadiness/TaskSheetBodyTabs'
+import { WfrTaskSheetBody } from '../components/workforceReadiness/WfrTaskSheetBody'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 import './ManagerDetailPage.css'
 
@@ -226,6 +230,7 @@ export function ManagerDetailPage() {
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
   const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const [taskSheetView, setTaskSheetView] = useState<'role' | 'employee'>('employee')
+  const [taskBodyTab, setTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [empTaskOverrides, setEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
   const [taskEditing, setTaskEditing] = useState(false)
   const [taskAddOpen, setTaskAddOpen] = useState(false)
@@ -672,157 +677,88 @@ export function ManagerDetailPage() {
       </main>
 
       {/* Task sheet */}
-      {taskSheetRole && createPortal(
-        <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null); setTaskEditing(false); setTaskAddOpen(false); setTaskAddInput('') }} />
-          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
-            <div className="wfr-trend-sheet__header">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{taskSheetView === 'employee' && taskSheetRole.employeeName ? taskSheetRole.employeeName : taskSheetRole.title}</h2>
-                </div>
-                <p className="wfr-trend-sheet__sub">{taskSheetView === 'employee' && taskSheetRole.employeeName ? taskSheetRole.title : taskSheetRole.dept}</p>
-                {taskSheetRole.employeeName && (
-                  <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
-                    {(['employee', 'role'] as const).map(v => (
-                      <button key={v} type="button" onClick={() => { setTaskSheetView(v); setTaskSheetZoneFilter(null); setTaskEditing(false); setTaskAddOpen(false); setTaskAddInput('') }}
-                        style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: taskSheetView === v ? '#fff' : 'transparent', color: taskSheetView === v ? '#0f172a' : '#64748b', boxShadow: taskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                        {v === 'employee' ? 'Employee' : 'Role'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {taskSheetRole.employeeName && taskSheetView === 'employee' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
-                  {taskEditing && (
-                    <button type="button" onClick={() => setTaskAddOpen(o => !o)}
-                      title="Add task"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${taskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: taskAddOpen ? '#eef2ff' : '#fff', color: taskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
-                    </button>
-                  )}
-                  <button type="button" onClick={() => { setTaskEditing(e => !e); setTaskAddOpen(false); setTaskAddInput('') }}
-                    title={taskEditing ? 'Done editing' : 'Edit tasks'}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${taskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: taskEditing ? '#eef2ff' : '#fff', color: taskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
-                  </button>
-                </div>
-              )}
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetZoneFilter(null); setTaskEditing(false); setTaskAddOpen(false); setTaskAddInput('') }} aria-label="Close">
-                <span className="material-symbols-outlined">close</span>
+      {taskSheetRole && (() => {
+        const closeTaskSheet = () => { setTaskSheetRole(null); setTaskSheetZoneFilter(null); setTaskEditing(false); setTaskAddOpen(false); setTaskAddInput('') }
+        const isEmpView = taskSheetView === 'employee' && !!taskSheetRole.employeeName
+        const belowHeader = taskSheetRole.employeeName ? (
+          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
+            {(['employee', 'role'] as const).map(v => (
+              <button key={v} type="button" onClick={() => { setTaskSheetView(v); setTaskSheetZoneFilter(null); setTaskEditing(false); setTaskAddOpen(false); setTaskAddInput('') }}
+                style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: taskSheetView === v ? '#fff' : 'transparent', color: taskSheetView === v ? '#0f172a' : '#64748b', boxShadow: taskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                {v === 'employee' ? 'Employee' : 'Role'}
               </button>
-            </div>
-            <div className="wfr-trend-sheet__body">
-              {(() => {
-                const roleTasks = getTasksForRole(taskSheetRole.title)
-                const isEmpView = taskSheetView === 'employee' && !!taskSheetRole.employeeName
-                const { tasks, addedNames } = isEmpView
-                  ? getEmpTasks(taskSheetRole.employeeName!, roleTasks)
-                  : { tasks: roleTasks, addedNames: new Set<string>() }
-                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
-                const aboveCount = tasks.filter(t => t.score > 75).length
-                const belowCount = tasks.filter(t => t.score < 15).length
-                const zoneCards: { zone: 'augment' | 'above' | 'below'; count: number; label: string; color: string; bg: string; border: string; activeBorder: string }[] = [
-                  { zone: 'above', count: aboveCount, label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
-                  { zone: 'augment', count: augCount, label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
-                  { zone: 'below', count: belowCount, label: 'Human', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
-                ]
-                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
-                const automateSkills = ['Process automation', 'AI pipeline']
-                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'strateg': ['Vision', 'Business judgment'] }
-                function getSkillsForTask(task: string, zone: string): string[] {
-                  const lower = task.toLowerCase()
-                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
-                  if (zone === 'above') return automateSkills
-                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
-                  return ['Critical thinking', 'Human judgment']
-                }
-                const groups = [
-                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', tasks: tasks.filter(t => t.score > 75) },
-                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
-                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', tasks: tasks.filter(t => t.score < 15) },
-                ]
-                const visibleGroups = taskSheetZoneFilter ? groups.filter(g => g.zone === taskSheetZoneFilter && g.tasks.length > 0) : groups.filter(g => g.tasks.length > 0)
-                return (
-                  <>
-                    {isEmpView && taskEditing && taskAddOpen && (
-                      <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#f8faff', display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <input type="text" value={taskAddInput} onChange={e => setTaskAddInput(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' && taskAddInput.trim()) { addEmpTask(taskSheetRole.employeeName!, taskAddInput); setTaskAddInput(''); setTaskAddOpen(false) }
-                            if (e.key === 'Escape') { setTaskAddInput(''); setTaskAddOpen(false) }
-                          }}
-                          placeholder="Task name…" autoFocus
-                          style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #c7d2fe', fontSize: 13, outline: 'none', background: 'transparent' }} />
-                        <button type="button" onClick={() => { if (taskAddInput.trim()) { addEmpTask(taskSheetRole.employeeName!, taskAddInput); setTaskAddInput(''); setTaskAddOpen(false) } }}
-                          style={{ padding: '5px 12px', borderRadius: 6, background: '#3b5bdb', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Add</button>
-                        <button type="button" onClick={() => { setTaskAddInput(''); setTaskAddOpen(false) }}
-                          style={{ padding: '5px 10px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', border: 'none', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                      {zoneCards.map((zc) => {
-                        const isActive = taskSheetZoneFilter === zc.zone
-                        const isDimmed = taskSheetZoneFilter != null && !isActive
-                        return (
-                          <div key={zc.zone} onClick={() => setTaskSheetZoneFilter(prev => prev === zc.zone ? null : zc.zone)} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: isActive ? `2px solid ${zc.activeBorder}` : `1px solid ${zc.border}`, background: zc.bg, cursor: 'pointer', opacity: isDimmed ? 0.45 : 1, transition: 'opacity 0.15s' }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
-                            <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {visibleGroups.map((group) => (
-                      <div key={group.label} style={{ marginBottom: 16 }}>
-                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
-                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
-                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
-                            const skills = getSkillsForTask(t.task, zone)
-                            const isAdded = addedNames.has(t.task)
-                            return (
-                              <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: isAdded ? `1px solid ${group.border}` : '1px solid #e5e7eb', background: isAdded ? group.bg : undefined, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                    <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
-                                    {isAdded && <span style={{ fontSize: 10, fontWeight: 600, color: group.color, background: group.bg, border: `1px solid ${group.border}`, borderRadius: 4, padding: '1px 5px' }}>Added</span>}
-                                  </div>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                    {skills.map((skill) => (
-                                      <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
-                                    ))}
-                                  </div>
-                                </div>
-                                {isEmpView && taskEditing && (
-                                  <button type="button" onClick={() => removeEmpTask(taskSheetRole.employeeName!, t.task)}
-                                    style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: 2, borderRadius: 4, lineHeight: 1, marginTop: 1 }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                                    onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}
-                                    title="Remove task">
-                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                                  </button>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )
-              })()}
-            </div>
+            ))}
           </div>
-        </div>,
-        document.body,
-      )}
+        ) : null
+        const headerActions = isEmpView ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+            {taskEditing && (
+              <button type="button" onClick={() => setTaskAddOpen(o => !o)}
+                title="Add task"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${taskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: taskAddOpen ? '#eef2ff' : '#fff', color: taskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
+              </button>
+            )}
+            <button type="button" onClick={() => { setTaskEditing(e => !e); setTaskAddOpen(false); setTaskAddInput('') }}
+              title={taskEditing ? 'Done editing' : 'Edit tasks'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${taskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: taskEditing ? '#eef2ff' : '#fff', color: taskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+            </button>
+          </div>
+        ) : null
+        return (
+          <WfrSheet
+            open
+            onClose={closeTaskSheet}
+            title={isEmpView ? taskSheetRole.employeeName! : taskSheetRole.title}
+            subtitle={isEmpView ? taskSheetRole.title : taskSheetRole.dept}
+            belowHeader={belowHeader}
+            headerActions={headerActions}
+            ariaLabel={`Tasks for ${taskSheetRole.title}`}
+          >
+              <TaskSheetBodyTabs value={taskBodyTab} onChange={setTaskBodyTab} count={getTasksForRole(taskSheetRole.title).length} />
+              {(() => {
+                const isEmpView = taskSheetView === 'employee' && !!taskSheetRole.employeeName
+                if (isEmpView) {
+                  const empName = taskSheetRole.employeeName!
+                  const ov = empTaskOverrides.get(empName)
+                  return (
+                    <>
+                      {taskEditing && taskAddOpen && (
+                        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#f8faff', display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <input type="text" value={taskAddInput} onChange={e => setTaskAddInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && taskAddInput.trim()) { addEmpTask(empName, taskAddInput); setTaskAddInput(''); setTaskAddOpen(false) }
+                              if (e.key === 'Escape') { setTaskAddInput(''); setTaskAddOpen(false) }
+                            }}
+                            placeholder="Task name…" autoFocus
+                            style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #c7d2fe', fontSize: 13, outline: 'none', background: 'transparent' }} />
+                          <button type="button" onClick={() => { if (taskAddInput.trim()) { addEmpTask(empName, taskAddInput); setTaskAddInput(''); setTaskAddOpen(false) } }}
+                            style={{ padding: '5px 12px', borderRadius: 6, background: '#3b5bdb', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Add</button>
+                          <button type="button" onClick={() => { setTaskAddInput(''); setTaskAddOpen(false) }}
+                            style={{ padding: '5px 10px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', border: 'none', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                        </div>
+                      )}
+                      <ManagerEmployeeTaskView
+                        employeeName={empName}
+                        role={taskSheetRole}
+                        phase="baseline"
+                        viewMode={taskBodyTab}
+                        mgrEmpAdded={ov?.added}
+                        mgrEmpRemoved={ov?.removed}
+                        mgrEditing={taskEditing}
+                        onMgrRemove={(taskName) => removeEmpTask(empName, taskName)}
+                      />
+                    </>
+                  )
+                }
+
+                // Role view
+                return <WfrTaskSheetBody role={taskSheetRole} phase="baseline" viewMode={taskBodyTab} />
+              })()}
+          </WfrSheet>
+        )
+      })()}
       <DevPlanSheet
         employee={devPlanEmployee}
         open={!!devPlanEmployee}

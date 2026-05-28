@@ -131,7 +131,7 @@ export function MyWorkPage() {
           <div className={`list-card${editMode ? ' editing' : ''}`}>
             <div className="list-head">
               <div>
-                <h2>Your work this week</h2>
+                <h2>My work tasks</h2>
                 <p>
                   The recurring things that fill your time, the skills they stretch, and a gentle read on where AI fits.{' '}
                   <span className="list-blue">Blue</span> skills are ones your role is growing.

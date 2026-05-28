@@ -1,0 +1,103 @@
+/* WfrSheet — shared shell for slide-in sheets across WFR.
+   Ported from .wfr-trend-sheet__* so visuals stay identical; consumers can
+   still use the trend-sheet namespace for body-content styling. */
+
+[data-wfr-sheet-open] {
+  overflow: hidden;
+}
+
+.wfr-sheet__root {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+}
+
+.wfr-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 0;
+}
+
+.wfr-sheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-family);
+}
+
+/* Header */
+.wfr-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.wfr-sheet__header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wfr-sheet__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wfr-sheet__title {
+  font: var(--typography-header4);
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.wfr-sheet__sub {
+  font: var(--typography-body3);
+  color: #64748b;
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.wfr-sheet__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.wfr-sheet__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Body */
+.wfr-sheet__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px 40px;
+}

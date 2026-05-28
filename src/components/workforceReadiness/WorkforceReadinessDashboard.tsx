@@ -40,6 +40,9 @@ import { ReadinessTrendSheet } from './ReadinessTrendSheet'
 import { UnrealizedValueSheet, type UnrealizedValueSheetData } from './UnrealizedValueSheet'
 import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMetricSheet'
 import { DevPlanSheet } from './DevPlanSheet'
+import { WfrSheet } from './WfrSheet'
+import { ManagerEmployeeTaskView } from './ManagerEmployeeTaskView'
+import { TaskSheetBodyTabs } from './TaskSheetBodyTabs'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
@@ -1767,36 +1770,25 @@ function BoardView({
       />
 
       {/* Task list sheet */}
-      {taskSheetRole && createPortal(
-        <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }} />
-          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${taskSheetRole.title}`}>
-            <div className="wfr-trend-sheet__header">
-              <div>
-                <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{taskSheetRole.title}</h2>
-                </div>
-                <p className="wfr-trend-sheet__sub">{taskSheetRole.dept}</p>
-              </div>
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }} aria-label="Close">
-                <span className="material-symbols-outlined">close</span>
+      {taskSheetRole && (
+        <WfrSheet
+          open
+          onClose={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }}
+          title={taskSheetRole.title}
+          subtitle={taskSheetRole.dept}
+          ariaLabel={`Tasks for ${taskSheetRole.title}`}
+        >
+          {/* Tab pills */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+            {(['all', 'classification', 'source'] as const).map(tab => (
+              <button key={tab} type="button" onClick={() => setTaskSheetTab(tab)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${taskSheetTab === tab ? '#6366f1' : '#e2e8f0'}`, background: taskSheetTab === tab ? '#eef2ff' : 'transparent', color: taskSheetTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: taskSheetTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
               </button>
-            </div>
-            <div className="wfr-trend-sheet__body">
-              {/* Tab pills */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-                {(['all', 'classification', 'source'] as const).map(tab => (
-                  <button key={tab} type="button" onClick={() => setTaskSheetTab(tab)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${taskSheetTab === tab ? '#6366f1' : '#e2e8f0'}`, background: taskSheetTab === tab ? '#eef2ff' : 'transparent', color: taskSheetTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: taskSheetTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
-                  </button>
-                ))}
-              </div>
-              <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode={taskSheetTab} />
-            </div>
+            ))}
           </div>
-        </div>,
-        document.body,
+          <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode={taskSheetTab} />
+        </WfrSheet>
       )}
 
       {/* HRBP dev plan role selection dialog */}
@@ -2521,6 +2513,7 @@ export function WorkforceReadinessDashboard({
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
   const [mgrTaskSheetView, setMgrTaskSheetView] = useState<'role' | 'employee'>('employee')
+  const [mgrTaskBodyTab, setMgrTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [mgrEmpTaskOverrides, setMgrEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
   const [mgrTaskEditing, setMgrTaskEditing] = useState(false)
   const [mgrTaskAddOpen, setMgrTaskAddOpen] = useState(false)
@@ -3077,79 +3070,51 @@ export function WorkforceReadinessDashboard({
         </div>,
         document.body
       )}
-      {mgrTaskSheetRole && createPortal(
-        <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }} />
-          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}>
-            <div className="wfr-trend-sheet__header">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName ? mgrTaskSheetRole.employeeName : mgrTaskSheetRole.title}</h2>
-                </div>
-                <p className="wfr-trend-sheet__sub">{mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName ? mgrTaskSheetRole.title : mgrTaskSheetRole.dept}</p>
-                {mgrTaskSheetRole.employeeName && (
-                  <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
-                    {(['employee', 'role'] as const).map(v => (
-                      <button key={v} type="button" onClick={() => { setMgrTaskSheetView(v); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
-                        style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: mgrTaskSheetView === v ? '#fff' : 'transparent', color: mgrTaskSheetView === v ? '#0f172a' : '#64748b', boxShadow: mgrTaskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                        {v === 'employee' ? 'Employee' : 'Role'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {mgrTaskSheetRole.employeeName && mgrTaskSheetView === 'employee' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
-                  {mgrTaskEditing && (
-                    <button type="button" onClick={() => setMgrTaskAddOpen(o => !o)}
-                      title="Add task"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskAddOpen ? '#eef2ff' : '#fff', color: mgrTaskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
-                    </button>
-                  )}
-                  <button type="button" onClick={() => { setMgrTaskEditing(e => !e); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
-                    title={mgrTaskEditing ? 'Done editing' : 'Edit tasks'}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskEditing ? '#eef2ff' : '#fff', color: mgrTaskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
-                  </button>
-                </div>
-              )}
-              <button type="button" className="wfr-trend-sheet__close" onClick={() => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }} aria-label="Close">
-                <span className="material-symbols-outlined">close</span>
+      {mgrTaskSheetRole && (() => {
+        const closeMgrTaskSheet = () => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }
+        const isEmpView = mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName != null
+        const belowHeader = mgrTaskSheetRole.employeeName ? (
+          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
+            {(['employee', 'role'] as const).map(v => (
+              <button key={v} type="button" onClick={() => { setMgrTaskSheetView(v); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
+                style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: mgrTaskSheetView === v ? '#fff' : 'transparent', color: mgrTaskSheetView === v ? '#0f172a' : '#64748b', boxShadow: mgrTaskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                {v === 'employee' ? 'Employee' : 'Role'}
               </button>
-            </div>
-            <div className="wfr-trend-sheet__body">
+            ))}
+          </div>
+        ) : null
+        const headerActions = isEmpView ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+            {mgrTaskEditing && (
+              <button type="button" onClick={() => setMgrTaskAddOpen(o => !o)}
+                title="Add task"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskAddOpen ? '#eef2ff' : '#fff', color: mgrTaskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
+              </button>
+            )}
+            <button type="button" onClick={() => { setMgrTaskEditing(e => !e); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
+              title={mgrTaskEditing ? 'Done editing' : 'Edit tasks'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskEditing ? '#eef2ff' : '#fff', color: mgrTaskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+            </button>
+          </div>
+        ) : null
+        return (
+          <WfrSheet
+            open
+            onClose={closeMgrTaskSheet}
+            title={isEmpView ? mgrTaskSheetRole.employeeName! : mgrTaskSheetRole.title}
+            subtitle={isEmpView ? mgrTaskSheetRole.title : mgrTaskSheetRole.dept}
+            belowHeader={belowHeader}
+            headerActions={headerActions}
+            ariaLabel={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}
+          >
+              <TaskSheetBodyTabs value={mgrTaskBodyTab} onChange={setMgrTaskBodyTab} count={getTasksForRole(mgrTaskSheetRole.title).length} />
               {mgrTaskSheetView === 'role' || !mgrTaskSheetRole.employeeName ? (
-                <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} />
+                <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} viewMode={mgrTaskBodyTab} />
               ) : (() => {
-                const roleTasks = getTasksForRole(mgrTaskSheetRole.title)
-                const { tasks, addedNames } = getMgrEmpTasks(mgrTaskSheetRole.employeeName, roleTasks)
                 const empName = mgrTaskSheetRole.employeeName
-                const augCount = tasks.filter(t => t.score >= 15 && t.score <= 75).length
-                const aboveCount = tasks.filter(t => t.score > 75).length
-                const belowCount = tasks.filter(t => t.score < 15).length
-                const zoneCards = [
-                  { zone: 'above' as const, count: aboveCount, label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', activeBorder: '#6366f1' },
-                  { zone: 'augment' as const, count: augCount, label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', activeBorder: '#15803d' },
-                  { zone: 'below' as const, count: belowCount, label: 'Human', color: '#94a3b8', bg: '#f8fafc', border: '#e5e7eb', activeBorder: '#64748b' },
-                ]
-                const [mgrZoneFilter, setMgrZoneFilter] = [null as 'augment' | 'above' | 'below' | null, (_: unknown) => {}]
-                const augmentSkills: Record<string, string[]> = { 'research': ['AI-assisted research', 'Data synthesis'], 'draft': ['AI writing', 'Content generation'], 'analys': ['Data interpretation', 'Pattern recognition'], 'plan': ['AI-assisted planning', 'Scenario modeling'], 'review': ['Quality evaluation', 'AI output review'], 'track': ['AI analytics', 'Trend detection'], 'coordinat': ['AI scheduling', 'Workflow automation'], 'report': ['Automated reporting', 'Data visualization'], 'forecast': ['Predictive analytics', 'AI modeling'], 'screen': ['AI screening', 'Candidate matching'], 'document': ['AI documentation', 'Template generation'], 'budget': ['Financial modeling', 'AI forecasting'] }
-                const automateSkills = ['Process automation', 'AI pipeline']
-                const humanSkills: Record<string, string[]> = { 'negotiat': ['Persuasion', 'Relationship building'], 'conflict': ['Mediation', 'Emotional intelligence'], 'client': ['Trust building', 'Empathy'], 'mentor': ['Coaching', 'Leadership'], 'strateg': ['Vision', 'Business judgment'] }
-                function getSkillsForTask(task: string, zone: string): string[] {
-                  const lower = task.toLowerCase()
-                  if (zone === 'augment') { for (const [key, skills] of Object.entries(augmentSkills)) { if (lower.includes(key)) return skills } return ['AI collaboration', 'Tool fluency'] }
-                  if (zone === 'above') return automateSkills
-                  for (const [key, skills] of Object.entries(humanSkills)) { if (lower.includes(key)) return skills }
-                  return ['Critical thinking', 'Human judgment']
-                }
-                const groups = [
-                  { zone: 'above' as const, label: 'Automate', icon: 'precision_manufacturing', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', tasks: tasks.filter(t => t.score > 75) },
-                  { zone: 'augment' as const, label: 'Augment', icon: 'smart_toy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', tasks: tasks.filter(t => t.score >= 15 && t.score <= 75) },
-                  { zone: 'below' as const, label: 'Human', icon: 'person', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb', tasks: tasks.filter(t => t.score < 15) },
-                ]
-                void mgrZoneFilter; void setMgrZoneFilter
+                const ov = mgrEmpTaskOverrides.get(empName)
                 return (
                   <>
                     {mgrTaskEditing && mgrTaskAddOpen && (
@@ -3167,64 +3132,22 @@ export function WorkforceReadinessDashboard({
                           style={{ padding: '5px 10px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', border: 'none', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
                       </div>
                     )}
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                      {zoneCards.map((zc) => (
-                        <div key={zc.zone} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: `1px solid ${zc.border}`, background: zc.bg }}>
-                          <span style={{ fontSize: 20, fontWeight: 700, color: zc.color }}>{zc.count}</span>
-                          <div style={{ fontSize: 11, color: zc.color, fontWeight: 500 }}>{zc.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {groups.filter(g => g.tasks.length > 0).map((group) => (
-                      <div key={group.label} style={{ marginBottom: 16 }}>
-                        <div style={{ padding: '8px 12px', borderRadius: 8, background: group.bg, border: `1px solid ${group.border}`, marginBottom: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: group.color }}>{group.icon}</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: group.color }}>{group.label}</span>
-                            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 4 }}>{group.tasks.length} tasks</span>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {group.tasks.sort((a, b) => b.score - a.score).map((t, ti) => {
-                            const zone = t.score >= 15 && t.score <= 75 ? 'augment' : t.score > 75 ? 'above' : 'below'
-                            const skills = getSkillsForTask(t.task, zone)
-                            const isAdded = addedNames.has(t.task)
-                            return (
-                              <div key={ti} style={{ padding: '10px 12px', borderRadius: 6, border: isAdded ? `1px solid ${group.border}` : '1px solid #e5e7eb', background: isAdded ? group.bg : undefined, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                    <span className="text-[13px] font-medium text-[#1a212e]">{t.task}</span>
-                                    {isAdded && <span style={{ fontSize: 10, fontWeight: 600, color: group.color, background: group.bg, border: `1px solid ${group.border}`, borderRadius: 4, padding: '1px 5px' }}>Added</span>}
-                                  </div>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                    {skills.map((skill) => (
-                                      <span key={skill} style={{ padding: '1px 6px', borderRadius: 4, background: group.bg, border: `1px solid ${group.border}`, fontSize: 10, fontWeight: 500, color: group.color }}>{skill}</span>
-                                    ))}
-                                  </div>
-                                </div>
-                                {mgrTaskEditing && (
-                                  <button type="button" onClick={() => removeMgrEmpTask(mgrTaskSheetRole!.employeeName!, t.task)}
-                                    style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: 2, borderRadius: 4, lineHeight: 1, marginTop: 1 }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                                    onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}
-                                    title="Remove task">
-                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                                  </button>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                    <ManagerEmployeeTaskView
+                      employeeName={empName}
+                      role={mgrTaskSheetRole}
+                      phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'}
+                      viewMode={mgrTaskBodyTab}
+                      mgrEmpAdded={ov?.added}
+                      mgrEmpRemoved={ov?.removed}
+                      mgrEditing={mgrTaskEditing}
+                      onMgrRemove={(taskName) => removeMgrEmpTask(empName, taskName)}
+                    />
                   </>
                 )
               })()}
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </WfrSheet>
+        )
+      })()}
       <DevPlanSheet
         employee={mgrDevPlanEmployee}
         open={!!mgrDevPlanEmployee}
@@ -5059,44 +4982,35 @@ export function WorkforceReadinessDashboard({
       <UnrealizedValueSheet data={uvSheetData} onClose={() => setUvSheetData(null)} />
 
       {/* Task sheet for HRBP role detail view — with admin edit capability */}
-      {dashTaskSheetRole && createPortal(
-        <div className="wfr-trend-sheet__root">
-          <div className="wfr-trend-sheet__backdrop" onClick={closeDashTaskSheet} />
-          <div className="wfr-trend-sheet" role="dialog" aria-label={`Tasks for ${dashTaskSheetRole.title}`}>
-            <div className="wfr-trend-sheet__header">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="wfr-trend-sheet__title-row">
-                  <h2 className="wfr-trend-sheet__title">{dashTaskSheetRole.title}</h2>
-                </div>
-                <p className="wfr-trend-sheet__sub">{dashTaskSheetRole.dept}</p>
-              </div>
-              {!dashTaskEditing && (
-                <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
-                </button>
-              )}
-              {dashTaskEditing && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
-                  <button type="button" onClick={() => { dashTaskAddOpen ? resetDashTaskAdd() : setDashTaskAddOpen(true) }} title="Add task"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${dashTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: dashTaskAddOpen ? '#eef2ff' : '#fff', color: dashTaskAddOpen ? '#4338ca' : '#64748b', padding: 0 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
-                  </button>
-                  <button type="button" onClick={cancelDashTask}
-                    style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', fontSize: 12, fontWeight: 500, fontFamily: 'inherit' }}>
-                    Cancel
-                  </button>
-                  <button type="button" onClick={saveDashTask}
-                    style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>
-                    Save
-                  </button>
-                </div>
-              )}
-              <button type="button" className="wfr-trend-sheet__close" onClick={closeDashTaskSheet} aria-label="Close">
-                <span className="material-symbols-outlined">close</span>
+      {dashTaskSheetRole && (
+        <WfrSheet
+          open
+          onClose={closeDashTaskSheet}
+          title={dashTaskSheetRole.title}
+          subtitle={dashTaskSheetRole.dept}
+          ariaLabel={`Tasks for ${dashTaskSheetRole.title}`}
+          headerActions={!dashTaskEditing ? (
+            <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+              <button type="button" onClick={() => { dashTaskAddOpen ? resetDashTaskAdd() : setDashTaskAddOpen(true) }} title="Add task"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${dashTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: dashTaskAddOpen ? '#eef2ff' : '#fff', color: dashTaskAddOpen ? '#4338ca' : '#64748b', padding: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
+              </button>
+              <button type="button" onClick={cancelDashTask}
+                style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', fontSize: 12, fontWeight: 500, fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+              <button type="button" onClick={saveDashTask}
+                style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>
+                Save
               </button>
             </div>
-            <div className="wfr-trend-sheet__body">
+          )}
+        >
               {/* Tab pills */}
               <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
                 {(['all', 'classification', 'source'] as const).map(tab => (
@@ -5189,10 +5103,7 @@ export function WorkforceReadinessDashboard({
                 draftAddedNames={new Set(dashDraftAdded.map(t => t.task))}
                 onAdminRemove={removeDashTask}
               />
-            </div>
-          </div>
-        </div>,
-        document.body,
+        </WfrSheet>
       )}
       {dashTaskToast && createPortal(
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: '#fff', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.18)', fontSize: 13, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>

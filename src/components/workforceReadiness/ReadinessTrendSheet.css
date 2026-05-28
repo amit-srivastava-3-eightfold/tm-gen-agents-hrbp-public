@@ -1,39 +1,15 @@
-/* Readiness Trend Detail Sheet — slides in from right */
-
-[data-wfr-trend-sheet-open] {
-  overflow: hidden;
-}
-
-.wfr-trend-sheet__root {
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-}
-
-.wfr-trend-sheet__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.3);
-  backdrop-filter: blur(2px);
-  z-index: 0;
-}
+/* Readiness Trend Detail Sheet — body-content styles.
+   Chrome (root/backdrop/header/close/body) lives in WfrSheet.css.
+   The static "sheet" preview in WfrTaskSheetPage still uses the
+   .wfr-trend-sheet container + header/title/sub/body styles below. */
 
 .wfr-trend-sheet {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  max-width: 560px;
-  background: #fff;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.1);
-  z-index: 1;
   display: flex;
   flex-direction: column;
+  background: #fff;
   font-family: var(--font-family);
 }
 
-/* Header */
 .wfr-trend-sheet__header {
   display: flex;
   align-items: flex-start;
@@ -60,29 +36,6 @@
   line-height: 1.25;
 }
 
-.wfr-trend-sheet__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 99px;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.wfr-trend-sheet__badge--up {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
-}
-
-.wfr-trend-sheet__badge--down {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-}
-
 .wfr-trend-sheet__sub {
   font: var(--typography-body3);
   color: #64748b;
@@ -90,27 +43,6 @@
   line-height: 1.45;
 }
 
-.wfr-trend-sheet__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  color: #64748b;
-  transition: background 0.15s ease, color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.wfr-trend-sheet__close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-/* Body */
 .wfr-trend-sheet__body {
   flex: 1;
   overflow-y: auto;

@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { WfrTaskSheetBody, type DemoPhase } from '../components/workforceReadiness/WfrTaskSheetBody'
+import { ManagerEmployeeTaskView } from '../components/workforceReadiness/ManagerEmployeeTaskView'
+import { TaskSheetBodyTabs } from '../components/workforceReadiness/TaskSheetBodyTabs'
 import { getTasksForRole } from '../data/wfrOrgData'
+import { useEmployeeTaskState } from '../hooks/useEmployeeTaskState'
+import {
+  submitPendingChanges,
+  withdrawPendingChanges,
+} from '../data/employeeTaskState'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 
 const ROLE = { title: 'Software Engineer', dept: 'Engineering' }
@@ -14,13 +21,18 @@ const PHASE_LABELS: Record<DemoPhase, string> = {
 
 export default function WfrTaskSheetPage() {
   const [phase, setPhase] = useState<DemoPhase>('baseline')
-  const [variant, setVariant] = useState<'role' | 'employee' | 'admin'>('role')
+  const [variant, setVariant] = useState<'role' | 'employee' | 'manager' | 'admin'>('role')
   const [empBodyMode, setEmpBodyMode] = useState<'employee' | 'role'>('employee')
 
-  // ── Employee: committed state ────────────────────────────────────────────
+  // ── Employee: persisted state (approved + pending, shared with manager) ──
+  const employeeState = useEmployeeTaskState(DEMO_EMPLOYEE)
+  const empApprovedAdded = employeeState.approved.added
+  const empApprovedRemoved = new Set(employeeState.approved.removed)
+  const empPending = employeeState.pending
+  const empPendingAdded = empPending?.added ?? []
+  const empPendingRemoved = new Set(empPending?.removed ?? [])
+  // Employee: edit state
   const [empEditing, setEmpEditing] = useState(false)
-  const [empAdded, setEmpAdded] = useState<{ task: string; score: number; description?: string }[]>([])
-  const [empRemoved, setEmpRemoved] = useState<Set<string>>(new Set())
   // Employee: draft state (cancelable, lives only during an edit session)
   const [empDraftAdded, setEmpDraftAdded] = useState<{ task: string; score: number; description?: string }[]>([])
   const [empDraftRemoved, setEmpDraftRemoved] = useState<Set<string>>(new Set())
@@ -53,11 +65,18 @@ export default function WfrTaskSheetPage() {
 
   const roleTasks = getTasksForRole(ROLE.title)
 
-  // Count for "All tasks" badge in employee view
+  // Employee view: tasks currently shown to the employee, layered as
+  //   role base − approved.removed − pending.removed − draft.removed
+  //   + approved.added + pending.added + draft.added (deduped by task name)
+  const empAllRemoved = new Set<string>([...empApprovedRemoved, ...empPendingRemoved, ...empDraftRemoved])
+  const empAllAddedNames = new Set<string>([
+    ...empApprovedAdded.map(t => t.task),
+    ...empPendingAdded.map(t => t.task),
+    ...empDraftAdded.map(t => t.task),
+  ])
   const empEffectiveCount =
-    roleTasks.filter(t => !empRemoved.has(t.task) && !empDraftRemoved.has(t.task)).length +
-    empAdded.filter(t => !empDraftRemoved.has(t.task)).length +
-    empDraftAdded.filter(t => !empDraftRemoved.has(t.task)).length
+    roleTasks.filter(t => !empAllRemoved.has(t.task)).length +
+    empAllAddedNames.size
 
   // ── Shared AI suggestion helper ──────────────────────────────────────────
   function computeAISuggestion(description: string): { title: string; score: number; desc: string } {
@@ -174,23 +193,47 @@ export default function WfrTaskSheetPage() {
     }, 1400)
   }
   function saveEmp() {
-    const prevAdded = empAdded; const prevRemoved = empRemoved
+    // Layer drafts onto existing pending. Drafts that "remove" a previously
+    // pending add just take it back out of pending (it never reached the manager).
+    const startingAdded = [...empPendingAdded]
+    const startingRemoved = new Set(empPendingRemoved)
+
+    // Apply draft adds
+    for (const t of empDraftAdded) {
+      if (!startingAdded.some(a => a.task === t.task)) startingAdded.push(t)
+      startingRemoved.delete(t.task) // un-removes
+    }
+    // Apply draft removes
+    for (const name of empDraftRemoved) {
+      const idx = startingAdded.findIndex(a => a.task === name)
+      if (idx >= 0) {
+        // Removing an item we hadn't yet submitted → just drop the pending add
+        startingAdded.splice(idx, 1)
+      } else if (!empApprovedRemoved.has(name)) {
+        // Otherwise mark for removal (skip if manager has already approved the removal)
+        startingRemoved.add(name)
+      }
+    }
+
     const removedCount = [...empDraftRemoved].filter(n => !empDraftAdded.some(t => t.task === n)).length
     const addedCount = empDraftAdded.filter(t => !empDraftRemoved.has(t.task)).length
-    setEmpAdded(prev => [...prev, ...empDraftAdded.filter(t => !empDraftRemoved.has(t.task))])
-    setEmpRemoved(prev => new Set([...prev, ...empDraftRemoved]))
+
+    submitPendingChanges(DEMO_EMPLOYEE, { added: startingAdded, removed: [...startingRemoved] })
     setEmpDraftAdded([]); setEmpDraftRemoved(new Set())
     setEmpEditing(false); resetEmpTaskAdd()
     const parts = [removedCount > 0 ? `${removedCount} removed` : '', addedCount > 0 ? `${addedCount} added` : ''].filter(Boolean)
-    setEmpToast({ msg: parts.length > 0 ? `Employee tasks updated — ${parts.join(', ')}` : 'No changes made', prevAdded, prevRemoved })
+    setEmpToast({ msg: parts.length > 0 ? `Submitted for manager review — ${parts.join(', ')}` : 'No changes made', prevAdded: [], prevRemoved: new Set() })
   }
   function cancelEmp() {
     setEmpDraftAdded([]); setEmpDraftRemoved(new Set())
     setEmpEditing(false); resetEmpTaskAdd()
   }
+  function withdrawEmpPending() {
+    withdrawPendingChanges(DEMO_EMPLOYEE)
+    setEmpToast({ msg: 'Pending changes withdrawn', prevAdded: [], prevRemoved: new Set() })
+  }
   function revertEmp() {
-    if (!empToast) return
-    setEmpAdded(empToast.prevAdded); setEmpRemoved(empToast.prevRemoved)
+    // Undo from toast is no longer meaningful with persisted pending state.
     setEmpToast(null)
   }
 
@@ -254,7 +297,7 @@ export default function WfrTaskSheetPage() {
       <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 20px' }}>Role-level task breakdown by AI zone.</p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        {(['role', 'employee', 'admin'] as const).map(v => (
+        {(['role', 'employee', 'manager', 'admin'] as const).map(v => (
           <button key={v} type="button" onClick={() => { setVariant(v); setEmpBodyMode('employee') }} style={{
             padding: '6px 14px', borderRadius: 8, border: '1px solid',
             borderColor: variant === v ? '#6366f1' : '#e2e8f0',
@@ -263,7 +306,7 @@ export default function WfrTaskSheetPage() {
             fontSize: 13, fontWeight: variant === v ? 600 : 400,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            {v === 'role' ? 'Role view' : v === 'employee' ? 'Employee view' : 'Admin view'}
+            {v === 'role' ? 'Role view' : v === 'employee' ? 'Employee view' : v === 'manager' ? 'Manager view' : 'Admin view'}
           </button>
         ))}
       </div>
@@ -287,9 +330,14 @@ export default function WfrTaskSheetPage() {
         <div className="wfr-trend-sheet__header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="wfr-trend-sheet__title-row">
-              <h2 className="wfr-trend-sheet__title">{variant === 'employee' ? DEMO_EMPLOYEE : ROLE.title}</h2>
+              <h2 className="wfr-trend-sheet__title">{variant === 'employee' || variant === 'manager' ? DEMO_EMPLOYEE : ROLE.title}</h2>
+              {variant === 'manager' && (
+                <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Manager view
+                </span>
+              )}
             </div>
-            <p className="wfr-trend-sheet__sub">{variant === 'employee' ? ROLE.title : ROLE.dept}</p>
+            <p className="wfr-trend-sheet__sub">{variant === 'employee' || variant === 'manager' ? ROLE.title : ROLE.dept}</p>
             {variant === 'employee' && (
               <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 16, width: 'fit-content' }}>
                 {(['employee', 'role'] as const).map(v => (
@@ -355,36 +403,11 @@ export default function WfrTaskSheetPage() {
         </div>
 
         <div className="wfr-trend-sheet__body">
-          {/* Tab pills */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-            {(['all', 'classification', 'source', 'intelligence'] as const).map(tab => (
-              <button key={tab} type="button" onClick={() => setBodyTab(tab)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '4px 12px', borderRadius: 20,
-                  border: `1px solid ${bodyTab === tab ? '#6366f1' : '#e2e8f0'}`,
-                  background: bodyTab === tab ? '#eef2ff' : 'transparent',
-                  color: bodyTab === tab ? '#4338ca' : '#64748b',
-                  fontSize: 12, fontWeight: bodyTab === tab ? 600 : 400,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                {tab === 'all' ? (
-                  <>
-                    All tasks
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      minWidth: 18, height: 18, borderRadius: 9, padding: '0 5px',
-                      background: bodyTab === 'all' ? '#6366f1' : '#e2e8f0',
-                      color: bodyTab === 'all' ? '#fff' : '#64748b',
-                      fontSize: 10, fontWeight: 700, lineHeight: 1,
-                    }}>
-                      {(variant === 'role' || empBodyMode === 'role') ? roleTasks.length : empEffectiveCount}
-                    </span>
-                  </>
-                ) : tab === 'classification' ? 'By classification' : 'By source'}
-              </button>
-            ))}
-          </div>
+          <TaskSheetBodyTabs
+            value={bodyTab}
+            onChange={setBodyTab}
+            count={(variant === 'role' || (variant === 'employee' && empBodyMode === 'role') || variant === 'admin') ? roleTasks.length : empEffectiveCount}
+          />
 
           {variant === 'role' || (variant === 'employee' && empBodyMode === 'role') ? (
             <WfrTaskSheetBody role={ROLE} phase={phase} viewMode={bodyTab} />
@@ -494,8 +517,50 @@ export default function WfrTaskSheetPage() {
               />
             </>
 
+          ) : variant === 'manager' ? (
+            <ManagerEmployeeTaskView
+              employeeName={DEMO_EMPLOYEE}
+              role={ROLE}
+              phase={phase}
+              viewMode={bodyTab}
+            />
+
           ) : (
             <>
+              {/* Pending manager review banner */}
+              {empPending && (empPending.added.length > 0 || empPending.removed.length > 0) && (
+                <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 8, border: '1px solid #fde68a', background: '#fffbeb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#b45309' }}>hourglass_top</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pending manager review</span>
+                    <span style={{ marginLeft: 'auto' }}>
+                      <button type="button" onClick={withdrawEmpPending}
+                        style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #fcd34d', cursor: 'pointer', background: 'transparent', color: '#92400e', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                        Withdraw
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {empPending.added.map(t => (
+                      <div key={`pa-${t.task}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: 4, background: '#dcfce7', color: '#15803d' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+                        </span>
+                        <span style={{ fontWeight: 500, color: '#0f172a' }}>{t.task}</span>
+                        <span style={{ color: '#94a3b8' }}>· score {t.score}</span>
+                      </div>
+                    ))}
+                    {empPending.removed.map(name => (
+                      <div key={`pr-${name}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: 4, background: '#fee2e2', color: '#b91c1c' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>remove</span>
+                        </span>
+                        <span style={{ fontWeight: 500, color: '#0f172a', textDecoration: 'line-through' }}>{name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Employee: AI add-task panel (indigo theme) */}
               {empEditing && empTaskAddOpen && (
                 <div style={{ marginBottom: 24, padding: '12px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#f0f4ff' }}>
@@ -591,10 +656,10 @@ export default function WfrTaskSheetPage() {
               <WfrTaskSheetBody
                 role={ROLE} phase={phase} viewMode={bodyTab}
                 adminEditing={empEditing}
-                adminAdded={[...empAdded, ...empDraftAdded]}
-                adminRemoved={empRemoved}
-                pendingRemoved={empDraftRemoved}
-                draftAddedNames={new Set(empDraftAdded.map(t => t.task))}
+                adminAdded={[...empApprovedAdded, ...empPendingAdded, ...empDraftAdded]}
+                adminRemoved={empApprovedRemoved}
+                pendingRemoved={new Set([...empPendingRemoved, ...empDraftRemoved])}
+                draftAddedNames={new Set([...empPendingAdded.map(t => t.task), ...empDraftAdded.map(t => t.task)])}
                 onAdminRemove={removeEmpTask}
               />
             </>
