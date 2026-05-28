@@ -33,7 +33,7 @@ export interface ReadinessTrendSheetProps {
 }
 
 export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _channelsLabel, managerContext, roleContext, hrbpContext, upskillingActive = false, collectionComplete = true, directReports, onUnrealizedValueClick }: ReadinessTrendSheetProps) {
-  const [bodyTab, setBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
+  const [, setBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
 
   // Reset tab when sheet closes or role changes
   useEffect(() => {

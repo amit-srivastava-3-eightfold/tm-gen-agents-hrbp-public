@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { Tag } from '@tonyh-2-eightfold/ef-design-system'
 import { WfrTaskSheetBody, type DemoPhase } from '../components/workforceReadiness/WfrTaskSheetBody'
 import { ManagerEmployeeTaskView } from '../components/workforceReadiness/ManagerEmployeeTaskView'
-import { TaskSheetBodyTabs } from '../components/workforceReadiness/TaskSheetBodyTabs'
-import { getTasksForRole } from '../data/wfrOrgData'
 import { useEmployeeTaskState } from '../hooks/useEmployeeTaskState'
 import {
   submitPendingChanges,
@@ -92,23 +90,12 @@ export default function WfrTaskSheetPage() {
   const [mgrSkillInputOpen, setMgrSkillInputOpen] = useState(false)
   const [mgrToast, setMgrToast] = useState<{ msg: string; prevAdded: { task: string; score: number; description?: string }[]; prevRemoved: Set<string> } | null>(null)
 
-  const [bodyTab, setBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [demoOpen, setDemoOpen] = useState(true)
 
-  const roleTasks = getTasksForRole(ROLE.title)
 
   // Employee view: tasks currently shown to the employee, layered as
   //   role base − approved.removed − pending.removed − draft.removed
   //   + approved.added + pending.added + draft.added (deduped by task name)
-  const empAllRemoved = new Set<string>([...empApprovedRemoved, ...empPendingRemoved, ...empDraftRemoved])
-  const empAllAddedNames = new Set<string>([
-    ...empApprovedAdded.map(t => t.task),
-    ...empPendingAdded.map(t => t.task),
-    ...empDraftAdded.map(t => t.task),
-  ])
-  const empEffectiveCount =
-    roleTasks.filter(t => !empAllRemoved.has(t.task)).length +
-    empAllAddedNames.size
 
   // ── Shared AI suggestion helper ──────────────────────────────────────────
   function computeAISuggestion(description: string): { title: string; score: number; desc: string } {

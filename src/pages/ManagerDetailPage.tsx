@@ -228,7 +228,7 @@ export function ManagerDetailPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [empSort, setEmpSort] = useState<{ col: 'name' | 'readiness' | 'upskilling', dir: 'asc' | 'desc' }>({ col: 'readiness', dir: 'desc' })
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
-  const [taskSheetZoneFilter, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
+  const [, setTaskSheetZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const [taskSheetView, setTaskSheetView] = useState<'role' | 'employee'>('employee')
   const [taskBodyTab, setTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [empTaskOverrides, setEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
@@ -236,12 +236,6 @@ export function ManagerDetailPage() {
   const [taskAddOpen, setTaskAddOpen] = useState(false)
   const [taskAddInput, setTaskAddInput] = useState('')
 
-  function getEmpTasks(employeeName: string, roleTasks: { task: string; score: number }[]) {
-    const ov = empTaskOverrides.get(employeeName)
-    if (!ov) return { tasks: roleTasks, addedNames: new Set<string>() }
-    const tasks = [...roleTasks.filter(t => !ov.removed.has(t.task)), ...ov.added]
-    return { tasks, addedNames: new Set(ov.added.map(t => t.task)) }
-  }
   function removeEmpTask(employeeName: string, taskName: string) {
     setEmpTaskOverrides(prev => {
       const next = new Map(prev)

@@ -45,7 +45,6 @@ import { DevPlanSheet } from './DevPlanSheet'
 import { WfrSheet } from './WfrSheet'
 import { ManagerEmployeeTaskView } from './ManagerEmployeeTaskView'
 import { useEmployeeTaskState } from '../../hooks/useEmployeeTaskState'
-import { TaskSheetBodyTabs } from './TaskSheetBodyTabs'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
@@ -820,7 +819,7 @@ function BoardView({
     setRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'dept' ? 'asc' : 'desc' })
   }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
-  const [taskSheetTab, setTaskSheetTab] = useState<'all' | 'classification' | 'source'>('classification')
+  const [, setTaskSheetTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
 
   const [chroUpskillingInfoOpen, setChroUpskillingInfoOpen] = useState(false)
@@ -1357,7 +1356,6 @@ function BoardView({
               {allDeptsSorted.map((d) => {
                 const trend = deptReadinessTrend(d.name)
                 const measuredReadiness = focusCollectionComplete ? d.aiReadiness + trend.delta : d.aiReadiness
-                const gapCount = focusCollectionComplete ? deptGapHeadcount({ ...d, aiReadiness: measuredReadiness } as unknown as Dept) : deptGapHeadcount(d)
                 const deptHrsUnlocked = scaleHrsUnlocked(d.hrsUnlocked, d.aiReadiness, measuredReadiness)
                 const priorityRank = topGapDeptRanks.get(d.name)
                 const isPriority = priorityRank !== undefined
@@ -1414,7 +1412,6 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {allDeptsSorted.map((d) => {
-                const gapCount = deptGapHeadcount(d)
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
                     <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
@@ -1447,7 +1444,6 @@ function BoardView({
             </DataTableHeader>
             <DataTableBody>
               {sorted.map((d) => {
-                const gapCount = deptGapHeadcount(d)
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
                     <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
@@ -2298,7 +2294,7 @@ export function WorkforceReadinessDashboard({
   const [hrbpUpskillingSelectedDirs, setHrbpUpskillingSelectedDirs] = useState<Set<string>>(new Set())
   const [snackbar, setSnackbar] = useState<string | null>(null)
   const [dashTaskSheetRole, setDashTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
-  const [dashTaskBodyTab, setDashTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
+  const [, setDashTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   // HRBP task-sheet edit state
   const [dashTaskEditing, setDashTaskEditing] = useState(false)
   const [dashTaskAdded, setDashTaskAdded] = useState<{ task: string; score: number; description?: string }[]>([])
@@ -2505,13 +2501,12 @@ export function WorkforceReadinessDashboard({
   }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
-  const [mgrTaskBodyTab, setMgrTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [mgrEmpTaskOverrides, setMgrEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
   const [mgrTaskEditing, setMgrTaskEditing] = useState(false)
   const [mgrCompareMode, setMgrCompareMode] = useState(false)
   const [mgrQuickRestored, setMgrQuickRestored] = useState<Set<string>>(new Set())
   const [mgrTaskAddOpen, setMgrTaskAddOpen] = useState(false)
-  const [mgrTaskAddInput, setMgrTaskAddInput] = useState('')
+  const [, setMgrTaskAddInput] = useState('')
   // Manager draft state (cancelable session)
   const [mgrDraftAdded, setMgrDraftAdded] = useState<{ task: string; score: number; description?: string }[]>([])
   const [mgrDraftRemoved, setMgrDraftRemoved] = useState<Set<string>>(new Set())
@@ -2527,34 +2522,6 @@ export function WorkforceReadinessDashboard({
   // Employee task state for the currently-open manager task sheet (drives compare summary bar)
   const mgrSheetEmpState = useEmployeeTaskState(mgrTaskSheetRole?.employeeName)
 
-  function getMgrEmpTasks(employeeName: string, roleTasks: { task: string; score: number }[]) {
-    const ov = mgrEmpTaskOverrides.get(employeeName)
-    if (!ov) return { tasks: roleTasks, addedNames: new Set<string>() }
-    const tasks = [...roleTasks.filter(t => !ov.removed.has(t.task)), ...ov.added]
-    return { tasks, addedNames: new Set(ov.added.map(t => t.task)) }
-  }
-  function removeMgrEmpTask(employeeName: string, taskName: string) {
-    setMgrEmpTaskOverrides(prev => {
-      const next = new Map(prev)
-      const ov = next.get(employeeName) ?? { added: [], removed: new Set<string>() }
-      if (ov.added.some(t => t.task === taskName)) {
-        next.set(employeeName, { ...ov, added: ov.added.filter(t => t.task !== taskName) })
-      } else {
-        const removed = new Set(ov.removed); removed.add(taskName)
-        next.set(employeeName, { ...ov, removed })
-      }
-      return next
-    })
-  }
-  function addMgrEmpTask(employeeName: string, taskName: string) {
-    if (!taskName.trim()) return
-    setMgrEmpTaskOverrides(prev => {
-      const next = new Map(prev)
-      const ov = next.get(employeeName) ?? { added: [], removed: new Set<string>() }
-      next.set(employeeName, { ...ov, added: [...ov.added, { task: taskName.trim(), score: 50 }] })
-      return next
-    })
-  }
   function resetMgrTaskAddPanel() {
     setMgrTaskAddOpen(false); setMgrTaskAddStep('describe')
     setMgrTaskDescription(''); setMgrTaskTitle(''); setMgrTaskDescSuggestion(''); setMgrTaskScore(45)
@@ -2959,13 +2926,6 @@ export function WorkforceReadinessDashboard({
                 const rawDisplayPct = emp._planPct > 0 ? emp._planPct : mgrAssignedPlans.has(emp.name) ? Math.min(85, 10 + (Math.abs(h) % 55)) : 0
                 const empDisplayPct = showUpskilling ? rawDisplayPct : 0
                 const upskillingComplete = showUpskilling && emp._planPct === 100
-                // Base readiness (pre-collection, pre-trend) determines if already AI-ready before any program
-                const wasAlreadyReady = emp.displayReadiness >= 50
-                // AI-ready: no one crosses threshold until plans are created (narrative)
-                // Once plans exist: already-ready employees keep threshold; others need 100% completion
-                const isAiReady = mgrPlansCreated
-                  ? (wasAlreadyReady ? displayEmpReadiness >= 50 : upskillingComplete)
-                  : false
                 return (
                 <DataTableRow key={`${emp.name}-${idx}`}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
@@ -3761,7 +3721,6 @@ export function WorkforceReadinessDashboard({
                       const globalIdx = (deptHrbpRows[0]?.mgrStartIdx ?? 0) + localIdx
                       const cal = deptMgrCalibrated[globalIdx] ?? []
                       const mgrReadiness = cal.length > 0 ? Math.round(cal.reduce((s, v) => s + v, 0) / cal.length) : d.aiReadiness
-                      const mgrGap = Math.max(0, mgr.employees - Math.round(mgr.employees * mgrReadiness / 100))
                       const mgrHrsBase = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees))
                       const mgrBaselineReadiness = Math.max(0, mgrReadiness - deptTrendDelta - deptBoostBase)
                       const mgrHrsUnlocked = scaleHrsUnlocked(mgrHrsBase, mgrBaselineReadiness, mgrReadiness)
