@@ -82,37 +82,39 @@ function CoachMessage({ children }: { children: ReactNode }) {
 function PrWalkthroughView() {
   return (
     <>
-      <CoachMessage>{COACH_GREETING_PR}</CoachMessage>
-      <div className="coach-steps">
-        {WALKTHROUGH_STEPS.map((step, idx) => (
-          <div
-            key={step.id}
-            className={`coach-step${step.state === 'active' ? ' active' : ''}${step.state === 'done' ? ' done' : ''}`}
-          >
-            <div className="step-dot">
-              {step.state === 'done' ? (
-                <span className="material-symbols-outlined">check</span>
-              ) : (
-                idx + 1
-              )}
-            </div>
-            <div>
-              <div className="step-title">{step.title}</div>
-              <div className="step-body">
-                {step.body}
-                {step.link ? (
-                  <>{' '}<a href="#" onClick={(e) => e.preventDefault()}>{step.link.label}</a>.</>
+      <div className="coach-scroll">
+        <CoachMessage>{COACH_GREETING_PR}</CoachMessage>
+        <div className="coach-steps">
+          {WALKTHROUGH_STEPS.map((step, idx) => (
+            <div
+              key={step.id}
+              className={`coach-step${step.state === 'active' ? ' active' : ''}${step.state === 'done' ? ' done' : ''}`}
+            >
+              <div className="step-dot">
+                {step.state === 'done' ? (
+                  <span className="material-symbols-outlined">check</span>
+                ) : (
+                  idx + 1
+                )}
+              </div>
+              <div>
+                <div className="step-title">{step.title}</div>
+                <div className="step-body">
+                  {step.body}
+                  {step.link ? (
+                    <>{' '}<a href="#" onClick={(e) => e.preventDefault()}>{step.link.label}</a>.</>
+                  ) : null}
+                </div>
+                {step.ctaLabel ? (
+                  <button type="button" className="step-btn">
+                    {step.ctaLabel}
+                    {step.ctaIcon ? <span className="material-symbols-outlined">{step.ctaIcon}</span> : null}
+                  </button>
                 ) : null}
               </div>
-              {step.ctaLabel ? (
-                <button type="button" className="step-btn">
-                  {step.ctaLabel}
-                  {step.ctaIcon ? <span className="material-symbols-outlined">{step.ctaIcon}</span> : null}
-                </button>
-              ) : null}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <div className="coach-input">
         <input placeholder="Stuck? Ask me anything about this step…" />
@@ -132,7 +134,7 @@ function CheckInView({ onClose }: { onClose: () => void }) {
   const [comment, setComment] = useState('')
 
   return (
-    <>
+    <div className="coach-scroll">
       <CoachMessage>{COACH_GREETING_CHECKIN}</CoachMessage>
       {CHECKIN_QUESTIONS.map((q) => (
         <div key={q.id} className="checkin-q">
@@ -172,7 +174,7 @@ function CheckInView({ onClose }: { onClose: () => void }) {
           Skip for now
         </button>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -223,48 +225,50 @@ function ChatView({ initialPrompt, coachingTaskId, coachingTaskName }: {
 
   return (
     <>
-      {messages.length === 0 && !coachingTaskId && (
-        <CoachMessage>
-          What's on your mind? I can help you unblock something, draft an update, prep for a meeting, or think through your week.
-        </CoachMessage>
-      )}
-
-      {messages.map((msg, i) =>
-        msg.role === 'ai' ? (
-          <CoachMessage key={i}>
-            <span style={{ whiteSpace: 'pre-line' }}>{msg.text}</span>
+      <div className="coach-scroll">
+        {messages.length === 0 && !coachingTaskId && (
+          <CoachMessage>
+            What's on your mind? I can help you unblock something, draft an update, prep for a meeting, or think through your week.
           </CoachMessage>
-        ) : (
-          <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{
-              background: '#025966', color: '#fff',
-              borderRadius: '14px 14px 4px 14px',
-              padding: '10px 14px', fontSize: 14, lineHeight: 1.5,
-              maxWidth: 300, whiteSpace: 'pre-line',
-            }}>
-              {msg.text}
+        )}
+
+        {messages.map((msg, i) =>
+          msg.role === 'ai' ? (
+            <CoachMessage key={i}>
+              <span style={{ whiteSpace: 'pre-line' }}>{msg.text}</span>
+            </CoachMessage>
+          ) : (
+            <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{
+                background: '#025966', color: '#fff',
+                borderRadius: '14px 14px 4px 14px',
+                padding: '10px 14px', fontSize: 14, lineHeight: 1.5,
+                maxWidth: 300, whiteSpace: 'pre-line',
+              }}>
+                {msg.text}
+              </div>
+            </div>
+          )
+        )}
+
+        {thinking && (
+          <div className="coach-msg">
+            <CoachAvatar size="sm" />
+            <div className="bubble" style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '10px 14px' }}>
+              {[0, 1, 2].map(i => (
+                <span key={i} style={{
+                  width: 6, height: 6, borderRadius: '50%', background: '#94a3b8',
+                  display: 'inline-block',
+                  animation: 'coach-pulse 1.2s ease-in-out infinite',
+                  animationDelay: `${i * 0.2}s`,
+                }} />
+              ))}
             </div>
           </div>
-        )
-      )}
+        )}
 
-      {thinking && (
-        <div className="coach-msg">
-          <CoachAvatar size="sm" />
-          <div className="bubble" style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '10px 14px' }}>
-            {[0, 1, 2].map(i => (
-              <span key={i} style={{
-                width: 6, height: 6, borderRadius: '50%', background: '#94a3b8',
-                display: 'inline-block',
-                animation: 'coach-pulse 1.2s ease-in-out infinite',
-                animationDelay: `${i * 0.2}s`,
-              }} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div ref={bottomRef} />
+        <div ref={bottomRef} />
+      </div>
 
       <div className="coach-input">
         <input
@@ -309,7 +313,7 @@ export function CoachDrawer({ view, firstName: _firstName, initialPrompt, coachi
         <header className="coach-panel-head">
           <CoachAvatar size="md" />
           <div>
-            <div className="coach-panel-title">AI Work Coach</div>
+            <div className="coach-panel-title">Career Coach</div>
             <div className="coach-panel-sub">
               <span className="online-dot" aria-hidden />
               Here to help, not to grade
