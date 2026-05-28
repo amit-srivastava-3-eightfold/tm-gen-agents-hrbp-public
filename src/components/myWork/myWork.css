@@ -349,30 +349,31 @@
   padding-top: 3px;
 }
 .t-note .t-hours { font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
+/* ——— AI adoption tag ——— */
 .t-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 11px 4px 9px;
-  border-radius: 999px;
-  letter-spacing: 0;
+  line-height: 1.6;
+  white-space: nowrap;
 }
-.t-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; }
-.t-tag.try { background: var(--peach); color: var(--peach-ink); }
-.t-tag.using { background: var(--sage); color: var(--sage-ink); }
+.t-tag::before { content: '●'; font-size: 7px; line-height: 1; }
+.t-tag.manual       { background: #f1f5f9; color: #64748b; }
+.t-tag.ai-assisted  { background: #fef3c7; color: #92400e; }
+.t-tag.mostly-ai    { background: #dcfce7; color: #15803d; }
 
 /* ——— Edit mode ——— */
-.list-card.editing .t-row { cursor: default; padding-right: 80px; }
+.list-card.editing .t-row { cursor: default; }
 .list-card.editing .t-row:hover { transform: none; }
-.t-row-actions { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); display: none; gap: 4px; }
-.list-card.editing .t-row-actions { display: flex; }
+.t-row-actions { display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end; }
 .t-row-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: white; color: var(--ink-2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .t-row-btn:hover { border-color: var(--coach-2); color: var(--coach-2); }
 .t-row-btn.delete:hover { border-color: #c44; color: #c44; background: #fff5f5; }
 .t-row-btn .material-symbols-outlined { font-size: 16px; }
-.list-card.editing .t-note .t-tag { display: none; }
 
 /* ——— Add task card ——— */
 .add-task-card { display: none; padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink-3); align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; min-height: 72px; }
@@ -491,6 +492,11 @@ body[data-coach-open] { overflow: hidden; }
 .td-tool-use { font-size: 12.5px; color: var(--ink-3); margin-left: auto; text-align: right; }
 .td-skill-grid { display: flex; flex-wrap: wrap; gap: 6px; }
 .td-skill-grid .t-skill { font-size: 12px; padding: 4px 10px; }
+
+.td-tips { display: flex; flex-direction: column; gap: 10px; }
+.td-tip { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.td-tip-num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--bg); color: var(--ink-3); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+
 .td-footer { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; background: white; }
 .td-footer .btn-primary { flex: 1; justify-content: center; }
 

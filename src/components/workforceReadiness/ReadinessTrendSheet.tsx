@@ -242,20 +242,7 @@ export function ReadinessTrendSheet({ open, onClose, dept, channelsLabel: _chann
                       ))}
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-                    {(['all', 'classification', 'source'] as const).map(tab => (
-                      <button key={tab} type="button" onClick={() => setBodyTab(tab)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${bodyTab === tab ? '#6366f1' : '#e2e8f0'}`, background: bodyTab === tab ? '#eef2ff' : 'transparent', color: bodyTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: bodyTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {tab === 'all' ? (
-                          <>
-                            All tasks
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 9, padding: '0 5px', background: bodyTab === 'all' ? '#6366f1' : '#e2e8f0', color: bodyTab === 'all' ? '#fff' : '#64748b', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>{tasks.length}</span>
-                          </>
-                        ) : tab === 'classification' ? 'By classification' : 'By source'}
-                      </button>
-                    ))}
-                  </div>
-                  <WfrTaskSheetBody role={{ title: roleContext.title }} phase={phase} viewMode={bodyTab} />
+                  <WfrTaskSheetBody role={{ title: roleContext.title }} phase={phase} viewMode="classification" />
                 </>
               )
             })()

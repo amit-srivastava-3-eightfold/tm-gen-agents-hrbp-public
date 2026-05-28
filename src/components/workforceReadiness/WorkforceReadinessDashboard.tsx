@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { WfrTaskSheetBody } from './WfrTaskSheetBody'
 import { useNavigate } from 'react-router-dom'
 import {
-  Badge, Button,
+  Badge, Button, Tag, SkillTag,
   Tabs, TabsList, TabsTrigger, TabsContent,
   DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableHead, DataTableCell,
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
@@ -22,6 +22,8 @@ import {
   getHrbpDepts,
   hrbpAssignments,
   formatHours,
+  formatDollars,
+  ORG_HOURLY_RATE_USD,
   WFR_FIRST_NAMES,
   type Dept,
   type RoleRowType,
@@ -42,6 +44,7 @@ import { WorkforceMetricSheet, type WorkforceMetricSheetId } from './WorkforceMe
 import { DevPlanSheet } from './DevPlanSheet'
 import { WfrSheet } from './WfrSheet'
 import { ManagerEmployeeTaskView } from './ManagerEmployeeTaskView'
+import { useEmployeeTaskState } from '../../hooks/useEmployeeTaskState'
 import { TaskSheetBodyTabs } from './TaskSheetBodyTabs'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
@@ -362,7 +365,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
   headline: React.ReactNode
   subtitle?: React.ReactNode
   pill: React.ReactNode
-  cards: { id: 'ai-potential' | 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; tag?: React.ReactNode; explainer?: React.ReactNode; onLearnMore?: () => void }[]
+  cards: { id: 'ai-potential' | 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; tag?: React.ReactNode; explainer?: React.ReactNode; onLearnMore?: () => void; cardChildren?: React.ReactNode }[]
   /** Content rendered between hero and cards (e.g. FocusFirst module) */
   beforeCards?: React.ReactNode
   /** CTA bar rendered inside the hero card's ctaBar slot */
@@ -387,7 +390,7 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
       {cards.length > 0 && (
         <div className="wfr-dash__cards-row">
           {cards.map((c) => (
-            <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} explainer={c.explainer} description={c.description} hint={c.hint} tag={c.tag} onLearnMore={c.onLearnMore} />
+            <MetricCard key={c.id} variant={c.id} icon={c.icon} label={c.label} badge={c.badge} value={c.value} explainer={c.explainer} description={c.description} hint={c.hint} tag={c.tag} onLearnMore={c.onLearnMore}>{c.cardChildren}</MetricCard>
           ))}
         </div>
       )}
@@ -800,6 +803,8 @@ function BoardView({
   const [trendSheetDept, setTrendSheetDept] = useState<Dept | null>(null)
   const [trendSheetRole, setTrendSheetRole] = useState<{ title: string; dept: string; measuredReadiness?: number } | null>(null)
   const [trendSheetHrbp, setTrendSheetHrbp] = useState<{ hrbpName: string; headcount: number } | null>(null)
+  const [potentialUnit, setPotentialUnit] = useState<'hours' | 'dollars'>('dollars')
+  const fmtPotential = (hrs: number) => potentialUnit === 'hours' ? formatHours(hrs) : formatDollars(hrs)
   const [boardTab, setBoardTab] = useState<'hrbps' | 'roles' | 'departments' | 'intelligence'>('hrbps')
   const [hoveredOpp, setHoveredOpp] = useState<number | null>(null)
   const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
@@ -1106,11 +1111,37 @@ function BoardView({
     {
       id: 'potential' as const,
       label: 'Productivity potential',
-      val: formatHours(orgHrsUnlocked),
+      val: potentialUnit === 'hours' ? formatHours(orgHrsUnlocked) : formatDollars(orgHrsUnlocked),
       icon: 'schedule',
-      l1: <><span>Annual hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {totalEmployeesHero.toLocaleString()} employees</span></>,
+      l1: potentialUnit === 'hours'
+        ? <><span>Annual hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {totalEmployeesHero.toLocaleString()} employees</span></>
+        : <><span>Estimated annual value at ${ORG_HOURLY_RATE_USD}/hr fully-loaded cost.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {totalEmployeesHero.toLocaleString()} employees</span></>,
       delta: null,
       deltaUp: true,
+      cardChildren: (
+        <div style={{ display: 'inline-flex', marginTop: 10, background: 'rgba(255,255,255,0.6)', border: '1px solid #c7d2fe', borderRadius: 20, padding: 2, gap: 2 }}>
+          <button
+            type="button"
+            onClick={() => setPotentialUnit('hours')}
+            style={{ padding: '3px 10px', borderRadius: 16, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.15s',
+              background: potentialUnit === 'hours' ? '#6366f1' : 'transparent',
+              color: potentialUnit === 'hours' ? '#fff' : '#6366f1',
+            }}
+          >
+            Hours
+          </button>
+          <button
+            type="button"
+            onClick={() => setPotentialUnit('dollars')}
+            style={{ padding: '3px 10px', borderRadius: 16, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.15s',
+              background: potentialUnit === 'dollars' ? '#6366f1' : 'transparent',
+              color: potentialUnit === 'dollars' ? '#fff' : '#6366f1',
+            }}
+          >
+            Dollars
+          </button>
+        </div>
+      ),
     },
   ]
 
@@ -1169,6 +1200,7 @@ function BoardView({
         description: c.l1,
         tag: (c as any).tag,
         explainer: (c as any).explainer,
+        cardChildren: (c as any).cardChildren,
         onLearnMore: () => setMetricInfoOpen(true),
       }))}
       heroCta={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={ctaButtonClick} onBarClick={ctaDemoState === 2 ? onCompleteCollection : undefined} /> : undefined}
@@ -1222,7 +1254,6 @@ function BoardView({
                 <DataTableHead style={{ width: '16%' }}>Departments</DataTableHead>
                 <DataTableHead metric style={{ width: '14%' }}><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'readiness' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric style={{ width: '16%' }}><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
-                <DataTableHead numeric style={{ width: '18%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpSort.col === 'gap' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('gap')} /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
                 {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '18%' }}>Upskilling progress</DataTableHead>}
               </DataTableRow>
@@ -1285,13 +1316,7 @@ function BoardView({
                       )}
                     </div>
                   </DataTableCell>
-                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, hrsUnlocked: row.totalHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.totalHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                  <DataTableCell align="right">
-                    <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                      <span className="wfr-type-h6">{row.totalGap.toLocaleString()} ({row.headcount > 0 ? Math.round((row.totalGap / row.headcount) * 100) : 0}%)</span>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {row.headcount.toLocaleString()}</div>
-                    </div>
-                  </DataTableCell>
+                  <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: row.hrbp, subtitle: `${row.depts.map(d => d.name).join(', ')} · ${row.headcount.toLocaleString()} employees`, aiPotential: row.avgPotential, headcount: row.headcount, hrsUnlocked: row.totalHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtPotential(row.totalHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                   {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && (
                     stateNum(row.hrbpState) === 1 && row.hrbpDelegated
                       ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
@@ -1326,7 +1351,6 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
                               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1370,13 +1394,7 @@ function BoardView({
                           </div>
                         )}
                       </DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: deptHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(deptHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                      <DataTableCell align="right" title={`${gapCount.toLocaleString()} of ${d.employees.toLocaleString()} people in augmentable roles are not yet AI-ready`}>
-                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
-                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
-                        </div>
-                      </DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: deptHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtPotential(deptHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     </DataTableRow>
                 )
               })}
@@ -1392,7 +1410,6 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1410,13 +1427,7 @@ function BoardView({
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
-                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: d.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(d.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                      <DataTableCell align="right">
-                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
-                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
-                        </div>
-                      </DataTableCell>
+                      <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: d.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtPotential(d.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     </DataTableRow>
                 )
               })}
@@ -1432,7 +1443,6 @@ function BoardView({
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={deptSort.col === 'gap' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('gap')} /></DataTableHead>
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
@@ -1453,13 +1463,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
                       </DataTableCell>
                       <DataTableCell align="right">
-                        <span className="wfr-type-h6 tabular-nums">{formatHours(d.hrsUnlocked)}</span>
-                      </DataTableCell>
-                      <DataTableCell align="right">
-                        <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                          <span className="wfr-type-h6">{gapCount.toLocaleString()} ({d.employees > 0 ? Math.round((gapCount / d.employees) * 100) : 0}%)</span>
-                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {d.employees.toLocaleString()}</div>
-                        </div>
+                        <span className="wfr-type-h6 tabular-nums">{fmtPotential(d.hrsUnlocked)}</span>
                       </DataTableCell>
                     </DataTableRow>
                 )
@@ -1482,7 +1486,6 @@ function BoardView({
                 <DataTableHead numeric>Tasks</DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'readiness' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
-                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={roleSort.col === 'gap' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('gap')} /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
@@ -1526,10 +1529,7 @@ function BoardView({
                         <DeptTableSoloBar variant="readiness" pct={r.aiReadiness} />
                       )}
                     </DataTableCell>
-                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                    <DataTableCell align="right">
-                      <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
-                    </DataTableCell>
+                    <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: r.title, subtitle: `${r.dept} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtPotential(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     {upskillingActive && (
                       <DataTableCell>
                         {hrbpPlansCreated ? (() => {
@@ -1778,16 +1778,7 @@ function BoardView({
           subtitle={taskSheetRole.dept}
           ariaLabel={`Tasks for ${taskSheetRole.title}`}
         >
-          {/* Tab pills */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-            {(['all', 'classification', 'source'] as const).map(tab => (
-              <button key={tab} type="button" onClick={() => setTaskSheetTab(tab)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${taskSheetTab === tab ? '#6366f1' : '#e2e8f0'}`, background: taskSheetTab === tab ? '#eef2ff' : 'transparent', color: taskSheetTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: taskSheetTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
-              </button>
-            ))}
-          </div>
-          <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode={taskSheetTab} />
+          <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode="classification" />
         </WfrSheet>
       )}
 
@@ -2086,6 +2077,8 @@ export function WorkforceReadinessDashboard({
   }
   const [hrbpPanelTab, setHrbpPanelTab] = useState<'managers' | 'roles' | 'intelligence'>('managers')
   const [mgrPanelTab, setMgrPanelTab] = useState<'team' | 'intelligence'>('team')
+  const [hrbpPotentialUnit, setHrbpPotentialUnit] = useState<'hours' | 'dollars'>('dollars')
+  const fmtHrbpPotential = (hrs: number) => hrbpPotentialUnit === 'hours' ? formatHours(hrs) : formatDollars(hrs)
   const [hoveredOppHrbp, setHoveredOppHrbp] = useState<number | null>(null)
   const [hoveredOppMgr, setHoveredOppMgr] = useState<number | null>(null)
   const [hrbpRoleSort, setHrbpRoleSort] = useState<{ col: 'name' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
@@ -2512,12 +2505,27 @@ export function WorkforceReadinessDashboard({
   }
   const [mgrMetricInfoOpen, setMgrMetricInfoOpen] = useState(false)
   const [mgrTaskSheetRole, setMgrTaskSheetRole] = useState<{ title: string; dept: string; employeeName?: string } | null>(null)
-  const [mgrTaskSheetView, setMgrTaskSheetView] = useState<'role' | 'employee'>('employee')
   const [mgrTaskBodyTab, setMgrTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [mgrEmpTaskOverrides, setMgrEmpTaskOverrides] = useState<Map<string, { added: { task: string; score: number }[]; removed: Set<string> }>>(new Map())
   const [mgrTaskEditing, setMgrTaskEditing] = useState(false)
+  const [mgrCompareMode, setMgrCompareMode] = useState(false)
+  const [mgrQuickRestored, setMgrQuickRestored] = useState<Set<string>>(new Set())
   const [mgrTaskAddOpen, setMgrTaskAddOpen] = useState(false)
   const [mgrTaskAddInput, setMgrTaskAddInput] = useState('')
+  // Manager draft state (cancelable session)
+  const [mgrDraftAdded, setMgrDraftAdded] = useState<{ task: string; score: number; description?: string }[]>([])
+  const [mgrDraftRemoved, setMgrDraftRemoved] = useState<Set<string>>(new Set())
+  // Manager AI add-task panel
+  const [mgrTaskAddStep, setMgrTaskAddStep] = useState<'describe' | 'generating' | 'suggested'>('describe')
+  const [mgrTaskDescription, setMgrTaskDescription] = useState('')
+  const [mgrTaskTitle, setMgrTaskTitle] = useState('')
+  const [mgrTaskDescSuggestion, setMgrTaskDescSuggestion] = useState('')
+  const [mgrTaskScore, setMgrTaskScore] = useState(45)
+  const [mgrTaskSkills, setMgrTaskSkills] = useState<string[]>([])
+  const [mgrSkillInput, setMgrSkillInput] = useState('')
+  const [mgrSkillInputOpen, setMgrSkillInputOpen] = useState(false)
+  // Employee task state for the currently-open manager task sheet (drives compare summary bar)
+  const mgrSheetEmpState = useEmployeeTaskState(mgrTaskSheetRole?.employeeName)
 
   function getMgrEmpTasks(employeeName: string, roleTasks: { task: string; score: number }[]) {
     const ov = mgrEmpTaskOverrides.get(employeeName)
@@ -2547,12 +2555,99 @@ export function WorkforceReadinessDashboard({
       return next
     })
   }
+  function resetMgrTaskAddPanel() {
+    setMgrTaskAddOpen(false); setMgrTaskAddStep('describe')
+    setMgrTaskDescription(''); setMgrTaskTitle(''); setMgrTaskDescSuggestion(''); setMgrTaskScore(45)
+    setMgrTaskSkills([]); setMgrSkillInput(''); setMgrSkillInputOpen(false)
+  }
+  function generateMgrTaskSuggestion() {
+    if (!mgrTaskDescription.trim()) return
+    setMgrTaskAddStep('generating')
+    setTimeout(() => {
+      const lower = mgrTaskDescription.toLowerCase()
+      const highAI = ['automat', 'generat', 'schedul', 'extract', 'parse', 'format', 'convert', 'process', 'log', 'notif', 'sync', 'fetch', 'export', 'compil']
+      const lowAI = ['mentor', 'negotiat', 'mediating', 'trust', 'relationship', 'judgment', 'strateg', 'decision', 'counsel', 'facilitat', 'lead', 'vision', 'inspir']
+      const hasHigh = highAI.some(k => lower.includes(k)); const hasLow = lowAI.some(k => lower.includes(k))
+      const score = hasHigh && !hasLow ? Math.floor(62 + Math.random() * 13) : hasLow && !hasHigh ? Math.floor(18 + Math.random() * 18) : Math.floor(38 + Math.random() * 22)
+      const actionP: [RegExp, string, number][] = [[/\bpull\s*request|\bprs?\b|\bpr\b/, 'PR Review', 10],[/\bcode\s+review/, 'Code Review', 10],[/\bquality\s+assurance|\bqa\b/, 'Quality Assurance', 9],[/\bunit\s+test|integration\s+test/, 'Test Authoring', 9],[/\bonboard/, 'Onboarding', 8],[/\bapprov/, 'Approval', 7],[/\breview|audit|inspect/, 'Review', 6],[/\banalyz|analysis/, 'Analysis', 6],[/\bmonitor|track(?:ing)?/, 'Monitoring', 6],[/\bdocument/, 'Documentation', 6],[/\bdeploy/, 'Deployment', 6],[/\bdebugg|troubleshoot/, 'Debugging', 6],[/\bschedul|coordinat/, 'Coordination', 5],[/\bforecast|predict/, 'Forecasting', 5],[/\bplan(?:ning)?/, 'Planning', 5],[/\btrain|coach/, 'Training', 5],[/\bautomati?on?\b|automat/, 'Automation', 5],[/\bresearch|investigat/, 'Research', 5],[/\breport(?:ing)?/, 'Reporting', 5],[/\bdevelop|build(?:ing)?/, 'Development', 4],[/\bdesign/, 'Design', 4],[/\btest(?:ing)?/, 'Testing', 4],[/\bmanag(?:e|ing)?/, 'Management', 3],[/\bimpleme?nt/, 'Implementation', 3],[/\bcreat/, 'Creation', 3]]
+      const subjectP: [RegExp, string, number][] = [[/\bpull\s*request|\bprs?\b/, 'PR', 10],[/\bcode\b|\bcodebase|\brepo\b/, 'Code', 9],[/\bsprint\b|\bticket|\bstory\b|\bbacklog/, 'Sprint', 9],[/\bincident|\boutage|\bpostmortem/, 'Incident', 8],[/\bbug\b|\bdefect|\bcrash\b/, 'Bug', 8],[/\bcandidate|\brecruit|\bhiring|\bhire\b|\binterview/, 'Candidate', 8],[/\bsecurity|\bcompliance|\baudit\b|\brisk\b/, 'Compliance', 7],[/\bperformanc|\bmetric|\bkpi\b|\bokr\b/, 'Performance', 7],[/\bbudget|\bfinanc|\bcost\b|\bspend\b/, 'Budget', 7],[/\bstakeholder|\bexecutive|\bleadership/, 'Stakeholder', 6],[/\bemployee|\bstaff\b|\bonboarding|\btalent\b/, 'Employee', 6],[/\bproduct\b|\bfeature\b|\broadmap\b/, 'Product', 6],[/\bcustomer|\bclient\b/, 'Client', 6],[/\bdata\b|\bdataset|\bdatabase/, 'Data', 5],[/\bproject\b|\bmilestone\b/, 'Project', 5],[/\binfrastructure|\bsystem\b|\bplatform\b/, 'System', 5],[/\bprocess\b|\bworkflow|\bprocedure/, 'Process', 4],[/\btest\b|\btests\b/, 'Test', 4]]
+      let title = ''
+      for (const [pat, label, weight] of actionP) { if (weight >= 9 && pat.test(lower)) { title = label; break } }
+      if (!title) {
+        let action = ''; let aw = 0; let subject = ''; let sw = 0
+        for (const [pat, label, weight] of actionP) { if (weight > aw && pat.test(lower)) { action = label; aw = weight } }
+        for (const [pat, label, weight] of subjectP) { if (weight > sw && pat.test(lower)) { subject = label; sw = weight } }
+        if (subject && action && subject.toLowerCase() !== action.toLowerCase()) title = `${subject} ${action}`
+        else if (action) title = action
+        else if (subject) title = `${subject} Management`
+        else { const stop = new Set(['and','the','a','an','of','for','with','to','in','on','at','by','or','that','this']); const words = mgrTaskDescription.trim().split(/\s+/).filter(w => !stop.has(w.toLowerCase()) && w.length > 2); title = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') }
+      }
+      let desc = mgrTaskDescription.trim()
+      if (!desc.endsWith('.') && !desc.endsWith('?') && !desc.endsWith('!')) desc += '.'
+      desc = desc.charAt(0).toUpperCase() + desc.slice(1)
+      setMgrTaskTitle(title); setMgrTaskDescSuggestion(desc); setMgrTaskScore(score)
+      const zone = score > 75 ? 'above' : score >= 15 ? 'augment' : 'below'
+      setMgrTaskSkills(getDashSkillsForTask(title, zone))
+      setMgrTaskAddStep('suggested')
+    }, 1400)
+  }
+  function saveMgrEditSession(empName: string) {
+    setMgrEmpTaskOverrides(prev => {
+      const next = new Map(prev)
+      const ov = next.get(empName) ?? { added: [], removed: new Set<string>() }
+      const newAdded = [
+        ...ov.added.filter(t => !mgrDraftRemoved.has(t.task)),
+        ...mgrDraftAdded.filter(t => !mgrDraftRemoved.has(t.task)),
+      ]
+      const newRemoved = new Set([...ov.removed, ...[...mgrDraftRemoved].filter(n => !ov.added.some(t => t.task === n))])
+      next.set(empName, { added: newAdded, removed: newRemoved })
+      return next
+    })
+    setMgrDraftAdded([]); setMgrDraftRemoved(new Set())
+    setMgrTaskEditing(false); resetMgrTaskAddPanel()
+  }
+  function cancelMgrEditSession() {
+    setMgrDraftAdded([]); setMgrDraftRemoved(new Set())
+    setMgrTaskEditing(false); resetMgrTaskAddPanel()
+  }
   const [mgrAssignedPlans, _setMgrAssignedPlans] = useState<Set<string>>(new Set())
   const [mgrAllPlansAssigned, setMgrAllPlansAssigned] = useState(false)
   const [mgrAssignConfirmOpen, setMgrAssignConfirmOpen] = useState(false)
   const [mgrAssignReviewed, setMgrAssignReviewed] = useState(false)
   const [mgrToast, setMgrToast] = useState<string | null>(null)
   const [mgrDevPlanEmployee, setMgrDevPlanEmployee] = useState<{ name: string; title?: string; readinessPct: number; displayReadiness: number; planPct?: number } | null>(null)
+
+  // ─── Manager persona: pending role-task updates pushed by super admin ───
+  const MGR_TASK_UPDATES_KEY = 'tm:mgr-task-updates-applied-v1'
+  const [mgrTaskUpdatesApplied, setMgrTaskUpdatesApplied] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(MGR_TASK_UPDATES_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) return new Set(parsed as string[])
+      }
+    } catch {}
+    return new Set()
+  })
+  const [mgrUpdatesModalOpen, setMgrUpdatesModalOpen] = useState(false)
+  const [mgrModalSelected, setMgrModalSelected] = useState<Set<string>>(new Set())
+  function toggleMgrModalEmp(key: string) {
+    setMgrModalSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
+  function applyMgrTaskUpdates(entries: { roleTitle: string; name: string }[]) {
+    setMgrTaskUpdatesApplied(prev => {
+      const next = new Set(prev)
+      for (const { roleTitle, name } of entries) next.add(`${roleTitle}::${name}`)
+      try { localStorage.setItem(MGR_TASK_UPDATES_KEY, JSON.stringify(Array.from(next))) } catch {}
+      return next
+    })
+    setMgrToast(`Task changes applied to ${entries.length} team member${entries.length === 1 ? '' : 's'}`)
+    setTimeout(() => setMgrToast(null), 3500)
+  }
 
   // ─── Manager persona: compute team data for Josh Minnia ───
   const managerTeamData = useMemo(() => {
@@ -2718,9 +2813,86 @@ export function WorkforceReadinessDashboard({
       })
       return map
     })()
+    // ─── Pending role-task updates (demo): take first 2 unique role titles on the team ───
+    const mgrTeamRoleTitles = Array.from(new Set(
+      enrichedMgrEmployees.map(e => e.title).filter((t): t is string => !!t)
+    ))
+    type PendingTemplate = {
+      added: { task: string; hrs: number; score: number }[]
+      removed: string[]
+      updated: { task: string; fromHrs: number; toHrs: number }[]
+    }
+    // Use real role task names so adds/removes actually highlight in the task list
+    const PENDING_TEMPLATES_BY_ROLE: Record<string, PendingTemplate> = {
+      'Customer Success Manager': {
+        added: [{ task: 'AI-assisted call summarization', hrs: 2, score: 78 }],
+        removed: ['Schedule management'],
+        updated: [{ task: 'Email triage and response', fromHrs: 5, toHrs: 3 }],
+      },
+      'Support Specialist': {
+        added: [{ task: 'AI-drafted first responses', hrs: 3, score: 72 }],
+        removed: [],
+        updated: [{ task: 'Ticket triage & routing', fromHrs: 4, toHrs: 2 }],
+      },
+    }
+    function formatPendingChanges(t: PendingTemplate): string[] {
+      const out: string[] = []
+      for (const a of t.added) out.push(`Added: ${a.task} (${a.hrs} hrs / week)`)
+      for (const r of t.removed) out.push(`Removed: ${r}`)
+      for (const u of t.updated) out.push(`Updated: ${u.task} (${u.fromHrs} → ${u.toHrs} hrs / week)`)
+      return out
+    }
+    const mgrRoleUpdates = mgrTeamRoleTitles
+      .map(roleTitle => {
+        const t = PENDING_TEMPLATES_BY_ROLE[roleTitle]
+        if (!t) return null
+        return { roleTitle, ...t, changes: formatPendingChanges(t) }
+      })
+      .filter((r): r is NonNullable<typeof r> => r != null)
+      .filter(r => r.changes.length > 0)
+    const mgrChangeCountByRole = new Map<string, number>()
+    for (const r of mgrRoleUpdates) mgrChangeCountByRole.set(r.roleTitle, r.changes.length)
+    const mgrRolesWithUpdates = new Set(mgrRoleUpdates.map(r => r.roleTitle))
+    const empHasPendingUpdate = (name: string, title?: string) =>
+      !!title && mgrRolesWithUpdates.has(title) && !mgrTaskUpdatesApplied.has(`${title}::${name}`)
+    // Total pending team members across all roles (for banner + modal)
+    const mgrPendingTotal = enrichedMgrEmployees.filter(e => empHasPendingUpdate(e.name, e.title)).length
+    // Modal: role → list of unapplied employees
+    const mgrModalRoles = mgrRoleUpdates
+      .map(r => ({
+        ...r,
+        employees: enrichedMgrEmployees
+          .filter(e => e.title === r.roleTitle && !mgrTaskUpdatesApplied.has(`${r.roleTitle}::${e.name}`))
+          .map(e => e.name),
+      }))
+      .filter(r => r.employees.length > 0)
+
     const mgrCtaDemoState: WfrDemoState | null = mgrUpskillingComplete ? 6 : mgrPlansCreated ? 5 : mgrUpskillingActive ? 4 : mgrCollComplete ? 3 : mgrCollActive ? 2 : 1
     const advanceMgrToComplete = () => setWfrState(prev => advanceAllHrbps(prev, null, 6))
-    const mgrHeroCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 1 ? () => navigate('/my-activity/dev-plan-templates') : mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
+    const mgrDefaultCta = mgrCtaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[mgrCtaDemoState]['manager']} onButtonClick={mgrCtaDemoState === 1 ? () => navigate('/my-activity/dev-plan-templates') : mgrCtaDemoState === 4 ? () => setMgrAssignConfirmOpen(true) : undefined} onBarClick={mgrCtaDemoState === 5 ? advanceMgrToComplete : undefined} /> : undefined
+    const mgrUpdatesCta = mgrPendingTotal > 0 ? (
+      <WfrCtaBar
+        content={{
+          icon: 'campaign',
+          label: `Task updates available for ${mgrPendingTotal} of your team member${mgrPendingTotal === 1 ? '' : 's'}.`,
+          hint: `Pushed by Laura Shah on May 28 across ${mgrModalRoles.length} role${mgrModalRoles.length === 1 ? '' : 's'} — review and apply.`,
+          buttonLabel: 'Review & apply updates →',
+          buttonVariant: 'secondary',
+          accent: 'rgba(217,119,6,0.55)',
+        }}
+        onButtonClick={() => {
+          // Pre-select every unapplied employee by default
+          const initial = new Set<string>()
+          for (const r of mgrModalRoles) {
+            for (const name of r.employees) initial.add(`${r.roleTitle}::${name}`)
+          }
+          setMgrModalSelected(initial)
+          setMgrUpdatesModalOpen(true)
+        }}
+      />
+    ) : null
+    const mgrHeroCta = mgrUpdatesCta ?? mgrDefaultCta
+
     return (
       <>
       <WfrOverviewLayout
@@ -2765,9 +2937,8 @@ export function WorkforceReadinessDashboard({
               <DataTableRow>
                 <DataTableHead style={{ width: showUpskilling ? '18%' : '22%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '10%' : '12%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
                 <DataTableHead metric style={{ width: showUpskilling ? '22%' : '24%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '16%' : '18%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={empSort.col === 'gap' ? empSort.dir : null} onSortClick={() => toggleEmpSort('gap')} /></DataTableHead>
                 {showUpskilling && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '15%', whiteSpace: 'nowrap' }}>Upskilling</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
@@ -2805,17 +2976,44 @@ export function WorkforceReadinessDashboard({
                   </DataTableCell>
                   <DataTableCell className="text-[13px] text-[#475569] !max-w-[140px] truncate">{emp.title ?? '—'}</DataTableCell>
                   <DataTableCell align="right">
-                    {empTaskCount > 0 && emp.title ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }); setMgrTaskSheetView('employee'); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
-                        title="View tasks"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {empTaskCount}
-                        <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
-                      </button>
-                    ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                      {empHasPendingUpdate(emp.name, emp.title) && (
+                        <span
+                          title={`${mgrChangeCountByRole.get(emp.title!) ?? 0} task updates pending — pushed by Laura Shah`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '2px 7px',
+                            borderRadius: 4,
+                            background: '#fef3c7',
+                            border: '1px solid #fcd34d',
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: '#92400e',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5,
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>campaign</span>
+                          {mgrChangeCountByRole.get(emp.title!) ?? 0} updates
+                        </span>
+                      )}
+                      {empTaskCount > 0 && emp.title ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setMgrTaskSheetRole({ title: emp.title!, dept: mgrDept.name, employeeName: emp.name }); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
+                          title="View tasks"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {empTaskCount}
+                          <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
+                        </button>
+                      ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                    </div>
                   </DataTableCell>
                   <DataTableCell metric>
                     <div>
@@ -2841,9 +3039,6 @@ export function WorkforceReadinessDashboard({
                         </div>
                       )}
                     </div>
-                  </DataTableCell>
-                  <DataTableCell align="right">
-                    <span style={{ color: isAiReady ? '#15803d' : '#dc2626', fontWeight: 600 }}>{isAiReady ? 'AI-ready' : 'Not AI-ready'}</span>
                   </DataTableCell>
                   {showUpskilling && (() => {
                     const effectivePct = empDisplayPct
@@ -3043,6 +3238,70 @@ export function WorkforceReadinessDashboard({
 
         </Tabs>
       </WfrOverviewLayout>
+      {mgrUpdatesModalOpen && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.45)' }} onClick={() => setMgrUpdatesModalOpen(false)} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: '24px 28px 20px', maxWidth: 560, width: '90%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700, color: '#0f172a' }}>Apply task updates</h3>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Pushed by Laura Shah · May 28</p>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16, paddingRight: 4 }}>
+              {mgrModalRoles.map(role => (
+                <div key={role.roleTitle} style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{role.roleTitle}</h4>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      {role.changes.length} changes
+                    </span>
+                  </div>
+                  <ul style={{ margin: '0 0 12px', padding: '0 0 0 18px', color: '#475569', fontSize: 13, lineHeight: 1.7 }}>
+                    {role.changes.map((c, i) => <li key={i}>{c}</li>)}
+                  </ul>
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
+                    {role.employees.map(name => {
+                      const key = `${role.roleTitle}::${name}`
+                      return (
+                        <label key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: 'pointer', fontSize: 13, color: '#1e293b' }}>
+                          <input
+                            type="checkbox"
+                            checked={mgrModalSelected.has(key)}
+                            onChange={() => toggleMgrModalEmp(key)}
+                            style={{ width: 15, height: 15, accentColor: '#d97706', cursor: 'pointer', margin: 0 }}
+                          />
+                          {name}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #f1f5f9', marginTop: 12 }}>
+              <Button variant="outline" onClick={() => setMgrUpdatesModalOpen(false)}>Cancel</Button>
+              <Button
+                variant="primary"
+                disabled={mgrModalSelected.size === 0}
+                style={{ opacity: mgrModalSelected.size === 0 ? 0.4 : 1, cursor: mgrModalSelected.size === 0 ? 'not-allowed' : 'pointer' }}
+                onClick={() => {
+                  if (mgrModalSelected.size === 0) return
+                  const entries: { roleTitle: string; name: string }[] = []
+                  for (const k of mgrModalSelected) {
+                    const [roleTitle, name] = k.split('::')
+                    if (roleTitle && name) entries.push({ roleTitle, name })
+                  }
+                  applyMgrTaskUpdates(entries)
+                  setMgrModalSelected(new Set())
+                  setMgrUpdatesModalOpen(false)
+                }}
+              >
+                Apply to {mgrModalSelected.size} selected
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       {mgrAssignConfirmOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.45)' }} onClick={() => setMgrAssignConfirmOpen(false)} />
@@ -3071,33 +3330,30 @@ export function WorkforceReadinessDashboard({
         document.body
       )}
       {mgrTaskSheetRole && (() => {
-        const closeMgrTaskSheet = () => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }
-        const isEmpView = mgrTaskSheetView === 'employee' && mgrTaskSheetRole.employeeName != null
-        const belowHeader = mgrTaskSheetRole.employeeName ? (
-          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, gap: 1, marginTop: 8, width: 'fit-content' }}>
-            {(['employee', 'role'] as const).map(v => (
-              <button key={v} type="button" onClick={() => { setMgrTaskSheetView(v); setMgrTaskEditing(false); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
-                style={{ padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: mgrTaskSheetView === v ? '#fff' : 'transparent', color: mgrTaskSheetView === v ? '#0f172a' : '#64748b', boxShadow: mgrTaskSheetView === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                {v === 'employee' ? 'Employee' : 'Role'}
-              </button>
-            ))}
-          </div>
-        ) : null
+        const closeMgrTaskSheet = () => { setMgrTaskSheetRole(null); setMgrTaskEditing(false); setMgrCompareMode(false); setMgrQuickRestored(new Set()); setMgrTaskAddOpen(false); setMgrTaskAddInput(''); setMgrDraftAdded([]); setMgrDraftRemoved(new Set()); resetMgrTaskAddPanel() }
+        const isEmpView = mgrTaskSheetRole.employeeName != null
         const headerActions = isEmpView ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
-            {mgrTaskEditing && (
-              <button type="button" onClick={() => setMgrTaskAddOpen(o => !o)}
-                title="Add task"
+          !mgrTaskEditing ? (
+            <button type="button" onClick={() => setMgrTaskEditing(true)} title="Edit tasks"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', transition: 'all 0.15s', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+              <button type="button" onClick={() => { mgrTaskAddOpen ? resetMgrTaskAddPanel() : setMgrTaskAddOpen(true) }} title="Add task"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskAddOpen ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskAddOpen ? '#eef2ff' : '#fff', color: mgrTaskAddOpen ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
               </button>
-            )}
-            <button type="button" onClick={() => { setMgrTaskEditing(e => !e); setMgrTaskAddOpen(false); setMgrTaskAddInput('') }}
-              title={mgrTaskEditing ? 'Done editing' : 'Edit tasks'}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: `1px solid ${mgrTaskEditing ? '#6366f1' : '#e2e8f0'}`, cursor: 'pointer', background: mgrTaskEditing ? '#eef2ff' : '#fff', color: mgrTaskEditing ? '#4338ca' : '#64748b', transition: 'all 0.15s', padding: 0 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
-            </button>
-          </div>
+              <button type="button" onClick={cancelMgrEditSession}
+                style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', fontSize: 12, fontWeight: 500, fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+              <button type="button" onClick={() => saveMgrEditSession(mgrTaskSheetRole.employeeName!)}
+                style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#1e293b', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>
+                Save
+              </button>
+            </div>
+          )
         ) : null
         return (
           <WfrSheet
@@ -3105,42 +3361,221 @@ export function WorkforceReadinessDashboard({
             onClose={closeMgrTaskSheet}
             title={isEmpView ? mgrTaskSheetRole.employeeName! : mgrTaskSheetRole.title}
             subtitle={isEmpView ? mgrTaskSheetRole.title : mgrTaskSheetRole.dept}
-            belowHeader={belowHeader}
             headerActions={headerActions}
+            isEditing={isEmpView && mgrTaskEditing}
             ariaLabel={`Tasks for ${mgrTaskSheetRole.employeeName ?? mgrTaskSheetRole.title}`}
           >
-              <TaskSheetBodyTabs value={mgrTaskBodyTab} onChange={setMgrTaskBodyTab} count={getTasksForRole(mgrTaskSheetRole.title).length} />
-              {mgrTaskSheetView === 'role' || !mgrTaskSheetRole.employeeName ? (
-                <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} viewMode={mgrTaskBodyTab} />
+              {!mgrTaskSheetRole.employeeName ? (
+                <WfrTaskSheetBody role={mgrTaskSheetRole} phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'} viewMode="classification" />
               ) : (() => {
                 const empName = mgrTaskSheetRole.employeeName
                 const ov = mgrEmpTaskOverrides.get(empName)
+                const hasPending = empHasPendingUpdate(empName, mgrTaskSheetRole.title)
+                const pendingRole = hasPending ? mgrRoleUpdates.find(r => r.roleTitle === mgrTaskSheetRole.title) : null
                 return (
                   <>
-                    {mgrTaskEditing && mgrTaskAddOpen && (
-                      <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, border: '1px solid #c7d2fe', background: '#f8faff', display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <input type="text" value={mgrTaskAddInput} onChange={e => setMgrTaskAddInput(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' && mgrTaskAddInput.trim()) { addMgrEmpTask(empName, mgrTaskAddInput); setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }
-                            if (e.key === 'Escape') { setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }
-                          }}
-                          placeholder="Task name…" autoFocus
-                          style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #c7d2fe', fontSize: 13, outline: 'none', background: 'transparent' }} />
-                        <button type="button" onClick={() => { if (mgrTaskAddInput.trim()) { addMgrEmpTask(empName, mgrTaskAddInput); setMgrTaskAddInput(''); setMgrTaskAddOpen(false) } }}
-                          style={{ padding: '5px 12px', borderRadius: 6, background: '#3b5bdb', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Add</button>
-                        <button type="button" onClick={() => { setMgrTaskAddInput(''); setMgrTaskAddOpen(false) }}
-                          style={{ padding: '5px 10px', borderRadius: 6, background: '#f1f5f9', color: '#64748b', border: 'none', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                    {pendingRole && (
+                      <div
+                        style={{
+                          marginBottom: 20,
+                          padding: '14px 16px',
+                          borderRadius: 10,
+                          background: '#fffbeb',
+                          border: '1px solid #fcd34d',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <span className="material-symbols-outlined" style={{ color: '#d97706', fontSize: 20, flexShrink: 0 }}>campaign</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#92400e' }}>
+                              {pendingRole.changes.length} task updates available for this role
+                            </div>
+                            <div style={{ fontSize: 11.5, color: '#a16207', marginTop: 1 }}>
+                              Pushed by Laura Shah · May 28
+                            </div>
+                          </div>
+                        </div>
+                        <ul style={{ margin: '0 0 12px', padding: '0 0 0 28px', color: '#78350f', fontSize: 13, lineHeight: 1.7 }}>
+                          {pendingRole.changes.map((c, i) => <li key={i}>{c}</li>)}
+                        </ul>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={() => applyMgrTaskUpdates([{ roleTitle: mgrTaskSheetRole.title, name: empName }])}
+                            style={{ padding: '7px 14px', background: '#d97706', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            Apply update to {empName.split(' ')[0]}
+                          </button>
+                        </div>
                       </div>
                     )}
+                    {mgrTaskEditing && mgrTaskAddOpen && (
+                      <div style={{ marginBottom: 24, padding: '12px', borderRadius: 8, border: '1px solid #fde68a', background: '#fffbeb' }}>
+                        {mgrTaskAddStep === 'describe' && (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#92400e' }}>auto_awesome</span>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Describe the task</span>
+                            </div>
+                            <textarea value={mgrTaskDescription} onChange={e => setMgrTaskDescription(e.target.value)}
+                              placeholder="What does this task involve? What's the main outcome?" autoFocus rows={3}
+                              onKeyDown={e => { if (e.key === 'Escape') resetMgrTaskAddPanel() }}
+                              style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 13, outline: 'none', background: 'rgba(255,255,255,0.6)', resize: 'none', fontFamily: 'inherit', color: '#1e293b', boxSizing: 'border-box', display: 'block' }} />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                              <button type="button" onClick={resetMgrTaskAddPanel}
+                                style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Cancel</button>
+                              <button type="button" onClick={generateMgrTaskSuggestion} disabled={!mgrTaskDescription.trim()}
+                                style={{ padding: '5px 12px', borderRadius: 6, background: '#92400e', color: '#fff', border: 'none', cursor: mgrTaskDescription.trim() ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', opacity: mgrTaskDescription.trim() ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 13 }}>auto_awesome</span>Suggest
+                              </button>
+                            </div>
+                          </>
+                        )}
+                        {mgrTaskAddStep === 'generating' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#d97706' }}>auto_awesome</span>
+                            <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>Analyzing description…</span>
+                            <span style={{ marginLeft: 'auto', fontSize: 14, color: '#b45309', letterSpacing: 2 }}>· · ·</span>
+                          </div>
+                        )}
+                        {mgrTaskAddStep === 'suggested' && (() => {
+                          const zone = mgrTaskScore > 75 ? 'above' : mgrTaskScore >= 15 ? 'augment' : 'below'
+                          const zoneMeta = zone === 'above' ? { label: 'Automate', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' } : zone === 'augment' ? { label: 'Augment', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' } : { label: 'Human', color: '#64748b', bg: '#f8fafc', border: '#e5e7eb' }
+                          return (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#92400e' }}>auto_awesome</span>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>AI suggestion</span>
+                                </div>
+                                <span style={{ padding: '2px 8px', borderRadius: 10, background: zoneMeta.bg, border: `1px solid ${zoneMeta.border}`, fontSize: 11, fontWeight: 600, color: zoneMeta.color }}>{zoneMeta.label} ≈{mgrTaskScore}%</span>
+                              </div>
+                              <div style={{ marginBottom: 10 }}>
+                                <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>Title</div>
+                                <input type="text" value={mgrTaskTitle} onChange={e => setMgrTaskTitle(e.target.value)}
+                                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 13, outline: 'none', background: 'rgba(255,255,255,0.7)', fontFamily: 'inherit', color: '#1e293b', boxSizing: 'border-box' }} />
+                              </div>
+                              <div style={{ marginBottom: 10 }}>
+                                <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>Description</div>
+                                <textarea value={mgrTaskDescSuggestion} onChange={e => setMgrTaskDescSuggestion(e.target.value)} rows={2}
+                                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.7)', resize: 'none', fontFamily: 'inherit', color: '#475569', lineHeight: 1.5, boxSizing: 'border-box', display: 'block' }} />
+                              </div>
+                              <div style={{ marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginBottom: mgrSkillInputOpen ? 6 : 0 }}>
+                                  <span style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginRight: 2 }}>Skills</span>
+                                  {mgrTaskSkills.map(s => (
+                                    <Tag key={s} onRemove={() => setMgrTaskSkills(prev => prev.filter(x => x !== s))}>{s}</Tag>
+                                  ))}
+                                  <button type="button" onClick={() => setMgrSkillInputOpen(p => !p)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', border: '1px solid #fde68a', background: mgrSkillInputOpen ? '#fde68a' : 'transparent', cursor: 'pointer', color: '#92400e', padding: 0, flexShrink: 0 }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>
+                                  </button>
+                                </div>
+                                {mgrSkillInputOpen && (
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <input autoFocus type="text" value={mgrSkillInput} onChange={e => setMgrSkillInput(e.target.value)}
+                                      placeholder="Add a skill…"
+                                      onKeyDown={e => { if (e.key === 'Enter' && mgrSkillInput.trim()) { setMgrTaskSkills(prev => [...prev, mgrSkillInput.trim()]); setMgrSkillInput(''); setMgrSkillInputOpen(false) } if (e.key === 'Escape') setMgrSkillInputOpen(false) }}
+                                      style={{ flex: 1, padding: '4px 8px', borderRadius: 6, border: '1px solid #fde68a', fontSize: 11, outline: 'none', background: 'rgba(255,255,255,0.7)', fontFamily: 'inherit', color: '#1e293b' }} />
+                                    <button type="button" onClick={() => { if (mgrSkillInput.trim()) { setMgrTaskSkills(prev => [...prev, mgrSkillInput.trim()]); setMgrSkillInput(''); setMgrSkillInputOpen(false) } }}
+                                      style={{ padding: '4px 10px', borderRadius: 6, background: '#fde68a', border: 'none', color: '#92400e', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Add</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 16 }}>
+                                <button type="button" onClick={resetMgrTaskAddPanel}
+                                  style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Cancel</button>
+                                <button type="button" onClick={() => { setMgrTaskTitle(''); setMgrTaskDescSuggestion(''); setMgrTaskAddStep('describe') }}
+                                  style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Retry</button>
+                                <button type="button" onClick={() => { if (!mgrTaskTitle.trim()) return; setMgrDraftAdded(prev => [...prev, { task: mgrTaskTitle.trim(), score: mgrTaskScore, ...(mgrTaskDescSuggestion ? { description: mgrTaskDescSuggestion } : {}) }]); resetMgrTaskAddPanel() }}
+                                  disabled={!mgrTaskTitle.trim()}
+                                  style={{ padding: '5px 12px', borderRadius: 6, background: '#92400e', color: '#fff', border: 'none', cursor: mgrTaskTitle.trim() ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', opacity: mgrTaskTitle.trim() ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>Add task
+                                </button>
+                              </div>
+                            </>
+                          )
+                        })()}
+                      </div>
+                    )}
+                    {/* Compare toggle switch — view control for the task list */}
+                    {!mgrTaskEditing && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: mgrCompareMode ? 8 : 12 }}>
+                        <button type="button" onClick={() => setMgrCompareMode(p => !p)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+                          <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>Compare with role template</span>
+                          <div style={{ position: 'relative', width: 32, height: 18, borderRadius: 9, background: mgrCompareMode ? '#4338ca' : '#cbd5e1', transition: 'background 0.2s', flexShrink: 0 }}>
+                            <div style={{ position: 'absolute', top: 2, left: mgrCompareMode ? 14 : 2, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                    {/* Compare summary bar */}
+                    {!mgrTaskEditing && mgrCompareMode && (() => {
+                      const addedMap = new Map<string, true>()
+                      for (const t of mgrSheetEmpState.approved.added) addedMap.set(t.task, true)
+                      for (const t of (mgrSheetEmpState.pending?.added ?? [])) addedMap.set(t.task, true)
+                      for (const t of (ov?.added ?? [])) addedMap.set(t.task, true)
+                      for (const t of mgrDraftAdded) addedMap.set(t.task, true)
+                      let addedCount = addedMap.size
+                      let removedCount = new Set([
+                        ...mgrSheetEmpState.approved.removed,
+                        ...(ov?.removed ?? []),
+                        ...Array.from(mgrDraftRemoved),
+                      ].filter(t => !mgrQuickRestored.has(t))).size
+                      let updatedCount = 0
+                      // Layer in pending role-task update deltas (if any)
+                      const pendingForThis = empHasPendingUpdate(empName, mgrTaskSheetRole.title)
+                        ? mgrRoleUpdates.find(r => r.roleTitle === mgrTaskSheetRole.title)
+                        : null
+                      if (pendingForThis) {
+                        addedCount += pendingForThis.added.length
+                        removedCount += pendingForThis.removed.length
+                        updatedCount += pendingForThis.updated.length
+                      }
+                      const dot = <span style={{ color: '#cbd5e1' }}>·</span>
+                      const noChanges = addedCount === 0 && removedCount === 0 && updatedCount === 0
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, background: pendingForThis ? '#fffbeb' : '#f8fafc', border: `1px solid ${pendingForThis ? '#fde68a' : '#e2e8f0'}`, marginBottom: 12, fontSize: 12 }}>
+                          <span style={{ color: '#0f172a', fontWeight: 600 }}>Compared to role</span>
+                          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {noChanges ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#15803d', fontWeight: 600 }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 13, lineHeight: 1 }}>check_circle</span>
+                                No changes
+                              </span>
+                            ) : (
+                              <>
+                                {addedCount > 0 && <span style={{ color: '#15803d', fontWeight: 600 }}>+{addedCount} added</span>}
+                                {addedCount > 0 && (removedCount > 0 || updatedCount > 0) && dot}
+                                {removedCount > 0 && <span style={{ color: '#b91c1c', fontWeight: 600 }}>−{removedCount} removed</span>}
+                                {removedCount > 0 && updatedCount > 0 && dot}
+                                {updatedCount > 0 && <span style={{ color: '#d97706', fontWeight: 600 }}>~{updatedCount} updated</span>}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
                     <ManagerEmployeeTaskView
                       employeeName={empName}
                       role={mgrTaskSheetRole}
                       phase={mgrPlansCreated ? 'upskilled' : mgrCollComplete ? 'calibrated' : 'baseline'}
-                      viewMode={mgrTaskBodyTab}
-                      mgrEmpAdded={ov?.added}
-                      mgrEmpRemoved={ov?.removed}
+                      viewMode="classification"
+                      diffMode={mgrCompareMode}
+                      mgrEmpAdded={[
+                        ...(ov?.added ?? []),
+                        ...mgrDraftAdded,
+                        ...(pendingRole?.added.map(a => ({ task: a.task, score: a.score })) ?? []),
+                      ]}
+                      mgrEmpRemoved={new Set([
+                        ...(ov?.removed ?? []),
+                        ...mgrDraftRemoved,
+                        ...(pendingRole?.removed ?? []),
+                      ].filter(t => !mgrQuickRestored.has(t)))}
                       mgrEditing={mgrTaskEditing}
-                      onMgrRemove={(taskName) => removeMgrEmpTask(empName, taskName)}
+                      onMgrRemove={(taskName) => setMgrDraftRemoved(prev => { const s = new Set(prev); s.has(taskName) ? s.delete(taskName) : s.add(taskName); return s })}
+                      onRestore={(t) => setMgrQuickRestored(prev => new Set([...prev, t]))}
                     />
                   </>
                 )
@@ -3294,7 +3729,6 @@ export function WorkforceReadinessDashboard({
                       <DataTableHead style={{ width: '28%' }}>HRBP</DataTableHead>
                       <DataTableHead metric style={{ width: '22%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '28%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
@@ -3307,13 +3741,7 @@ export function WorkforceReadinessDashboard({
                           </div>
                         </DataTableCell>
                         <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={row.readiness} /></DataTableCell>
-                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, hrsUnlocked: row.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(row.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                        <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{row.gap.toLocaleString()} ({row.headcount > 0 ? Math.round(row.gap / row.headcount * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {row.headcount.toLocaleString()}</div>
-                          </div>
-                        </DataTableCell>
+                        <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: row.hrbp, subtitle: `${d.name} · ${row.headcount.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: row.headcount, hrsUnlocked: row.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtHrbpPotential(row.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                       </DataTableRow>
                     ))}
                   </DataTableBody>
@@ -3326,7 +3754,6 @@ export function WorkforceReadinessDashboard({
                       <DataTableHead style={{ width: '32%' }}>Manager</DataTableHead>
                       <DataTableHead metric style={{ width: '24%' }}><MetricHeaderLabel label="Team AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
                       <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} /></DataTableHead>
-                      <DataTableHead numeric style={{ width: '22%' }}><MetricHeaderLabel label="Transformation gap" metric="gap" /></DataTableHead>
                     </DataTableRow>
                   </DataTableHeader>
                   <DataTableBody>
@@ -3347,13 +3774,7 @@ export function WorkforceReadinessDashboard({
                             </div>
                           </DataTableCell>
                           <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={mgrReadiness} /></DataTableCell>
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: mgrHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(mgrHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
-                          <DataTableCell align="right">
-                            <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                              <span className="wfr-type-h6">{mgrGap.toLocaleString()} ({mgr.employees > 0 ? Math.round(mgrGap / mgr.employees * 100) : 0}%)</span>
-                              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
-                            </div>
-                          </DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: mgrHrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtHrbpPotential(mgrHrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         </DataTableRow>
                       )
                     })}
@@ -3628,9 +4049,15 @@ export function WorkforceReadinessDashboard({
           const hrbpHrsUnlockedBase = Math.round(d.hrsUnlocked * headcount / Math.max(1, d.employees))
           const hrbpReadinessBaseline = Math.max(0, dirWeightedReadiness - deptTrendDelta - upskillingBoostBase)
           const hrbpHrsUnlocked = scaleHrsUnlocked(hrbpHrsUnlockedBase, hrbpReadinessBaseline, dirWeightedReadiness)
+          const hrbpPotentialToggle = (
+            <div style={{ display: 'inline-flex', marginTop: 10, background: 'rgba(255,255,255,0.6)', border: '1px solid #c7d2fe', borderRadius: 20, padding: 2, gap: 2 }}>
+              <button type="button" onClick={() => setHrbpPotentialUnit('hours')} style={{ padding: '3px 10px', borderRadius: 16, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.15s', background: hrbpPotentialUnit === 'hours' ? '#6366f1' : 'transparent', color: hrbpPotentialUnit === 'hours' ? '#fff' : '#6366f1' }}>Hours</button>
+              <button type="button" onClick={() => setHrbpPotentialUnit('dollars')} style={{ padding: '3px 10px', borderRadius: 16, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.15s', background: hrbpPotentialUnit === 'dollars' ? '#6366f1' : 'transparent', color: hrbpPotentialUnit === 'dollars' ? '#fff' : '#6366f1' }}>Dollars</button>
+            </div>
+          )
           const hrbpOverviewCards: Parameters<typeof WfrOverviewLayout>[0]['cards'] = [
             { id: 'ai-potential', icon: 'bolt', label: 'AI potential', value: `${d.aiPotential}%`, explainer: `How much of your team's daily work AI is capable of supporting.`, description: <span style={{ color: '#94a3b8' }}>Across {headcount.toLocaleString()} employees</span>, tag: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />Above industry median (38%)</span>, onLearnMore: () => setDashMetricInfoOpen(true) },
-            { id: 'potential', icon: 'schedule', label: 'Productivity potential', value: formatHours(hrbpHrsUnlocked), description: <><span>Annual hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {headcount.toLocaleString()} employees</span></>, onLearnMore: () => setDashMetricInfoOpen(true) },
+            { id: 'potential', icon: 'schedule', label: 'Productivity potential', value: hrbpPotentialUnit === 'hours' ? formatHours(hrbpHrsUnlocked) : formatDollars(hrbpHrsUnlocked), description: hrbpPotentialUnit === 'hours' ? <><span>Annual hours AI can unlock for people in the transformation gap.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {headcount.toLocaleString()} employees</span></> : <><span>Estimated annual value at ${ORG_HOURLY_RATE_USD}/hr fully-loaded cost.</span><span style={{ display: 'block', color: '#94a3b8', marginTop: 3 }}>Across {headcount.toLocaleString()} employees</span></>, cardChildren: hrbpPotentialToggle, onLearnMore: () => setDashMetricInfoOpen(true) },
           ]
           // HRBP persona: use WfrOverviewLayout directly with table as children
           if (isHrbp) {
@@ -3774,7 +4201,7 @@ export function WorkforceReadinessDashboard({
                                 </div>
                               </DataTableCell>
                               {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
-                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
+                          <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtHrbpPotential(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
                               <DataTableCell align="right">
                                 <div className="tabular-nums" style={{ textAlign: 'right' }}>
@@ -3830,7 +4257,6 @@ export function WorkforceReadinessDashboard({
                                 <DataTableHead numeric>Tasks</DataTableHead>
                                 <DataTableHead metric><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'readiness' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('readiness')} /></DataTableHead>
                                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setDashMetricInfoOpen(true)} sortDir={hrbpRoleSort.col === 'potential' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('potential')} /></DataTableHead>
-                                <DataTableHead numeric><MetricHeaderLabel label="Transformation gap" metric="gap" sortDir={hrbpRoleSort.col === 'gap' ? hrbpRoleSort.dir : null} onSortClick={() => toggleHrbpRoleSort('gap')} /></DataTableHead>
                               </DataTableRow>
                             </DataTableHeader>
                             <DataTableBody>
@@ -3852,10 +4278,7 @@ export function WorkforceReadinessDashboard({
                                     <DeptTableSoloBar variant="readiness" pct={hrbpCollectionComplete ? r.measuredReadiness : r.aiReadiness} />
                                   </DataTableCell>
                                   <DataTableCell align="right">
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button>
-                                  </DataTableCell>
-                                  <DataTableCell align="right">
-                                    <span className="wfr-type-h6 tabular-nums">{r.gap.toLocaleString()}</span>
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: r.title, subtitle: `${d.name} · ${r.employees.toLocaleString()} employees`, aiPotential: r.aiPotential, headcount: r.employees, hrsUnlocked: r.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtHrbpPotential(r.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button>
                                   </DataTableCell>
                                 </DataTableRow>
                               ))}
@@ -4989,6 +5412,7 @@ export function WorkforceReadinessDashboard({
           title={dashTaskSheetRole.title}
           subtitle={dashTaskSheetRole.dept}
           ariaLabel={`Tasks for ${dashTaskSheetRole.title}`}
+          isEditing={dashTaskEditing}
           headerActions={!dashTaskEditing ? (
             <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
@@ -5012,14 +5436,6 @@ export function WorkforceReadinessDashboard({
           )}
         >
               {/* Tab pills */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-                {(['all', 'classification', 'source'] as const).map(tab => (
-                  <button key={tab} type="button" onClick={() => setDashTaskBodyTab(tab)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, border: `1px solid ${dashTaskBodyTab === tab ? '#6366f1' : '#e2e8f0'}`, background: dashTaskBodyTab === tab ? '#eef2ff' : 'transparent', color: dashTaskBodyTab === tab ? '#4338ca' : '#64748b', fontSize: 12, fontWeight: dashTaskBodyTab === tab ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {tab === 'all' ? 'All tasks' : tab === 'classification' ? 'By classification' : 'By source'}
-                  </button>
-                ))}
-              </div>
               {/* AI add-task panel (amber theme) */}
               {dashTaskEditing && dashTaskAddOpen && (
                 <div style={{ marginBottom: 24, padding: '12px', borderRadius: 8, border: '1px solid #fde68a', background: '#fffbeb' }}>
@@ -5075,10 +5491,10 @@ export function WorkforceReadinessDashboard({
                         <div style={{ marginBottom: 12 }}>
                           <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6 }}>Expected skills</div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                            {skills.map(s => <span key={s} style={{ padding: '2px 8px', borderRadius: 10, background: '#f1f5f9', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 500, color: '#475569' }}>{s}</span>)}
+                            {skills.map(s => <SkillTag key={s}>{s}</SkillTag>)}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 16 }}>
                           <button type="button" onClick={resetDashTaskAdd} style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Cancel</button>
                           <button type="button" onClick={() => { setDashTaskTitle(''); setDashTaskDescSuggestion(''); setDashTaskAddStep('describe') }} style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Retry</button>
                           <button type="button" onClick={() => { if (!dashTaskTitle.trim()) return; addDashTask(dashTaskTitle, dashTaskScore, dashTaskDescSuggestion || undefined); resetDashTaskAdd() }}
@@ -5095,7 +5511,7 @@ export function WorkforceReadinessDashboard({
               <WfrTaskSheetBody
                 role={dashTaskSheetRole}
                 phase={(() => { const f = deriveWfrFlags(wfrState.state); return f.hrbpPlansCreated ? 'upskilled' : f.collectionComplete ? 'calibrated' : 'baseline' })()}
-                viewMode={dashTaskBodyTab}
+                viewMode="classification"
                 adminEditing={dashTaskEditing}
                 adminAdded={[...dashTaskAdded, ...dashDraftAdded]}
                 adminRemoved={dashTaskRemoved}

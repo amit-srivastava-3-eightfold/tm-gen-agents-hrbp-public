@@ -104,6 +104,17 @@ Goal: drive Readiness up and Gap down, quarter after quarter.
 - **Data Collection** (4 steps): Assign (HRBP vs self) → Scope (all vs select depts) → Channels (AI Agent Interviews) → Review
 - **Upskilling** (3 steps): Assign → Departments (sorted by gap) → Review
 
+## Engineering Process Rules
+
+### Audit before acting — "apply X to Y" tasks
+When asked to apply a pattern, component, or behavior from one place (X) to another (Y):
+1. **Read Y first.** Fully read every file that will change before writing a single line.
+2. **Diff X vs Y across all dimensions** — visual styling, UX behavior, state management, event handlers. List every gap explicitly.
+3. **Fix all gaps in one pass.** Don't apply only the surface layer (e.g. CSS) and call it done. If the underlying behavior doesn't match, fix that too.
+4. **Verify in the actual target context**, not just the source. A screenshot of X does not confirm Y is working.
+
+Skipping the audit and jumping straight to code is the primary cause of multi-iteration loops on "simple" tasks.
+
 <!-- VERCEL BEST PRACTICES START -->
 ## Best practices for developing on Vercel
 

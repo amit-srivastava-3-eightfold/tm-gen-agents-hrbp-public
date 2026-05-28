@@ -4,12 +4,11 @@ import { useUser } from '../contexts/UserContext'
 import { NavbarApp } from '../components/Navbar'
 import { ProductBackground, Header, HeaderToolbar, HeaderTextGroup, HeaderTitle } from '@tonyh-2-eightfold/ef-design-system'
 import {
-  COACH_PICK, IDEAS,
+  COACH_PICK,
   INITIAL_TASKS, TASKS_STORAGE_KEY,
   type Task, type TaskCat,
 } from '../data/myWorkData'
 import { CoachPickCard } from '../components/myWork/CoachPickCard'
-import { IdeaCard } from '../components/myWork/IdeaCard'
 import { TaskRow } from '../components/myWork/TaskRow'
 import { CheckInCard } from '../components/myWork/CheckInCard'
 import { CoachDrawer, type CoachDrawerView } from '../components/myWork/CoachDrawer'
@@ -50,6 +49,8 @@ export function MyWorkPage() {
   const [formDefaultCat, setFormDefaultCat] = useState<TaskCat>('help')
   const [drawerView, setDrawerView] = useState<CoachDrawerView>(null)
   const [sessionOpen, setSessionOpen] = useState(false)
+  const [promptInput, setPromptInput] = useState('')
+  const [coachingTask, setCoachingTask] = useState<Task | null>(null)
 
   useEffect(() => { localStorage.removeItem('tm:my-work-tasks-v1') }, [])
 
@@ -106,26 +107,49 @@ export function MyWorkPage() {
             onStart={() => setSessionOpen(true)}
           />
 
-          <div className="section-head">
-            <div>
-              <h2 className="section-title">A few more ideas for your week</h2>
-              <p className="section-sub">Small experiments. No pressure.</p>
+          {/* AI prompt card */}
+          <div style={{ background: '#fff', border: '1px solid #e8eaed', borderRadius: 14, padding: '24px 28px', marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#6366f1' }}>auto_awesome</span>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0, fontFamily: 'var(--font-family)' }}>How can I do my job better?</h2>
             </div>
-            <button type="button" className="btn-ghost">
-              See all <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
-          </div>
-
-          <div className="ideas">
-            {IDEAS.map((idea) => (
-              <IdeaCard
-                key={idea.id}
-                idea={idea}
-                onCtaClick={(i) => {
-                  if (i.ctaAction === 'open-coach-chat') setDrawerView('chat')
-                }}
+            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 18px', fontFamily: 'var(--font-family)' }}>Ask anything about your role, tasks, or growth.</p>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <input
+                type="text"
+                value={promptInput}
+                onChange={e => setPromptInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && promptInput.trim()) { setDrawerView('chat') } }}
+                placeholder="Ask anything…"
+                style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, outline: 'none', fontFamily: 'var(--font-family)', color: '#1e293b', background: '#fafafa' }}
               />
-            ))}
+              <button
+                type="button"
+                disabled={!promptInput.trim()}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 42, height: 42, borderRadius: 8, border: 'none', background: promptInput.trim() ? '#6366f1' : '#e2e8f0', color: promptInput.trim() ? '#fff' : '#94a3b8', cursor: promptInput.trim() ? 'pointer' : 'default', transition: 'all 0.15s', flexShrink: 0 }}
+                onClick={() => { if (promptInput.trim()) setDrawerView('chat') }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                'Help me prep for my architecture review',
+                'Draft a stakeholder update',
+                'What skills should I grow next?',
+                'How can AI help with PR reviews?',
+                'Summarize my experiment notes',
+              ].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => { setPromptInput(p); setDrawerView('chat') }}
+                  style={{ padding: '6px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: promptInput === p ? '#eef2ff' : '#f8fafc', color: promptInput === p ? '#4338ca' : '#475569', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-family)', transition: 'all 0.15s' }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={`list-card${editMode ? ' editing' : ''}`}>
@@ -133,8 +157,7 @@ export function MyWorkPage() {
               <div>
                 <h2>My work tasks</h2>
                 <p>
-                  The recurring things that fill your time, the skills they stretch, and a gentle read on where AI fits.{' '}
-                  <span className="list-blue">Blue</span> skills are ones your role is growing.
+                  The recurring things that fill your time, the skills they use, and how you're tackling each one today — manually, with AI's help, or mostly AI.
                 </p>
               </div>
               <div className="list-head-actions">
@@ -202,7 +225,10 @@ export function MyWorkPage() {
       <CoachDrawer
         view={drawerView}
         firstName={firstName}
-        onClose={() => setDrawerView(null)}
+        initialPrompt={drawerView === 'chat' && !coachingTask ? promptInput : undefined}
+        coachingTaskId={coachingTask?.id}
+        coachingTaskName={coachingTask?.name}
+        onClose={() => { setDrawerView(null); setPromptInput(''); setCoachingTask(null) }}
       />
       <CoachSessionPanel
         open={sessionOpen}
@@ -213,9 +239,10 @@ export function MyWorkPage() {
       <TaskDetailDrawer
         task={selectedTask}
         onClose={() => setSelectedTaskId(null)}
-        onCreatePlan={() => {
+        onStartCoaching={(task) => {
           setSelectedTaskId(null)
-          setDrawerView('pr')
+          setCoachingTask(task)
+          setDrawerView('chat')
         }}
       />
       <TaskFormDrawer

@@ -1886,6 +1886,20 @@ export function formatHours(hrs: number): string {
   return `${Math.round(annual).toLocaleString()} hrs/yr`
 }
 
+/** Blended fully-loaded hourly cost for knowledge workers (salary + benefits + overhead). */
+export const ORG_HOURLY_RATE_USD = 75
+
+/** Format hours-as-dollars for display, annualized at ORG_HOURLY_RATE_USD.
+ *  Input is weekly hours (same unit as hrsUnlocked); output is annual dollar value. */
+export function formatDollars(weeklyHrs: number): string {
+  if (weeklyHrs == null || isNaN(weeklyHrs)) return '$0/yr'
+  const annual = weeklyHrs * 52 * ORG_HOURLY_RATE_USD
+  if (annual >= 1_000_000_000) return `$${(annual / 1_000_000_000).toFixed(1)}B/yr`
+  if (annual >= 1_000_000) return `$${Math.round(annual / 1_000_000)}M/yr`
+  if (annual >= 10_000) return `$${Math.round(annual / 1_000)}k/yr`
+  return `$${Math.round(annual).toLocaleString()}/yr`
+}
+
 /** Compute aiPotential from task data per Octave: Tasks in Augmentation Zone / Total Tasks × 100 */
 function computeAiPotential(title: string): number {
   const tasks = tasksByRole[title]

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SkillTag } from '@tonyh-2-eightfold/ef-design-system'
 import { getTasksForRole } from '../../data/wfrOrgData'
 
 type DemoPhase = 'baseline' | 'calibrated' | 'upskilled'
@@ -391,15 +392,25 @@ interface Props {
   role: { title: string }
   phase?: DemoPhase
   viewMode?: 'all' | 'classification' | 'source'
+  /**
+   * Diff mode: instead of hiding adminRemoved tasks, keep them in the list
+   * with "Not included" styling so users can compare employee vs. role template.
+   * Employee-added tasks get an "Employee" badge.
+   */
+  diffMode?: boolean
   adminEditing?: boolean
   adminAdded?: { task: string; score: number; description?: string }[]
   adminRemoved?: Set<string>
   pendingRemoved?: Set<string>
   draftAddedNames?: Set<string>
+  /** Tasks already submitted for review (pending approval) — shown with normal bg + "Pending" badge. */
+  pendingAddedNames?: Set<string>
   onAdminRemove?: (taskName: string) => void
+  /** Called when the user clicks "Add back" on a Not Included row in compare mode (non-editing). */
+  onRestore?: (taskName: string) => void
 }
 
-export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classification', adminEditing, adminAdded, adminRemoved, pendingRemoved, draftAddedNames, onAdminRemove }: Props) {
+export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classification', diffMode, adminEditing, adminAdded, adminRemoved, pendingRemoved, draftAddedNames, pendingAddedNames, onAdminRemove, onRestore }: Props) {
   const [zoneFilter, setZoneFilter] = useState<'augment' | 'above' | 'below' | null>(null)
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set())
 
@@ -413,9 +424,12 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
     })
 
   const rawBaseTasks = getTasksForRole(role.title)
-  const baseTasks = (adminAdded || adminRemoved)
-    ? [...rawBaseTasks.filter(t => !adminRemoved?.has(t.task)), ...(adminAdded ?? [])]
-    : rawBaseTasks
+  const baseTasks = diffMode
+    // Keep ALL role template tasks + any employee-added tasks not already in the template
+    ? [...rawBaseTasks, ...(adminAdded?.filter(a => !rawBaseTasks.some(b => b.task === a.task)) ?? [])]
+    : (adminAdded || adminRemoved)
+      ? [...rawBaseTasks.filter(t => !adminRemoved?.has(t.task)), ...(adminAdded ?? [])]
+      : rawBaseTasks
   const adminAddedNames = new Set((adminAdded ?? []).map(t => t.task))
   const adminAddedMap = new Map((adminAdded ?? []).map(t => [t.task, t]))
 
@@ -493,9 +507,7 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
               </div>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-              {skills.map(skill => (
-                <span key={skill} style={{ padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 500, color: '#475569' }}>{skill}</span>
-              ))}
+              {skills.map(skill => <SkillTag key={skill}>{skill}</SkillTag>)}
             </div>
             {!adminAddedNames.has(t.task) && (
               <div style={{ marginBottom: 10 }}>
@@ -605,6 +617,7 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
               const moved = phase !== 'baseline' && t.zone !== t.baseZone
               const movedUp = moved && (['above', 'augment', 'below'].indexOf(t.zone) < ['above', 'augment', 'below'].indexOf(t.baseZone))
               const isPendingDelete = pendingRemoved?.has(t.task) ?? false
+              const isNotIncluded = !!(diffMode && adminRemoved?.has(t.task))
               const isOpen = expandedTasks.has(t.task)
               const skills = getSkills(t.task, group.zone)
               const analysis = getAnalysis(t.task)
@@ -614,23 +627,55 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
               return (
                 <div
                   key={i}
-                  onClick={() => !isPendingDelete && toggleTask(t.task)}
-                  style={{ padding: '10px 12px', borderRadius: 6, cursor: isPendingDelete ? 'default' : 'pointer', opacity: isPendingDelete ? 0.6 : 1, transition: 'background 0.1s',
-                    border: `1px solid ${isPendingDelete ? '#fecaca' : moved ? (movedUp ? '#c7d2fe' : '#fecaca') : draftAddedNames?.has(t.task) ? group.border : '#e5e7eb'}`,
-                    background: isPendingDelete ? '#fff1f2' : moved ? (movedUp ? '#fafafe' : '#fff8f8') : draftAddedNames?.has(t.task) ? group.bg : '#fff' }}
+                  onClick={() => !isPendingDelete && !isNotIncluded && toggleTask(t.task)}
+                  style={{ padding: '10px 12px', borderRadius: 6,
+                    cursor: isNotIncluded || isPendingDelete ? 'default' : 'pointer',
+                    opacity: isPendingDelete ? 0.6 : 1,
+                    transition: 'background 0.1s',
+                    border: `1px solid ${isNotIncluded ? '#e2e8f0' : isPendingDelete ? '#fecaca' : moved ? (movedUp ? '#c7d2fe' : '#fecaca') : draftAddedNames?.has(t.task) ? group.border : '#e5e7eb'}`,
+                    background: isNotIncluded ? '#f8fafc' : isPendingDelete ? '#fff1f2' : moved ? (movedUp ? '#fafafe' : '#fff8f8') : draftAddedNames?.has(t.task) ? group.bg : '#fff' }}
                 >
                   {/* Row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span className="text-[13px] font-medium" style={{ color: isPendingDelete ? '#94a3b8' : '#1a212e', textDecoration: isPendingDelete ? 'line-through' : 'none' }}>{t.task}</span>
+                    <span className="text-[13px] font-medium" style={{ color: isNotIncluded ? '#94a3b8' : isPendingDelete ? '#94a3b8' : '#1a212e', textDecoration: isNotIncluded || isPendingDelete ? 'line-through' : 'none' }}>{t.task}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      {isPendingDelete && <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 500 }}>Removed</span>}
-                      {!isPendingDelete && moved && (
+                      {/* Not-included state (diffMode: approved removal) */}
+                      {isNotIncluded && adminEditing && onAdminRemove && (
+                        <button type="button" onClick={e => { e.stopPropagation(); onAdminRemove(t.task) }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#15803d')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+                          title="Restore task">
+                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>undo</span>
+                        </button>
+                      )}
+                      {isNotIncluded && !adminEditing && onRestore && (
+                        <button type="button" onClick={e => { e.stopPropagation(); onRestore(t.task) }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 10, border: '1px solid #bbf7d0', background: '#f0fdf4', cursor: 'pointer', color: '#15803d', fontSize: 11, fontWeight: 600, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#dcfce7'; e.currentTarget.style.borderColor = '#86efac' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#f0fdf4'; e.currentTarget.style.borderColor = '#bbf7d0' }}
+                          title="Add">
+                          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+                          Add
+                        </button>
+                      )}
+                      {/* Normal / pending-delete states */}
+                      {!isNotIncluded && isPendingDelete && <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 500 }}>Removed</span>}
+                      {!isNotIncluded && !isPendingDelete && moved && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 10, background: movedUp ? '#eef2ff' : '#fff1f2', border: `1px solid ${movedUp ? '#c7d2fe' : '#fecaca'}`, fontSize: 11, fontWeight: 600, color: movedUp ? '#4338ca' : '#be123c', whiteSpace: 'nowrap' }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 11, lineHeight: 1 }}>{movedUp ? 'arrow_upward' : 'arrow_downward'}</span>
                           was {ZONE_META[t.baseZone].label}
                         </span>
                       )}
-                      {adminEditing && onAdminRemove && (
+                      {/* Pending badge — task submitted but awaiting manager approval */}
+                      {!isNotIncluded && !isPendingDelete && pendingAddedNames?.has(t.task) && (
+                        <span style={{ padding: '2px 6px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 10, fontWeight: 700, color: '#b45309', whiteSpace: 'nowrap' }}>Pending</span>
+                      )}
+                      {/* Employee-added badge in diffMode */}
+                      {!isNotIncluded && !isPendingDelete && diffMode && adminAddedNames.has(t.task) && (
+                        <span style={{ padding: '2px 6px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 10, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap' }}>Added</span>
+                      )}
+                      {!isNotIncluded && adminEditing && onAdminRemove && (
                         <button type="button" onClick={e => { e.stopPropagation(); onAdminRemove(t.task) }}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: isPendingDelete ? '#ef4444' : '#cbd5e1', padding: 0 }}
                           onMouseEnter={e => (e.currentTarget.style.color = isPendingDelete ? '#be123c' : '#ef4444')}
@@ -639,11 +684,11 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
                           <span className="material-symbols-outlined" style={{ fontSize: 15 }}>{isPendingDelete ? 'undo' : 'delete'}</span>
                         </button>
                       )}
-                      {!isPendingDelete && <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#94a3b8', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', lineHeight: 1 }}>expand_more</span>}
+                      {!isNotIncluded && !isPendingDelete && <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#94a3b8', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', lineHeight: 1 }}>expand_more</span>}
                     </div>
                   </div>
-                  {/* Expanded content */}
-                  {!isPendingDelete && isOpen && (
+                  {/* Expanded content — suppressed for not-included rows */}
+                  {!isNotIncluded && !isPendingDelete && isOpen && (
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                       {adminAddedMap.get(t.task)?.description && (
                         <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 4px', lineHeight: 1.5 }}>{adminAddedMap.get(t.task)!.description}</p>
@@ -666,9 +711,7 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-                        {skills.map(skill => (
-                          <span key={skill} style={{ padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 500, color: '#475569' }}>{skill}</span>
-                        ))}
+                        {skills.map(skill => <SkillTag key={skill}>{skill}</SkillTag>)}
                       </div>
                       {!adminAddedNames.has(t.task) && (
                         <div style={{ marginBottom: 10 }}>

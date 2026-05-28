@@ -1,13 +1,21 @@
 import { useEffect } from 'react'
+import { SkillTag } from '@tonyh-2-eightfold/ef-design-system'
+import { TASK_TIPS, TASK_AI_ANALYSIS } from '../../data/myWorkData'
 import type { Task } from '../../data/myWorkData'
 
 interface Props {
   task: Task | null
   onClose: () => void
-  onCreatePlan: () => void
+  onStartCoaching: (task: Task) => void
 }
 
-export function TaskDetailDrawer({ task, onClose, onCreatePlan }: Props) {
+const TIP_SECTION_LABEL: Record<string, string> = {
+  help: 'How to use AI here',
+  you:  'How to do this well',
+  off:  'How to automate this',
+}
+
+export function TaskDetailDrawer({ task, onClose, onStartCoaching }: Props) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && task) onClose()
@@ -59,6 +67,46 @@ export function TaskDetailDrawer({ task, onClose, onCreatePlan }: Props) {
                 </div>
               )}
 
+              {TASK_AI_ANALYSIS[task.id] && (() => {
+                const { aiCaps, humanEdge } = TASK_AI_ANALYSIS[task.id]
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#2563eb', fontWeight: 700, fontSize: 11.5, marginBottom: 7 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+                        AI Capabilities
+                      </div>
+                      {aiCaps.map(c => (
+                        <div key={c} style={{ fontSize: 12.5, color: '#1e40af', lineHeight: 1.5 }}>· {c}</div>
+                      ))}
+                    </div>
+                    <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#b45309', fontWeight: 700, fontSize: 11.5, marginBottom: 7 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>person</span>
+                        Human Strengths
+                      </div>
+                      {humanEdge.map(h => (
+                        <div key={h} style={{ fontSize: 12.5, color: '#92400e', lineHeight: 1.5 }}>· {h}</div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {TASK_TIPS[task.id] && (
+                <div className="td-section">
+                  <div className="td-section-label">{TIP_SECTION_LABEL[task.cat] ?? 'Ways to improve'}</div>
+                  <div className="td-tips">
+                    {TASK_TIPS[task.id].map((tip, i) => (
+                      <div key={i} className="td-tip">
+                        <span className="td-tip-num">{i + 1}</span>
+                        <span>{tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {task.tools && task.tools.length > 0 && (
                 <div className="td-section">
                   <div className="td-section-label">Tools you'd use</div>
@@ -78,10 +126,8 @@ export function TaskDetailDrawer({ task, onClose, onCreatePlan }: Props) {
                 <div className="td-section">
                   <div className="td-section-label">Skills this grows</div>
                   <div className="td-skill-grid">
-                    {task.skills.map(([name, match]) => (
-                      <span key={name} className={`t-skill${match === 'match' ? ' match' : ''}`}>
-                        {name}
-                      </span>
+                    {task.skills.map(([name]) => (
+                      <SkillTag key={name}>{name}</SkillTag>
                     ))}
                   </div>
                 </div>
@@ -92,9 +138,14 @@ export function TaskDetailDrawer({ task, onClose, onCreatePlan }: Props) {
               <button type="button" className="btn-ghost" onClick={onClose}>
                 Close
               </button>
-              <button type="button" className="btn-primary" onClick={onCreatePlan}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>rocket_launch</span>
-                Create a dev plan
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => onStartCoaching(task)}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                Start coaching session
               </button>
             </div>
           </>

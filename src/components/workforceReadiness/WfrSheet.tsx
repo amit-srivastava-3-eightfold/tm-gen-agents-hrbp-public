@@ -37,6 +37,8 @@ export interface WfrSheetProps {
    * coexist with independent scroll-lock semantics.
    */
   bodyAttr?: string
+  /** When true, applies amber ring and header tint to signal edit mode. */
+  isEditing?: boolean
   /** Body content. */
   children: ReactNode
 }
@@ -51,6 +53,7 @@ export function WfrSheet({
   headerActions,
   ariaLabel,
   bodyAttr = DEFAULT_BODY_ATTR,
+  isEditing = false,
   children,
 }: WfrSheetProps) {
   useLayoutEffect(() => {
@@ -75,20 +78,39 @@ export function WfrSheet({
   return createPortal(
     <div className="wfr-sheet__root">
       <div className="wfr-sheet__backdrop" onClick={onClose} aria-hidden />
-      <div className="wfr-sheet" role="dialog" aria-label={computedAriaLabel}>
-        <div className="wfr-sheet__header">
+      <div className="wfr-sheet" role="dialog" aria-label={computedAriaLabel}
+        style={isEditing ? { borderLeft: '4px solid #f59e0b' } : undefined}>
+        <div className="wfr-sheet__header"
+          style={isEditing ? { background: '#fffbeb', borderBottom: '1px solid #fde68a' } : undefined}>
           <div className="wfr-sheet__header-main">
             <div className="wfr-sheet__title-row">
               <h2 className="wfr-sheet__title">{title}</h2>
               {titleExtras}
             </div>
             {subtitle != null && <p className="wfr-sheet__sub">{subtitle}</p>}
-            {belowHeader}
+            {belowHeader != null
+              ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  {belowHeader}
+                  <span style={{ flex: 1 }} />
+                  {headerActions}
+                  {!isEditing && (
+                    <button type="button" className="wfr-sheet__close" onClick={onClose} aria-label="Close"
+                      style={{ alignSelf: 'center', marginTop: 0, width: 28, height: 28 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                    </button>
+                  )}
+                </div>
+              )
+              : null
+            }
           </div>
-          {headerActions}
-          <button type="button" className="wfr-sheet__close" onClick={onClose} aria-label="Close">
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          {belowHeader == null && headerActions}
+          {belowHeader == null && !isEditing && (
+            <button type="button" className="wfr-sheet__close" onClick={onClose} aria-label="Close">
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          )}
         </div>
         <div className="wfr-sheet__body">{children}</div>
       </div>

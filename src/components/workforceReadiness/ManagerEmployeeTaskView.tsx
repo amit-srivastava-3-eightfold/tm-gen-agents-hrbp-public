@@ -15,11 +15,14 @@ interface Props {
   role: { title: string; dept?: string }
   phase: DemoPhase
   viewMode?: 'all' | 'classification' | 'source'
+  /** Show removed tasks as "Not included" instead of hiding them. */
+  diffMode?: boolean
   /** Manager's direct edits stored outside the pending workflow. */
   mgrEmpAdded?: { task: string; score: number; description?: string }[]
   mgrEmpRemoved?: Set<string>
   mgrEditing?: boolean
   onMgrRemove?: (taskName: string) => void
+  onRestore?: (taskName: string) => void
 }
 
 export function ManagerEmployeeTaskView({
@@ -27,10 +30,12 @@ export function ManagerEmployeeTaskView({
   role,
   phase,
   viewMode = 'classification',
+  diffMode,
   mgrEmpAdded = [],
   mgrEmpRemoved,
   mgrEditing = false,
   onMgrRemove,
+  onRestore,
 }: Props) {
   const state = useEmployeeTaskState(employeeName)
   const approvedAdded = state.approved.added
@@ -67,12 +72,14 @@ export function ManagerEmployeeTaskView({
         role={role}
         phase={phase}
         viewMode={viewMode}
+        diffMode={diffMode}
         adminEditing={mgrEditing}
         adminAdded={adminAdded}
         adminRemoved={adminRemoved}
         pendingRemoved={strikethroughSet}
         draftAddedNames={draftAddedNames}
         onAdminRemove={onMgrRemove}
+        onRestore={onRestore}
       />
     </>
   )

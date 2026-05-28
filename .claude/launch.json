@@ -4,7 +4,7 @@
     {
       "name": "tm-dev",
       "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/Dev/Eightfold/tm && npm run dev"],
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/dev/tm && npm run dev"],
       "port": 5173
     },
     {

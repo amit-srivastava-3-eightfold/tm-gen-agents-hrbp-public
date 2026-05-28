@@ -35,6 +35,8 @@ export interface TaskSkill {
   variant: SkillVariant
 }
 
+export type AiAdoption = 'manual' | 'ai-assisted' | 'mostly-ai'
+
 export type TaskStatus = 'try' | 'using'
 export interface TaskRowData {
   id: string
@@ -397,6 +399,7 @@ export interface Task {
   icon: string
   hours: number
   tag?: 'try' | 'using'
+  aiAdoption?: AiAdoption
   category: string
   skills: [string, '' | 'match'][]
   tools?: TaskTool[]
@@ -404,11 +407,139 @@ export interface Task {
   desc?: string
 }
 
+export interface TaskAiAnalysis {
+  aiCaps: string[]
+  humanEdge: string[]
+}
+
+export const TASK_AI_ANALYSIS: Record<string, TaskAiAnalysis> = {
+  'pr-review': {
+    aiCaps: ['Automated code analysis', 'Tensor-shape checking', 'Style enforcement'],
+    humanEdge: ['Architecture judgment', 'Team context', 'Design mentorship'],
+  },
+  'experimentation': {
+    aiCaps: ['Hypothesis generation', 'Run result summarization', 'Training code scaffolding'],
+    humanEdge: ['Research direction', 'Failure interpretation', 'Scientific judgment'],
+  },
+  'docs': {
+    aiCaps: ['First draft generation', 'Gap identification', 'Template structuring'],
+    humanEdge: ['Audience calibration', 'Tacit knowledge', 'Narrative coherence'],
+  },
+  'serving': {
+    aiCaps: ['API scaffolding', 'Inference code review', 'Load test generation'],
+    humanEdge: ['Architecture tradeoffs', 'Production judgment', 'Cost optimization'],
+  },
+  'stakeholder': {
+    aiCaps: ['Exec summary generation', 'Thread summarization', 'Status drafting'],
+    humanEdge: ['Trust building', 'Message framing', 'Political navigation'],
+  },
+  'sprint': {
+    aiCaps: ['Sprint doc drafting', 'Scope risk flagging', 'Ticket description writing'],
+    humanEdge: ['Priority judgment', 'Team capacity reading', 'Trade-off decisions'],
+  },
+  '1on1': {
+    aiCaps: ['Talking point prep', 'Pattern surfacing from notes', 'Feedback drafting'],
+    humanEdge: ['Emotional presence', 'Relationship depth', 'Growth coaching'],
+  },
+  'arch-review': {
+    aiCaps: ['Failure mode listing', 'Question generation', 'Proposal summarization'],
+    humanEdge: ['Long-term judgment', 'Team capability fit', 'Architectural vision'],
+  },
+  'hiring': {
+    aiCaps: ['Rubric structuring', 'Follow-up question generation', 'Notes summarization'],
+    humanEdge: ['Candidate fit judgment', 'Culture assessment', 'Hiring decision'],
+  },
+  'perf': {
+    aiCaps: ['Example surfacing from notes', 'Vagueness detection', 'Tone checking'],
+    humanEdge: ['Relationship context', 'Growth narrative', 'Calibration judgment'],
+  },
+  'evals': {
+    aiCaps: ['Scheduled execution', 'Regression detection', 'Automated reporting'],
+    humanEdge: ['Threshold setting', 'Exception judgment', 'Metrics strategy'],
+  },
+  'oncall': {
+    aiCaps: ['Incident summarization', 'Handoff draft generation', 'Pattern detection'],
+    humanEdge: ['Context judgment', 'Escalation decisions', 'Process design'],
+  },
+  'dataset': {
+    aiCaps: ['Quality threshold monitoring', 'Batch analysis', 'Issue flagging'],
+    humanEdge: ['Guidelines authoring', 'Exception review', 'Vendor relationship'],
+  },
+}
+
+export const TASK_TIPS: Record<string, string[]> = {
+  'pr-review': [
+    'Run Claude or a PR bot on large diffs before you open them — focus your review on modeling judgment, not mechanical nits.',
+    'Ask AI to explain what a diff does in plain English before reading line by line. Saves 5–10 min on complex changes.',
+    'Set up auto-triage so you know which PRs actually need your eyes before you open your inbox.',
+  ],
+  'experimentation': [
+    'Ask Claude to generate 3 alternative hypotheses before each experiment — it surfaces edge cases you might skip.',
+    "Have AI summarize your last run's results before designing the next one. Loss curves in → plain-English diagnosis out.",
+    'Use Cursor for training code boilerplate. It handles the scaffolding; you focus on the model architecture.',
+  ],
+  'docs': [
+    'Paste your bullet-point notes into Claude and ask for a first draft — edit 20 min of output instead of writing from scratch.',
+    'Ask AI to spot gaps or unanswered questions in your design before sharing it with the team.',
+    'Use a consistent doc template so AI can fill in the structure every time without re-prompting.',
+  ],
+  'serving': [
+    'Let Cursor or Claude scaffold your FastAPI endpoints — 90% of serving boilerplate is template work AI handles well.',
+    'Ask Claude to review your inference code for memory leaks and latency bottlenecks before you ship.',
+    "Use AI to generate load test scenarios upfront. It's faster than discovering gaps in production.",
+  ],
+  'stakeholder': [
+    'Paste metrics + a few bullet points into Claude for an exec summary — 2 minutes instead of 30.',
+    "Use Slack AI to recap long threads before you write your update. Don't re-read the whole thread.",
+    'Ask AI to translate your technical findings into 3 plain-English sentences. Share those with PMs, then attach the details.',
+  ],
+  'sprint': [
+    'Share your backlog and team capacity with Claude — ask it to draft the sprint doc. Most of the structure is boilerplate.',
+    'Ask AI to flag scope risks or estimation gaps in your proposed sprint before the planning meeting.',
+    'Use AI to write ticket descriptions from rough notes. One sentence in → full ticket description out.',
+  ],
+  '1on1': [
+    "Use AI to prepare talking points before each 1:1 — then set it aside and be fully present in the conversation.",
+    "Ask Claude to help draft written feedback. You'll revise it to sound like you, but the hard start is done.",
+    'Brief notes after tough 1:1s + a monthly AI summary can surface patterns you\'d otherwise miss.',
+  ],
+  'arch-review': [
+    'Ask Claude to list known failure modes for a proposed architecture before the review — it primes you for what to probe.',
+    'Use AI to generate a set of probing questions for each proposal. You pick the ones worth asking.',
+    "Have AI summarize the proposal in 3 sentences before you deep-dive. If the summary feels wrong, that's often the issue.",
+  ],
+  'hiring': [
+    'Use AI to draft a structured interview rubric — you set the bar, AI formats it into a usable scorecard.',
+    'Ask Claude to suggest follow-up questions for specific ML topics before each interview.',
+    'Summarize your interview notes with AI before calibration sessions to reduce recall bias across interviewers.',
+  ],
+  'perf': [
+    'Search your 1:1 notes and ask AI to surface specific examples from the year — stops recency bias from dominating.',
+    "Draft your written feedback, then ask Claude to flag where you're being vague or generic. Be specific about the impact.",
+    'Ask AI to check tone — it catches "always/never" language that weakens feedback before it reaches the person.',
+  ],
+  'evals': [
+    "Schedule eval runs automatically via Airflow or GitHub Actions — you shouldn't be manually triggering these.",
+    "Set threshold-based alerting so you're notified only when something regresses, not on every passing run.",
+    'Talk to your manager about handing this to the platform team. This is exactly the work they exist for.',
+  ],
+  'oncall': [
+    'Slack AI + PagerDuty can auto-draft the handoff. You verify and post — 5 min instead of 30.',
+    'Build a handoff template once and ask AI to fill it from your incident timeline every week.',
+    "Talk to your manager about fully automating this. The format is fixed, the data is structured — it's ready.",
+  ],
+  'dataset': [
+    'Set quality thresholds and only review batches that fall below the bar — stop looking at passing batches manually.',
+    'Ask AI to improve your labeling guidelines. Better guidelines → fewer vendor disputes → fewer review cycles.',
+    'Talk to your manager about agent-based QA with exception-only escalation to you.',
+  ],
+}
+
 export const TASKS_STORAGE_KEY = 'tm:my-work-tasks-v2'
 
 export const INITIAL_TASKS: Task[] = [
   {
-    id: 'pr-review', cat: 'help', name: 'Model PR review', icon: 'difference', hours: 5, tag: 'try',
+    id: 'pr-review', cat: 'help', name: 'Model PR review', icon: 'difference', hours: 5, aiAdoption: 'manual',
     category: 'Recurring · weekly',
     skills: [['Code review', 'match'], ['Python', ''], ['PyTorch', 'match']],
     tools: [
@@ -420,7 +551,7 @@ export const INITIAL_TASKS: Task[] = [
     desc: "Reviewing your team's pull requests — mostly ML plumbing, data handling, tensor shapes, training loops, and the occasional framework upgrade. You're the last line of defense before code hits main.",
   },
   {
-    id: 'experimentation', cat: 'help', name: 'Model experimentation', icon: 'science', hours: 8, tag: 'using',
+    id: 'experimentation', cat: 'help', name: 'Model experimentation', icon: 'science', hours: 8, aiAdoption: 'ai-assisted',
     category: 'Recurring · daily',
     skills: [['PyTorch', 'match'], ['Distributed training', ''], ['Experiment design', 'match']],
     tools: [
@@ -432,7 +563,7 @@ export const INITIAL_TASKS: Task[] = [
     desc: 'Designing, running, and iterating on model training experiments. Sweeps, ablations, hyperparameter search, and reading tea leaves from loss curves.',
   },
   {
-    id: 'docs', cat: 'help', name: 'Research & design docs', icon: 'article', hours: 3, tag: 'try',
+    id: 'docs', cat: 'help', name: 'Research & design docs', icon: 'article', hours: 3, aiAdoption: 'manual',
     category: 'Recurring · weekly',
     skills: [['Technical writing', ''], ['ML system design', 'match']],
     tools: [
@@ -443,7 +574,7 @@ export const INITIAL_TASKS: Task[] = [
     desc: 'Writing research memos, design docs, and post-mortems. The writing that helps your team align and helps future-you remember why.',
   },
   {
-    id: 'serving', cat: 'help', name: 'Model serving & deployment', icon: 'hub', hours: 3, tag: 'try',
+    id: 'serving', cat: 'help', name: 'Model serving & deployment', icon: 'hub', hours: 3, aiAdoption: 'manual',
     category: 'Recurring · weekly',
     skills: [['Model serving', 'match'], ['FastAPI', ''], ['GPU inference', '']],
     tools: [
@@ -454,7 +585,7 @@ export const INITIAL_TASKS: Task[] = [
     desc: 'Getting models out of research and into production. Containers, endpoints, autoscaling, latency budgets, and GPU cost optimization.',
   },
   {
-    id: 'stakeholder', cat: 'help', name: 'Stakeholder & product updates', icon: 'campaign', hours: 2, tag: 'using',
+    id: 'stakeholder', cat: 'help', name: 'Stakeholder & product updates', icon: 'campaign', hours: 2, aiAdoption: 'ai-assisted',
     category: 'Recurring · weekly',
     skills: [['Communication', ''], ['Product thinking', '']],
     tools: [
@@ -465,7 +596,7 @@ export const INITIAL_TASKS: Task[] = [
     desc: "Updating PMs, eng leadership, and cross-functional partners on model progress. Translating research-speak into 'what does this mean for the product.'",
   },
   {
-    id: 'sprint', cat: 'help', name: 'Sprint planning', icon: 'calendar_today', hours: 2, tag: 'try',
+    id: 'sprint', cat: 'help', name: 'Sprint planning', icon: 'calendar_today', hours: 2, aiAdoption: 'manual',
     category: 'Recurring · biweekly',
     skills: [['Agile', ''], ['Estimation', ''], ['Prioritization', '']],
     tools: [
