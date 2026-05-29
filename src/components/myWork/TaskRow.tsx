@@ -55,7 +55,7 @@ export function TaskRow({ task, editMode, onClick, onEdit, onDelete, onCoach }: 
           variant="outline"
           size="sm"
           className="t-coach-cta"
-          onClick={(e) => { e.stopPropagation(); onCoach(e) }}
+          onClick={(e: React.MouseEvent) => { e.stopPropagation(); onCoach(e) }}
         >
           <span className="material-symbols-outlined t-coach-cta__icon" aria-hidden>auto_awesome</span>
           Help me do this better
