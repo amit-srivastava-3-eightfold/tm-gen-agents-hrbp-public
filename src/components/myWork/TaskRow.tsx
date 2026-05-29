@@ -1,4 +1,4 @@
-import { SkillTag } from '@tonyh-2-eightfold/ef-design-system'
+import { Button, SkillTag } from '@tonyh-2-eightfold/ef-design-system'
 import type { Task } from '../../data/myWorkData'
 
 interface TaskRowProps {
@@ -7,6 +7,8 @@ interface TaskRowProps {
   onClick: () => void
   onEdit: (e: React.MouseEvent) => void
   onDelete: (e: React.MouseEvent) => void
+  /** Open the Career Coach scoped to this task. */
+  onCoach?: (e: React.MouseEvent) => void
 }
 
 const ADOPTION_LABELS: Record<string, string> = {
@@ -15,7 +17,7 @@ const ADOPTION_LABELS: Record<string, string> = {
   'mostly-ai':   'Mostly AI',
 }
 
-export function TaskRow({ task, editMode, onClick, onEdit, onDelete }: TaskRowProps) {
+export function TaskRow({ task, editMode, onClick, onEdit, onDelete, onCoach }: TaskRowProps) {
   if (!task?.icon) return null
   return (
     <div className="t-row" onClick={() => { if (!editMode) onClick() }}>
@@ -31,9 +33,6 @@ export function TaskRow({ task, editMode, onClick, onEdit, onDelete }: TaskRowPr
         </div>
       </div>
       <div className="t-note">
-        <span className="t-hours">
-          {task.hours === 1 ? '1 hr / week' : `${task.hours} hrs / week`}
-        </span>
         {!editMode && task.cat === 'help' && task.aiAdoption && (
           <span className={`t-tag ${task.aiAdoption}`}>
             {ADOPTION_LABELS[task.aiAdoption]}
@@ -50,6 +49,19 @@ export function TaskRow({ task, editMode, onClick, onEdit, onDelete }: TaskRowPr
           </div>
         )}
       </div>
+      {!editMode && onCoach && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="t-coach-cta"
+          onClick={(e) => { e.stopPropagation(); onCoach(e) }}
+        >
+          <span className="material-symbols-outlined t-coach-cta__icon" aria-hidden>auto_awesome</span>
+          Help me do this better
+          <span className="material-symbols-outlined t-coach-cta__arrow" aria-hidden>arrow_forward</span>
+        </Button>
+      )}
     </div>
   )
 }

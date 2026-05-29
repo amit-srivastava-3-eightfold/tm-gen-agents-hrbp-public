@@ -199,6 +199,7 @@ export function MyWorkPage() {
                           handleDeleteTask(task.id)
                         }
                       }}
+                      onCoach={() => { setCoachingTask(task); setDrawerView('chat') }}
                     />
                   ))}
                   <button

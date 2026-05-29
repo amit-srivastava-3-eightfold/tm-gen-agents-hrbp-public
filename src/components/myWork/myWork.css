@@ -274,8 +274,13 @@
   padding: 18px 22px;
   display: grid;
   grid-template-columns: 44px 1fr auto;
-  grid-template-rows: auto auto;
-  grid-template-areas: "icon name meta" "icon skills meta";
+  /* row 2 = 1fr so skills absorb extra height and push the CTA to the bottom,
+     keeping sibling cards visually aligned. */
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "icon name   meta"
+    "icon skills meta"
+    "cta  cta    cta";
   column-gap: 16px;
   row-gap: 10px;
   background: white;
@@ -372,6 +377,20 @@
 .t-row-actions { display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end; }
 .t-row-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: white; color: var(--ink-2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .t-row-btn:hover { border-color: var(--coach-2); color: var(--coach-2); }
+
+/* Career Coach CTA — DS Button (variant="outline" size="sm").
+   We only own the grid placement + the AI accent on the leading sparkle icon
+   and the arrow nudge on hover; everything else is DS defaults. */
+.t-coach-cta {
+  grid-area: cta;
+  align-self: end;
+  justify-self: end;
+  gap: 6px;
+}
+.t-coach-cta .t-coach-cta__icon  { font-size: 15px !important; color: #6366f1; }
+.t-coach-cta .t-coach-cta__arrow { font-size: 15px !important; transition: transform 0.15s ease; }
+.t-coach-cta:hover .t-coach-cta__arrow { transform: translateX(2px); }
+.list-card.editing .t-coach-cta { display: none; }
 .t-row-btn.delete:hover { border-color: #c44; color: #c44; background: #fff5f5; }
 .t-row-btn .material-symbols-outlined { font-size: 16px; }
 
@@ -415,6 +434,13 @@
 .coach-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .coach-msg { display: flex; gap: 10px; align-items: flex-start; }
 .coach-msg .bubble { background: var(--bg); border-radius: 14px 14px 14px 4px; padding: 12px 14px; font-size: 14px; line-height: 1.5; color: var(--ink); max-width: 340px; }
+
+/* Progressive reveal for each block inside a streamed coach response. */
+.coach-block-in { animation: coach-block-in 0.32s ease-out; }
+@keyframes coach-block-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .coach-steps { display: flex; flex-direction: column; gap: 10px; }
 .coach-step { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: white; }
