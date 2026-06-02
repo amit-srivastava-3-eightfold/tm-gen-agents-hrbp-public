@@ -2579,3 +2579,114 @@
   background: #f0f4ff;
   border-color: #3b5bdb;
 }
+
+/* ── Roles admin toolbar (admin-only above the Roles table) ─────────── */
+.wfr-roles-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+.wfr-roles-admin__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wfr-roles-admin__search {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+}
+.wfr-roles-admin__search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 18px !important;
+  color: #94a3b8;
+  pointer-events: none;
+}
+.wfr-roles-admin__search-input {
+  flex: 1;
+  padding: 7px 32px 7px 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.wfr-roles-admin__search-input:focus {
+  border-color: #818cf8;
+  background: #fff;
+}
+.wfr-roles-admin__search-input::placeholder { color: #94a3b8; }
+.wfr-roles-admin__search-clear {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.wfr-roles-admin__search-clear:hover { background: #f1f5f9; color: #475569; }
+.wfr-roles-admin__search-clear .material-symbols-outlined { font-size: 16px; }
+.wfr-roles-admin__count {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Segment rail — DS Button handles the chrome; we just lay them out */
+.wfr-roles-admin__segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.wfr-roles-admin__segment.is-active {
+  /* DS secondary variant already gives a filled look; keep a hairline accent */
+  box-shadow: inset 0 0 0 1px #c7d2fe;
+}
+
+/* DS SelectTrigger sizing tweak so it fits inline with the search input */
+.wfr-roles-admin__dept-trigger { min-width: 160px; }
+
+/* Inline row actions on the admin Roles table */
+.wfr-roles-row-actions {
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+tr:hover .wfr-roles-row-actions { opacity: 1; }
+.wfr-roles-row-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.wfr-roles-row-actions__btn:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #f8fafc;
+}
+.wfr-roles-row-actions__btn .material-symbols-outlined { font-size: 15px; }

@@ -45,6 +45,11 @@ import { DevPlanSheet } from './DevPlanSheet'
 import { WfrSheet } from './WfrSheet'
 import { ManagerEmployeeTaskView } from './ManagerEmployeeTaskView'
 import { useEmployeeTaskState } from '../../hooks/useEmployeeTaskState'
+import { useUser } from '../../contexts/UserContext'
+import { RolesAdminToolbar, EMPTY_ROLES_ADMIN_FILTER, type RolesAdminFilter } from './RolesAdminToolbar'
+import { applyRolesAdminFilter } from './rolesAdminFilter'
+import { TasksReviewBadge } from './TasksReviewBadge'
+import { isRoleReviewed, markRoleReviewed, roleReviewKey } from './../../data/roleReviewState'
 import './WorkforceReadinessDashboard.css'
 import '../../pages/ManagerDetailPage.css'
 
@@ -744,6 +749,13 @@ function BoardView({
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
   onRoleClick?: (role: { title: string; deptName: string; employees: number; aiPotential: number; readiness: number; hrsUnlocked: number; gap: number }) => void
 }) {
+  // Admin role detection — currently mapped to CHRO persona. Swap to a
+  // dedicated `currentUser.role === 'admin'` flag when the user model gains
+  // one. HRBP/Manager BoardView instances never unlock admin affordances.
+  const { currentUser } = useUser()
+  const isRolesAdmin = !isHrbp && currentUser.id === 'chro'
+  const [rolesAdminFilter, setRolesAdminFilter] = useState<RolesAdminFilter>(EMPTY_ROLES_ADMIN_FILTER)
+
   // Derive convenience flags — for HRBP, use their persona-scoped state (not org-level)
   const effectiveFlagState = isHrbp && personaHrbpNames?.length ? getPersonaEffectiveState(wfrState, personaHrbpNames) : wfrState.state
   const { collectionActive: focusCollectionActive, collectionComplete: focusCollectionComplete, collectionJustCompleted, upskillingActive, hrbpPlansCreated, upskillingComplete } = deriveWfrFlags(effectiveFlagState)
@@ -940,6 +952,16 @@ function BoardView({
       }
     })
   }, [allDeptsSorted, hrbpPlansCreated, focusCollectionComplete, roleSort])
+
+  // Roles tab — admin filter pipeline + unique values for the Department dropdown.
+  const adminDeptOptions = useMemo(
+    () => Array.from(new Set(allRoles.map(r => r.dept))).sort(),
+    [allRoles],
+  )
+  const visibleRoles = useMemo(
+    () => (isRolesAdmin ? applyRolesAdminFilter(allRoles, rolesAdminFilter) : allRoles),
+    [isRolesAdmin, allRoles, rolesAdminFilter],
+  )
 
   // Cross-role task intelligence — shared tasks, high-exposure tasks, consolidation opps
   const taskIntelData = useMemo(() => {
@@ -1472,6 +1494,19 @@ function BoardView({
         </TabsContent>
 
         <TabsContent value="roles">
+          {isRolesAdmin && (
+            <RolesAdminToolbar
+              value={rolesAdminFilter}
+              onChange={setRolesAdminFilter}
+              departments={adminDeptOptions}
+              resultCount={visibleRoles.length}
+              totalCount={allRoles.length}
+              onNewRole={() => {
+                // Phase 3 hook — wizard mount lands here.
+                window.alert('New role wizard — coming next')
+              }}
+            />
+          )}
           <div className="wfr-dash__table-scroll">
           <DataTable bordered style={{ minWidth: 600, width: '100%' }}>
             <DataTableHeader>
@@ -1483,10 +1518,11 @@ function BoardView({
                 <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'readiness' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
+              {isRolesAdmin && <DataTableHead style={{ width: 80 }}>{''}</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
             <DataTableBody>
-              {allRoles.map((r) => {
+              {visibleRoles.map((r) => {
                 return (
                   <DataTableRow key={`${r.dept}-${r.title}`} style={{ cursor: 'pointer' }} onClick={() => { onRoleClick?.({ title: r.title, deptName: r.dept, employees: r.employees, aiPotential: r.aiPotential, readiness: focusCollectionComplete ? r.measuredReadiness : r.aiReadiness, hrsUnlocked: r.hrsUnlocked, gap: r.gap }) }}>
                     <DataTableCell className="font-semibold">{r.title}</DataTableCell>
@@ -1497,15 +1533,13 @@ function BoardView({
                       </button>
                     </DataTableCell>
                     <DataTableCell align="right">
-                      <button
-                        type="button"
+                      <TasksReviewBadge
+                        dept={r.dept}
+                        title={r.title}
+                        count={r.tasks}
+                        showReviewState={isRolesAdmin}
                         onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
-                        title="View tasks"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {r.tasks}
-                        <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span>
-                      </button>
+                      />
                     </DataTableCell>
                     <DataTableCell metric>
                       {focusCollectionComplete ? (
@@ -1571,6 +1605,20 @@ function BoardView({
                             <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>{r.gap.toLocaleString()} unassigned</span>
                           </div>
                         )}
+                      </DataTableCell>
+                    )}
+                    {isRolesAdmin && (
+                      <DataTableCell align="right">
+                        <span className="wfr-roles-row-actions" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="wfr-roles-row-actions__btn"
+                            title="Edit role tasks"
+                            onClick={() => { setTaskSheetRole({ title: r.title, dept: r.dept }) }}
+                          >
+                            <span className="material-symbols-outlined">edit</span>
+                          </button>
+                        </span>
                       </DataTableCell>
                     )}
                   </DataTableRow>
@@ -1766,17 +1814,32 @@ function BoardView({
       />
 
       {/* Task list sheet */}
-      {taskSheetRole && (
-        <WfrSheet
-          open
-          onClose={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }}
-          title={taskSheetRole.title}
-          subtitle={taskSheetRole.dept}
-          ariaLabel={`Tasks for ${taskSheetRole.title}`}
-        >
-          <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode="classification" />
-        </WfrSheet>
-      )}
+      {taskSheetRole && (() => {
+        const tsKey = roleReviewKey(taskSheetRole.dept, taskSheetRole.title)
+        const needsReview = isRolesAdmin && !isRoleReviewed(tsKey)
+        return (
+          <WfrSheet
+            open
+            onClose={() => { setTaskSheetRole(null); setTaskSheetTab('classification') }}
+            title={taskSheetRole.title}
+            subtitle={taskSheetRole.dept}
+            ariaLabel={`Tasks for ${taskSheetRole.title}`}
+            headerActions={needsReview ? (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => { markRoleReviewed(tsKey); setTaskSheetRole(null); setTaskSheetTab('classification') }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 15 }} aria-hidden>check</span>
+                Mark reviewed
+              </Button>
+            ) : undefined}
+          >
+            <WfrTaskSheetBody role={taskSheetRole} phase={hrbpPlansCreated ? 'upskilled' : focusCollectionComplete ? 'calibrated' : 'baseline'} viewMode="classification" />
+          </WfrSheet>
+        )
+      })()}
 
       {/* HRBP dev plan role selection dialog */}
       {hrbpDevPlanDialogOpen && (() => {
