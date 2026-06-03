@@ -43,6 +43,7 @@ interface TemplateData {
   location: string
   skills: string[]
   courses: { title: string; provider: string; duration: string; level: string; free: boolean }[]
+  progressModules?: number
 }
 
 const TEMPLATE_DATA: Record<string, TemplateData> = {
@@ -169,6 +170,25 @@ const TEMPLATE_DATA: Record<string, TemplateData> = {
       { title: 'Prompt Engineering for ChatGPT', provider: 'Vanderbilt University', duration: '18 hours to complete', level: 'Beginner', free: true },
       { title: 'AI-Assisted Engineering Workflows', provider: 'Eightfold Academy', duration: 'Self-paced', level: 'Intermediate', free: false },
     ],
+  },
+  'strategic-account-management': {
+    name: 'Strategic Account Management',
+    description: 'Develop the skills to manage and grow complex enterprise accounts — from executive stakeholder engagement and renewal strategy to expansion playbooks and long-term relationship management.',
+    status: 'Draft',
+    createdBy: 'Alex Nakamura',
+    role: 'Senior Customer Success Manager',
+    duration: 10,
+    businessUnit: 'Customer Success',
+    jobFunction: 'Customer Success Management',
+    location: 'All',
+    skills: ['Executive stakeholder management', 'Renewal strategy', 'Expansion playbooks', 'QBR facilitation', 'Risk identification', 'Account planning'],
+    courses: [
+      { title: 'Strategic Account Management', provider: 'Eightfold Academy', duration: '3 hrs · self-paced', level: 'Intermediate', free: true },
+      { title: 'Executive Communication for CSMs', provider: 'LinkedIn Learning', duration: '2 hrs · self-paced', level: 'Intermediate', free: false },
+      { title: 'Renewal & Expansion Playbooks', provider: 'Eightfold Academy', duration: '2 hrs · self-paced', level: 'Advanced', free: true },
+      { title: 'Data-Driven Account Health', provider: 'Coursera', duration: '4 hrs · self-paced', level: 'Intermediate', free: false },
+    ],
+    progressModules: 1,
   },
 }
 
@@ -524,8 +544,10 @@ export function DevPlanTemplateDetailPage() {
                 // Read WFR state to determine plan completion
                 let wfrState = 1
                 try { wfrState = JSON.parse(localStorage.getItem('tm:wfr-state') || '{}').state ?? 1 } catch {}
-                // AI plan completion derives from WFR state; all other plans are always complete for the employee view
-                const planComplete = templateId !== 'ai-powered-customer-success' || (wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })())
+                // Plans with progressModules use that for completion; AI plan uses WFR state; all others default to complete
+                const planComplete = template.progressModules !== undefined
+                  ? template.progressModules >= 4
+                  : templateId !== 'ai-powered-customer-success' || (wfrState >= 5 && (() => { const h = currentUser.name.split('').reduce((a: number, c: string) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); return Math.abs(h) % 4 === 0 })())
                 const basePct = 48
                 const totalPlanPts = 14
                 const currentPct = planComplete ? basePct + totalPlanPts : basePct
@@ -615,7 +637,8 @@ export function DevPlanTemplateDetailPage() {
                     {/* Curriculum */}
                     <div className="dev-plan-sheet__curriculum-heading">Curriculum · {levels.length} modules</div>
                     {levels.map(level => {
-                      const state: LevelState = planComplete ? 'recognized' : level.id === 1 ? 'current' : 'locked'
+                      const prog = template.progressModules ?? 0
+                      const state: LevelState = planComplete ? 'recognized' : level.id <= prog ? 'recognized' : level.id === prog + 1 ? 'current' : 'locked'
                       return (
                         <div key={level.id} id={`dev-plan-step-${level.id}`} style={{ scrollMarginTop: 120 }}>
                           <LevelCard

@@ -6,7 +6,8 @@ import { TabsWithLines } from '../components/ui/TabsWithLines'
 import { NavbarApp } from '../components/Navbar'
 import { useUser } from '../contexts/UserContext'
 import { Button } from '../components/ui/Button'
-import { Button as DsButton, ProductBackground, StatCard } from '@tonyh-2-eightfold/ef-design-system'
+import { Button as DsButton, Input, ProductBackground, StatCard } from '@tonyh-2-eightfold/ef-design-system'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/Select'
 import { WaveBackground } from '../components/WaveBackground'
 import { OpenTo } from '../components/OpenTo'
 import { AboutCard } from '../components/AboutCard'
@@ -51,6 +52,8 @@ export function ProfilePage() {
   const initialTab = searchParams.get('tab') ?? 'experience'
   const [view, setView] = useState('own')
   const [hoveredPlanRow, setHoveredPlanRow] = useState<number | null>(null)
+  const [planStatusFilter, setPlanStatusFilter] = useState('all')
+  const [planSearch, setPlanSearch] = useState('')
   const { currentUser } = useUser()
   const avatarSrc = currentUser.avatarType === 'photo' && currentUser.avatarPhotoSrc
     ? currentUser.avatarPhotoSrc
@@ -231,14 +234,26 @@ export function ProfilePage() {
                 </div>
 
                 {/* Filters */}
-                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-                  <button type="button" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 6, border: '1px solid #d9dce1', background: '#fff', fontSize: 13, color: '#475569', cursor: 'pointer' }}>
-                    Plan status <span style={{ fontSize: 10 }}>▼</span>
-                  </button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: '1px solid #d9dce1', background: '#fff', flex: 1, maxWidth: 240 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#94a3b8' }}>search</span>
-                    <span style={{ fontSize: 13, color: '#94a3b8' }}>Search Plan</span>
-                  </div>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+                  <Select value={planStatusFilter} onValueChange={setPlanStatusFilter}>
+                    <SelectTrigger style={{ minWidth: 140 }}>
+                      <SelectValue placeholder="Plan status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="In progress">In progress</SelectItem>
+                      <SelectItem value="Not started">Not started</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    size="medium"
+                    leadingIcon="search"
+                    placeholder="Search Plan"
+                    value={planSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlanSearch(e.target.value)}
+                    style={{ maxWidth: 240 }}
+                  />
                 </div>
 
                 {/* Plans table */}
@@ -251,6 +266,7 @@ export function ProfilePage() {
 
                   const plans: PlanRow[] = currentUser.id === 'csm' ? [
                     ...(wfrState.state >= 4 ? [{ name: 'AI for Customer Success', status: aiStatus, createdBy: 'Workforce Readiness', role: 'Customer Success Manager', planTitle: 'Customer Success Manager', assignDate: '4/10/2026', updatedOn: aiPlanDone ? '4/11/2026' : '4/10/2026', duration: 8, aiGenerated: true, planPct: aiPlanDone ? 100 : undefined, href: '/my-activity/dev-plan-templates/ai-powered-customer-success' }] : []),
+                    { name: 'Strategic Account Management', status: 'In progress', createdBy: 'Alex Nakamura', role: 'Customer Success Manager', planTitle: 'Senior Customer Success Manager', assignDate: '4/1/2026', updatedOn: '5/20/2026', duration: 10, planPct: 40, href: '/my-activity/dev-plan-templates/strategic-account-management' },
                     { name: 'Platform Reliability Fundamentals', status: 'Completed', createdBy: 'Alex Nakamura', role: 'Customer Success Manager', planTitle: 'Site Reliability Engineer', assignDate: '1/15/2026', updatedOn: '3/10/2026', duration: 8, planPct: 100, href: '/my-activity/dev-plan-templates/platform-reliability-fundamentals' },
                     { name: 'Engineering Leadership Growth', status: 'Completed', createdBy: 'Alex Nakamura', role: 'Customer Success Manager', planTitle: 'Engineering Manager', assignDate: '11/1/2025', updatedOn: '1/20/2026', duration: 10, planPct: 100, href: '/my-activity/dev-plan-templates/engineering-leadership-growth' },
                     { name: 'Data-Driven Customer Success', status: 'Completed', createdBy: 'Workforce Readiness', role: 'Customer Success Manager', planTitle: 'Customer Success Manager', assignDate: '8/5/2025', updatedOn: '10/20/2025', duration: 8, planPct: 100, href: '/my-activity/dev-plan-templates/data-driven-customer-success' },
@@ -259,6 +275,12 @@ export function ProfilePage() {
                     { name: 'Technical Marketing Skills', status: 'In progress', createdBy: 'Mateo Myer', role: 'Director of Product Marketing', planTitle: 'Director of Product Marketing', assignDate: '2/25/2026', updatedOn: '2/25/2026', duration: 10 },
                     { name: 'Plan for Marketing Manager', status: 'In progress', createdBy: 'Mateo Myer', role: 'Marketing Manager', planTitle: 'Marketing Manager', assignDate: '2/25/2026', updatedOn: '2/25/2026', duration: 10 },
                   ]
+
+                  const filteredPlans = plans.filter(plan => {
+                    const matchesStatus = planStatusFilter === 'all' || plan.status === planStatusFilter
+                    const matchesSearch = !planSearch || plan.name.toLowerCase().includes(planSearch.toLowerCase())
+                    return matchesStatus && matchesSearch
+                  })
 
                   return (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -274,7 +296,7 @@ export function ProfilePage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {plans.map((plan, i) => (
+                        {filteredPlans.map((plan, i) => (
                           <tr
                             key={i}
                             onClick={() => { if (plan.href) { window.scrollTo(0, 0); navigate(plan.href) } }}
@@ -288,8 +310,8 @@ export function ProfilePage() {
                                 {plan.aiGenerated && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: '#6366f1', background: '#eff3ff', border: '1px solid #c5d3f8', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}><span className="material-symbols-outlined" style={{ fontSize: 11 }}>auto_awesome</span>AI generated</span>}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: plan.status === 'Completed' ? '#22c55e' : plan.status === 'In progress' ? '#22c55e' : '#94a3b8' }} />
-                                <span style={{ fontSize: 12, color: plan.status === 'Completed' ? '#15803d' : '#475569' }}>{plan.status}</span>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: plan.status === 'Completed' ? '#22c55e' : plan.status === 'In progress' ? '#f59e0b' : '#94a3b8' }} />
+                                <span style={{ fontSize: 12, color: plan.status === 'Completed' ? '#15803d' : plan.status === 'In progress' ? '#b45309' : '#475569' }}>{plan.status}</span>
                               </div>
                             </td>
                             <td style={{ padding: '14px 12px', color: '#475569' }}>{plan.createdBy}</td>

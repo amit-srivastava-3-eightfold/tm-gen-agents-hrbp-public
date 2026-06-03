@@ -16,8 +16,8 @@
     {
       "name": "ds-demo",
       "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/dev/ef-design-system && npm run build && cd demo && npm run dev"],
-      "port": 5188
+      "runtimeArgs": ["-c", "export PATH=\"/Users/tony/.nvm/versions/node/v24.5.0/bin:$PATH\" && cd /Users/tony/dev/ef-design-system && npm --prefix web run dev"],
+      "port": 3000
     },
     {
       "name": "ai-coach",
