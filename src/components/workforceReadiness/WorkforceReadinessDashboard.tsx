@@ -2923,6 +2923,7 @@ export function WorkforceReadinessDashboard({
           hint: `Pushed by Laura Shah on May 28 across ${mgrModalRoles.length} role${mgrModalRoles.length === 1 ? '' : 's'} — review and apply.`,
           buttonLabel: 'Review & apply updates',
           buttonVariant: 'primary',
+          accent: '#0f766e',
           variant: 'card',
         }}
         onButtonClick={() => {
