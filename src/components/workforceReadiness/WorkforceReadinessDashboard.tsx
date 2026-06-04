@@ -232,6 +232,7 @@ const METRIC_INFO = {
   readiness: 'People in augmentable roles using AI effectively ÷ total people in augmentable roles',
   potential: 'BLS median wages × weekly hours unlocked × 52 weeks',
   gap: 'People in augmentable roles not yet AI-ready — your upskilling pool',
+  aiPotential: 'Share of daily tasks in the augmentation zone (15–75% AI exposure score) — work AI can help with today',
 } as const
 
 export function MetricInfoDialog({ open, onClose, collectionComplete = false }: { open: boolean; onClose: () => void; collectionComplete?: boolean }) {
@@ -244,10 +245,10 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
           <span className="material-symbols-outlined">close</span>
         </button>
 
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 8px' }}>Understanding your four core metrics</h2>
-        <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 28px' }}>Four numbers that tell you where your workforce stands — and exactly where to act.</p>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 8px' }}>Understanding your core metrics</h2>
+        <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 28px' }}>Three numbers that tell you where your workforce stands — and exactly where to act.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
           {/* AI Potential card */}
           <div style={{ border: '1.5px solid #bbf7d0', borderRadius: 12, padding: '20px 16px', background: '#f0fdf4' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -329,29 +330,6 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
             )}
           </div>
 
-          {/* Transformation Gap card */}
-          <div style={{ border: '1.5px solid #fecaca', borderRadius: 12, padding: '20px 16px', background: '#fef2f2' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#dc2626', background: 'rgba(220,38,38,0.10)', borderRadius: 8, padding: 5 }}>groups</span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#dc2626' }}>Transformation Gap</span>
-            </div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', lineHeight: 1.35, margin: '0 0 8px' }}>Employees in augmentable roles who aren't yet AI-ready.</h3>
-            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 14px' }}>The gap between AI Potential and AI Adoption — counted as people, not percentages. Each person in the gap gets a role-specific development plan.</p>
-            <div style={{ borderTop: '1px solid rgba(220,38,38,0.15)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>Scope</strong> — only employees in augmentable roles are counted, not total headcount.</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>Action</strong> — role-specific dev plans sourced from your learning catalog, mapped to augmentable tasks.</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', marginTop: 6, flexShrink: 0 }} />
-                <span><strong style={{ color: '#0f172a' }}>Goal</strong> — drive adoption up and this number down, quarter over quarter.</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>,
@@ -362,7 +340,7 @@ export function MetricInfoDialog({ open, onClose, collectionComplete = false }: 
 type MgrSortCol = 'name' | 'readiness' | 'potential' | 'gap'
 
 /** Shared overview layout: hero section (MetricArc + headline + pill) + 3 metric cards row. */
-function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, pill, cards, beforeCards, heroCta, hideHero, children }: {
+function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, headline, pill, cards, beforeCards, heroCta, crowdHero, heroCtaIsCard, hoverReadinessPct, hideHero, children }: {
   aiPotentialPct: number
   aiReadinessPct: number
   totalEmployees: number
@@ -372,21 +350,42 @@ function WfrOverviewLayout({ aiPotentialPct, aiReadinessPct, totalEmployees, hea
   cards: { id: 'ai-potential' | 'readiness' | 'potential' | 'gap'; icon: string; label: string; badge?: React.ReactNode; value: React.ReactNode; description: React.ReactNode; hint?: string; tag?: React.ReactNode; explainer?: React.ReactNode; onLearnMore?: () => void; cardChildren?: React.ReactNode }[]
   /** Content rendered between hero and cards (e.g. FocusFirst module) */
   beforeCards?: React.ReactNode
-  /** CTA bar rendered inside the hero card's ctaBar slot */
+  /** CTA bar — rendered as an internal band (states 2–5) or a standalone card below the hero (state 1) */
   heroCta?: React.ReactNode
+  /** Use the crowd dot-field hero variant (WFR dashboard) instead of the gauge variant */
+  crowdHero?: boolean
+  /** When true, render heroCta as a standalone card below the hero instead of an internal band */
+  heroCtaIsCard?: boolean
+  /** Live readiness % from a hovered row — smoothly updates the crowd hero dots. */
+  hoverReadinessPct?: number
   hideHero?: boolean
   children?: React.ReactNode
 }) {
   return (
     <div className="wfr-dash" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {!hideHero && (
-        <WfrHeroCard
-          gauge={<MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />}
-          eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
-          headline={headline}
-          supportingText={pill}
-          ctaBar={heroCta}
-        />
+        crowdHero ? (
+          <>
+            <WfrHeroCard
+              variant="crowd"
+              readinessPct={aiReadinessPct}
+              hoverReadinessPct={hoverReadinessPct}
+              eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
+              headline={headline}
+              supportingText={pill}
+              ctaBar={heroCtaIsCard ? undefined : heroCta}
+            />
+            {heroCtaIsCard && heroCta}
+          </>
+        ) : (
+          <WfrHeroCard
+            gauge={<MetricArc potential={aiPotentialPct} readiness={aiReadinessPct} size="lg" />}
+            eyebrow={<>{totalEmployees.toLocaleString()} employees {EM} Q1 2026</>}
+            headline={headline}
+            supportingText={pill}
+            ctaBar={heroCta}
+          />
+        )
       )}
 
       {beforeCards}
@@ -818,21 +817,23 @@ function BoardView({
   const fmtPotential = (hrs: number) => potentialUnit === 'hours' ? formatHours(hrs) : formatDollars(hrs)
   const [boardTab, setBoardTab] = useState<'hrbps' | 'roles' | 'departments' | 'intelligence'>('hrbps')
   const [hoveredOpp, setHoveredOpp] = useState<number | null>(null)
-  const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
+  const [deptSort, setDeptSort] = useState<{ col: 'name' | 'hrbp' | 'headcount' | 'readiness' | 'potential' | 'gap' | 'aiPotential', dir: 'asc' | 'desc' }>({ col: 'gap', dir: 'desc' })
   const toggleDeptSort = (col: typeof deptSort['col']) => {
     setDeptSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'hrbp' ? 'asc' : 'desc' })
   }
-  const [hrbpSort, setHrbpSort] = useState<{ col: 'hrbp' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
+  const [hrbpSort, setHrbpSort] = useState<{ col: 'hrbp' | 'readiness' | 'potential' | 'gap' | 'aiPotential', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
   const toggleHrbpSort = (col: typeof hrbpSort['col']) => {
     setHrbpSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'hrbp' ? 'asc' : 'desc' })
   }
-  const [roleSort, setRoleSort] = useState<{ col: 'name' | 'dept' | 'headcount' | 'readiness' | 'potential' | 'gap', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
+  const [roleSort, setRoleSort] = useState<{ col: 'name' | 'dept' | 'headcount' | 'readiness' | 'potential' | 'gap' | 'aiPotential', dir: 'asc' | 'desc' }>({ col: 'potential', dir: 'desc' })
   const toggleRoleSort = (col: typeof roleSort['col']) => {
     setRoleSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' || col === 'dept' ? 'asc' : 'desc' })
   }
   const [taskSheetRole, setTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
   const [, setTaskSheetTab] = useState<'all' | 'classification' | 'source'>('classification')
   const [metricInfoOpen, setMetricInfoOpen] = useState(false)
+  /** Readiness % for a hovered row — drives crowd hero dot live update. Undefined = show view default. */
+  const [hoverReadinessPct, setHoverReadinessPct] = useState<number | undefined>(undefined)
 
   const [chroUpskillingInfoOpen, setChroUpskillingInfoOpen] = useState(false)
   const [hrbpDevPlanDialogOpen, setHrbpDevPlanDialogOpen] = useState(false)
@@ -859,6 +860,7 @@ function BoardView({
         case 'readiness': return mul * (a.aiReadiness - b.aiReadiness)
         case 'potential': return mul * (a.hrsUnlocked - b.hrsUnlocked)
         case 'gap': return mul * (deptGapHeadcount(a) - deptGapHeadcount(b))
+        case 'aiPotential': return mul * (a.aiPotential - b.aiPotential)
         default: return 0
       }
     })
@@ -921,6 +923,7 @@ function BoardView({
         case 'readiness': return mul * (a.avgReadiness - b.avgReadiness)
         case 'potential': return mul * (a.totalHrsUnlocked - b.totalHrsUnlocked)
         case 'gap': return mul * (a.totalGap - b.totalGap)
+        case 'aiPotential': return mul * (a.avgPotential - b.avgPotential)
         default: return 0
       }
     })
@@ -948,6 +951,7 @@ function BoardView({
         case 'readiness': return mul * ((focusCollectionComplete ? a.measuredReadiness : a.aiReadiness) - (focusCollectionComplete ? b.measuredReadiness : b.aiReadiness))
         case 'potential': return mul * (a.hrsUnlocked - b.hrsUnlocked)
         case 'gap': return mul * (a.gap - b.gap)
+        case 'aiPotential': return mul * (a.aiPotential - b.aiPotential)
         default: return 0
       }
     })
@@ -1224,6 +1228,9 @@ function BoardView({
         cardChildren: (c as any).cardChildren,
         onLearnMore: () => setMetricInfoOpen(true),
       }))}
+      crowdHero
+      heroCtaIsCard={ctaDemoState === 1}
+      hoverReadinessPct={hoverReadinessPct}
       heroCta={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={ctaButtonClick} onBarClick={ctaDemoState === 2 ? onCompleteCollection : undefined} /> : undefined}
     >
         <WorkforceMetricSheet
@@ -1272,9 +1279,10 @@ function BoardView({
             <DataTableHeader>
               <DataTableRow>
                 <DataTableHead style={{ width: '22%', cursor: 'pointer' }} onClick={() => toggleHrbpSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={hrbpSort.col === 'hrbp' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('hrbp')} /></span></DataTableHead>
-                <DataTableHead style={{ width: '16%' }}>Departments</DataTableHead>
-                <DataTableHead metric style={{ width: '14%' }}><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'readiness' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('readiness')} /></DataTableHead>
-                <DataTableHead numeric style={{ width: '16%' }}><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
+                <DataTableHead style={{ width: '15%' }}>Departments</DataTableHead>
+                <DataTableHead metric style={{ width: '13%' }}><MetricHeaderLabel label={'AI potential'} metric="aiPotential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'aiPotential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('aiPotential')} /></DataTableHead>
+                <DataTableHead metric style={{ width: '13%' }}><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'readiness' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('readiness')} /></DataTableHead>
+                <DataTableHead numeric style={{ width: '15%' }}><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={hrbpSort.col === 'potential' ? hrbpSort.dir : null} onSortClick={() => toggleHrbpSort('potential')} /></DataTableHead>
                 {!focusCollectionComplete && (anyDelegation || focusCollectionActive) && <DataCollectionHead />}
                 {focusCollectionComplete && <DataTableHead metric className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '18%' }}>Upskilling progress</DataTableHead>}
               </DataTableRow>
@@ -1317,6 +1325,9 @@ function BoardView({
                         </button>
                       ))}
                     </div>
+                  </DataTableCell>
+                  <DataTableCell metric>
+                    <DeptTableSoloBar variant="potential" pct={row.avgPotential} width={90} />
                   </DataTableCell>
                   <DataTableCell metric>
                     <div>
@@ -1370,6 +1381,7 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="aiPotential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'aiPotential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('aiPotential')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
                               </DataTableRow>
@@ -1383,7 +1395,7 @@ function BoardView({
                 const isPriority = priorityRank !== undefined
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)} onMouseEnter={() => setHoverReadinessPct(d.aiReadiness)} onMouseLeave={() => setHoverReadinessPct(undefined)}>
                       <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                         <div className="flex items-center gap-2">
                           <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
@@ -1401,6 +1413,7 @@ function BoardView({
                           ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                       <DataTableCell metric>
                         {upskillingComplete && trend.delta < 0 ? (
                           <DeptTableSoloBar variant="readiness" pct={measuredReadiness} />
@@ -1428,6 +1441,7 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="aiPotential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'aiPotential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('aiPotential')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
               </DataTableRow>
@@ -1436,7 +1450,7 @@ function BoardView({
               {allDeptsSorted.map((d) => {
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)} onMouseEnter={() => setHoverReadinessPct(d.aiReadiness)} onMouseLeave={() => setHoverReadinessPct(undefined)}>
                       <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                         <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
                       </DataTableCell>
@@ -1445,6 +1459,7 @@ function BoardView({
                           ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                       <DataTableCell metric><DeptTableSoloBar variant="readiness" pct={d.aiReadiness} /></DataTableCell>
                       <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); onUnrealizedValueClick?.({ label: d.name, subtitle: `${d.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: d.employees, hrsUnlocked: d.hrsUnlocked }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtPotential(d.hrsUnlocked)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                     </DataTableRow>
@@ -1460,6 +1475,7 @@ function BoardView({
               <DataTableRow>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('name')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={deptSort.col === 'name' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('name')} /></span></DataTableHead>
                 <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleDeptSort('hrbp')}><span className="inline-flex items-center gap-1">HRBP <SortIcon sortDir={deptSort.col === 'hrbp' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('hrbp')} /></span></DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="aiPotential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'aiPotential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('aiPotential')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'Team AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'readiness' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={deptSort.col === 'potential' ? deptSort.dir : null} onSortClick={() => toggleDeptSort('potential')} /></DataTableHead>
               </DataTableRow>
@@ -1468,7 +1484,7 @@ function BoardView({
               {sorted.map((d) => {
                 const deptHrbps = getDeptHrbps(d.name)
                 return (
-                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)}>
+                    <DataTableRow key={d.name} style={{ cursor: 'pointer' }} onClick={() => onDeptClick(d)} onMouseEnter={() => setHoverReadinessPct(d.aiReadiness)} onMouseLeave={() => setHoverReadinessPct(undefined)}>
                       <DataTableCell className="font-semibold" style={{ borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                         <span className="text-[#3b5bdb] hover:underline">{d.name}</span>
                       </DataTableCell>
@@ -1477,6 +1493,7 @@ function BoardView({
                           ? <><button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0].hrbp}</button>{` +${deptHrbps.length - 1}`}</>
                           : <button type="button" className="text-[#3b5bdb] hover:underline font-medium" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onHrbpClick(deptHrbps[0].hrbp) }}>{deptHrbps[0]?.hrbp ?? '—'}</button>}
                       </DataTableCell>
+                      <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                       <DataTableCell metric>
                         <DeptTableSoloBar variant="readiness" pct={d.aiReadiness} />
                       </DataTableCell>
@@ -1515,6 +1532,7 @@ function BoardView({
                 {!isHrbp && <DataTableHead style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('dept')}><span className="inline-flex items-center gap-1">Department <SortIcon sortDir={roleSort.col === 'dept' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('dept')} /></span></DataTableHead>}
                 <DataTableHead numeric style={{ cursor: 'pointer' }} onClick={() => toggleRoleSort('headcount')}><span className="inline-flex items-center gap-1">Headcount <SortIcon sortDir={roleSort.col === 'headcount' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('headcount')} /></span></DataTableHead>
                 <DataTableHead numeric>Tasks</DataTableHead>
+                <DataTableHead metric><MetricHeaderLabel label="AI potential" metric="aiPotential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'aiPotential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('aiPotential')} /></DataTableHead>
                 <DataTableHead metric><MetricHeaderLabel label={'AI adoption'} metric="readiness" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'readiness' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('readiness')} /></DataTableHead>
                 <DataTableHead numeric><MetricHeaderLabel label="Productivity potential" metric="potential" onInfoClick={() => setMetricInfoOpen(true)} sortDir={roleSort.col === 'potential' ? roleSort.dir : null} onSortClick={() => toggleRoleSort('potential')} /></DataTableHead>
                 {upskillingActive && <DataTableHead>Upskilling status</DataTableHead>}
@@ -1541,6 +1559,7 @@ function BoardView({
                         onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
                       />
                     </DataTableCell>
+                    <DataTableCell metric><DeptTableSoloBar variant="potential" pct={r.aiPotential} width={90} /></DataTableCell>
                     <DataTableCell metric>
                       {focusCollectionComplete ? (
                         <div className="wfr-dash__readiness-with-trend">
@@ -2134,6 +2153,7 @@ export function WorkforceReadinessDashboard({
   const toggleMgrSort = (col: MgrSortCol) => {
     setMgrSort(prev => prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'name' ? 'asc' : 'desc' })
   }
+  const [hoverReadinessPct, setHoverReadinessPct] = useState<number | undefined>(undefined)
   const [hrbpPanelTab, setHrbpPanelTab] = useState<'managers' | 'roles' | 'intelligence'>('managers')
   const [mgrPanelTab, setMgrPanelTab] = useState<'team' | 'intelligence'>('team')
   const [hrbpPotentialUnit, setHrbpPotentialUnit] = useState<'hours' | 'dollars'>('dollars')
@@ -2901,9 +2921,9 @@ export function WorkforceReadinessDashboard({
           icon: 'campaign',
           label: `Task updates available for ${mgrPendingTotal} of your team member${mgrPendingTotal === 1 ? '' : 's'}.`,
           hint: `Pushed by Laura Shah on May 28 across ${mgrModalRoles.length} role${mgrModalRoles.length === 1 ? '' : 's'} — review and apply.`,
-          buttonLabel: 'Review & apply updates →',
-          buttonVariant: 'secondary',
-          accent: 'rgba(217,119,6,0.55)',
+          buttonLabel: 'Review & apply updates',
+          buttonVariant: 'primary',
+          variant: 'card',
         }}
         onButtonClick={() => {
           // Pre-select every unapplied employee by default
@@ -2924,13 +2944,16 @@ export function WorkforceReadinessDashboard({
         aiPotentialPct={mgrDept.aiPotential}
         aiReadinessPct={displayReadinessPct}
         totalEmployees={mgrEmployees.length}
+        crowdHero
+        heroCtaIsCard={mgrCtaDemoState === 1 || mgrPendingTotal > 0}
+        hoverReadinessPct={hoverReadinessPct}
         headline={mgrPlansCreated ? (
           <>
             <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadinessPct}%</span>
             <span className="wfr-dash__headline-text">{` AI adoption on your team — up from ${mgrReadinessBaseline}% before upskilling.`}</span>
           </>
         ) : (
-          <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> are AI-ready.</span>
+          <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadinessPct}%</span> of your team is AI-ready.</span>
         )}
         subtitle={<>Your team has <span className="font-bold wfr-text-potential">{formatHours(displayMgrHrsUnlocked)}</span> in annual productivity potential to unlock.</>}
         pill={<><strong style={{ fontWeight: 700 }}>{displayNotReady.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>}
@@ -2960,10 +2983,11 @@ export function WorkforceReadinessDashboard({
           <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
             <DataTableHeader>
               <DataTableRow>
-                <DataTableHead style={{ width: showUpskilling ? '18%' : '22%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
-                <DataTableHead style={{ width: '16%' }}>Role</DataTableHead>
-                <DataTableHead numeric style={{ width: showUpskilling ? '18%' : '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
-                <DataTableHead metric style={{ width: showUpskilling ? '22%' : '24%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
+                <DataTableHead style={{ width: showUpskilling ? '16%' : '20%', cursor: 'pointer' }} onClick={() => toggleEmpSort('name')}><span className="inline-flex items-center gap-1">Employee <SortIcon sortDir={empSort.col === 'name' ? empSort.dir : null} onSortClick={() => toggleEmpSort('name')} /></span></DataTableHead>
+                <DataTableHead style={{ width: '14%' }}>Role</DataTableHead>
+                <DataTableHead numeric style={{ width: showUpskilling ? '14%' : '16%', cursor: 'pointer' }} onClick={() => toggleEmpSort('tasks')}><span className="inline-flex items-center gap-1">Tasks <SortIcon sortDir={empSort.col === 'tasks' ? empSort.dir : null} onSortClick={() => toggleEmpSort('tasks')} /></span></DataTableHead>
+                <DataTableHead metric style={{ width: showUpskilling ? '13%' : '14%' }}><MetricHeaderLabel label="AI potential" metric="aiPotential" onInfoClick={() => setMgrMetricInfoOpen(true)} /></DataTableHead>
+                <DataTableHead metric style={{ width: showUpskilling ? '20%' : '22%' }}><MetricHeaderLabel label="AI adoption" metric="readiness" onInfoClick={() => setMgrMetricInfoOpen(true)} sortDir={empSort.col === 'readiness' ? empSort.dir : null} onSortClick={() => toggleEmpSort('readiness')} /></DataTableHead>
                 {showUpskilling && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ width: '15%', whiteSpace: 'nowrap' }}>Upskilling</DataTableHead>}
               </DataTableRow>
             </DataTableHeader>
@@ -2985,7 +3009,7 @@ export function WorkforceReadinessDashboard({
                 const empDisplayPct = showUpskilling ? rawDisplayPct : 0
                 const upskillingComplete = showUpskilling && emp._planPct === 100
                 return (
-                <DataTableRow key={`${emp.name}-${idx}`}>
+                <DataTableRow key={`${emp.name}-${idx}`} onMouseEnter={() => setHoverReadinessPct(displayEmpReadiness)} onMouseLeave={() => setHoverReadinessPct(undefined)}>
                   <DataTableCell className="font-semibold" style={showUpskilling ? { borderLeft: '3px solid #6366f1', paddingLeft: 17 } : { borderLeft: '3px solid transparent', paddingLeft: 17 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <PersonAvatar name={emp.name} size={28} src={mgrPhotoMap.get(emp.name)} />
@@ -3033,6 +3057,7 @@ export function WorkforceReadinessDashboard({
                       ) : <span style={{ color: '#cbd5e1' }}>—</span>}
                     </div>
                   </DataTableCell>
+                  <DataTableCell metric><DeptTableSoloBar variant="potential" pct={mgrDept.aiPotential} width={80} /></DataTableCell>
                   <DataTableCell metric>
                     <div>
                       {mgrCollComplete && empTrendDelta !== 0 ? (
@@ -4100,6 +4125,9 @@ export function WorkforceReadinessDashboard({
                   : <><strong style={{ fontWeight: 700 }}>{dirTotalGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
                 }
                 cards={hrbpOverviewCards}
+                crowdHero
+                heroCtaIsCard={hrbpCtaDemoState === 1}
+                hoverReadinessPct={hoverReadinessPct}
                 heroCta={hrbpHeroCta}
               >
                 <Tabs value={hrbpPanelTab} onValueChange={(v: string) => setHrbpPanelTab(v as 'managers' | 'roles' | 'intelligence')}>
@@ -4135,12 +4163,12 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
-                        <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                        <DataTableHead style={{ width: '28%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                        <DataTableHead metric style={{ width: '15%' }}>Team AI potential</DataTableHead>
+                        <DataTableHead metric style={{ width: '13%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '15%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                         {showHrbpCollection && <DataCollectionHead />}
-                        {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                        {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
@@ -4169,13 +4197,15 @@ export function WorkforceReadinessDashboard({
                         const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
                         const dirPrioritySet = new Set(dirScoresSorted.slice(0, dirPriorityCount).map(r => r.key))
                         return sortedDirs.map((dir) => {
-                          const notReady = dir.employees - dir.readyCount
                           const dirResponseRate = hrbpCollecting && !hrbpJustLaunched ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
                           return (
                             <DataTableRow
                               key={dir.name}
                               style={{ cursor: 'pointer' }}
+                              onMouseEnter={() => setHoverReadinessPct(dir.readiness)}
+                              onMouseLeave={() => setHoverReadinessPct(undefined)}
                               onClick={() => {
+                                setHoverReadinessPct(undefined)
                                 setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName, readiness: dir.readiness })
                                 setView('director')
                                 window.scrollTo(0, 0)
@@ -4198,6 +4228,7 @@ export function WorkforceReadinessDashboard({
                                   <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
                                 </div>
                               </DataTableCell>
+                              <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                               <DataTableCell metric>
                                 <div>
                                   {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) && !(hrbpUpskillingComplete && deptTrendDelta < 0) ? (
@@ -4220,12 +4251,6 @@ export function WorkforceReadinessDashboard({
                               {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
                           <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{fmtHrbpPotential(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
-                              <DataTableCell align="right">
-                                <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                                  <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
-                                  <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dir.employees.toLocaleString()}</div>
-                                </div>
-                              </DataTableCell>
                               {showHrbpCollection && (
                                 hrbpDelegatedPending
                                   ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
@@ -4632,12 +4657,12 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
-                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
+                    <DataTableHead style={{ width: '28%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '15%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead metric style={{ width: '13%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '15%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
                     {showHrbpCollection && <DataCollectionHead />}
-                    {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                    {hrbpUpskillingActive && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -4666,14 +4691,16 @@ export function WorkforceReadinessDashboard({
                     const dirPriorityCount = Math.max(1, Math.round(dirScoresSorted.length * 0.3))
                     const dirPrioritySet = new Set(dirScoresSorted.slice(0, dirPriorityCount).map(r => r.key))
                     return sortedDirs.map((dir) => {
-                      const notReady = dir.employees - dir.readyCount
                       // Deterministic per-director response rate (varies around HRBP dept rate)
                       const dirResponseRate = hrbpCollecting && !hrbpJustLaunched ? Math.max(5, Math.min(95, hrbpResponseRate + ((dir.name.length * 7) % 30) - 15)) : 0
                       return (
                         <DataTableRow
                           key={dir.name}
                           style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setHoverReadinessPct(dir.readiness)}
+                          onMouseLeave={() => setHoverReadinessPct(undefined)}
                           onClick={() => {
+                            setHoverReadinessPct(undefined)
                             setDirectorData({ name: dir.name, title: dir.title, deptName: d.name, mgrIdxStart: dir.firstMgrIdx, mgrCount: dir.teamManagers, parentHrbp: hrbpName, readiness: dir.readiness })
                             setView('director')
                             window.scrollTo(0, 0)
@@ -4694,6 +4721,7 @@ export function WorkforceReadinessDashboard({
                               <div className="text-[#94a3b8] text-[11px] font-normal">{dir.title} · {dir.teamManagers} teams</div>
                             </div>
                           </DataTableCell>
+                          <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                           <DataTableCell metric>
                             <div>
                               {hrbpCollectionComplete && deptTrendDelta !== 0 && hrbpDirInScope(dir.name) && !(hrbpUpskillingComplete && deptTrendDelta < 0) ? (
@@ -4716,12 +4744,6 @@ export function WorkforceReadinessDashboard({
                           {(() => { const baseHrs = Math.round(d.hrsUnlocked * dir.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, dir.readiness - deptTrendDelta - upskillingBoostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, dir.readiness); return (
                           <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: dir.name, subtitle: `${d.name} · Director · ${dir.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: dir.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                           ) })()}
-                          <DataTableCell align="right">
-                            <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                              <span className="wfr-type-h6">{notReady.toLocaleString()} ({dir.employees > 0 ? Math.round((notReady / dir.employees) * 100) : 0}%)</span>
-                              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {dir.employees.toLocaleString()}</div>
-                            </div>
-                          </DataTableCell>
                           {showHrbpCollection && (
                             hrbpDelegatedPending
                               ? <DataTableCell metric className="bg-[#fafbfc] border-l border-[#e2e8f0]"><div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}><HrbpStatusPill state={1} delegated /><span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400 }}>Sent Apr 5, 2026</span></div></DataTableCell>
@@ -5005,16 +5027,15 @@ export function WorkforceReadinessDashboard({
                   <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                     <DataTableHeader>
                       <DataTableRow>
-                        <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
-                        <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
-                        <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                        <DataTableHead style={{ width: '28%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                        <DataTableHead metric style={{ width: '15%' }}>Team AI potential</DataTableHead>
+                        <DataTableHead metric style={{ width: '13%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                        <DataTableHead numeric style={{ width: '15%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                        {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
                       {[...seniorMgrs].sort((a, b) => { const mul = mgrSort.dir === 'asc' ? 1 : -1; switch (mgrSort.col) { case 'name': return mul * a.name.localeCompare(b.name); case 'readiness': return mul * (a.readiness - b.readiness); case 'potential': return mul * (a.employees - b.employees); case 'gap': return mul * ((a.employees - a.readyCount) - (b.employees - b.readyCount)); default: return 0 } }).map(sr => {
-                        const notReady = sr.employees - sr.readyCount
                         const srPlanPct = dirUpskillingCompleteFlag ? 100 : effDirPlansComplete ? Math.min(90, 45 + (nh(sr.name) % 45)) : 0
                         return (
                           <DataTableRow
@@ -5040,6 +5061,7 @@ export function WorkforceReadinessDashboard({
                                 <div className="text-[#94a3b8] text-[11px] font-normal">{sr.title} · {sr.batchCount} teams</div>
                               </div>
                             </DataTableCell>
+                            <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                             <DataTableCell metric>
                               <div>
                                 {effDirCollComplete && trendDelta !== 0 ? (
@@ -5055,12 +5077,6 @@ export function WorkforceReadinessDashboard({
                             {(() => { const baseHrs = Math.round(d.hrsUnlocked * sr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, sr.readiness - trendDelta - boostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, sr.readiness); return (
                             <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: sr.name, subtitle: `${d.name} · Senior Manager · ${sr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: sr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                             ) })()}
-                            <DataTableCell align="right">
-                              <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                                <span className="wfr-type-h6">{notReady.toLocaleString()} ({sr.employees > 0 ? Math.round((notReady / sr.employees) * 100) : 0}%)</span>
-                                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {sr.employees.toLocaleString()}</div>
-                              </div>
-                            </DataTableCell>
                             {effDirCollComplete && <UpskillingProgressCell total={sr.employees} pct={srPlanPct} plansComplete={dirUpskillingCompleteFlag || effDirPlansComplete} nameHash={nh(sr.name)} />}
                           </DataTableRow>
                         )
@@ -5072,11 +5088,11 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
-                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                    {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                    <DataTableHead style={{ width: '28%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '15%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead metric style={{ width: '13%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '15%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    {effDirCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -5084,7 +5100,6 @@ export function WorkforceReadinessDashboard({
                     const globalIdx = directorData.mgrIdxStart + i
                     const en = mgrEnriched[globalIdx]
                     if (!en) return null
-                    const notReady = mgr.employees - en.readyCount
                     const mgrPlanPct = dirUpskillingCompleteFlag ? 100 : effDirPlansComplete ? Math.min(90, 45 + (nh(mgr.manager) % 45)) : 0
                     return (
                       <DataTableRow
@@ -5098,6 +5113,7 @@ export function WorkforceReadinessDashboard({
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
                           </div>
                         </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                         <DataTableCell metric>
                           <div>
                             {effDirCollComplete && trendDelta !== 0 ? (
@@ -5113,12 +5129,6 @@ export function WorkforceReadinessDashboard({
                         {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - trendDelta - boostBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
                         <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
-                        <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
-                          </div>
-                        </DataTableCell>
                         {effDirCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={dirUpskillingCompleteFlag || effDirPlansComplete} nameHash={nh(mgr.manager)} />}
                       </DataTableRow>
                     )
@@ -5253,11 +5263,11 @@ export function WorkforceReadinessDashboard({
               <DataTable bordered style={{ tableLayout: 'fixed', width: '100%' }}>
                 <DataTableHeader>
                   <DataTableRow>
-                    <DataTableHead style={{ width: '34%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
-                    <DataTableHead metric style={{ width: '14%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '16%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
-                    <DataTableHead numeric style={{ width: '18%', cursor: 'pointer' }} onClick={() => toggleMgrSort('gap')}><span className="inline-flex items-center gap-1">Transformation gap <SortIcon sortDir={mgrSort.col === 'gap' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('gap')} /></span></DataTableHead>
-                    {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '20%' }}>Upskilling status</DataTableHead>}
+                    <DataTableHead style={{ width: '28%', cursor: 'pointer' }} onClick={() => toggleMgrSort('name')}><span className="inline-flex items-center gap-1">Manager <SortIcon sortDir={mgrSort.col === 'name' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('name')} /></span></DataTableHead>
+                    <DataTableHead metric style={{ width: '15%' }}>Team AI potential</DataTableHead>
+                    <DataTableHead metric style={{ width: '13%', cursor: 'pointer' }} onClick={() => toggleMgrSort('readiness')}><span className="inline-flex items-center gap-1">Team AI adoption <SortIcon sortDir={mgrSort.col === 'readiness' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('readiness')} /></span></DataTableHead>
+                    <DataTableHead numeric style={{ width: '15%', cursor: 'pointer' }} onClick={() => toggleMgrSort('potential')}><span className="inline-flex items-center gap-1">Productivity potential <button type="button" onClick={(e) => { e.stopPropagation(); setDashOpenMetric('potential') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#94a3b8', verticalAlign: -1 }}>info</span></button><SortIcon sortDir={mgrSort.col === 'potential' ? mgrSort.dir : null} onSortClick={() => toggleMgrSort('potential')} /></span></DataTableHead>
+                    {effSrCollComplete && <DataTableHead className="bg-[#f8fafc] border-l border-[#e2e8f0]" style={{ whiteSpace: 'nowrap', width: '18%' }}>Upskilling status</DataTableHead>}
                   </DataTableRow>
                 </DataTableHeader>
                 <DataTableBody>
@@ -5265,7 +5275,6 @@ export function WorkforceReadinessDashboard({
                     const globalIdx = seniorMgrData.mgrIdxStart + i
                     const en = srMgrEnriched[globalIdx]
                     if (!en) return null
-                    const notReady = mgr.employees - en.readyCount
                     const mgrPlanPct = srUpskillingCompleteFlag ? 100 : effSrPlansComplete ? Math.min(90, 45 + (nh2(mgr.manager) % 45)) : 0
                     return (
                       <DataTableRow
@@ -5279,6 +5288,7 @@ export function WorkforceReadinessDashboard({
                             <div className="text-[#94a3b8] text-[11px] font-normal">{mgr.title}</div>
                           </div>
                         </DataTableCell>
+                        <DataTableCell metric><DeptTableSoloBar variant="potential" pct={d.aiPotential} width={90} /></DataTableCell>
                         <DataTableCell metric>
                           <div>
                             {effSrCollComplete && tDelta !== 0 ? (
@@ -5294,12 +5304,6 @@ export function WorkforceReadinessDashboard({
                         {(() => { const baseHrs = Math.round(d.hrsUnlocked * mgr.employees / Math.max(1, d.employees)); const baselineR = Math.max(0, en.readiness - tDelta - bBase); const scaledHrs = scaleHrsUnlocked(baseHrs, baselineR, en.readiness); return (
                         <DataTableCell align="right"><button type="button" onClick={(e) => { e.stopPropagation(); setUvSheetData({ label: mgr.manager, subtitle: `${d.name} · Manager · ${mgr.employees.toLocaleString()} employees`, aiPotential: d.aiPotential, headcount: mgr.employees, hrsUnlocked: scaledHrs }) }} title="View productivity potential" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 12, background: '#f0f4ff', border: '1px solid #c7d2fe', fontSize: 13, fontWeight: 600, color: '#3b5bdb', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>{formatHours(scaledHrs)}<span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>chevron_right</span></button></DataTableCell>
                         ) })()}
-                        <DataTableCell align="right">
-                          <div className="tabular-nums" style={{ textAlign: 'right' }}>
-                            <span className="wfr-type-h6">{notReady.toLocaleString()} ({mgr.employees > 0 ? Math.round((notReady / mgr.employees) * 100) : 0}%)</span>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 400 }}>of {mgr.employees.toLocaleString()}</div>
-                          </div>
-                        </DataTableCell>
                         {effSrCollComplete && <UpskillingProgressCell total={mgr.employees} pct={mgrPlanPct} plansComplete={srUpskillingCompleteFlag || effSrPlansComplete} nameHash={nh2(mgr.manager)} />}
                       </DataTableRow>
                     )

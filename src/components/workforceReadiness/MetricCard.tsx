@@ -42,29 +42,49 @@ export function MetricCard({
 }: MetricCardProps) {
   const theme = (variant ? VARIANT_THEME[variant] : undefined) ?? DEFAULT_THEME
 
-  // Wrap onLearnMore in a button-based LinkComponent so InsightCard's link slot fires the callback
-  const LearnMoreLink = useMemo(() => {
-    if (!onLearnMore) return undefined
-    return function ClickLink({ children: linkChildren, className }: { to: string; children: React.ReactNode; className?: string }) {
-      return (
-        <button type="button" onClick={onLearnMore} className={className}>
-          {linkChildren}
-        </button>
-      )
-    }
-  }, [onLearnMore])
+  // Suppress unused-variable warning — actionLabel kept for API compat
+  void useMemo(() => actionLabel, [actionLabel])
+
+  const learnMoreBtn = onLearnMore ? (
+    <button
+      type="button"
+      onClick={onLearnMore}
+      style={{
+        font: 'var(--typography-body3)',
+        color: '#146DA6',
+        fontWeight: 600,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
+      {actionLabel} <span style={{ fontSize: 13 }}>→</span>
+    </button>
+  ) : null
 
   const cardChildren = (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       <p style={{ font: 'var(--typography-header2)', letterSpacing: '-0.01em', lineHeight: 1.12, margin: '0 0 10px', color: theme.textColor }}>
         {value}
       </p>
       {explainer && <p style={{ font: 'var(--typography-body3)', color: '#1a212e', margin: '0 0 4px' }}>{explainer}</p>}
       <div style={{ font: 'var(--typography-body3)', color: '#4f5666', margin: '0 0 6px' }}>{description}</div>
       {hint && <p style={{ font: 'var(--typography-body3)', color: '#94a3b8', margin: '0 0 6px' }}>{hint}</p>}
-      {tag && <div style={{ marginTop: 6 }}>{tag}</div>}
-      {children}
-    </>
+      {/* Footer row: badge/tag and/or children on the left, Learn more on the right — pushed to bottom */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto', paddingTop: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {tag}
+          {children}
+        </div>
+        {learnMoreBtn}
+      </div>
+    </div>
   )
 
   return (
@@ -77,9 +97,7 @@ export function MetricCard({
       iconBgColor={theme.iconBgColor}
       iconColor={theme.iconColor}
       textColor={theme.textColor}
-      buttonLabel={actionLabel}
       fixedSize={false}
-      {...(LearnMoreLink ? { LinkComponent: LearnMoreLink } : {})}
     >
       {cardChildren}
     </InsightCard>

@@ -248,9 +248,9 @@ function EmployeeTasksTeaser() {
     <article className="home-page__wfr-compact" aria-label="Your work and AI">
       <div className="home-page__wfr-compact__title-row">
         <h3 className="home-page__wfr-compact__title">Your work &amp; AI</h3>
-        <Link to="/profile" className="home-page__wfr-compact__view-link">Explore tasks&nbsp;→</Link>
+        <Link to="/my-work" className="home-page__wfr-compact__view-link">Explore tasks&nbsp;→</Link>
       </div>
-      <Link to="/profile" style={{ textDecoration: 'none', display: 'block' }}>
+      <Link to="/my-work" style={{ textDecoration: 'none', display: 'block' }}>
         <WfrHeroCard
           gauge={<MetricArc potential={augmentablePct} readiness={Math.round(augmentablePct * (aiAssisted / Math.max(1, augment)))} size="lg" />}
           eyebrow={<>{roleTitle} {EM} {total} tasks</>}
@@ -296,7 +296,7 @@ function EmployeeTasksTeaser() {
               </div>
               <button
                 type="button"
-                onClick={(e) => { e.preventDefault(); window.location.href = '/profile' }}
+                onClick={(e) => { e.preventDefault(); window.location.href = '/my-work' }}
                 style={{ flexShrink: 0, padding: '0 16px', borderRadius: 24, border: 'none', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', height: 36, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}
               >
                 Explore my tasks&nbsp;→

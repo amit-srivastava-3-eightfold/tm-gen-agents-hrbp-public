@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
-import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import {
   departments,
   ORG,
@@ -23,15 +23,133 @@ export type FocusFirstCollectionAttentionScope = 'org' | 'dept'
 // ── Shared hero card chrome ──────────────────────────────────────────────────
 
 interface WfrHeroCardProps {
-  gauge: ReactNode
+  /** 'crowd': dot-field hero (WFR dashboard). 'classic': gauge + copy (home page cards). Default: 'classic'. */
+  variant?: 'crowd' | 'classic'
+  /** For crowd variant — percentage of dots to light up (the readiness %). Default 24. */
+  readinessPct?: number
+  /** Overrides dot percentage for live row-hover interactions — smoothly adds/removes dots without re-rendering. */
+  hoverReadinessPct?: number
+  /** Classic variant only: gauge SVG rendered to the left of copy. */
+  gauge?: ReactNode
   eyebrow: ReactNode
   headline: ReactNode
   supportingText?: ReactNode
-  /** Optional CTA bar rendered as a bottom strip inside the card */
+  /** CTA bar rendered as a dark band at the bottom, inside the card (states 2–5). */
   ctaBar?: ReactNode
 }
 
-export function WfrHeroCard({ gauge, eyebrow, headline, supportingText, ctaBar }: WfrHeroCardProps) {
+export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadinessPct, gauge, eyebrow, headline, supportingText, ctaBar }: WfrHeroCardProps) {
+  const dotFieldRef = useRef<HTMLDivElement>(null)
+  // Tracks the currently displayed pct so diff updates know how many dots are on
+  const displayedPctRef = useRef(readinessPct)
+
+  // Initial render + readinessPct change → full DOM rebuild with stagger animation
+  useEffect(() => {
+    if (variant !== 'crowd') return
+    const field = dotFieldRef.current
+    if (!field) return
+    const N = 540
+    const onCount = Math.round(N * Math.max(0, Math.min(1, readinessPct / 100)))
+    const flags = Array(N).fill(false)
+    let placed = 0
+    while (placed < onCount) {
+      const i = Math.floor(Math.random() * N)
+      if (!flags[i]) { flags[i] = true; placed++ }
+    }
+    let html = ''
+    for (let k = 0; k < N; k++) {
+      html += `<span class="wfr-hero-dot${flags[k] ? ' wfr-hero-dot--on' : ''}"></span>`
+    }
+    field.innerHTML = html
+    displayedPctRef.current = readinessPct
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let pulseTimer: ReturnType<typeof setTimeout> | undefined
+
+    if (!prefersReduced) {
+      const dots = field.children as HTMLCollectionOf<HTMLElement>
+      for (let j = 0; j < dots.length; j++) {
+        dots[j].style.opacity = '0'
+        dots[j].style.transform = 'scale(0.4)'
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        for (let m = 0; m < dots.length; m++) {
+          dots[m].style.transition = 'opacity 0.5s ease, transform 0.5s ease'
+          dots[m].style.transitionDelay = `${Math.min(m * 1.8, 1200)}ms`
+          dots[m].style.opacity = ''
+          dots[m].style.transform = ''
+        }
+      }))
+
+      // After stagger-in completes, add an organic pulse to each lit dot
+      pulseTimer = setTimeout(() => {
+        const children = field.children as HTMLCollectionOf<HTMLElement>
+        for (let m = 0; m < children.length; m++) {
+          if (children[m].classList.contains('wfr-hero-dot--on')) {
+            const dur = (2.4 + Math.random() * 2.8).toFixed(1)
+            const delay = (Math.random() * 5).toFixed(2)
+            children[m].style.transition = ''
+            children[m].style.transitionDelay = ''
+            children[m].style.animation = `wfr-dot-pulse ${dur}s ${delay}s ease-in-out infinite`
+          }
+        }
+      }, 2000)
+    }
+
+    return () => { if (pulseTimer !== undefined) clearTimeout(pulseTimer) }
+  }, [variant, readinessPct])
+
+  // Hover override → smooth diff update (add/remove individual dots, no full re-render)
+  useEffect(() => {
+    if (variant !== 'crowd') return
+    const field = dotFieldRef.current
+    if (!field || field.children.length === 0) return
+
+    const targetPct = hoverReadinessPct ?? readinessPct
+    const N = 540
+    const newCount = Math.round(N * Math.max(0, Math.min(1, targetPct / 100)))
+    const currentCount = Math.round(N * Math.max(0, Math.min(1, displayedPctRef.current / 100)))
+    if (newCount === currentCount) return
+
+    const dots = Array.from(field.children) as HTMLElement[]
+    const onDots = dots.filter(d => d.classList.contains('wfr-hero-dot--on'))
+    const offDots = dots.filter(d => !d.classList.contains('wfr-hero-dot--on'))
+    const delta = newCount - onDots.length
+
+    if (delta > 0) {
+      const toOn = [...offDots].sort(() => Math.random() - 0.5).slice(0, Math.min(delta, offDots.length))
+      for (const dot of toOn) {
+        dot.classList.add('wfr-hero-dot--on')
+        dot.style.animation = `wfr-dot-pulse ${(2.4 + Math.random() * 2.8).toFixed(1)}s ${(Math.random() * 2).toFixed(2)}s ease-in-out infinite`
+      }
+    } else if (delta < 0) {
+      const toOff = [...onDots].sort(() => Math.random() - 0.5).slice(0, Math.min(-delta, onDots.length))
+      for (const dot of toOff) {
+        dot.classList.remove('wfr-hero-dot--on')
+        dot.style.animation = ''
+      }
+    }
+    displayedPctRef.current = targetPct
+  }, [variant, hoverReadinessPct, readinessPct])
+
+  if (variant === 'crowd') {
+    return (
+      <div className={`wfr-hero-card wfr-hero-card--crowd${ctaBar ? ' wfr-hero-card--with-band' : ''}`}>
+        <div className="wfr-hero-card__dots" ref={dotFieldRef} />
+        <div className="wfr-hero-card__scrim" />
+        <div className="wfr-hero-card__main">
+          <div className="wfr-hero-card__copy">
+            <p className="wfr-hero-card__eyebrow">{eyebrow}</p>
+            <h2 className="wfr-hero-card__headline">{headline}</h2>
+            {supportingText && <p className="wfr-hero-card__supporting">{supportingText}</p>}
+          </div>
+        </div>
+        {ctaBar && <div className="wfr-hero-card__cta-bar">{ctaBar}</div>}
+      </div>
+    )
+  }
+
+  // Classic variant (home page cards, WfrHeroOptionsPage)
   return (
     <div className={ctaBar ? 'wfr-hero-card wfr-hero-card--with-cta' : 'wfr-hero-card'}>
       <div className="wfr-hero-card__main">
@@ -939,6 +1057,8 @@ export interface WfrCtaBarContent {
   whatsNextCompletedSteps?: number
   /** For the What's next dialog: is the current active step in progress (vs just upcoming) */
   whatsNextInProgress?: boolean
+  /** 'card': render as branded teal card below the hero (state 1). 'band': dark internal band (default). */
+  variant?: 'card' | 'band'
 }
 
 const RED    = 'rgba(185,28,28,0.55)'
@@ -949,28 +1069,31 @@ const BLUE   = 'rgba(59,91,219,0.35)'
 export const WFR_CTA_CONTENT: Record<WfrDemoState, Record<WfrPersona, WfrCtaBarContent>> = {
   1: {
     chro: {
-      icon: 'flag',
-      label: 'AI adoption is estimated today — collect real data to see what\'s actually happening.',
-      hint: 'Choose departments to refine adoption scores and surface upskilling priorities.',
-      buttonLabel: 'Get started →',
+      icon: 'insights',
+      label: 'Estimated from skill profiles — not yet confirmed with usage data.',
+      hint: 'Collect observed adoption by department to raise confidence and surface upskilling priorities.',
+      buttonLabel: 'Get started',
       buttonVariant: 'primary',
       accent: RED,
+      variant: 'card',
     },
     hrbp: {
-      icon: 'flag',
-      label: 'AI adoption scores for your team are estimated — collect real data to see what\'s actually happening.',
-      hint: 'Launch data collection to refine scores and surface upskilling priorities for your teams.',
-      buttonLabel: 'Get started →',
+      icon: 'insights',
+      label: 'AI adoption scores for your team are estimated — not yet confirmed with usage data.',
+      hint: 'Launch data collection to raise confidence and surface upskilling priorities for your people.',
+      buttonLabel: 'Get started',
       buttonVariant: 'primary',
       accent: RED,
+      variant: 'card',
     },
     manager: {
       icon: 'assignment',
       label: 'Build development plans for your team today.',
       hint: 'Development planning works independently of AI adoption scores.',
-      buttonLabel: 'Start a development plan →',
-      buttonVariant: 'secondary',
+      buttonLabel: 'Start a development plan',
+      buttonVariant: 'primary',
       accent: BLUE,
+      variant: 'card',
     },
   },
   '1b': {
@@ -1313,6 +1436,29 @@ export function WfrCtaBar({ content, onButtonClick, onBarClick }: { content: Wfr
     setDisplayedProgress(100)
     setTimeout(() => onBarClick(), 1200)
   } : undefined
+
+  // Branded teal card — sits below the crowd hero (state 1)
+  if (content.variant === 'card') {
+    return (
+      <div className="wfr-cta-card">
+        <div className="wfr-cta-card__ic">
+          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{content.icon}</span>
+        </div>
+        <div className="wfr-cta-card__body">
+          {content.label && <p className="wfr-cta-card__title">{content.label}</p>}
+          <p className="wfr-cta-card__hint">{content.hint}</p>
+        </div>
+        {content.buttonLabel && (
+          <div className="wfr-cta-card__actions">
+            <button className="wfr-btn-getstarted" type="button" onClick={onButtonClick}>
+              {content.buttonLabel}
+              <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_forward</span>
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div
