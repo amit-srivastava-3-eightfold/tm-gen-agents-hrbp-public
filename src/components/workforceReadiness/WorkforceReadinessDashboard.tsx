@@ -1209,7 +1209,7 @@ function BoardView({
         </>
       ) : (
         <span className="wfr-dash__headline-text">
-          Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> are AI-ready.
+          Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiReadinessPct}%</span> of your team is AI-ready.
         </span>
       )}
       subtitle={!hrbpPlansCreated ? <>Your org has <span className="font-bold wfr-text-potential">{formatHours(orgHrsUnlocked)}</span> in annual productivity potential waiting to be unlocked.</> : undefined}
@@ -4118,7 +4118,7 @@ export function WorkforceReadinessDashboard({
                     </span>
                   </>
                 ) : (
-                  <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> are AI-ready.</span>
+                  <span className="wfr-dash__headline-text">Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{dirWeightedReadiness}%</span> of your team is AI-ready.</span>
                 )}
                 subtitle={!hrbpPlansComplete ? <>Your team has <span className="font-bold wfr-text-potential">{formatHours(hrbpHrsUnlocked)}</span> in annual productivity potential to unlock.</> : undefined}
                 pill={hrbpPlansComplete
