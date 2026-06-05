@@ -292,27 +292,6 @@ function EmployeeTasksTeaser() {
           />
         </Link>
 
-        {/* 3-stat row: AI Potential · Adoption · Dev Plan */}
-        <div className="home-page__emp-stats">
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">AI Potential</span>
-            <span className="home-page__emp-stat__value wfr-text-potential">{augmentablePct}%</span>
-            <span className="home-page__emp-stat__sub">of your {total} tasks</span>
-          </div>
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">Adoption</span>
-            <span className="home-page__emp-stat__value wfr-text-readiness">{adoptionPct}%</span>
-            <span className="home-page__emp-stat__sub">of augmentable</span>
-          </div>
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">Dev Plan</span>
-            <span className="home-page__emp-stat__value">
-              0<span style={{ fontSize: '0.55em', fontWeight: 400, color: '#94a3b8' }}>&thinsp;/&thinsp;2</span>
-            </span>
-            <span className="home-page__emp-stat__sub">courses started</span>
-          </div>
-        </div>
-
         {/* CTA card */}
         <div className="wfr-cta-card">
           <div className="wfr-cta-card__ic">
@@ -337,6 +316,27 @@ function EmployeeTasksTeaser() {
               Explore tasks
               <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_forward</span>
             </button>
+          </div>
+        </div>
+
+        {/* 3-stat row: AI Potential · Adoption · Dev Plan */}
+        <div className="home-page__emp-stats">
+          <div className="home-page__emp-stat">
+            <span className="home-page__emp-stat__label">AI Potential</span>
+            <span className="home-page__emp-stat__value wfr-text-potential">{augmentablePct}%</span>
+            <span className="home-page__emp-stat__sub">of your {total} tasks</span>
+          </div>
+          <div className="home-page__emp-stat">
+            <span className="home-page__emp-stat__label">Adoption</span>
+            <span className="home-page__emp-stat__value wfr-text-readiness">{adoptionPct}%</span>
+            <span className="home-page__emp-stat__sub">of augmentable</span>
+          </div>
+          <div className="home-page__emp-stat">
+            <span className="home-page__emp-stat__label">Dev Plan</span>
+            <span className="home-page__emp-stat__value">
+              0<span style={{ fontSize: '0.55em', fontWeight: 400, color: '#94a3b8' }}>&thinsp;/&thinsp;2</span>
+            </span>
+            <span className="home-page__emp-stat__sub">courses started</span>
           </div>
         </div>
       </div>
