@@ -454,6 +454,36 @@
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
+/* ── Home-widget crowd hero (smaller scale) ── */
+.wfr-hero-card--crowd-home .wfr-hero-card__dots {
+  gap: 8px;
+  padding: 18px 20px;
+}
+.wfr-hero-card--crowd-home .wfr-hero-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+}
+.wfr-hero-card--crowd-home .wfr-hero-card__main {
+  padding: 24px 26px 22px;
+  min-height: 170px;
+}
+.wfr-hero-card--crowd-home .wfr-hero-card__eyebrow {
+  font-size: 11px;
+  letter-spacing: .08em;
+  margin-bottom: 9px;
+}
+.wfr-hero-card--crowd-home .wfr-hero-card__headline {
+  font-size: 26px;
+  line-height: 1.14;
+  letter-spacing: -.016em;
+}
+.wfr-hero-card--crowd-home .wfr-hero-card__supporting {
+  font-size: 13.5px;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
 .wfr-hero-legend {
   display: flex;
   gap: 22px;

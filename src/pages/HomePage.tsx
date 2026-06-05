@@ -198,34 +198,50 @@ function ChroWorkforceReadinessTeaser() {
   const ctaPersona: WfrPersona = isManager ? 'manager' : isHrbp ? 'hrbp' : 'chro'
   const ctaButtonHref = (ctaDemoState === 1 && !isHrbp && !isManager) || ctaDemoState === '1b' ? '/workforce?action=launch' : '/workforce'
 
+  const ctaContent = ctaDemoState ? WFR_CTA_CONTENT[ctaDemoState][ctaPersona] : null
+  const ctaIsCard = ctaContent?.variant === 'card'
+
   return (
     <article className="home-page__wfr-compact" aria-label="Workforce Readiness">
-      <div className="home-page__wfr-compact__title-row">
+      <div className="home-page__wfr-compact__head">
         <h3 className="home-page__wfr-compact__title">Workforce Readiness</h3>
-        <Link to="/workforce" className="home-page__wfr-compact__view-link">View dashboard&nbsp;→</Link>
+        <Link to="/workforce" className="home-page__wfr-compact__view-link">
+          View dashboard
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-1px', marginLeft: 3 }}>
+            <path d="M4 12h15"/><path d="m13 6 6 6-6 6"/>
+          </svg>
+        </Link>
       </div>
-      <Link to="/workforce" style={{ textDecoration: 'none', display: 'block' }}>
-        <WfrHeroCard
-          gauge={<MetricArc potential={48} readiness={displayReadiness} size="lg" />}
-          eyebrow={heroEyebrow}
-          headline={hrbpPlansCreated ? (
-            <>
-              <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadiness}%</span>
-              <span className="wfr-dash__headline-text">{` AI adoption${isHrbp ? ' across your teams' : isManager ? ' on your team' : ''} — up from ${rawReadiness}% before upskilling.`}</span>
-            </>
-          ) : (
-            <span className="wfr-dash__headline-text">
-              Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadiness}%</span>
-              {' are AI-ready.'}
-            </span>
-          )}
-          supportingText={hrbpPlansCreated && !isManager
-            ? <><strong style={{ fontWeight: 700, color: '#4ade80' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#fca5a5' }}>{displayGap.toLocaleString()}</strong> remaining</>
-            : <><strong style={{ fontWeight: 700 }}>{displayGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
-          }
-          ctaBar={ctaDemoState ? <WfrCtaBar content={WFR_CTA_CONTENT[ctaDemoState][ctaPersona]} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
-        />
-      </Link>
+      <div className="home-page__wfr-compact__body">
+        <Link to="/workforce" style={{ textDecoration: 'none', display: 'block' }}>
+          <WfrHeroCard
+            variant="crowd"
+            crowdClassName="wfr-hero-card--crowd-home"
+            dotCount={260}
+            readinessPct={displayReadiness}
+            eyebrow={heroEyebrow}
+            headline={hrbpPlansCreated ? (
+              <>
+                <span className="wfr-dash__headline-pct wfr-text-readiness">{displayReadiness}%</span>
+                <span className="wfr-dash__headline-text">{` AI adoption${isHrbp ? ' across your teams' : isManager ? ' on your team' : ''} — up from ${rawReadiness}% before upskilling.`}</span>
+              </>
+            ) : (
+              <span className="wfr-dash__headline-text">
+                Only <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{displayReadiness}%</span>
+                {' of your team is AI-ready.'}
+              </span>
+            )}
+            supportingText={hrbpPlansCreated && !isManager
+              ? <><strong style={{ fontWeight: 700, color: '#4ade80' }}>{movedOut.toLocaleString()}</strong> employees moved out of the gap — <strong style={{ fontWeight: 700, color: '#fca5a5' }}>{displayGap.toLocaleString()}</strong> remaining</>
+              : <><strong style={{ fontWeight: 700 }}>{displayGap.toLocaleString()}</strong> employees in augmentable roles haven't adopted AI yet.</>
+            }
+            ctaBar={ctaContent && !ctaIsCard ? <WfrCtaBar content={ctaContent} onButtonClick={() => { window.location.href = ctaButtonHref }} /> : undefined}
+          />
+        </Link>
+        {ctaContent && ctaIsCard && (
+          <WfrCtaBar content={ctaContent} onButtonClick={() => { window.location.href = ctaButtonHref }} />
+        )}
+      </div>
     </article>
   )
 }
@@ -246,10 +262,11 @@ function EmployeeTasksTeaser() {
 
   return (
     <article className="home-page__wfr-compact" aria-label="Your work and AI">
-      <div className="home-page__wfr-compact__title-row">
+      <div className="home-page__wfr-compact__head">
         <h3 className="home-page__wfr-compact__title">Your work &amp; AI</h3>
         <Link to="/my-work" className="home-page__wfr-compact__view-link">Explore tasks&nbsp;→</Link>
       </div>
+      <div className="home-page__wfr-compact__body">
       <Link to="/my-work" style={{ textDecoration: 'none', display: 'block' }}>
         <WfrHeroCard
           gauge={<MetricArc potential={augmentablePct} readiness={Math.round(augmentablePct * (aiAssisted / Math.max(1, augment)))} size="lg" />}
@@ -305,6 +322,7 @@ function EmployeeTasksTeaser() {
           }
         />
       </Link>
+      </div>
     </article>
   )
 }

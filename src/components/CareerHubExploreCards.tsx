@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { getHomePageData } from '../data/homePageData'
@@ -152,11 +152,13 @@ const CARD_TEMPLATES = [
   },
 ]
 
+const PAGE_SIZE = 2
+
 export function CareerHubExploreCards() {
   const { currentUser } = useUser()
   const homeData = getHomePageData(currentUser)
   const [expanded, setExpanded] = useState(true)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [page, setPage] = useState(0)
 
   const cards = [
     {
@@ -177,11 +179,8 @@ export function CareerHubExploreCards() {
     },
   ]
 
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    const amount = 416
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' })
-  }
+  const totalPages = Math.ceil(cards.length / PAGE_SIZE)
+  const pageCards = cards.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
   return (
     <section className="career-hub-explore">
@@ -207,14 +206,15 @@ export function CareerHubExploreCards() {
         <div className="career-hub-explore__body">
           <button
             type="button"
-            className="career-hub-explore__nav career-hub-explore__nav--prev"
-            onClick={() => scroll('left')}
-            aria-label="Scroll left"
+            className="career-hub-explore__nav"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            aria-label="Previous"
+            disabled={page === 0}
           >
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
-          <div className="career-hub-explore__scroll" ref={scrollRef}>
-            {cards.map((card) => {
+          <div className="career-hub-explore__grid">
+            {pageCards.map((card) => {
               const c = card as {
                 bgColor: string
                 iconBgColor: string
@@ -230,18 +230,7 @@ export function CareerHubExploreCards() {
                 buttonHref?: string
               }
               return (
-                <div
-                  key={card.id}
-                  className="career-hub-card"
-                  style={
-                    {
-                      '--card-bg': c.bgColor,
-                      '--card-icon-bg': c.iconBgColor,
-                      '--card-icon-color': c.iconColor,
-                      '--card-text-color': c.textColor,
-                    } as React.CSSProperties
-                  }
-                >
+                <div key={card.id} className="career-hub-card">
                   <div className="career-hub-card__header">
                     <div className="career-hub-card__header-content">
                       <div className="career-hub-card__title-row">
@@ -262,10 +251,7 @@ export function CareerHubExploreCards() {
                     <span className="career-hub-card__recommended">{c.recommendedLabel}</span>
                   )}
                   <div className="career-hub-card__content">{c.content}</div>
-                  <Link
-                    to={c.buttonHref ?? '#'}
-                    className="career-hub-card__btn"
-                  >
+                  <Link to={c.buttonHref ?? '#'} className="career-hub-card__btn">
                     {c.buttonLabel}
                   </Link>
                 </div>
@@ -274,9 +260,10 @@ export function CareerHubExploreCards() {
           </div>
           <button
             type="button"
-            className="career-hub-explore__nav career-hub-explore__nav--next"
-            onClick={() => scroll('right')}
-            aria-label="Scroll right"
+            className="career-hub-explore__nav"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            aria-label="Next"
+            disabled={page >= totalPages - 1}
           >
             <span className="material-symbols-outlined">chevron_right</span>
           </button>

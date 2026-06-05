@@ -2,7 +2,7 @@
   background: #FFFFFF;
   border: 1px solid #D9DCE1;
   border-radius: 24px;
-  padding: 24px;
+  overflow: hidden;
   font-family: var(--font-family);
 }
 
@@ -10,7 +10,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid #f0f1f3;
 }
 
 .career-hub-explore__title {
@@ -47,7 +48,8 @@
 .career-hub-explore__body {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 14px;
 }
 
 .career-hub-explore__nav {
@@ -55,65 +57,55 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid #D9DCE1;
   border-radius: 50%;
   background: #FFFFFF;
   color: #4F5666;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
 
-.career-hub-explore__nav:hover {
+.career-hub-explore__nav:hover:not(:disabled) {
   background: #F6F7F8;
   color: #1A212E;
 }
 
-.career-hub-explore__scroll {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+.career-hub-explore__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
-.career-hub-explore__scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+.career-hub-explore__nav .material-symbols-outlined {
+  font-size: 18px;
 }
 
-.career-hub-explore__card-wrap {
-  flex: 0 0 400px;
-  width: 400px;
+.career-hub-explore__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 0;
 }
 
-/* Card: 400px × 300px - similar to MentorshipCard */
+/* Career hub cards — amber, 2-col grid */
 .career-hub-card {
-  flex: 0 0 400px;
-  width: 400px;
-  height: 300px;
-  background: var(--card-bg);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 24px;
-  padding: 24px;
+  background: #FEF9ED;
+  border: 1px solid #FAE9BB;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-  position: relative;
 }
 
 .career-hub-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  position: relative;
-  padding-right: 40px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .career-hub-card__header-content {
@@ -131,7 +123,7 @@
 .career-hub-card__title {
   margin: 0;
   font: var(--typography-button1);
-  color: var(--card-text-color, #3B2600);
+  color: #1A212E;
 }
 
 .career-hub-card__badge {
@@ -143,26 +135,22 @@
   color: #4F5666;
 }
 
-/* Tilted icon square - like MentorshipCard */
 .career-hub-card__icon-wrap {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
-  background: var(--card-icon-bg);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #FDD87A;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(16deg);
   flex-shrink: 0;
-  position: absolute;
-  top: -32px;
-  right: -8px;
+  color: #92600a;
 }
 
 .career-hub-card__icon-wrap .material-symbols-outlined {
-  font-size: 36px !important;
+  font-size: 22px !important;
   font-variation-settings: 'FILL' 1;
-  color: var(--card-icon-color);
+  color: #92600a;
 }
 
 .career-hub-card__description {
@@ -287,22 +275,25 @@
 }
 
 .career-hub-card__btn {
-  display: inline-flex;
+  margin-top: auto;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px;
+  width: 100%;
+  height: 36px;
   background: #FFFFFF;
-  font: var(--typography-button3);
+  font-family: var(--font-display, var(--font-family));
+  font-weight: 600;
+  font-size: 13.5px;
   color: #1A212E;
   text-decoration: none;
-  border-radius: 24px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: 99px;
+  border: 1px solid #D9DCE1;
   transition: background 0.15s;
 }
 
 .career-hub-card__btn:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: #fff8e0;
 }
 
 /* Career Navigator path visualization */

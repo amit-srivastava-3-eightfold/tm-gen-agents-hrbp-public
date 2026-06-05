@@ -115,22 +115,23 @@
   gap: 24px;
 }
 
-/* CHRO home: compact Workforce Readiness (board hero + recommended action) */
-/* ── WFR Compact Card — matches career-hub-explore card style ─── */
+/* CHRO home: compact Workforce Readiness (crowd hero + CTA card) */
+/* ── WFR Compact Card ─── */
 .home-page__wfr-compact {
   margin: 0;
   background: #ffffff;
   border: 1px solid #D9DCE1;
   border-radius: 24px;
-  padding: 24px;
+  overflow: hidden;
   font-family: var(--font-family);
 }
 
-.home-page__wfr-compact__title-row {
+.home-page__wfr-compact__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid #f0f1f3;
 }
 
 .home-page__wfr-compact__title {
@@ -140,8 +141,11 @@
 }
 
 .home-page__wfr-compact__view-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: #3b5bdb;
   text-decoration: none;
 }
@@ -150,17 +154,28 @@
   text-decoration: underline;
 }
 
-.home-page__wfr-compact .wfr-hero-card {
-  margin-bottom: 16px;
+.home-page__wfr-compact__body {
+  padding: 12px 14px 14px;
 }
 
-.home-page__wfr-compact a .wfr-hero-card {
-  cursor: pointer;
+.home-page__wfr-compact__body .wfr-hero-card--crowd {
+  border-radius: 12px;
+}
+
+.home-page__wfr-compact__body a .wfr-hero-card--crowd {
   transition: opacity 0.15s ease;
 }
 
-.home-page__wfr-compact a:hover .wfr-hero-card {
-  opacity: 0.9;
+.home-page__wfr-compact__body a:hover .wfr-hero-card--crowd {
+  opacity: 0.92;
+}
+
+.home-page__wfr-compact__body .wfr-cta-card {
+  margin-top: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: none;
+  border: none;
 }
 
 /* Arc component */

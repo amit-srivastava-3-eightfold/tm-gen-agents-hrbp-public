@@ -36,9 +36,13 @@ interface WfrHeroCardProps {
   supportingText?: ReactNode
   /** CTA bar rendered as a dark band at the bottom, inside the card (states 2–5). */
   ctaBar?: ReactNode
+  /** Extra CSS class(es) added to the crowd-variant outer div (e.g. 'wfr-hero-card--crowd-home'). */
+  crowdClassName?: string
+  /** Number of dots in the crowd field. Default: 540. Use 260 for the home widget. */
+  dotCount?: number
 }
 
-export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadinessPct, gauge, eyebrow, headline, supportingText, ctaBar }: WfrHeroCardProps) {
+export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadinessPct, gauge, eyebrow, headline, supportingText, ctaBar, crowdClassName, dotCount = 540 }: WfrHeroCardProps) {
   const dotFieldRef = useRef<HTMLDivElement>(null)
   // Tracks the currently displayed pct so diff updates know how many dots are on
   const displayedPctRef = useRef(readinessPct)
@@ -48,7 +52,7 @@ export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadi
     if (variant !== 'crowd') return
     const field = dotFieldRef.current
     if (!field) return
-    const N = 540
+    const N = dotCount
     const onCount = Math.round(N * Math.max(0, Math.min(1, readinessPct / 100)))
     const flags = Array(N).fill(false)
     let placed = 0
@@ -97,7 +101,7 @@ export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadi
     }
 
     return () => { if (pulseTimer !== undefined) clearTimeout(pulseTimer) }
-  }, [variant, readinessPct])
+  }, [variant, readinessPct, dotCount])
 
   // Hover override → smooth diff update (add/remove individual dots, no full re-render)
   useEffect(() => {
@@ -106,7 +110,7 @@ export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadi
     if (!field || field.children.length === 0) return
 
     const targetPct = hoverReadinessPct ?? readinessPct
-    const N = 540
+    const N = dotCount
     const newCount = Math.round(N * Math.max(0, Math.min(1, targetPct / 100)))
     const currentCount = Math.round(N * Math.max(0, Math.min(1, displayedPctRef.current / 100)))
     if (newCount === currentCount) return
@@ -130,11 +134,11 @@ export function WfrHeroCard({ variant = 'classic', readinessPct = 24, hoverReadi
       }
     }
     displayedPctRef.current = targetPct
-  }, [variant, hoverReadinessPct, readinessPct])
+  }, [variant, hoverReadinessPct, readinessPct, dotCount])
 
   if (variant === 'crowd') {
     return (
-      <div className={`wfr-hero-card wfr-hero-card--crowd${ctaBar ? ' wfr-hero-card--with-band' : ''}`}>
+      <div className={`wfr-hero-card wfr-hero-card--crowd${ctaBar ? ' wfr-hero-card--with-band' : ''}${crowdClassName ? ` ${crowdClassName}` : ''}`}>
         <div className="wfr-hero-card__dots" ref={dotFieldRef} />
         <div className="wfr-hero-card__scrim" />
         <div className="wfr-hero-card__main">
