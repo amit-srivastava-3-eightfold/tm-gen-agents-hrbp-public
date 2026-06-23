@@ -6,6 +6,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's1',
     name: 'Christina Stokes',
     title: 'Solutions Engineer • Sales Engineering',
+    about: 'Solutions Engineer with deep enterprise POC experience and AWS certification. Skilled at translating complex technical requirements into clear customer value. Strong background in pre-sales engineering and technical demos.',
     avatarType: 'initials',
     avatarInitials: 'CS',
     avatarColor: '#8D6E63',
@@ -29,6 +30,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's2',
     name: 'Maya Baum',
     title: 'Technical Account Manager • Sales',
+    about: 'Technical Account Manager with five years of engineering depth. Skilled at building trusted customer relationships and driving product adoption. Strong background in technical demos and account growth.',
     avatarType: 'initials',
     avatarInitials: 'MB',
     avatarColor: '#7B1FA2',
@@ -49,6 +51,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's3',
     name: 'Marcus Webb',
     title: 'Support Engineer • Customer Success',
+    about: 'Support Engineer focused on enterprise escalations and technical troubleshooting. Skilled at root-cause analysis and cross-team coordination. Completed the Solutions Engineer shadow program.',
     avatarType: 'photo',
     avatarPhotoSrc: 'https://i.pravatar.cc/80?u=s3-marcus',
     businessUnit: 'Customer Success',
@@ -68,6 +71,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's4',
     name: 'Priyanka Sharma',
     title: 'Solutions Architect • Sales Engineering',
+    about: 'Solutions Architect with AWS certification and a track record of leading enterprise demos. Skilled in technical discovery, solution design, and customer enablement.',
     avatarType: 'initials',
     avatarInitials: 'PS',
     avatarColor: '#1976D2',
@@ -88,6 +92,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's5',
     name: 'David Chen',
     title: 'Technical Account Manager • Sales',
+    about: 'Technical Account Manager experienced in account expansion and technical upsell. Skilled at aligning product capabilities to customer goals. Completed the Sales Engineering bootcamp.',
     avatarType: 'initials',
     avatarInitials: 'DC',
     avatarColor: '#2E7D32',
@@ -108,6 +113,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's6',
     name: 'Sarah Mitchell',
     title: 'Senior Sales Engineer • Sales Engineering',
+    about: 'Senior Sales Engineer with expertise in solution architecture, technical sales, and enterprise POCs. Proven track record of closing complex deals and mentoring junior engineers. Strong background in product demos and customer enablement.',
     avatarType: 'initials',
     avatarInitials: 'SM',
     avatarColor: '#C62828',
@@ -129,6 +135,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's7',
     name: 'James Wilson',
     title: 'Product Manager • PM',
+    about: 'Product Manager with a technical background and strong customer-facing experience. Skilled at roadmap planning and cross-functional delivery. Participated in the Sales Engineering shadow program.',
     avatarType: 'initials',
     avatarInitials: 'JW',
     avatarColor: '#6A1B9A',
@@ -149,6 +156,7 @@ export const SEARCH_PEOPLE_CARDS: PeopleProfileCardData[] = [
     id: 's8',
     name: 'Elena Rodriguez',
     title: 'Implementation Consultant • Professional Services',
+    about: 'Implementation Consultant specializing in enterprise onboarding and configuration. Skilled at project delivery and stakeholder management across complex deployments.',
     avatarType: 'initials',
     avatarInitials: 'ER',
     avatarColor: '#00838F',
@@ -469,16 +477,17 @@ const TEAM_PROFILE_OVERRIDES: Record<string, Partial<PeopleProfileCardData>> = {
   },
 }
 
-function userCardToProfile(c: { id: string; name: string; title: string; location: string; initials: string; avatarColor: string }): PeopleProfileCardData {
+function userCardToProfile(c: { id: string; name: string; title: string; location: string; initials: string; avatarColor: string; avatarPhotoSrc?: string }): PeopleProfileCardData {
   const o = TEAM_PROFILE_OVERRIDES[c.id] ?? {}
   const bu = o.businessUnit ?? (c.title.includes('•') ? c.title.split('•')[1]?.trim() ?? 'General' : 'General')
   return {
     id: c.id,
     name: c.name,
     title: o.title ?? c.title,
-    avatarType: 'initials',
+    avatarType: c.avatarPhotoSrc ? 'photo' : 'initials',
     avatarInitials: c.initials,
     avatarColor: c.avatarColor,
+    avatarPhotoSrc: c.avatarPhotoSrc,
     businessUnit: bu,
     manager: o.manager ?? '—',
     location: c.location,
@@ -500,4 +509,21 @@ const ALL_PEOPLE = [...SEARCH_PEOPLE_CARDS, ...OPEN_ROLES_PEOPLE_CARDS, LAURA_SH
 
 export function getPersonById(id: string): PeopleProfileCardData | undefined {
   return ALL_PEOPLE.find((p) => p.id === id)
+}
+
+/**
+ * About text for a profile: the person's own bio when set, otherwise a clean
+ * generated fallback so the "About" card appears on every public profile view.
+ */
+export function getAboutText(person: PeopleProfileCardData): string {
+  if (person.about) return person.about
+  const role = person.title.split('•')[0].trim()
+  const team =
+    person.businessUnit && person.businessUnit !== 'General'
+      ? person.businessUnit
+      : person.title.includes('•')
+        ? person.title.split('•')[1]?.trim()
+        : ''
+  const where = person.location && person.location !== '—' ? `, based in ${person.location}` : ''
+  return team ? `${role} on the ${team} team${where}.` : `${role}${where}.`
 }

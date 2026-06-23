@@ -8,14 +8,21 @@ import { NavbarApp } from '../components/Navbar'
 import { Button } from '../components/ui/Button'
 import { OpenTo } from '../components/OpenTo'
 import { MentorshipCard } from '../components/MentorshipCard'
+import { AboutCard } from '../components/AboutCard'
 import { SkillsCard } from '../components/SkillsCard'
+import { WorkExperienceCard } from '../components/WorkExperienceCard'
+import { EducationCard } from '../components/EducationCard'
+import { MentoringCard } from '../components/MentoringCard'
+import { ProjectsCard } from '../components/ProjectsCard'
+import { SkillAssessmentsTab } from '../components/SkillAssessmentsTab'
+import { DevPlansTable, type PlanRow } from '../components/DevPlansTable'
 import { HighlightsCard } from '../components/HighlightsCard'
 import { StandardHighlightsCard } from '../components/StandardHighlightsCard'
 import { OrganizationCard } from '../components/OrganizationCard'
 import { MobilityCard } from '../components/MobilityCard'
 import { CareerNavigator } from '../components/CareerNavigator'
 import { CareerInterestsSidebar } from '../components/CareerInterestsSidebar'
-import { getPersonById } from '../data/peopleData'
+import { getPersonById, getAboutText } from '../data/peopleData'
 import { getCareerPathForPerson, getCareerInterestsForSidebar } from '../data/careerInterestsData'
 import '../components/MentorshipCard.css'
 import '../components/SkillsCard.css'
@@ -192,11 +199,16 @@ function PeopleProfileContent({
             <Tabs.Content value="experience" className="tabs-with-lines__content">
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8 flex flex-col gap-6">
+                  <AboutCard text={getAboutText(person)} readOnly />
                   <SkillsCard personId={person.id} />
                   <MobilityCard
                     relocateValue={person.mobilityPreference}
                     travelValue={person.flexibilityToTravel}
                   />
+                  <WorkExperienceCard personId={person.id} />
+                  <EducationCard personId={person.id} />
+                  <MentoringCard />
+                  <ProjectsCard personId={person.id} />
                 </div>
                 <div className="col-span-4 flex flex-col gap-6">
                   <HighlightsCard
@@ -218,35 +230,33 @@ function PeopleProfileContent({
             {(view === 'hrbp' || view === 'manager') && (
               <>
                 <Tabs.Content value="skills" className="tabs-with-lines__content">
-                  <div className="grid grid-cols-12 gap-6">
-                    <div className="col-span-8 flex flex-col gap-6">
-                      <SkillsCard personId={person.id} />
-                      <MobilityCard
-                        relocateValue={person.mobilityPreference}
-                        travelValue={person.flexibilityToTravel}
-                      />
-                    </div>
-                    <div className="col-span-4 flex flex-col gap-6">
-                      <HighlightsCard
-                        matchRole="Senior Sales Engineer"
-                        matchScore={person.matchScore}
-                        roleInterest={person.roleInterest}
-                        insights={person.insights}
-                        hireDate={person.hireDate}
-                        timeInCurrentPosition={person.timeInCurrentPosition}
-                        businessUnit={person.businessUnit}
-                        mobilityPreference={person.mobilityPreference}
-                        eligibleForInternalMobility={person.eligibleForInternalMobility}
-                      />
-                      <StandardHighlightsCard />
-                      <OrganizationCard />
-                    </div>
-                  </div>
+                  <SkillAssessmentsTab personId={person.id} />
                 </Tabs.Content>
                 <Tabs.Content value="development" className="tabs-with-lines__content">
                   <div className="profile-section">
-                    <h2 className="profile-section__title">Development plans</h2>
-                    <p className="profile-section__text">Development plans content goes here.</p>
+                    {(() => {
+                      const firstName = person.name.split(' ')[0]
+                      const roleName = person.title.split('•')[0].trim()
+                      const devPlans: PlanRow[] = [
+                        { name: `Plan for ${roleName}`, status: 'In progress', createdBy: person.name, role: roleName, planTitle: roleName, assignDate: '2/23/2026', updatedOn: '5/26/2026', duration: 10 },
+                        { name: `${firstName}'s Onboarding Plan`, status: 'Not started', createdBy: person.name, role: '', planTitle: '', assignDate: '1/29/2026', updatedOn: '2/2/2026', duration: 4 },
+                        { name: 'Career Plan', status: 'Not started', createdBy: person.name, role: 'Lead Solutions Architect - SE', planTitle: '', assignDate: '10/30/2025', updatedOn: '10/31/2025', duration: 26 },
+                        { name: 'Onboarding Week 1 Schedule', status: 'Not started', createdBy: person.name, role: roleName, planTitle: '', assignDate: '6/14/2024', updatedOn: '11/23/2024', duration: 1 },
+                        { name: 'Learning path for solution experts', status: 'Not started', createdBy: person.name, role: 'Solutions Architect I, [C] Solution Architect, Lead Solutions Architect', planTitle: '', assignDate: '11/10/2023', updatedOn: '11/23/2024', duration: 4 },
+                      ]
+                      return (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <h2 className="profile-section__title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                              All plans
+                              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 24, height: 20, padding: '0 8px', background: '#E8E9EB', color: '#4F5666', fontSize: 12, fontWeight: 600, borderRadius: 10 }}>{devPlans.length}</span>
+                            </h2>
+                            <Button variant="outline" size="sm">Create Plan for {firstName}</Button>
+                          </div>
+                          <DevPlansTable plans={devPlans} />
+                        </>
+                      )
+                    })()}
                   </div>
                 </Tabs.Content>
                 <Tabs.Content value="career-interest" className="tabs-with-lines__content">

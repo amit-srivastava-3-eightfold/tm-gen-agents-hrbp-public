@@ -6,6 +6,8 @@ interface EducationEntry {
   degree?: string
   field?: string
   dateRange?: string
+  /** Comma-separated coursework / subjects shown below the date */
+  coursework?: string
   logoSrc?: string
   logoBg?: string
   logoInitials?: string
@@ -24,6 +26,24 @@ const EDUCATION_BY_USER: Record<string, EducationEntry[]> = {
   ],
 }
 
+/** Shown on profiles without a hand-authored history, so every profile has an education section. */
+const DEFAULT_EDUCATION: EducationEntry[] = [
+  {
+    school: 'Santa Clara University',
+    degree: 'BSc',
+    field: 'Computer Science',
+    dateRange: 'Sep 2006 – Jun 2010',
+    coursework: 'Programming, Databases, Distributed Systems, Networking, Algorithms',
+  },
+  {
+    school: 'Foothill College',
+    degree: 'Associate',
+    field: 'Information Technology',
+    dateRange: 'Sep 2004 – Jun 2006',
+    coursework: 'Web Development, Systems Administration, Technical Writing, Data Structures',
+  },
+]
+
 interface EducationCardProps {
   personId?: string
 }
@@ -31,7 +51,7 @@ interface EducationCardProps {
 export function EducationCard({ personId }: EducationCardProps) {
   const { currentUser } = useUser()
   const id = personId ?? currentUser.id
-  const entries = EDUCATION_BY_USER[id] ?? []
+  const entries = EDUCATION_BY_USER[id] ?? DEFAULT_EDUCATION
   const showEditButton = !personId
 
   return (
@@ -56,9 +76,15 @@ export function EducationCard({ personId }: EducationCardProps) {
             <li key={i} className={`education-card__item${i > 0 ? ' education-card__item--divider' : ''}`}>
               <div
                 className="education-card__logo"
-                style={{ background: entry.logoBg ?? '#E8E9EB' }}
+                style={{ background: entry.logoBg ?? '#56568C' }}
               >
-                <span className="education-card__logo-text">{entry.logoInitials}</span>
+                {entry.logoSrc ? (
+                  <img src={entry.logoSrc} alt="" className="education-card__logo-img" />
+                ) : entry.logoInitials ? (
+                  <span className="education-card__logo-text">{entry.logoInitials}</span>
+                ) : (
+                  <span className="material-symbols-outlined education-card__logo-icon">school</span>
+                )}
               </div>
               <div className="education-card__body">
                 <p className="education-card__school">{entry.school}</p>
@@ -69,6 +95,9 @@ export function EducationCard({ personId }: EducationCardProps) {
                 )}
                 {entry.dateRange && (
                   <p className="education-card__date">{entry.dateRange}</p>
+                )}
+                {entry.coursework && (
+                  <p className="education-card__coursework">{entry.coursework}</p>
                 )}
               </div>
               {showEditButton && (

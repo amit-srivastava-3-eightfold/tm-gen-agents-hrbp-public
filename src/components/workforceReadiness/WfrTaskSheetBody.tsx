@@ -491,12 +491,12 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
             <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 4px', lineHeight: 1.5 }}>{adminAddedMap.get(t.task)?.description ?? getDescription(t.task)}</p>
             <p style={{ fontSize: 12, color: '#475569', margin: '0 0 14px', lineHeight: 1.6 }}>{analysis}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-              <div style={{ padding: '10px 12px', borderRadius: 8, background: '#eef2ff', border: '1px solid #c7d2fe' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#4338ca', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ padding: '10px 12px', borderRadius: 8, background: '#f1f5f9', border: '1px solid #cbd5e1' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#334155', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 13, lineHeight: 1 }}>smart_toy</span>
                   AI Capabilities
                 </div>
-                {aiCaps.map(cap => <div key={cap} style={{ fontSize: 11, color: '#4338ca', lineHeight: 1.6 }}>• {cap}</div>)}
+                {aiCaps.map(cap => <div key={cap} style={{ fontSize: 11, color: '#475569', lineHeight: 1.6 }}>• {cap}</div>)}
               </div>
               <div style={{ padding: '10px 12px', borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -695,12 +695,12 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
                       )}
                       <p style={{ fontSize: 12, color: '#475569', margin: '0 0 14px', lineHeight: 1.6 }}>{analysis}</p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                        <div style={{ padding: '10px 12px', borderRadius: 8, background: '#eef2ff', border: '1px solid #c7d2fe' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#4338ca', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ padding: '10px 12px', borderRadius: 8, background: '#f1f5f9', border: '1px solid #cbd5e1' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#334155', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span className="material-symbols-outlined" style={{ fontSize: 13, lineHeight: 1 }}>smart_toy</span>
                             AI Capabilities
                           </div>
-                          {aiCaps.map(cap => <div key={cap} style={{ fontSize: 11, color: '#4338ca', lineHeight: 1.6 }}>• {cap}</div>)}
+                          {aiCaps.map(cap => <div key={cap} style={{ fontSize: 11, color: '#475569', lineHeight: 1.6 }}>• {cap}</div>)}
                         </div>
                         <div style={{ padding: '10px 12px', borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a' }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>

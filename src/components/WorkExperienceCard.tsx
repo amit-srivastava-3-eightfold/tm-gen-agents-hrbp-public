@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './WorkExperienceCard.css'
 import { useUser } from '../contexts/UserContext'
 
@@ -8,9 +9,13 @@ interface WorkEntry {
   logoInitials?: string
   logoColor?: string
   dateRange: string
+  tags?: string[]
   bullets?: string[]
   description?: string
 }
+
+/** Entries per page */
+const PAGE_SIZE = 3
 
 const WORK_EXPERIENCE_BY_USER: Record<string, WorkEntry[]> = {
   csm: [
@@ -53,6 +58,73 @@ const WORK_EXPERIENCE_BY_USER: Record<string, WorkEntry[]> = {
   ],
 }
 
+/** Shown on profiles without a hand-authored history, so every profile has a work-experience section. */
+const DEFAULT_WORK_EXPERIENCE: WorkEntry[] = [
+  {
+    title: 'Senior Sales Engineer',
+    company: 'Acme Corp',
+    logoInitials: 'AC',
+    logoColor: '#054D7B',
+    dateRange: 'Jan 2022 – Current',
+  },
+  {
+    title: 'Sales Engineer',
+    company: 'Cloudbase Technologies',
+    logoInitials: 'CB',
+    logoColor: '#025966',
+    dateRange: 'Jun 2019 – Jan 2022',
+    tags: ['Solution Architecture', 'Technical Sales', 'Product Demos', 'API Integration', 'Enterprise Solutions', 'Technical Discovery', 'POC Delivery', 'CRM Systems'],
+    bullets: [
+      'Owned technical pre-sales for enterprise accounts — discovery, demos, and proof-of-concept builds.',
+      'Partnered with account executives to close $4M+ in new ARR across the financial-services vertical.',
+      'Built reusable demo environments and POC templates adopted across the SE org.',
+      'Mentored two junior sales engineers through onboarding and their first solo POCs.',
+    ],
+  },
+  {
+    title: 'Solutions Consultant',
+    company: 'Meridian Labs',
+    logoInitials: 'ML',
+    logoColor: '#414996',
+    dateRange: 'Mar 2017 – May 2019',
+    bullets: [
+      'Led implementation and integration projects for mid-market SaaS customers.',
+      'Translated complex technical requirements into clear solution designs for stakeholders.',
+    ],
+  },
+  {
+    title: 'Technical Account Manager',
+    company: 'Northwind Software',
+    logoInitials: 'NW',
+    logoColor: '#7B1FA2',
+    dateRange: 'Aug 2015 – Feb 2017',
+    bullets: [
+      'Managed post-sale technical relationships for a portfolio of 20+ enterprise accounts.',
+    ],
+  },
+  {
+    title: 'Implementation Specialist',
+    company: 'Northwind Software',
+    logoInitials: 'NW',
+    logoColor: '#7B1FA2',
+    dateRange: 'Jan 2014 – Jul 2015',
+  },
+  {
+    title: 'Support Engineer',
+    company: 'DataForge',
+    logoInitials: 'DF',
+    logoColor: '#2E7D32',
+    dateRange: 'Jun 2012 – Dec 2013',
+  },
+  {
+    title: 'Technical Analyst',
+    company: 'DataForge',
+    logoInitials: 'DF',
+    logoColor: '#2E7D32',
+    dateRange: 'Sep 2010 – May 2012',
+  },
+]
+
 function CompanyLogo({ entry }: { entry: WorkEntry }) {
   if (entry.logoSrc) {
     return <img src={entry.logoSrc} alt={entry.company} className="work-exp-card__logo" />
@@ -74,8 +146,12 @@ interface WorkExperienceCardProps {
 export function WorkExperienceCard({ personId }: WorkExperienceCardProps) {
   const { currentUser } = useUser()
   const id = personId ?? currentUser.id
-  const entries = WORK_EXPERIENCE_BY_USER[id] ?? []
+  const entries = WORK_EXPERIENCE_BY_USER[id] ?? DEFAULT_WORK_EXPERIENCE
   const showEditButton = !personId
+  const [page, setPage] = useState(0)
+
+  const totalPages = Math.ceil(entries.length / PAGE_SIZE)
+  const visible = entries.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
   return (
     <div className="work-exp-card">
@@ -92,8 +168,8 @@ export function WorkExperienceCard({ personId }: WorkExperienceCardProps) {
       </div>
 
       <ul className="work-exp-card__list">
-        {entries.map((entry, i) => (
-          <li key={i} className={`work-exp-card__item${i > 0 ? ' work-exp-card__item--divider' : ''}`}>
+        {visible.map((entry, i) => (
+          <li key={page * PAGE_SIZE + i} className={`work-exp-card__item${i > 0 ? ' work-exp-card__item--divider' : ''}`}>
             <div className="work-exp-card__item-main">
               <CompanyLogo entry={entry} />
               <div className="work-exp-card__body">
@@ -114,6 +190,13 @@ export function WorkExperienceCard({ personId }: WorkExperienceCardProps) {
                     </div>
                   )}
                 </div>
+                {entry.tags && entry.tags.length > 0 && (
+                  <div className="work-exp-card__tags">
+                    {entry.tags.map((t) => (
+                      <span key={t} className="work-exp-card__tag">{t}</span>
+                    ))}
+                  </div>
+                )}
                 {entry.description && (
                   <p className="work-exp-card__description">{entry.description}</p>
                 )}
@@ -129,6 +212,41 @@ export function WorkExperienceCard({ personId }: WorkExperienceCardProps) {
           </li>
         ))}
       </ul>
+
+      {totalPages > 1 && (
+        <div className="work-exp-card__pagination">
+          <button
+            type="button"
+            className="work-exp-card__page-btn work-exp-card__page-nav"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            aria-label="Previous page"
+          >
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`work-exp-card__page-btn${i === page ? ' work-exp-card__page-btn--active' : ''}`}
+              onClick={() => setPage(i)}
+              aria-label={`Page ${i + 1}`}
+              aria-current={i === page}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="work-exp-card__page-btn work-exp-card__page-nav"
+            disabled={page === totalPages - 1}
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            aria-label="Next page"
+          >
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

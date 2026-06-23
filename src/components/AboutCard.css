@@ -43,6 +43,14 @@
   font-size: 20px !important;
 }
 
+.about-card__text {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 .about-card__textarea {
   width: 100%;
   min-height: 120px;

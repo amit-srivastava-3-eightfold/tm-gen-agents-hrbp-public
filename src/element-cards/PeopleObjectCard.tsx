@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
+import { OpenTo, type OpenToItem } from '../components/OpenTo'
 
 export type PeopleObjectCardPerson = {
   id?: string
@@ -63,7 +64,7 @@ export function PeopleObjectCard({
       <div className="people-object-card__divider" aria-hidden />
       <div className="object-card-bottom-bar">
         <div className="object-card-bottom-bar__content">
-          <span className="people-object-card__open-to">{person.openTo}</span>
+          <OpenTo items={[person.openTo as OpenToItem]} labelAsButton={false} className="people-object-card__open-to" />
         </div>
       </div>
     </>

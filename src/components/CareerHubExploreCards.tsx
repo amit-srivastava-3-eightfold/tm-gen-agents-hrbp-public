@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { InsightCard } from '@tonyh-2-eightfold/ef-design-system'
 import { useUser } from '../contexts/UserContext'
 import { getHomePageData } from '../data/homePageData'
 import './CareerHubExploreCards.css'
@@ -42,7 +43,7 @@ function ProjectCardContent({ project }: { project: { title: string; tags: strin
   )
 }
 
-function MentorCardContent({ mentor }: { mentor: { name: string; role: string; avatarSrc: string; matchText: string; matchCount: number } }) {
+function MentorCardContent({ mentor }: { mentor: { name: string; role: string; avatarSrc: string } }) {
   return (
     <div className="career-hub-card__mentor">
       <div className="career-hub-card__mentor-profile">
@@ -50,9 +51,6 @@ function MentorCardContent({ mentor }: { mentor: { name: string; role: string; a
         <div className="career-hub-card__mentor-info">
           <span className="career-hub-card__name">{mentor.name}</span>
           <span className="career-hub-card__role">{mentor.role}</span>
-          <span className="career-hub-card__match">
-            {mentor.matchText} · {mentor.matchCount} matches
-          </span>
         </div>
       </div>
     </div>
@@ -230,31 +228,24 @@ export function CareerHubExploreCards() {
                 buttonHref?: string
               }
               return (
-                <div key={card.id} className="career-hub-card">
-                  <div className="career-hub-card__header">
-                    <div className="career-hub-card__header-content">
-                      <div className="career-hub-card__title-row">
-                        <h3 className="career-hub-card__title">{c.title}</h3>
-                        {c.badge && (
-                          <span className="career-hub-card__badge">{c.badge}</span>
-                        )}
-                      </div>
-                      <p className="career-hub-card__description">{c.description}</p>
-                    </div>
-                    <div className="career-hub-card__icon-wrap" aria-hidden>
-                      <span className="material-symbols-outlined career-hub-card__icon">
-                        {c.icon}
-                      </span>
-                    </div>
-                  </div>
-                  {c.recommendedLabel && (
-                    <span className="career-hub-card__recommended">{c.recommendedLabel}</span>
-                  )}
-                  <div className="career-hub-card__content">{c.content}</div>
-                  <Link to={c.buttonHref ?? '#'} className="career-hub-card__btn">
-                    {c.buttonLabel}
-                  </Link>
-                </div>
+                <InsightCard
+                  key={card.id}
+                  title={c.title}
+                  badge={c.badge}
+                  description={c.description}
+                  recommendedLabel={c.recommendedLabel}
+                  icon={c.icon}
+                  bgColor={c.bgColor}
+                  iconBgColor={c.iconBgColor}
+                  iconColor={c.iconColor}
+                  textColor={c.textColor}
+                  buttonLabel={c.buttonLabel}
+                  buttonHref={c.buttonHref ?? '#'}
+                  fixedSize={false}
+                  LinkComponent={Link}
+                >
+                  {c.content}
+                </InsightCard>
               )
             })}
           </div>

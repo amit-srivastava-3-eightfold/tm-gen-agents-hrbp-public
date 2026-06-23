@@ -166,6 +166,22 @@
   font-size: 18px !important;
 }
 
+.work-exp-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.work-exp-card__tag {
+  padding: 6px 12px;
+  border: 1px solid #D9DCE1;
+  border-radius: 8px;
+  font: var(--typography-body3);
+  color: #1A212E;
+  background: #FFFFFF;
+}
+
 .work-exp-card__description {
   margin: 0 0 8px;
   font: var(--typography-body3);
@@ -195,4 +211,50 @@
   position: absolute;
   left: 0;
   color: #4F5666;
+}
+
+/* Pagination */
+.work-exp-card__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.work-exp-card__page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #F1F3F5;
+  color: #1A212E;
+  font: var(--typography-body3);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.work-exp-card__page-btn:hover:not(:disabled) {
+  background: #E4E7EB;
+}
+
+.work-exp-card__page-btn--active {
+  background: #E8F1FB;
+  border-color: #146DA6;
+  color: #146DA6;
+  font-weight: 600;
+}
+
+.work-exp-card__page-btn:disabled {
+  background: #F8F9FA;
+  color: #C2C7D0;
+  cursor: not-allowed;
+}
+
+.work-exp-card__page-nav .material-symbols-outlined {
+  font-size: 18px !important;
 }

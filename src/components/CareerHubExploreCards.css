@@ -90,86 +90,6 @@
   min-width: 0;
 }
 
-/* Career hub cards — amber, 2-col grid */
-.career-hub-card {
-  background: #FEF9ED;
-  border: 1px solid #FAE9BB;
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.career-hub-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.career-hub-card__header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.career-hub-card__title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.career-hub-card__title {
-  margin: 0;
-  font: var(--typography-button1);
-  color: #1A212E;
-}
-
-.career-hub-card__badge {
-  padding: 2px 10px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  font: var(--typography-caption-semibold);
-  color: #4F5666;
-}
-
-.career-hub-card__icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #FDD87A;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: #92600a;
-}
-
-.career-hub-card__icon-wrap .material-symbols-outlined {
-  font-size: 22px !important;
-  font-variation-settings: 'FILL' 1;
-  color: #92600a;
-}
-
-.career-hub-card__description {
-  margin: 0;
-  font: var(--typography-body3);
-  color: #4F5666;
-}
-
-.career-hub-card__recommended {
-  font: var(--typography-caption-medium);
-  color: #4F5666;
-  margin-bottom: -6px;
-}
-
-.career-hub-card__content {
-  flex: 1;
-  min-height: 60px;
-}
-
 .career-hub-card__mentor {
   display: flex;
   flex-direction: column;
@@ -204,33 +124,6 @@
 .career-hub-card__role {
   font: var(--typography-caption-medium);
   color: #4F5666;
-}
-
-.career-hub-card__match {
-  margin: 0;
-  font: var(--typography-caption-medium);
-  color: #4F5666;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.career-hub-card__match-icon {
-  font-size: 16px;
-  color: #4F5666;
-}
-
-.career-hub-card__match-text {
-  text-decoration: underline;
-  text-decoration-style: dashed;
-}
-
-.career-hub-card__match-badge {
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  font: var(--typography-caption-semibold);
-  color: #1A212E;
 }
 
 .career-hub-card__job,
@@ -272,28 +165,6 @@
 
 .career-hub-card__tag--checked .material-symbols-outlined {
   font-size: 14px;
-}
-
-.career-hub-card__btn {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 36px;
-  background: #FFFFFF;
-  font-family: var(--font-display, var(--font-family));
-  font-weight: 600;
-  font-size: 13.5px;
-  color: #1A212E;
-  text-decoration: none;
-  border-radius: 99px;
-  border: 1px solid #D9DCE1;
-  transition: background 0.15s;
-}
-
-.career-hub-card__btn:hover {
-  background: #fff8e0;
 }
 
 /* Career Navigator path visualization */

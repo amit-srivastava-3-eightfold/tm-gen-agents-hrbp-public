@@ -27,8 +27,6 @@ export interface HomeMentor {
   name: string
   role: string
   avatarSrc: string
-  matchText: string
-  matchCount: number
 }
 
 export interface HomeRecommendedJob {
@@ -140,32 +138,24 @@ const MATEO_MENTOR: HomeMentor = {
   name: 'Alex Nakamura',
   role: 'Senior Manager · Engineering',
   avatarSrc: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=56&h=56&fit=crop&crop=face',
-  matchText: 'Matched 4 of your skill interests',
-  matchCount: 4,
 }
 
 const CHRO_MENTOR: HomeMentor = {
   name: 'Michael Torres',
   role: 'CEO',
   avatarSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=56&h=56&fit=crop&crop=face',
-  matchText: 'Executive sponsor',
-  matchCount: 0,
 }
 
 const CSM_MENTOR: HomeMentor = {
   name: 'Jaydon Torff',
   role: 'HR Business Partner, Customer Success',
   avatarSrc: '/jaydon_torff.jpg',
-  matchText: 'Your HRBP, strong in AI adoption',
-  matchCount: 0,
 }
 
 const LAURA_MENTOR: HomeMentor = {
   name: 'Rachel Kim',
   role: 'Senior HRBP, Product & Engineering',
   avatarSrc: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=56&h=56&fit=crop&crop=face',
-  matchText: 'Matched 4 of your skill interests',
-  matchCount: 4,
 }
 
 const MATEO_JOB: HomeRecommendedJob = {
@@ -178,11 +168,11 @@ const MATEO_JOB: HomeRecommendedJob = {
 }
 
 const CHRO_JOB: HomeRecommendedJob = {
-  title: 'Chief People Officer',
+  title: 'Board Director',
   tags: [
-    { label: 'People Strategy' },
-    { label: 'Org Development', checked: true },
-    { label: 'AI Adoption' },
+    { label: 'People Strategy', checked: true },
+    { label: 'Governance' },
+    { label: 'AI Transformation' },
   ],
 }
 

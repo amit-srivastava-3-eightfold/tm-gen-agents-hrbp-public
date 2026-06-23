@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tag } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
 import { EditRiskSheet } from './EditRiskSheet'
+import { ProfileSheet } from './ProfileSheet'
 import './UserCard.css'
 
 export interface DirectReport {
@@ -83,6 +83,7 @@ const METRIC_ITEMS = [
 
 export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
   const [editSheetOpen, setEditSheetOpen] = useState(false)
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false)
 
   const handleEditRiskClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -94,9 +95,11 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
     onRiskTagsChange?.(user.id, riskTags)
   }
 
+  const hasDirectReports = user.directReports.length > 0 || (user.directReportCount ?? 0) > 0
+
   return (
     <>
-    <Link to={`/people/${user.id}`} className="user-card-link">
+    <div className="user-card-link" role="button" tabIndex={0} onClick={() => setProfileSheetOpen(true)}>
     <article className="user-card">
       <div className="user-card__left">
         <div className="user-card__avatar-wrap" onClick={(e) => e.stopPropagation()}>
@@ -125,14 +128,10 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
               </div>
             </div>
             <div className="user-card__action-icons" onClick={(e) => e.stopPropagation()}>
-              <Button variant="secondary" size="icon" className="user-card__icon-btn user-card__icon-btn--with-badge" aria-label="Document">
+              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Document">
                 <span className="material-symbols-outlined">description</span>
-                <span className="user-card__icon-badge" aria-hidden />
               </Button>
-              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Career navigator">
-                <span className="material-symbols-outlined">route</span>
-              </Button>
-              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Org chart" hidden>
+              <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="Org chart">
                 <span className="material-symbols-outlined">account_tree</span>
               </Button>
               <Button variant="secondary" size="icon" className="user-card__icon-btn" aria-label="More options">
@@ -140,32 +139,34 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
               </Button>
             </div>
           </div>
-          <div className="user-card__reports" onClick={(e) => e.stopPropagation()}>
-            <span className="material-symbols-outlined user-card__reports-arrow">subdirectory_arrow_right</span>
-            <div className="user-card__report-avatars">
-              {user.directReports.map((r, i) => (
-                <div
-                  key={i}
-                  className="user-card__report-avatar"
-                  style={{ background: r.color, marginLeft: i > 0 ? -8 : 0 }}
-                  title={r.initials}
-                >
-                  {r.initials}
-                </div>
-              ))}
-              {user.directReportCount != null && user.directReportCount > 0 && (
-                <span className="user-card__report-more">+{user.directReportCount}</span>
-              )}
+          {hasDirectReports && (
+            <div className="user-card__reports" onClick={(e) => e.stopPropagation()}>
+              <span className="material-symbols-outlined user-card__reports-arrow">subdirectory_arrow_right</span>
+              <div className="user-card__report-avatars">
+                {user.directReports.map((r, i) => (
+                  <div
+                    key={i}
+                    className="user-card__report-avatar"
+                    style={{ background: r.color, marginLeft: i > 0 ? -8 : 0 }}
+                    title={r.initials}
+                  >
+                    {r.initials}
+                  </div>
+                ))}
+                {user.directReportCount != null && user.directReportCount > 0 && (
+                  <span className="user-card__report-more">+{user.directReportCount}</span>
+                )}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="user-card__reports-btn"
+                trailingIcon={<span className="material-symbols-outlined">chevron_right</span>}
+              >
+                Direct reports
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="user-card__reports-btn"
-              trailingIcon={<span className="material-symbols-outlined">chevron_right</span>}
-            >
-              Direct reports
-            </Button>
-          </div>
+          )}
         </div>
       </div>
       <div className="user-card__right">
@@ -269,13 +270,21 @@ export function UserCard({ user, onRiskTagsChange }: UserCardProps) {
         </div>
       </div>
     </article>
-    </Link>
+    </div>
     <EditRiskSheet
       key={editSheetOpen && user ? user.id : 'edit-risk-closed'}
       user={editSheetOpen ? user : null}
       open={editSheetOpen}
       onClose={() => setEditSheetOpen(false)}
       onSave={handleSaveRisk}
+    />
+    <ProfileSheet
+      key={profileSheetOpen ? `sheet-${user.id}` : 'profile-sheet-closed'}
+      user={profileSheetOpen ? user : null}
+      open={profileSheetOpen}
+      onClose={() => setProfileSheetOpen(false)}
+      variant="manager"
+      onEditRisk={() => { setProfileSheetOpen(false); setEditSheetOpen(true) }}
     />
     </>
   )

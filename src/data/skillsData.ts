@@ -176,11 +176,58 @@ export const PROFILE_SKILLS: Record<string, { skills: ProfileSkill[]; endorserIn
   o8: { skills: PROFESSIONAL_SERVICES_SKILLS, endorserInitials: 'S', endorserName: 'Sarah Chen at Acme', endorserColor: '#5C6BC0' },
 }
 
+/* Shared avatar pool for derived featured-skill endorsers. */
+const DERIVED_ENDORSERS: FeaturedSkillEndorser[] = [
+  { initials: 'AN', color: '#1565C0', photoSrc: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
+  { initials: 'CW', color: '#2E7D32', photoSrc: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=40&h=40&fit=crop&crop=face' },
+  { initials: 'RK', color: '#6A1B9A', photoSrc: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=40&h=40&fit=crop&crop=face' },
+  { initials: 'JT', color: '#AD1457', photoSrc: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=40&h=40&fit=crop&crop=face' },
+  { initials: 'PS', color: '#00838F', photoSrc: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=40&h=40&fit=crop&crop=face' },
+]
+
+/** "Mateo Myer at Acme" -> "Mateo Myer"; "—" -> "" */
+function endorserDisplayName(endorserName: string): string {
+  if (!endorserName || endorserName === '—') return ''
+  return endorserName.replace(/\s+at\s+.+$/i, '').trim()
+}
+
+/**
+ * Build the 3-column featured section (top 2 endorsed skills + an "Expert in N"
+ * block) from a profile's skills, so every profile shows it — not just ones
+ * with hand-authored featured data.
+ */
+function deriveFeatured(skills: ProfileSkill[], endorserName: string): { featuredSkills: FeaturedSkill[]; expertBlock?: ExpertBlock } {
+  const ranked = skills
+    .filter((s) => s.endorsementCount != null)
+    .sort((a, b) => (b.endorsementCount ?? 0) - (a.endorsementCount ?? 0))
+  if (ranked.length === 0) return { featuredSkills: [] }
+
+  const name = endorserDisplayName(endorserName)
+  const featuredSkills: FeaturedSkill[] = ranked.slice(0, 2).map((s, i) => {
+    const others = Math.min((s.endorsementCount ?? 2) - 1, 6)
+    const avatarCount = Math.min(Math.max(others + 1, 3), DERIVED_ENDORSERS.length)
+    const endorsers = [...DERIVED_ENDORSERS.slice(i), ...DERIVED_ENDORSERS.slice(0, i)].slice(0, avatarCount)
+    const endorserSummary = name
+      ? `${name} and ${others} other${others === 1 ? '' : 's'} at Acme`
+      : `${others + 1} colleagues at Acme`
+    return { name: s.name, endorserSummary, endorsers }
+  })
+
+  const expertNames = ranked.slice(0, 6).map((s) => s.name)
+  const expertBlock: ExpertBlock = { count: expertNames.length, skills: expertNames }
+  return { featuredSkills, expertBlock }
+}
+
 export function getProfileSkills(personId: string) {
-  return PROFILE_SKILLS[personId] ?? {
+  const entry = PROFILE_SKILLS[personId] ?? {
     skills: SALES_ENGINEERING_SKILLS,
     endorserInitials: '—',
     endorserName: '—',
     endorserColor: '#A1A6B1',
   }
+  // Keep hand-authored featured data; otherwise derive it so the 3-column
+  // section appears on every profile.
+  if (entry.featuredSkills && entry.featuredSkills.length > 0) return entry
+  const { featuredSkills, expertBlock } = deriveFeatured(entry.skills, entry.endorserName)
+  return { ...entry, featuredSkills, expertBlock }
 }

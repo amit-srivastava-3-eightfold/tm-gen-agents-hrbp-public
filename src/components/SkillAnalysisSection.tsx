@@ -9,6 +9,7 @@ import {
   SelectContent,
   SelectItem,
   SkillTag,
+  Input,
 } from '@tonyh-2-eightfold/ef-design-system'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
@@ -1291,16 +1292,44 @@ export function SkillAnalysisSection({
                     </DropdownMenu.Content>
                   </DropdownMenu.Portal>
                 </DropdownMenu.Root>
-                <Select defaultValue="dev-plan">
-                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Development Plan Status" /></SelectTrigger>
+                <Select value={selectedTenure || 'all'} onValueChange={(v: string) => setSelectedTenure(v === 'all' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Tenure" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dev-plan">Development Plan Status</SelectItem>
+                    <SelectItem value="all">Tenure</SelectItem>
+                    <SelectItem value="<1">Under 1 year</SelectItem>
+                    <SelectItem value="1-2">1–2 years</SelectItem>
+                    <SelectItem value="2-5">2–5 years</SelectItem>
+                    <SelectItem value="5+">5+ years</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="skill-analysis__search">
-                  <span className="material-symbols-outlined skill-analysis__search-icon">search</span>
-                  <input type="search" placeholder="Search name or role" className="skill-analysis__search-input" />
-                </div>
+                <Select value={selectedRetentionRisk || 'all'} onValueChange={(v: string) => setSelectedRetentionRisk(v === 'all' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Retention Risk" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Retention Risk</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedLossImpact || 'all'} onValueChange={(v: string) => setSelectedLossImpact(v === 'all' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Loss Impact" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Loss Impact</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedDevPlanStatus || 'all'} onValueChange={(v: string) => setSelectedDevPlanStatus(v === 'all' ? '' : v)}>
+                  <SelectTrigger variant="secondary" className="skill-analysis__filter-select"><SelectValue placeholder="Development Plan Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Development Plan Status</SelectItem>
+                    <SelectItem value="not-started">Not started</SelectItem>
+                    <SelectItem value="in-progress">In progress</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input size="small" leadingIcon="search" placeholder="Search name or role" className="skill-analysis__search" />
               </>
             )}
           </>
@@ -1349,10 +1378,10 @@ export function SkillAnalysisSection({
         selectedRoles={selectedRolesPeople}
         selectedSkills={selectedSkillsPeople}
         selectedJobLevels={selectedJobLevels}
-        selectedTenure={viewFilter === 'team-statistics' ? selectedTenure : ''}
-        selectedRetentionRisk={viewFilter === 'team-statistics' ? selectedRetentionRisk : ''}
-        selectedLossImpact={viewFilter === 'team-statistics' ? selectedLossImpact : ''}
-        selectedDevPlanStatus={viewFilter === 'team-statistics' ? selectedDevPlanStatus : ''}
+        selectedTenure={selectedTenure}
+        selectedRetentionRisk={selectedRetentionRisk}
+        selectedLossImpact={selectedLossImpact}
+        selectedDevPlanStatus={selectedDevPlanStatus}
         sortBy={sortBy}
         riskTagOverrides={riskTagOverrides}
         onRiskTagsChange={(userId, riskTags) => setRiskTagOverrides((prev) => ({ ...prev, [userId]: riskTags }))}

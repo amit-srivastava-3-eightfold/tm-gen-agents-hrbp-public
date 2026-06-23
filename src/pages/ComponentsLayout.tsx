@@ -15,6 +15,8 @@ const SECTIONS: NavSection[] = [
       { label: 'WFR Metric Cards', path: '/components/wfr-metric-cards' },
       { label: 'WFR Dialogs', path: '/components/wfr-dialogs' },
       { label: 'WFR Task Sheet', path: '/components/wfr-task-sheet' },
+      { label: 'Profile Sheet', path: '/components/profile-sheet' },
+      { label: 'Team report card', path: '/components/user-card' },
       { label: 'Dev plans', path: '/components/dev-plans' },
     ],
   },

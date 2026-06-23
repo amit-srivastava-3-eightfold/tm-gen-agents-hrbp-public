@@ -17,6 +17,8 @@ export interface PeopleProfileCardData {
   timeInCurrentPosition: string
   hasRequestButton: boolean
   openToIcons: ('coffee' | 'mentoring' | 'project')[]
+  /** Short professional bio shown read-only in the "About" card on the profile page */
+  about?: string
   insights?: string[]
   matchScore?: number
   /** Role interest — shown as first insight when matchRole is provided */

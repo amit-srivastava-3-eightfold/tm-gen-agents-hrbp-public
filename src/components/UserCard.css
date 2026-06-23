@@ -187,16 +187,6 @@
   font-size: 20px;
 }
 
-.user-card__icon-btn--with-badge .user-card__icon-badge {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  background: #146DA6;
-  border-radius: 50%;
-}
-
 .user-card__reports {
   display: flex;
   align-items: center;

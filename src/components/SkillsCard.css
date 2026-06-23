@@ -147,17 +147,11 @@
 .skills-card__featured {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: #D9DCE1;
-  border: 1px solid #D9DCE1;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 20px;
+  gap: 32px;
+  margin-bottom: 24px;
 }
 
 .skills-card__featured-col {
-  background: #fff;
-  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -226,29 +220,39 @@
 
 .skills-card__tag {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  align-items: stretch;
   background: #FFFFFF;
   border: 1px solid #D9DCE1;
   border-radius: 8px;
+  overflow: hidden;
   font: var(--typography-body3);
   color: #1A212E;
 }
 
 .skills-card__tag-name {
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+}
+
+.skills-card__tag-star {
+  font-size: 16px !important;
+  color: #8E9128;
+  font-variation-settings: 'FILL' 1;
 }
 
 .skills-card__tag-endorsement {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  padding: 7px 10px;
+  border-left: 1px solid #D9DCE1;
 }
 
 .skills-card__tag-icon {
   font-size: 16px !important;
-  color: #4F5666;
+  color: #9AA0AC;
 }
 
 .skills-card__tag-icon--endorsed {
@@ -256,6 +260,54 @@
 }
 
 .skills-card__tag-count {
-  font: var(--typography-caption-medium);
+  font: var(--typography-caption-semibold);
   color: #4F5666;
+}
+
+/* Expert (top) skills — starred, olive/yellow theme */
+.skills-card__tag--expert {
+  background: #FBFBEA;
+  border-color: #C7CA72;
+  color: #5F6312;
+}
+
+.skills-card__tag--expert .skills-card__tag-endorsement {
+  border-left-color: #C7CA72;
+}
+
+.skills-card__tag--expert .skills-card__tag-count {
+  color: #5F6312;
+}
+
+/* See more / less toggle */
+.skills-card__see-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: #E8F1FB;
+  color: #146DA6;
+  font: var(--typography-body3);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.skills-card__see-more:hover {
+  background: #D6E7F7;
+}
+
+.skills-card__see-more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  background: #C7DDF2;
+  border-radius: 10px;
+  font: var(--typography-caption-semibold);
 }

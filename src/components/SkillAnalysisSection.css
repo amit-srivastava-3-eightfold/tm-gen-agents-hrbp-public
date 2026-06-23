@@ -64,7 +64,6 @@
 
 /* Roles multiselect (top filter) */
 .skill-analysis__roles-trigger.btn {
-  min-width: 140px;
   justify-content: space-between;
   background: #F6F7F8;
   border-color: transparent;
@@ -167,7 +166,6 @@
 
 /* Skills multiselect (top filter) – same as roles + search */
 .skill-analysis__skills-trigger.btn {
-  min-width: 140px;
   justify-content: space-between;
   background: #F6F7F8;
   border-color: transparent;
@@ -597,7 +595,7 @@
 
 /* EF DS Select in filters – layout; secondary variant needs explicit bg (DS uses Tailwind secondary) */
 .skill-analysis__filters [data-slot="select-trigger"].skill-analysis__filter-select {
-  min-width: 140px;
+  width: fit-content;
 }
 
 .skill-analysis__filters [data-slot="select-trigger"][data-variant="secondary"] {

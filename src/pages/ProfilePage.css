@@ -32,10 +32,11 @@
   pointer-events: none;
 }
 
-/* Header - navbar layered over background, anchored to bottom of cover area (z-index above main) */
+/* Header - navbar layered over background, anchored to bottom of cover area.
+   No z-index here: a stacking context would trap the fixed navbar (z-index 1000)
+   below .profile-page__main (z-index 2), letting content scroll over the navbar. */
 .profile-page__header {
   position: relative;
-  z-index: 1;
   width: 100%;
   height: 420px;
   display: flex;

@@ -1,0 +1,51 @@
+.mentoring-card {
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 24px;
+  padding: 24px;
+  font-family: var(--font-family);
+}
+
+.mentoring-card__title {
+  margin: 0 0 20px;
+  font: var(--typography-button1);
+  color: #1A212E;
+}
+
+.mentoring-card__group {
+  margin-bottom: 24px;
+}
+
+.mentoring-card__group:last-child {
+  margin-bottom: 0;
+}
+
+.mentoring-card__label {
+  margin: 0 0 12px;
+  font: var(--typography-body2);
+  font-weight: 600;
+  color: #1A212E;
+}
+
+.mentoring-card__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #146DA6;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #146DA6;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mentoring-card__add:hover {
+  background: #E8F1FB;
+}
+
+.mentoring-card__add .material-symbols-outlined {
+  font-size: 20px !important;
+}
