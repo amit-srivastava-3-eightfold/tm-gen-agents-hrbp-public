@@ -469,8 +469,8 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
     return (
       <div key={i} onClick={() => !isPendingDelete && toggleTask(t.task)}
         style={{ padding: '10px 12px', borderRadius: 6, cursor: isPendingDelete ? 'default' : 'pointer', opacity: isPendingDelete ? 0.6 : 1,
-          border: `1px solid ${isPendingDelete ? '#fecaca' : draftAddedNames?.has(t.task) ? meta.border : '#e5e7eb'}`,
-          background: isPendingDelete ? '#fff1f2' : draftAddedNames?.has(t.task) ? meta.bg : '#fff' }}>
+          border: `1px solid ${isPendingDelete ? '#fecaca' : draftAddedNames?.has(t.task) ? '#fde68a' : '#e5e7eb'}`,
+          background: isPendingDelete ? '#fff1f2' : draftAddedNames?.has(t.task) ? '#fffbeb' : '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="text-[13px] font-medium" style={{ flex: 1, minWidth: 0, color: isPendingDelete ? '#94a3b8' : '#1a212e', textDecoration: isPendingDelete ? 'line-through' : 'none' }}>{t.task}</span>
           {!isPendingDelete && <span style={{ padding: '2px 7px', borderRadius: 10, background: meta.bg, border: `1px solid ${meta.border}`, fontSize: 11, fontWeight: 600, color: meta.color, whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>}
@@ -632,8 +632,8 @@ export function WfrTaskSheetBody({ role, phase = 'baseline', viewMode = 'classif
                     cursor: isNotIncluded || isPendingDelete ? 'default' : 'pointer',
                     opacity: isPendingDelete ? 0.6 : 1,
                     transition: 'background 0.1s',
-                    border: `1px solid ${isNotIncluded ? '#e2e8f0' : isPendingDelete ? '#fecaca' : moved ? (movedUp ? '#c7d2fe' : '#fecaca') : draftAddedNames?.has(t.task) ? group.border : '#e5e7eb'}`,
-                    background: isNotIncluded ? '#f8fafc' : isPendingDelete ? '#fff1f2' : moved ? (movedUp ? '#fafafe' : '#fff8f8') : draftAddedNames?.has(t.task) ? group.bg : '#fff' }}
+                    border: `1px solid ${isNotIncluded ? '#e2e8f0' : isPendingDelete ? '#fecaca' : moved ? (movedUp ? '#c7d2fe' : '#fecaca') : draftAddedNames?.has(t.task) ? '#fde68a' : '#e5e7eb'}`,
+                    background: isNotIncluded ? '#f8fafc' : isPendingDelete ? '#fff1f2' : moved ? (movedUp ? '#fafafe' : '#fff8f8') : draftAddedNames?.has(t.task) ? '#fffbeb' : '#fff' }}
                 >
                   {/* Row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useUser } from '../contexts/UserContext'
 import { MATEO_USER_CARDS, MATEO_ALL_REPORTS_CARDS, LAURA_USER_CARDS, LAURA_ALL_REPORTS_CARDS, CHRO_USER_CARDS, CHRO_ALL_REPORTS_CARDS } from '../data/teamData'
@@ -302,6 +303,9 @@ export function SkillAnalysisSection({
     : (isLaura ? LAURA_USER_CARDS : isChro ? CHRO_USER_CARDS : MATEO_USER_CARDS)
 
   const [viewFilter, setViewFilter] = useState<ViewFilterValue>('gaps')
+  const [cardsExpanded, setCardsExpanded] = useState(true)
+  /** Floating tooltip for truncated skill names (portaled, position: fixed) */
+  const [skillTip, setSkillTip] = useState<{ text: string; x: number; y: number } | null>(null)
   const [selectedSkillGap, setSelectedSkillGap] = useState<string | null>(null)
   const [selectedSkillStrength, setSelectedSkillStrength] = useState<string | null>(null)
   const [selectedSkillInterest, setSelectedSkillInterest] = useState<string | null>(null)
@@ -515,7 +519,11 @@ export function SkillAnalysisSection({
   )
 
   return (
-    <div className="skill-analysis">
+    <div className={`skill-analysis${cardsExpanded ? '' : ' skill-analysis--insights-collapsed'}`}>
+      {skillTip && createPortal(
+        <div className="skill-analysis__name-tip" style={{ left: skillTip.x, top: skillTip.y }}>{skillTip.text}</div>,
+        document.body,
+      )}
       <div className="skill-analysis__tabs">
         <Button
           type="button"
@@ -537,6 +545,19 @@ export function SkillAnalysisSection({
         </Button>
       </div>
 
+      <div className="skill-analysis__insights">
+      <button
+        type="button"
+        className="skill-analysis__insights-header"
+        onClick={() => setCardsExpanded((v) => !v)}
+        aria-expanded={cardsExpanded}
+      >
+        <span className="skill-analysis__insights-title">
+          <span className="material-symbols-outlined skill-analysis__insights-title-icon">insights</span>
+          Skills insights
+        </span>
+        <span className="material-symbols-outlined skill-analysis__insights-chevron">{cardsExpanded ? 'expand_less' : 'expand_more'}</span>
+      </button>
       <div className="skill-analysis__filters skill-analysis__filters--top">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
@@ -710,7 +731,21 @@ export function SkillAnalysisSection({
           })}
         </div>
       )}
-      <div className="skill-analysis__cards">
+      <div
+        className="skill-analysis__cards"
+        onMouseOver={(e) => {
+          const row = (e.target as HTMLElement).closest('.skill-analysis__item')
+          const label = row?.querySelector('.skill-tag__label, .skill-analysis__employee-name') as HTMLElement | null
+          if (label && label.scrollWidth > label.clientWidth + 1) {
+            const r = label.getBoundingClientRect()
+            const text = label.textContent ?? ''
+            setSkillTip((prev) => (prev?.text === text ? prev : { text, x: Math.round(r.left + r.width / 2), y: Math.round(r.top) }))
+          } else {
+            setSkillTip((prev) => (prev ? null : prev))
+          }
+        }}
+        onMouseLeave={() => setSkillTip(null)}
+      >
         {viewFilter === 'gaps' ? (
           /* Gaps analysis: first view – Skill gaps, Skill strengths, Skill interests */
           <>
@@ -987,6 +1022,8 @@ export function SkillAnalysisSection({
           </div>
         </div>
       )}
+      </>
+      </div>
 
       <>
       <div className="skill-analysis__filters skill-analysis__filters--bottom">
@@ -1386,7 +1423,6 @@ export function SkillAnalysisSection({
         riskTagOverrides={riskTagOverrides}
         onRiskTagsChange={(userId, riskTags) => setRiskTagOverrides((prev) => ({ ...prev, [userId]: riskTags }))}
       />
-      </>
       </>
       <EditSkillAssessmentsSheet
         key={skillAssessmentPerson?.id ?? 'edit-skill-closed'}

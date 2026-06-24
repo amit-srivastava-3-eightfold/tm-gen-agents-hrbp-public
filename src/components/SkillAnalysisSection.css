@@ -2,6 +2,86 @@
   font-family: var(--font-family);
 }
 
+/* Skills insights — bordered, collapsible container */
+.skill-analysis__insights {
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  padding: 4px 12px 16px;
+  margin-bottom: 20px;
+  background: #fff;
+}
+
+.skill-analysis--insights-collapsed .skill-analysis__insights {
+  padding-bottom: 4px;
+}
+
+.skill-analysis__insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+/* Divider under the header only when the container is expanded */
+.skill-analysis:not(.skill-analysis--insights-collapsed) .skill-analysis__insights-header {
+  border-bottom: 1px solid #E9EBEE;
+  margin-bottom: 16px;
+}
+
+.skill-analysis__insights-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1A212E;
+}
+
+.skill-analysis__insights-title-icon {
+  font-size: 20px;
+  color: #146DA6;
+}
+
+.skill-analysis__insights-chevron {
+  font-size: 22px;
+  color: #4F5666;
+  transition: color 0.15s;
+}
+
+.skill-analysis__insights-header:hover .skill-analysis__insights-chevron {
+  color: #1A212E;
+}
+
+/* Collapsed: hide the insights body (filters + every card variant); keep header + people list */
+.skill-analysis--insights-collapsed .skill-analysis__filters--top,
+.skill-analysis--insights-collapsed .skill-analysis__view-stat-cards,
+.skill-analysis--insights-collapsed .skill-analysis__cards,
+.skill-analysis--insights-collapsed .skill-analysis__stat-cards {
+  display: none;
+}
+
+/* Floating tooltip for truncated skill names (portaled to body) */
+.skill-analysis__name-tip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 1000;
+  padding: 6px 10px;
+  background: #1A212E;
+  color: #FFFFFF;
+  font: var(--typography-caption-medium);
+  line-height: 1.4;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
 .skill-analysis__tabs {
   display: flex;
   gap: 24px;
@@ -610,11 +690,12 @@
 
 .skill-analysis__cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .skill-analysis__card {
+  min-width: 0;
   background: #FFFFFF;
   border: 1px solid #D9DCE1;
   border-radius: 12px;

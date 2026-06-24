@@ -5,7 +5,6 @@
 import { useState } from 'react'
 import { EM } from '../data/wfrOrgData'
 import { WfrHeroCard, WfrCtaBar, WFR_CTA_CONTENT, type WfrDemoState, type WfrPersona } from '../components/workforceReadiness/FocusFirstModule'
-import { MetricArc } from '../components/workforceReadiness/MetricArc'
 import '../components/workforceReadiness/WorkforceReadinessDashboard.css'
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ function getHeadline(persona: WfrPersona, upskilled: boolean) {
     )
   }
   return (
-    <>Only <span className="wfr-text-readiness" style={{ fontWeight: 700 }}>{pct}%</span>{' '}<span style={{ fontWeight: 500 }}>are AI-ready.</span></>
+    <>Only <span className="wfr-text-readiness" style={{ fontWeight: 700 }}>{pct}%</span>{' '}<span style={{ fontWeight: 500 }}>of your team is AI-ready.</span></>
   )
 }
 
@@ -97,7 +96,8 @@ export default function WfrHeroOptionsPage() {
                 {persona === 'chro' ? 'CHRO' : persona === 'hrbp' ? 'HRBP' : 'Manager'}
               </p>
               <WfrHeroCard
-                gauge={<MetricArc potential={48} readiness={readinessPct} size="lg" />}
+                variant="crowd"
+                readinessPct={readinessPct}
                 eyebrow={<>49,500 employees {EM} Q1 2026</>}
                 headline={getHeadline(persona, upskilled)}
                 supportingText={getSupportingText(persona, upskilled)}
