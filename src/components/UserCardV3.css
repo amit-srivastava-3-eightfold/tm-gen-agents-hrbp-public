@@ -1,0 +1,278 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Team report card — v3 (WFR-integrated) layout.
+   Shared atoms (Manager actions, Contact select, icon buttons, report
+   avatars, risk pills) reuse the .user-card__* rules in UserCard.css.
+   ────────────────────────────────────────────────────────────────────── */
+
+.ucv3-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.ucv3-link:hover .ucv3 {
+  border-color: #146DA6;
+}
+
+.ucv3 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 6px rgba(16, 24, 40, 0.06);
+  font-family: var(--font-family);
+}
+
+/* Header */
+.ucv3__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ucv3__identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ucv3__avatar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.ucv3__checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #146DA6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ucv3__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button1);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.ucv3__identity-text {
+  min-width: 0;
+}
+
+.ucv3__name {
+  margin: 0 0 2px;
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.ucv3__meta {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+/* Headline badges — Risk + AI readiness */
+.ucv3__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ucv3__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: var(--typography-caption-semibold);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ucv3__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ucv3__badge-icon {
+  font-size: 15px !important;
+}
+
+.ucv3__badge-pct {
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.ucv3__badge--risk-high { background: #FEECEB; color: #B42318; }
+.ucv3__badge--risk-high .ucv3__badge-dot { background: #D92D20; }
+.ucv3__badge--risk-medium { background: #FEF4E5; color: #B54708; }
+.ucv3__badge--risk-medium .ucv3__badge-dot { background: #F79009; }
+.ucv3__badge--risk-low { background: #ECFDF3; color: #027A48; }
+.ucv3__badge--risk-low .ucv3__badge-dot { background: #12B76A; }
+
+.ucv3__badge--ai-ready { background: #ECFDF3; color: #027A48; }
+.ucv3__badge--ai-building { background: #EFF8FF; color: #175CD3; }
+.ucv3__badge--ai-gap { background: #FEF3F2; color: #B42318; }
+
+.ucv3__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Toolbar */
+.ucv3__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ucv3__toolbar .user-card__action-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.ucv3__completeness {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--typography-caption-medium);
+  color: #69717F;
+  white-space: nowrap;
+}
+
+.ucv3__completeness .material-symbols-outlined {
+  font-size: 16px;
+  color: #98A2B3;
+}
+
+.ucv3__divider {
+  height: 1px;
+  background: #E7EAEF;
+  margin: 0 -24px;
+}
+
+/* Signal row — the levers + succession context */
+.ucv3__signals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.ucv3__signal {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #F6F7F8;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+  min-width: 0;
+}
+
+.ucv3__signal:hover {
+  background: #EDEEF0;
+}
+
+.ucv3__signal-icon {
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.ucv3__signal-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.ucv3__signal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ucv3__signal-label {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.ucv3__signal-value {
+  font: var(--typography-header6);
+  color: #1A212E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ucv3__signal-sub {
+  font: var(--typography-caption);
+  color: #69717F;
+}
+
+/* Value status tones */
+.ucv3__tone--good { color: #027A48; }
+.ucv3__tone--warn { color: #B54708; }
+.ucv3__tone--bad { color: #B42318; }
+.ucv3__tone--none { color: #69717F; }
+
+/* Mini progress (upskilling plan) */
+.ucv3__miniprogress {
+  display: block;
+  height: 4px;
+  width: 100%;
+  max-width: 130px;
+  margin-top: 5px;
+  background: #E4E7EC;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ucv3__miniprogress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.ucv3__miniprogress-fill--good { background: #12B76A; }
+.ucv3__miniprogress-fill--warn { background: #F79009; }
+.ucv3__miniprogress-fill--bad { background: #F04438; }
+.ucv3__miniprogress-fill--none { background: #D0D5DD; }
+
+/* Risk profile */
+.ucv3__risk-title {
+  margin: 0 0 8px;
+  font: var(--typography-header6);
+  color: #1A212E;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ucv3__risk-title .material-symbols-outlined {
+  font-size: 18px;
+  color: #4F5666;
+}

@@ -4,11 +4,11 @@
 
 /* Skills insights — bordered, collapsible container */
 .skill-analysis__insights {
-  border: 1px solid #D9DCE1;
+  border: 1px solid #bcd3ee;
   border-radius: 12px;
   padding: 4px 12px 16px;
   margin-bottom: 20px;
-  background: #fff;
+  background: #dce8f8;
 }
 
 .skill-analysis--insights-collapsed .skill-analysis__insights {

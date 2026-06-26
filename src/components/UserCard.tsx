@@ -47,6 +47,23 @@ export interface UserCardData {
   skillInterests?: string[]
   /** Years in current role (for Tenure sort) */
   tenureYears?: number
+
+  // ── Workforce Readiness (WFR) signals — per-person AI-transformation data.
+  //    Role/dept-level equivalents live in wfrOrgData.ts; these are the
+  //    per-person projections the manager-facing card needs (used by v3). ──
+  /** Estimated AI readiness 0–100; ≥50 = AI-ready (WFR threshold) */
+  aiReadiness?: number
+  /** Observed AI adoption state */
+  aiAdoption?: 'active' | 'exploring' | 'not-started'
+  /** Count of this person's role tasks in the augmentation zone */
+  augmentableTasks?: number
+  /** Total role tasks (denominator for the augmentable share) */
+  totalTasks?: number
+  /** Estimated weekly hours unlockable via AI augmentation */
+  hrsUnlockable?: number
+  /** Role-specific upskilling plan progress (merges talent dev plan + WFR Degreed plan) */
+  upskillingCompleted?: number
+  upskillingTotal?: number
 }
 
 interface UserCardProps {

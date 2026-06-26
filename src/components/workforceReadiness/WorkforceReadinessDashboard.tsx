@@ -728,6 +728,7 @@ function BoardView({
   onHrbpLaunchCollection,
   onUnrealizedValueClick,
   onRoleClick,
+  onRoleTaskEdit,
 }: {
   onDeptClick: (d: Dept) => void
   onHrbpClick: (hrbpName: string) => void
@@ -747,6 +748,7 @@ function BoardView({
   onHrbpLaunchCollection?: (channelsLabel: string) => void
   onUnrealizedValueClick?: (data: UnrealizedValueSheetData) => void
   onRoleClick?: (role: { title: string; deptName: string; employees: number; aiPotential: number; readiness: number; hrsUnlocked: number; gap: number }) => void
+  onRoleTaskEdit?: (args: { title: string; dept: string; edit?: boolean; needsReview?: boolean; onMarkReviewed?: () => void }) => void
 }) {
   // Admin role detection — currently mapped to CHRO persona. Swap to a
   // dedicated `currentUser.role === 'admin'` flag when the user model gains
@@ -1556,7 +1558,7 @@ function BoardView({
                         title={r.title}
                         count={r.tasks}
                         showReviewState={isRolesAdmin}
-                        onClick={(e) => { e.stopPropagation(); setTaskSheetRole({ title: r.title, dept: r.dept }) }}
+                        onClick={(e) => { e.stopPropagation(); if (isRolesAdmin && onRoleTaskEdit) { onRoleTaskEdit({ title: r.title, dept: r.dept, needsReview: !isRoleReviewed(roleReviewKey(r.dept, r.title)), onMarkReviewed: () => markRoleReviewed(roleReviewKey(r.dept, r.title)) }) } else { setTaskSheetRole({ title: r.title, dept: r.dept }) } }}
                       />
                     </DataTableCell>
                     <DataTableCell metric><DeptTableSoloBar variant="potential" pct={r.aiPotential} width={90} /></DataTableCell>
@@ -1633,7 +1635,7 @@ function BoardView({
                             type="button"
                             className="wfr-roles-row-actions__btn"
                             title="Edit role tasks"
-                            onClick={() => { setTaskSheetRole({ title: r.title, dept: r.dept }) }}
+                            onClick={() => { if (onRoleTaskEdit) { onRoleTaskEdit({ title: r.title, dept: r.dept, edit: true, needsReview: !isRoleReviewed(roleReviewKey(r.dept, r.title)), onMarkReviewed: () => markRoleReviewed(roleReviewKey(r.dept, r.title)) }) } else { setTaskSheetRole({ title: r.title, dept: r.dept }) } }}
                           >
                             <span className="material-symbols-outlined">edit</span>
                           </button>
@@ -2376,7 +2378,7 @@ export function WorkforceReadinessDashboard({
   const [hrbpUpskillingDialogOpen, setHrbpUpskillingDialogOpen] = useState(false)
   const [hrbpUpskillingSelectedDirs, setHrbpUpskillingSelectedDirs] = useState<Set<string>>(new Set())
   const [snackbar, setSnackbar] = useState<string | null>(null)
-  const [dashTaskSheetRole, setDashTaskSheetRole] = useState<{ title: string; dept: string } | null>(null)
+  const [dashTaskSheetRole, setDashTaskSheetRole] = useState<{ title: string; dept: string; needsReview?: boolean; onMarkReviewed?: () => void } | null>(null)
   const [, setDashTaskBodyTab] = useState<'all' | 'classification' | 'source'>('classification')
   // HRBP task-sheet edit state
   const [dashTaskEditing, setDashTaskEditing] = useState(false)
@@ -3695,6 +3697,7 @@ export function WorkforceReadinessDashboard({
               setView('role')
               window.scrollTo(0, 0)
             }}
+            onRoleTaskEdit={({ edit, ...role }) => { setDashTaskSheetRole(role); if (edit) setDashTaskEditing(true) }}
           />
         )}
         {view === 'dept' && deptViewName && (() => {
@@ -5436,10 +5439,19 @@ export function WorkforceReadinessDashboard({
           ariaLabel={`Tasks for ${dashTaskSheetRole.title}`}
           isEditing={dashTaskEditing}
           headerActions={!dashTaskEditing ? (
-            <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0, flexShrink: 0, alignSelf: 'flex-start' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
+              {dashTaskSheetRole?.needsReview && (
+                <Button type="button" variant="primary" size="sm"
+                  onClick={() => { dashTaskSheetRole?.onMarkReviewed?.(); closeDashTaskSheet() }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 15 }} aria-hidden>check</span>
+                  Mark reviewed
+                </Button>
+              )}
+              <button type="button" onClick={() => setDashTaskEditing(true)} title="Edit role tasks"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff', color: '#64748b', padding: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>edit</span>
+              </button>
+            </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, alignSelf: 'flex-start' }}>
               <button type="button" onClick={() => { dashTaskAddOpen ? resetDashTaskAdd() : setDashTaskAddOpen(true) }} title="Add task"

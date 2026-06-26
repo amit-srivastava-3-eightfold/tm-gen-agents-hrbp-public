@@ -1,0 +1,421 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Team report card — v5 (comparison table) layout.
+   Shared atoms (Manager actions dropdown, risk pills) reuse the
+   .user-card__* rules in UserCard.css.
+   ────────────────────────────────────────────────────────────────────── */
+
+.uct {
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  background: #FFFFFF;
+  overflow-x: auto;
+  font-family: var(--font-family);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 6px rgba(16, 24, 40, 0.05);
+  /* WFR metric palette (mirrors .wfr-dash) */
+  --uct-potential: #818cf8;
+  --uct-potential-text: #6366f1;
+  --uct-readiness: #22c55e;
+  --uct-readiness-text: #15803d;
+}
+
+/* WFR-style metric bars (mirror DeptTableSoloBar) */
+.uct-bar {
+  display: block;
+  width: 100%;
+  max-width: 100px;
+}
+
+.uct-bar__track {
+  display: block;
+  position: relative;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.uct-bar__fill {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 99px;
+}
+
+.uct-bar__fill--potential { background: var(--uct-potential); }
+.uct-bar__fill--readiness { background: var(--uct-readiness); }
+
+.uct-bar__pct {
+  display: block;
+  margin-top: 4px;
+  font: var(--typography-caption-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.uct-bar__pct--potential { color: var(--uct-potential-text); }
+.uct-bar__pct--readiness { color: var(--uct-readiness-text); }
+
+/* WFR-style metric header (label + info tooltip) */
+.uct__h-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.uct__h-info {
+  font-size: 14px !important;
+  color: #94a3b8;
+  cursor: help;
+  vertical-align: -1px;
+}
+
+/* Shared column template — header + rows align */
+.uct__head,
+.uct__row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2.2fr) 110px 110px 96px 92px 1fr 32px;
+  align-items: center;
+  gap: 16px;
+}
+
+.uct__head {
+  padding: 11px 20px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E7EAEF;
+}
+
+.uct__h {
+  font: var(--typography-caption-semibold);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #98A2B3;
+}
+
+.uct__group {
+  border-bottom: 1px solid #EDF0F4;
+}
+
+.uct__group:last-child {
+  border-bottom: none;
+}
+
+.uct__row {
+  padding: 14px 20px;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.12s;
+}
+
+.uct__row:hover {
+  background: #F8FAFC;
+}
+
+.uct__group.is-open > .uct__row {
+  background: #F8FAFC;
+}
+
+.uct__row:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(20, 109, 166, 0.35);
+}
+
+/* Person */
+.uct__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.uct__person-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+}
+
+.uct__person-link:hover .uct__name {
+  color: #146DA6;
+}
+
+.uct__person-link:focus-visible {
+  box-shadow: 0 0 0 2px rgba(20, 109, 166, 0.4);
+}
+
+.uct__check { display: flex; flex-shrink: 0; }
+
+.uct__checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #146DA6;
+  cursor: pointer;
+}
+
+.uct__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button2);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.uct__person-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.uct__name {
+  font: var(--typography-header6);
+  color: #1A212E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uct__role {
+  font: var(--typography-caption-medium);
+  color: #69717F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uct__cell { min-width: 0; }
+
+/* Signal cells — neutral text + a single quiet status dot */
+.uct__signal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uct__signal-text {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #344054;
+  white-space: nowrap;
+}
+
+.uct__signal-pct {
+  font: var(--typography-body3);
+  color: #98A2B3;
+}
+
+.uct__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.uct__dot--green { background: #12B76A; }
+.uct__dot--amber { background: #F79009; }
+.uct__dot--grey { background: #CFD4DC; }
+
+.uct__adoption {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #344054;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uct__augment {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.uct__augment-main {
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #344054;
+}
+
+.uct__augment-sub {
+  font: var(--typography-caption);
+  color: #98A2B3;
+}
+
+/* Actions */
+.uct__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.uct__actions-btn.user-card__manager-actions {
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 10px;
+}
+
+.uct__kebab {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid #D9DCE1;
+  background: #FFFFFF;
+  color: #4F5666;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uct__kebab:hover { background: #F2F4F7; color: #1A212E; }
+.uct__kebab .material-symbols-outlined { font-size: 20px; }
+
+/* Expand chevron */
+.uct__chevron {
+  font-size: 22px;
+  color: #98A2B3;
+  justify-self: center;
+  transition: transform 0.2s ease;
+}
+
+.uct__group.is-open .uct__chevron { transform: rotate(180deg); }
+
+/* ── Detail panel — the story ── */
+.uct__detail {
+  padding: 16px 20px 20px;
+  background: #F8FAFC;
+  border-top: 1px solid #E7EAEF;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.uct__story {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  border: 1px solid #E7EAEF;
+  border-radius: 12px;
+}
+
+.uct__story-icon {
+  font-size: 22px;
+  color: #175CD3;
+  flex-shrink: 0;
+}
+
+.uct__story-text {
+  margin: 0;
+  flex: 1;
+  font: var(--typography-body2);
+  color: #344054;
+  line-height: 1.5;
+}
+
+.uct__story-cta { flex-shrink: 0; }
+
+/* Evidence panel */
+.uct__panel {
+  background: #FFFFFF;
+  border: 1px solid #E7EAEF;
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+
+.uct__groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 56px;
+}
+
+.uct__group-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #EDF0F4;
+  font: var(--typography-caption-semibold);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94A3B8;
+}
+
+.uct__group-icon {
+  font-size: 15px !important;
+  color: #B0B8C4;
+}
+
+.uct__drow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F2F4F7;
+}
+
+.uct__drow:last-child { border-bottom: none; }
+
+.uct__drow-label {
+  font: var(--typography-body3);
+  color: #69717F;
+}
+
+.uct__drow-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--typography-body3);
+  font-weight: 600;
+  color: #1A212E;
+  text-align: right;
+}
+
+/* Inline metric bars */
+.uct__ibar {
+  display: inline-block;
+  width: 56px;
+  height: 6px;
+  background: #EDF0F4;
+  border-radius: 99px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.uct__ibar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+
+.uct__ibar-fill--potential { background: #818cf8; }
+.uct__ibar-fill--readiness { background: #22c55e; }
+.uct__ibar-fill--good { background: #12B76A; }
+.uct__ibar-fill--warn { background: #F79009; }
+.uct__ibar-fill--bad { background: #F04438; }
+.uct__ibar-fill--none { background: #D0D5DD; }
+.uct__ibar-fill--neutral { background: #A9B2C0; }
+
+/* Risk — full width within the panel */
+.uct__risk-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #EDF0F4;
+}
+
+.uct__risk-row .uct__group-h { margin-bottom: 12px; }

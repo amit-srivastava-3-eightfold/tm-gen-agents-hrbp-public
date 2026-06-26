@@ -1,0 +1,239 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Team report card — v2 layout.
+   New vertical layout classes only; shared atoms (Manager actions, Contact
+   select, icon buttons, report avatars, risk pills) reuse the .user-card__*
+   rules in UserCard.css.
+   ────────────────────────────────────────────────────────────────────── */
+
+.ucv2-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.ucv2-link:hover .ucv2 {
+  border-color: #146DA6;
+}
+
+.ucv2 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 1px solid #D9DCE1;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 6px rgba(16, 24, 40, 0.06);
+  font-family: var(--font-family);
+}
+
+/* Header — identity left, AI + manager actions right */
+.ucv2__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ucv2__identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ucv2__checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #146DA6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ucv2__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--typography-button1);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.ucv2__identity-text {
+  min-width: 0;
+}
+
+.ucv2__name {
+  margin: 0 0 2px;
+  font: var(--typography-header5);
+  color: #1A212E;
+}
+
+.ucv2__meta {
+  margin: 0;
+  font: var(--typography-body3);
+  color: #4F5666;
+}
+
+.ucv2__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Toolbar — contact, quick icons, direct reports */
+.ucv2__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ucv2__toolbar .user-card__action-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.ucv2__reports {
+  margin-left: auto;
+}
+
+.ucv2__divider {
+  height: 1px;
+  background: #E7EAEF;
+  margin: 0 -24px;
+}
+
+/* Completion — progress bar */
+.ucv2__completion {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ucv2__completion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ucv2__completion-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--typography-caption-semibold);
+  color: #4F5666;
+}
+
+.ucv2__completion-label .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.ucv2__completion-value {
+  font: var(--typography-header6);
+  color: #146DA6;
+}
+
+.ucv2__progress {
+  height: 8px;
+  background: #E8EBF0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ucv2__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #146DA6, #1F8FD4);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Metrics — responsive grid that wraps (no horizontal scroll) */
+.ucv2__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.ucv2__metric {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #F6F7F8;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+  min-width: 0;
+}
+
+.ucv2__metric:hover {
+  background: #EDEEF0;
+}
+
+.ucv2__metric-icon {
+  color: #4F5666;
+  flex-shrink: 0;
+}
+
+.ucv2__metric-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.ucv2__metric-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ucv2__metric-label {
+  font: var(--typography-caption-medium);
+  color: #4F5666;
+}
+
+.ucv2__metric-value {
+  font: var(--typography-header6);
+  color: #146DA6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ucv2__metric-arrow {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 16px !important;
+  color: #69717F;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ucv2__metric:hover .ucv2__metric-arrow {
+  opacity: 1;
+}
+
+/* Risk profile */
+.ucv2__risk-title {
+  margin: 0 0 8px;
+  font: var(--typography-header6);
+  color: #1A212E;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ucv2__risk-title .material-symbols-outlined {
+  font-size: 18px;
+  color: #4F5666;
+}

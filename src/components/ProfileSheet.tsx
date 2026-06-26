@@ -59,7 +59,9 @@ type ManageRowKey =
   | 'profile-completeness'
   | 'career-interests'
   | 'self-assessment'
+  | 'manager-assessment'
   | 'development-planning'
+  | 'succession-planning'
 
 interface ManageRow {
   key: ManageRowKey
@@ -72,7 +74,9 @@ const MANAGE_ROWS: ManageRow[] = [
   { key: 'profile-completeness', icon: 'person', label: 'Profile completeness', getValue: (u) => `${u.completionPercent}% complete` },
   { key: 'career-interests', icon: 'work', label: 'Career interests', getValue: (u) => u.careerInterests },
   { key: 'self-assessment', icon: 'assignment_ind', label: 'Self assessment', getValue: (u) => u.selfAssessment },
+  { key: 'manager-assessment', icon: 'supervisor_account', label: 'Manager assessment', getValue: (u) => u.managerAssessment },
   { key: 'development-planning', icon: 'trending_up', label: 'Development planning', getValue: (u) => u.developmentPlanning },
+  { key: 'succession-planning', icon: 'account_tree', label: 'Succession planning', getValue: (u) => u.successionPlanning },
 ]
 
 const RISK_TAG_LABEL_ORDER = ['Retention risk', 'Loss impact', 'Employee criticality'] as const
@@ -292,12 +296,12 @@ export function ProfileSheet({
                 <DropdownMenu.Content className="profile-sheet__ma-content" align="start" sideOffset={4}>
                   <DropdownMenu.Label className="profile-sheet__ma-label">Suggested actions</DropdownMenu.Label>
                   <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
-                    <span className="material-symbols-outlined profile-sheet__ma-icon">mail</span>
-                    Send self assessment reminder
+                    <span className="material-symbols-outlined profile-sheet__ma-icon">bolt</span>
+                    Nudge AI adoption
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
-                    <span className="material-symbols-outlined profile-sheet__ma-icon">format_list_bulleted</span>
-                    Assess skills
+                    <span className="material-symbols-outlined profile-sheet__ma-icon">school</span>
+                    Assign upskilling plan
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
                     <span className="material-symbols-outlined profile-sheet__ma-icon">add</span>
@@ -305,9 +309,17 @@ export function ProfileSheet({
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="profile-sheet__ma-separator" />
                   <DropdownMenu.Label className="profile-sheet__ma-label">All actions</DropdownMenu.Label>
+                  <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
+                    <span className="material-symbols-outlined profile-sheet__ma-icon">mail</span>
+                    Send career interest reminder
+                  </DropdownMenu.Item>
                   <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={() => onEditRisk?.()}>
                     <span className="material-symbols-outlined profile-sheet__ma-icon">label</span>
                     Edit Risk Indicators
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
+                    <span className="material-symbols-outlined profile-sheet__ma-icon">mail</span>
+                    Send self assessment reminder
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="profile-sheet__ma-item" onSelect={(e) => e.preventDefault()}>
                     <span className="material-symbols-outlined profile-sheet__ma-icon">mail</span>
