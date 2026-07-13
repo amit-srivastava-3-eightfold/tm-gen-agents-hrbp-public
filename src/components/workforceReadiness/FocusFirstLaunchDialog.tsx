@@ -614,7 +614,7 @@ export function FocusFirstLaunchDialog({
 
   // ─── HRBP mode: 3-step dialog (select teams → channels → review + launch) ───
   if (hrbpMode) {
-    const hrbpDept = _defaultScope ? departments.find(dd => dd.name === _defaultScope) : null
+    const hrbpDept = _defaultScope ? departments.find(dd => dd.name === _defaultScope) ?? null : null
     const rawDirs = hrbpDirectors ?? []
     // Sort directors by unrealized value (matches overview table sort)
     const dirs = [...rawDirs].sort((a, b) => b.employees - a.employees)

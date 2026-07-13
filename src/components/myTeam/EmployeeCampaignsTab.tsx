@@ -366,7 +366,7 @@ const INSIGHTS_CONFIG: Record<string, {
       { col: 'Preferred Format', title: 'Preferred Format' },
       { col: 'Barriers to Learning', title: 'Barriers to Learning' },
     ],
-    summary: (kpis, dists) => {
+    summary: (_kpis, dists) => {
       const topPriority = dists[0]?.items[0]?.label ?? '—'
       const topFormat = dists[1]?.items[0]?.label ?? '—'
       const topBarrier = dists[2]?.items[0]?.label ?? '—'
