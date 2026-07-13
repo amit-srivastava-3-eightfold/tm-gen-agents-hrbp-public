@@ -1,0 +1,559 @@
+/* ─── Root ─────────────────────────────────────────────────────────────────── */
+
+.ec-root {
+  padding: 0;
+}
+
+/* ─── Toolbar ──────────────────────────────────────────────────────────────── */
+
+.ec-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.ec-toolbar__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px;
+}
+
+.ec-toolbar__sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ─── Section header ───────────────────────────────────────────────────────── */
+
+.ec-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ec-section-header__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ec-section-header__count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+/* ─── List section ─────────────────────────────────────────────────────────── */
+
+.ec-list-section {
+  margin-bottom: 32px;
+}
+
+/* ─── Campaign cards ───────────────────────────────────────────────────────── */
+
+.ec-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.ec-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ec-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.ec-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ec-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ec-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ec-card__meta {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.ec-card__progress {}
+
+.ec-card__progress-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+.ec-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ec-card__cta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+/* ─── Type icon ────────────────────────────────────────────────────────────── */
+
+.ec-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ec-type-icon--sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+/* ─── Status badge ─────────────────────────────────────────────────────────── */
+
+.ec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Draft rows ───────────────────────────────────────────────────────────── */
+
+.ec-drafts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ec-draft-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px dashed #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.ec-draft-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ec-draft-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 2px;
+}
+
+.ec-draft-row__meta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.ec-draft-row__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.ec-draft-row__delete:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* ─── Empty state ──────────────────────────────────────────────────────────── */
+
+.ec-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ─── Detail view ──────────────────────────────────────────────────────────── */
+
+.ec-detail {
+  padding: 0;
+}
+
+.ec-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6366f1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+  transition: opacity 0.15s;
+}
+
+.ec-detail__back:hover { opacity: 0.75; }
+
+.ec-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ec-detail__header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ec-detail__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.ec-detail__meta {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.ec-detail__freq {
+  color: #94a3b8;
+}
+
+/* ─── Stat tiles ───────────────────────────────────────────────────────────── */
+
+.ec-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .ec-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ec-stat-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.ec-stat-icon {
+  font-size: 20px;
+  color: #6366f1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ec-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px;
+  line-height: 1;
+}
+
+.ec-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.ec-stat-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+}
+
+/* ─── Section ──────────────────────────────────────────────────────────────── */
+
+.ec-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.ec-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Table ────────────────────────────────────────────────────────────────── */
+
+.ec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ec-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 8px 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ec-table__num {
+  text-align: right !important;
+}
+
+.ec-table td {
+  padding: 10px 8px 10px 0;
+  color: #374151;
+  border-bottom: 1px solid #f8fafc;
+  vertical-align: middle;
+}
+
+.ec-table__name {
+  font-weight: 500;
+}
+
+/* ─── View toggle ──────────────────────────────────────────────────────────── */
+
+.ec-view-toggle {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.ec-view-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.ec-view-toggle__btn:hover {
+  color: #475569;
+}
+
+.ec-view-toggle__btn--active {
+  background: #fff;
+  color: #6366f1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ─── Table row (list view) ────────────────────────────────────────────────── */
+
+.ec-trow:hover td {
+  background: #f8fafc;
+}
+
+.ec-trow__view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.ec-trow__view:hover {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+/* ─── Action buttons (Share / Export) ─────────────────────────────────────── */
+
+.ec-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.ec-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.ec-action-btn--primary {
+  color: #6366f1;
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.ec-action-btn--primary:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
+/* ─── Responses table ──────────────────────────────────────────────────────── */
+
+.ec-responses-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.ec-responses-table {
+  min-width: 700px;
+}
+
+.ec-responses-table th {
+  background: #f8fafc;
+  padding: 8px 12px 8px 8px;
+}
+
+.ec-responses-table td {
+  padding: 9px 12px 9px 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.ec-responses-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ─── Timeline ─────────────────────────────────────────────────────────────── */
+
+.ec-timeline {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ec-timeline__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ec-timeline__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ec-timeline__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 2px;
+}
+
+.ec-timeline__val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}

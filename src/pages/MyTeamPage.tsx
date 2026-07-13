@@ -12,6 +12,7 @@ import {
 } from '@tonyh-2-eightfold/ef-design-system'
 import { PersonBanner } from '../components/PersonBanner'
 import { SkillAnalysisSection } from '../components/SkillAnalysisSection'
+import { EmployeeCampaignsTab } from '../components/myTeam/EmployeeCampaignsTab'
 import '../components/PersonBanner.css'
 import '../components/SkillAnalysisSection.css'
 import './MyTeamPage.css'
@@ -50,6 +51,11 @@ export function MyTeamPage() {
               <Tabs.Trigger value="succession" className="my-team-page__tab">
                 Succession planning
               </Tabs.Trigger>
+              {isHrbp && (
+                <Tabs.Trigger value="campaigns" className="my-team-page__tab">
+                  Employee campaigns
+                </Tabs.Trigger>
+              )}
             </Tabs.List>
             <Tabs.Content value="reports" className="my-team-page__tabs-content">
               <div className="my-team-page__banner-wrap">
@@ -77,6 +83,11 @@ export function MyTeamPage() {
                 <p className="my-team-page__placeholder col-span-12">Succession planning content goes here.</p>
               </div>
             </Tabs.Content>
+            {isHrbp && (
+              <Tabs.Content value="campaigns" className="my-team-page__tabs-content">
+                <EmployeeCampaignsTab />
+              </Tabs.Content>
+            )}
           </Tabs.Root>
         </div>
         <footer className="my-team-page__footer">
