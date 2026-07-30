@@ -22,6 +22,7 @@ export function MyTeamPage() {
   const [reportScope, setReportScope] = useState<'direct' | 'all'>('direct')
   const [sustainedHighPerformersFilter, setSustainedHighPerformersFilter] = useState(false)
   const isHrbp = currentUser.id === 'jaydon-torff'
+  const isManager = currentUser.id === 'mateo'
 
   return (
     <div className="my-team-page">
@@ -51,7 +52,7 @@ export function MyTeamPage() {
               <Tabs.Trigger value="succession" className="my-team-page__tab">
                 Succession planning
               </Tabs.Trigger>
-              {isHrbp && (
+              {isManager && (
                 <Tabs.Trigger value="campaigns" className="my-team-page__tab">
                   Employee campaigns
                 </Tabs.Trigger>
@@ -83,7 +84,7 @@ export function MyTeamPage() {
                 <p className="my-team-page__placeholder col-span-12">Succession planning content goes here.</p>
               </div>
             </Tabs.Content>
-            {isHrbp && (
+            {isManager && (
               <Tabs.Content value="campaigns" className="my-team-page__tabs-content">
                 <EmployeeCampaignsTab />
               </Tabs.Content>

@@ -476,7 +476,7 @@ export function FocusFirstLaunchDialog({
   hrbpDirectors,
 }: FocusFirstLaunchDialogProps) {
   const [step, setStep] = useState(1)
-  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('ai-adoption')
+  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('custom-campaign')
   const [campaignName, setCampaignName] = useState('')
   const campaignNameManual = useRef(false)
   const [periodStart, setPeriodStart] = useState('')
@@ -497,6 +497,10 @@ export function FocusFirstLaunchDialog({
   const [previewSeed, setPreviewSeed] = useState(0)
   const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([])
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
+  const [audienceMode, setAudienceMode] = useState<'nlp' | 'teams'>('nlp')
+  const [audienceQuery, setAudienceQuery] = useState('')
+  const [audienceResult, setAudienceResult] = useState<{ total: number; managers: number; departments: number; preview: string[] } | null>(null)
+  const [audienceGenerating, setAudienceGenerating] = useState(false)
   const [showNextHint, setShowNextHint] = useState(false)
   const nextHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -516,10 +520,10 @@ export function FocusFirstLaunchDialog({
       } else {
         setHrbpSelectedDirs({})
       }
-      setSelectedCollectionType('ai-adoption')
+      setSelectedCollectionType('custom-campaign')
       const d = new Date()
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-      setCampaignName(`AI Adoption Assessment · ${months[d.getMonth()]} ${d.getFullYear()}`)
+      setCampaignName(`Custom Campaign · ${months[d.getMonth()]} ${d.getFullYear()}`)
       campaignNameManual.current = false
       setPeriodStart('')
       setPeriodEnd('')
@@ -534,6 +538,10 @@ export function FocusFirstLaunchDialog({
       setPreviewSeed(0)
       setSurveyQuestions([])
       setEditingQuestionId(null)
+      setAudienceMode('nlp')
+      setAudienceQuery('')
+      setAudienceResult(null)
+      setAudienceGenerating(false)
     }
   }, [open, hrbpDirectors])
 
@@ -611,6 +619,23 @@ export function FocusFirstLaunchDialog({
 
   const handleNext = () => setStep(step + 1)
   const handleBack = () => setStep(step - 1)
+
+  // ─── Audience NLP generation (deterministic synthetic result) ───
+  const handleGenerateAudience = () => {
+    if (!audienceQuery.trim()) return
+    setAudienceGenerating(true)
+    setAudienceResult(null)
+    setTimeout(() => {
+      const seed = audienceQuery.trim().length + audienceQuery.charCodeAt(0)
+      const total = 40 + (seed % 120)
+      const managers = 3 + (seed % 8)
+      const depts = 2 + (seed % 5)
+      const names = ['Alex Rivera', 'Jordan Kim', 'Sam Patel', 'Morgan Lee', 'Casey Chen', 'Taylor Brooks', 'Dana Wu', 'Jamie Okafor']
+      const preview = names.slice(0, 4 + (seed % 3))
+      setAudienceResult({ total, managers, departments: depts, preview })
+      setAudienceGenerating(false)
+    }, 900)
+  }
 
   // ─── HRBP mode: 3-step dialog (select teams → channels → review + launch) ───
   if (hrbpMode) {
@@ -1108,58 +1133,173 @@ export function FocusFirstLaunchDialog({
                 )
               })()}
 
-              {/* Step 2/3: Select client manager teams */}
+              {/* Step 2/3: Select audience */}
               {hrbpIsTeams && (() => {
                 const colConfig = TEAM_COLUMNS_BY_TYPE[selectedCollectionType] ?? TEAM_COLUMNS_BY_TYPE['ai-adoption']
                 return (
                   <>
-                    <h2 className="wfr-focus-launch__title">Select teams to include</h2>
-                    <p className="wfr-focus-launch__sub">Choose which client manager teams to include in the <strong>{collectionTypeLabel}</strong>. Employees in selected teams will be contacted via the method you choose next.</p>
+                    <h2 className="wfr-focus-launch__title">Define your audience</h2>
+                    <p className="wfr-focus-launch__sub">Choose who to include in the <strong>{collectionTypeLabel}</strong>. Employees will be contacted via the method you choose next.</p>
 
-                    <div className="wfr-focus-launch__dept-list">
-                      <div className="wfr-focus-launch__table-wrap"><DataTable className="wfr-focus-launch__table" style={{ width: '100%' }}>
-                        <DataTableHeader>
-                          <DataTableRow>
-                            <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
-                              <span
-                                className="wfr-focus-launch__check"
-                                style={{ cursor: 'pointer', ...(hrbpAllSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
-                                onClick={() => { if (hrbpAllSelected) setHrbpSelectedDirs({}); else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) } }}
-                              >{hrbpAllSelected ? '✓' : ''}</span>
-                            </DataTableHead>
-                            <DataTableHead>Manager</DataTableHead>
-                            <DataTableHead numeric>{colConfig.cols[0].label}</DataTableHead>
-                            <DataTableHead numeric>{colConfig.cols[1].label}</DataTableHead>
-                            <DataTableHead numeric>{colConfig.cols[2].label}</DataTableHead>
-                          </DataTableRow>
-                        </DataTableHeader>
-                        <DataTableBody>
-                          {dirs.map((dir, idx) => {
-                            const cells = colConfig.cells(dir, idx, hrbpDept)
-                            return (
-                              <DataTableRow key={dir.name} onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))} style={{ cursor: 'pointer', ...(hrbpSelectedDirs[dir.name] ? { background: '#eef2ff' } : {}) }}>
-                                <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
-                                  <span className="wfr-focus-launch__check" style={hrbpSelectedDirs[dir.name] ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}}>{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
-                                </DataTableCell>
-                                <DataTableCell className="font-semibold">
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    {dir.name}
-                                    {dirPrioritySet.has(dir.name) && (
-                                      <PriorityTooltip tooltip={colConfig.priorityTooltip}>
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
-                                      </PriorityTooltip>
-                                    )}
-                                  </span>
-                                </DataTableCell>
-                                <DataTableCell align="right">{cells[0]}</DataTableCell>
-                                <DataTableCell align="right">{cells[1]}</DataTableCell>
-                                <DataTableCell align="right">{cells[2]}</DataTableCell>
-                              </DataTableRow>
-                            )
-                          })}
-                        </DataTableBody>
-                      </DataTable></div>
+                    {/* Mode toggle */}
+                    <div style={{ display: 'flex', gap: 0, marginBottom: 18, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', width: 'fit-content' }}>
+                      {([['nlp', 'auto_awesome', 'Describe audience'], ['teams', 'groups', 'Select teams']] as const).map(([mode, icon, label]) => {
+                        const active = audienceMode === mode
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setAudienceMode(mode)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                              background: active ? '#6366f1' : '#fff',
+                              color: active ? '#fff' : '#64748b',
+                              border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400,
+                              transition: 'background 0.15s, color 0.15s',
+                            }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>{icon}</span>
+                            {label}
+                          </button>
+                        )
+                      })}
                     </div>
+
+                    {/* NLP mode */}
+                    {audienceMode === 'nlp' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                            Describe who should receive this campaign
+                          </label>
+                          <textarea
+                            value={audienceQuery}
+                            onChange={e => { setAudienceQuery(e.target.value); setAudienceResult(null) }}
+                            placeholder="e.g. Target employees who have Document Creation skill assessed at 3 or lower, or people who have not updated their profile skills in the last 3 months"
+                            rows={3}
+                            style={{ width: '100%', fontSize: 13, padding: '8px 10px', borderRadius: 7, border: '1px solid #cbd5e1', color: '#1e293b', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.5 }}
+                          />
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                            {[
+                              'Document Creation skill ≤ 3',
+                              'Profile not updated in 3+ months',
+                              'No learning activity in 60 days',
+                            ].map(ex => (
+                              <button
+                                key={ex}
+                                type="button"
+                                onClick={() => { setAudienceQuery(ex); setAudienceResult(null) }}
+                                style={{ fontSize: 11, padding: '3px 9px', borderRadius: 20, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', cursor: 'pointer', fontWeight: 500 }}
+                              >
+                                {ex}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={handleGenerateAudience}
+                            style={!audienceQuery.trim() ? { opacity: 0.5, cursor: 'default' } : undefined}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>auto_awesome</span>
+                            {audienceGenerating ? 'Generating…' : audienceResult ? 'Regenerate' : 'Generate audience'}
+                          </Button>
+                          {audienceResult && (
+                            <span style={{ fontSize: 12, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
+                              Audience ready
+                            </span>
+                          )}
+                        </div>
+
+                        {audienceGenerating && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6366f1', fontSize: 13, padding: '12px 0' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, animation: 'spin 1s linear infinite' }}>progress_activity</span>
+                            Analysing your workforce data…
+                          </div>
+                        )}
+
+                        {audienceResult && !audienceGenerating && (
+                          <div style={{ border: '1px solid #e0e7ff', borderRadius: 10, background: '#f5f3ff', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {/* 3 metrics */}
+                            <div style={{ display: 'flex', gap: 16 }}>
+                              {[
+                                { label: 'Matched employees', value: audienceResult.total.toLocaleString(), icon: 'group' },
+                                { label: 'Managers covered', value: String(audienceResult.managers), icon: 'manage_accounts' },
+                                { label: 'Departments', value: String(audienceResult.departments), icon: 'corporate_fare' },
+                              ].map(m => (
+                                <div key={m.label} style={{ flex: 1, background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid #e0e7ff', textAlign: 'center' }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#6366f1', display: 'block', marginBottom: 2 }}>{m.icon}</span>
+                                  <div style={{ fontSize: 20, fontWeight: 700, color: '#1e293b' }}>{m.value}</div>
+                                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{m.label}</div>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Preview names */}
+                            <div>
+                              <p style={{ fontSize: 11, fontWeight: 600, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Sample matches</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {audienceResult.preview.map(name => (
+                                  <span key={name} style={{ fontSize: 12, padding: '3px 9px', borderRadius: 20, background: '#ede9fe', color: '#4c1d95', fontWeight: 500 }}>{name}</span>
+                                ))}
+                                <span style={{ fontSize: 12, padding: '3px 9px', borderRadius: 20, background: '#f1f5f9', color: '#94a3b8', fontWeight: 500 }}>+{audienceResult.total - audienceResult.preview.length} more</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Teams mode (existing table) */}
+                    {audienceMode === 'teams' && (
+                      <div className="wfr-focus-launch__dept-list">
+                        <div className="wfr-focus-launch__table-wrap"><DataTable className="wfr-focus-launch__table" style={{ width: '100%' }}>
+                          <DataTableHeader>
+                            <DataTableRow>
+                              <DataTableHead style={{ width: 28, padding: '8px 0 8px 14px' }}>
+                                <span
+                                  className="wfr-focus-launch__check"
+                                  style={{ cursor: 'pointer', ...(hrbpAllSelected ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}) }}
+                                  onClick={() => { if (hrbpAllSelected) setHrbpSelectedDirs({}); else { const all: Record<string, boolean> = {}; dirs.forEach(d => { all[d.name] = true }); setHrbpSelectedDirs(all) } }}
+                                >{hrbpAllSelected ? '✓' : ''}</span>
+                              </DataTableHead>
+                              <DataTableHead>Manager</DataTableHead>
+                              <DataTableHead numeric>{colConfig.cols[0].label}</DataTableHead>
+                              <DataTableHead numeric>{colConfig.cols[1].label}</DataTableHead>
+                              <DataTableHead numeric>{colConfig.cols[2].label}</DataTableHead>
+                            </DataTableRow>
+                          </DataTableHeader>
+                          <DataTableBody>
+                            {dirs.map((dir, idx) => {
+                              const cells = colConfig.cells(dir, idx, hrbpDept)
+                              return (
+                                <DataTableRow key={dir.name} onClick={() => setHrbpSelectedDirs(prev => ({ ...prev, [dir.name]: !prev[dir.name] }))} style={{ cursor: 'pointer', ...(hrbpSelectedDirs[dir.name] ? { background: '#eef2ff' } : {}) }}>
+                                  <DataTableCell style={{ width: 28, padding: '10px 0 10px 14px' }}>
+                                    <span className="wfr-focus-launch__check" style={hrbpSelectedDirs[dir.name] ? { borderColor: 'var(--wfr-potential-text, #6366f1)', background: 'var(--wfr-potential-text, #6366f1)', color: '#fff' } : {}}>{hrbpSelectedDirs[dir.name] ? '✓' : ''}</span>
+                                  </DataTableCell>
+                                  <DataTableCell className="font-semibold">
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      {dir.name}
+                                      {dirPrioritySet.has(dir.name) && (
+                                        <PriorityTooltip tooltip={colConfig.priorityTooltip}>
+                                          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1px 7px', whiteSpace: 'nowrap' }}>Priority</span>
+                                        </PriorityTooltip>
+                                      )}
+                                    </span>
+                                  </DataTableCell>
+                                  <DataTableCell align="right">{cells[0]}</DataTableCell>
+                                  <DataTableCell align="right">{cells[1]}</DataTableCell>
+                                  <DataTableCell align="right">{cells[2]}</DataTableCell>
+                                </DataTableRow>
+                              )
+                            })}
+                          </DataTableBody>
+                        </DataTable></div>
+                      </div>
+                    )}
                   </>
                 )
               })()}
@@ -1292,7 +1432,8 @@ export function FocusFirstLaunchDialog({
                     : isCustom && !customDataCapture.trim() ? 'Describe what data to capture to continue'
                     : null
                   )
-                : hrbpIsTeams && hrbpSelCount === 0 ? 'Select at least one team to continue'
+                : hrbpIsTeams && audienceMode === 'nlp' && !audienceResult ? 'Generate an audience to continue'
+                : hrbpIsTeams && audienceMode === 'teams' && hrbpSelCount === 0 ? 'Select at least one team to continue'
                 : hrbpIsChannels && !selectedChannel ? 'Choose a collection method to continue'
                 : null
 

@@ -26,6 +26,7 @@ import WfrTaskSheetPage from './pages/WfrTaskSheetPage'
 import ProfileSheetPage from './pages/ProfileSheetPage'
 import UserCardPage from './pages/UserCardPage'
 import { MyDevPlanPage } from './pages/MyDevPlanPage'
+import { EmployeeCampaignsPage } from './pages/EmployeeCampaignsPage'
 import { ComponentsLayout } from './pages/ComponentsLayout'
 
 createRoot(document.getElementById('root')!).render(
@@ -40,6 +41,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/people" element={<PeoplePage />} />
             <Route path="/people/:id" element={<PeopleProfilePage />} />
             <Route path="/my-team" element={<MyTeamPage />} />
+            <Route path="/employee-campaigns" element={<EmployeeCampaignsPage />} />
             <Route path="/my-work" element={<MyWorkPage />} />
             <Route path="/my-development-plans" element={<MyDevPlanPage />} />
             <Route path="/workforce" element={<WorkforceReadinessPage />} />

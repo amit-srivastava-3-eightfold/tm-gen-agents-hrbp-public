@@ -69,6 +69,7 @@ const CAREER_HUB_HRBP_TABS: NavbarTabItem[] = [
   },
   { id: 'people', label: 'People', path: '/people' },
   { id: 'my-team', label: 'My team', path: '/my-team' },
+  { id: 'employee-campaigns', label: 'Employee Campaigns', path: '/employee-campaigns' },
   { id: 'workforce', label: 'Workforce Readiness', path: '/workforce' },
   {
     id: 'more',

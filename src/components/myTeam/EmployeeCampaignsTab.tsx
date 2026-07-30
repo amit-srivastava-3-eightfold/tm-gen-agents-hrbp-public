@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@tonyh-2-eightfold/ef-design-system'
 import { FocusFirstLaunchDialog, type CampaignLaunchData, type CampaignDraftData, type HrbpDirector } from '../workforceReadiness/FocusFirstLaunchDialog'
+import { CampaignAuthoringAgent } from './CampaignAuthoringAgent'
 import './EmployeeCampaignsTab.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1123,6 +1124,7 @@ export function EmployeeCampaignsTab() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
+  const [showAuthoring, setShowAuthoring] = useState(false)
 
   const active = campaigns.filter(c => c.status === 'active')
   const completed = campaigns.filter(c => c.status === 'completed')
@@ -1177,6 +1179,16 @@ export function EmployeeCampaignsTab() {
     setCampaigns(prev => prev.filter(c => c.id !== id))
   }
 
+  // Authoring agent view
+  if (showAuthoring) {
+    return (
+      <CampaignAuthoringAgent
+        onBack={() => setShowAuthoring(false)}
+        onLaunch={data => { handleCampaignLaunch(data); setShowAuthoring(false) }}
+      />
+    )
+  }
+
   // Detail view
   if (selectedCampaign) {
     return <CampaignDetail campaign={selectedCampaign} onBack={() => setSelectedCampaign(null)} />
@@ -1195,6 +1207,21 @@ export function EmployeeCampaignsTab() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ViewToggle value={viewMode} onChange={setViewMode} />
+          <button
+            type="button"
+            title="Campaign Authoring Agent — draft with AI"
+            onClick={() => setShowAuthoring(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px', borderRadius: 8,
+              border: '1.5px solid #818cf8', background: '#eef2ff',
+              color: '#4f46e5', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
+            AI Authoring Agent
+          </button>
           <Button type="button" variant="primary" onClick={() => setDialogOpen(true)}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
             Launch new campaign
