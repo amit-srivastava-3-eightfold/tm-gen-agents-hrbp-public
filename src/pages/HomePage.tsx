@@ -7,6 +7,7 @@ import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useUser } from '../contexts/UserContext'
+import { EmployeeAgentHome } from '../components/employeeHome/EmployeeAgentHome'
 import {
   EM, ORG, getPersonaHrbpNames, getPersonaDepartments,
   wfrRollupDepartmentsByName, departments, getEmployeesForRole, getRolesForDept, getDeptHrbps, getHrbpDepts,
@@ -351,6 +352,16 @@ export function HomePage() {
     ? currentUser.avatarPhotoSrc.replace(/w=\d+&h=\d+/, 'w=120&h=120')
     : null
 
+  // Employee (csm) gets the full conversational agent home
+  if (currentUser.id === 'csm') {
+    return (
+      <div className="home-page home-page--agent">
+        <NavbarApp />
+        <EmployeeAgentHome userName={firstName} />
+      </div>
+    )
+  }
+
   return (
     <div className="home-page">
       <NavbarApp />
@@ -385,9 +396,6 @@ export function HomePage() {
             </div>
           </header>
         )
-        if (currentUser.id === 'csm') {
-          return <WaveBackground variant="profile">{heroContent}</WaveBackground>
-        }
         return (
           <ProductBackground variant="career-hub" {...(currentUser.id === 'jaydon-torff' ? { hexagonsVariant: 'profile' as const } : { chevronsVariant: 'profile' as const })}>
             {heroContent}
@@ -401,7 +409,6 @@ export function HomePage() {
           </div>
           <div className="home-page__content col-span-8" aria-label="Main content">
             {(currentUser.id === 'chro' || currentUser.id === 'jaydon-torff' || currentUser.id === 'mateo') ? <ChroWorkforceReadinessTeaser /> : null}
-            {currentUser.id === 'csm' ? <EmployeeTasksTeaser /> : null}
             <CareerHubExploreCards />
             <ErrorBoundary>
               <FavoritesSection />

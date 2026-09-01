@@ -28,6 +28,7 @@ import UserCardPage from './pages/UserCardPage'
 import { MyDevPlanPage } from './pages/MyDevPlanPage'
 import { EmployeeCampaignsPage } from './pages/EmployeeCampaignsPage'
 import { ComponentsLayout } from './pages/ComponentsLayout'
+import { AIHomePage } from './pages/AIHomePage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/people/:id" element={<PeopleProfilePage />} />
             <Route path="/my-team" element={<MyTeamPage />} />
             <Route path="/employee-campaigns" element={<EmployeeCampaignsPage />} />
+            <Route path="/ai-home" element={<AIHomePage />} />
             <Route path="/my-work" element={<MyWorkPage />} />
             <Route path="/my-development-plans" element={<MyDevPlanPage />} />
             <Route path="/workforce" element={<WorkforceReadinessPage />} />

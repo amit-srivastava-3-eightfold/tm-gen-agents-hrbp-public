@@ -1,0 +1,442 @@
+/* ── Root layout (reuses sidebar classes from EmployeeAgentHome.css) ── */
+.eah-ai-root {
+  display: flex;
+  height: calc(100vh - 60px);
+  margin-top: 60px;
+  overflow: hidden;
+  background: #f8fafc;
+  position: relative;
+}
+
+/* ── Main scroll area ── */
+.eah-ai-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eah-ai-main__inner {
+  width: 100%;
+  max-width: 720px;
+  padding: 48px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Agent voice card ── */
+.eah-ai-voice-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #6366f1;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.eah-ai-voice-card__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6366f1;
+  margin-bottom: 8px;
+}
+
+.eah-ai-voice-card__insight {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #1e293b;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* ── Surfaced items ── */
+.eah-ai-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.eah-ai-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.eah-ai-item:last-child {
+  border-bottom: none;
+}
+
+.eah-ai-item__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+  font-size: 18px;
+}
+
+.eah-ai-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.eah-ai-item__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eah-ai-item__why {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.eah-ai-item__action {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6366f1;
+  background: #eef2ff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+
+.eah-ai-item__action:hover {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* ── Composer ── */
+.eah-ai-composer {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.eah-ai-composer:focus-within {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.eah-ai-composer__input {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  color: #1e293b;
+  background: transparent;
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 44px;
+}
+
+.eah-ai-composer__input::placeholder {
+  color: #94a3b8;
+}
+
+.eah-ai-composer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+}
+
+.eah-ai-composer__tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.eah-ai-composer__tool-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.eah-ai-composer__hint {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-left: auto;
+}
+
+.eah-ai-composer__send {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+  flex-shrink: 0;
+}
+
+.eah-ai-composer__send:disabled {
+  background: #e2e8f0;
+  cursor: default;
+}
+
+.eah-ai-composer__send:not(:disabled):hover {
+  background: #4f46e5;
+}
+
+/* ── Section links ── */
+.eah-ai-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eah-ai-sections__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.eah-ai-section-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: #475569;
+  font-size: 14px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.eah-ai-section-link:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.eah-ai-section-link .material-symbols-outlined {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+/* ── Section sub-page ── */
+.eah-ai-subpage {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.eah-ai-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+  margin-bottom: -8px;
+}
+
+.eah-ai-back .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.eah-ai-back:hover { color: #4f46e5; }
+
+/* ── See more details ── */
+.eah-ai-details {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.eah-ai-details summary {
+  padding: 13px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eah-ai-details summary::-webkit-details-marker { display: none; }
+
+.eah-ai-details[open] summary {
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.eah-ai-details__body {
+  padding: 16px 18px 18px;
+}
+
+.eah-ai-details__body ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eah-ai-details__body li {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* ── Bullet rows with action chips ── */
+.eah-ai-details__body ul { padding: 0; list-style: none; }
+
+.eah-ai-details__bullet-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.eah-ai-details__bullet-row:last-child { border-bottom: none; }
+
+.eah-ai-details__bullet-text {
+  flex: 1;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.eah-ai-details__bullet-action {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid #6366f1;
+  background: transparent;
+  color: #6366f1;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.eah-ai-details__bullet-action:hover {
+  background: #6366f1;
+  color: #fff;
+}
+
+/* ── Thread view ── */
+.eah-ai-thread-header {
+  padding: 4px 0 12px;
+}
+.eah-ai-thread-header__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.4;
+}
+.eah-ai-thread-header__subtitle {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+/* ── Timeline ── */
+.eah-ai-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.eah-ai-timeline__label {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
+}
+.eah-ai-timeline__step {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f8fafc;
+}
+.eah-ai-timeline__step:last-child { border-bottom: none; }
+.eah-ai-timeline__step-date {
+  flex-shrink: 0;
+  width: 52px;
+  font-size: 11px;
+  color: #94a3b8;
+  padding-top: 2px;
+}
+.eah-ai-timeline__step-body { flex: 1; }
+.eah-ai-timeline__step-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.4;
+}
+.eah-ai-timeline__step-snippet {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.eah-ai-timeline__step-source {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  font-size: 11px;
+  color: #64748b;
+}
