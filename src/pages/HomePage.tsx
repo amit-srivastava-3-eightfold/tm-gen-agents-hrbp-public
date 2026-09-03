@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { ProductBackground } from '@tonyh-2-eightfold/ef-design-system'
-import { WaveBackground } from '../components/WaveBackground'
 import { NavbarApp } from '../components/Navbar'
 import { HomeSidebar } from '../components/HomeSidebar'
 import { CareerHubExploreCards } from '../components/CareerHubExploreCards'
@@ -11,7 +10,6 @@ import { EmployeeAgentHome } from '../components/employeeHome/EmployeeAgentHome'
 import {
   EM, ORG, getPersonaHrbpNames, getPersonaDepartments,
   wfrRollupDepartmentsByName, departments, getEmployeesForRole, getRolesForDept, getDeptHrbps, getHrbpDepts,
-  getTasksForRole, taskZone,
   type RoleRowType,
 } from '../data/wfrOrgData'
 import {
@@ -241,105 +239,6 @@ function ChroWorkforceReadinessTeaser() {
         {ctaContent && ctaIsCard && (
           <WfrCtaBar content={ctaContent} onButtonClick={() => { window.location.href = ctaButtonHref }} />
         )}
-      </div>
-    </article>
-  )
-}
-
-function EmployeeTasksTeaser() {
-  const { currentUser } = useUser()
-  const roleTitle = currentUser.title ?? 'Engineering Lead'
-  const tasks = getTasksForRole(roleTitle)
-  const total = tasks.length
-  const augment = tasks.filter(t => taskZone(t.score) === 'augment').length
-  const nameHash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) }
-  const adoptionRatio = augment > 0 ? 0.25 + ((nameHash(currentUser.id) % 20) / 100) : 0
-  const aiAssisted = Math.round(augment * adoptionRatio)
-  const augmentablePct = total > 0 ? Math.round((augment / total) * 100) : 0
-  const adoptionPct = augment > 0 ? Math.round((aiAssisted / augment) * 100) : 0
-  const notYet = augment - aiAssisted
-
-  return (
-    <article className="home-page__wfr-compact" aria-label="Your work and AI">
-      <div className="home-page__wfr-compact__head">
-        <h3 className="home-page__wfr-compact__title">Your work &amp; AI</h3>
-        <Link to="/my-work" className="home-page__wfr-compact__view-link">
-          Explore tasks
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-1px', marginLeft: 3 }}>
-            <path d="M4 12h15"/><path d="m13 6 6 6-6 6"/>
-          </svg>
-        </Link>
-      </div>
-      <div className="home-page__wfr-compact__body">
-        <Link to="/my-work" style={{ textDecoration: 'none', display: 'block' }}>
-          <WfrHeroCard
-            variant="crowd"
-            crowdClassName="wfr-hero-card--crowd-home"
-            dotCount={260}
-            readinessPct={adoptionPct}
-            eyebrow={<>{roleTitle} {EM} {total} tasks</>}
-            headline={
-              <span className="wfr-dash__headline-text">
-                {'Using AI on '}
-                <span className="wfr-dash__headline-pct wfr-text-readiness" style={{ fontSize: 'inherit' }}>{aiAssisted}</span>
-                {` of ${augment} augmentable tasks.`}
-              </span>
-            }
-            supportingText={
-              notYet > 0
-                ? <><strong style={{ fontWeight: 700 }}>{notYet}</strong> more task{notYet !== 1 ? 's' : ''} ready to try with AI.</>
-                : <>You're using AI across all your augmentable tasks — great work!</>
-            }
-          />
-        </Link>
-
-        {/* CTA card */}
-        <div className="wfr-cta-card">
-          <div className="wfr-cta-card__ic">
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>trending_up</span>
-          </div>
-          <div className="wfr-cta-card__body">
-            <p className="wfr-cta-card__title">
-              You're using AI on {adoptionPct}% of your augmentable work.
-            </p>
-            <p className="wfr-cta-card__hint">
-              {notYet > 0
-                ? `Try AI on ${notYet} more task${notYet !== 1 ? 's' : ''} — see which ones fit best.`
-                : 'Explore your tasks to go deeper and share techniques with your team.'}
-            </p>
-          </div>
-          <div className="wfr-cta-card__actions">
-            <button
-              className="wfr-btn-getstarted"
-              type="button"
-              onClick={() => { window.location.href = '/my-work' }}
-            >
-              Explore tasks
-              <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_forward</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3-stat row: AI Potential · Adoption · Dev Plan */}
-        <div className="home-page__emp-stats">
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">AI Potential</span>
-            <span className="home-page__emp-stat__value wfr-text-potential">{augmentablePct}%</span>
-            <span className="home-page__emp-stat__sub">of your {total} tasks</span>
-          </div>
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">Adoption</span>
-            <span className="home-page__emp-stat__value wfr-text-readiness">{adoptionPct}%</span>
-            <span className="home-page__emp-stat__sub">of augmentable</span>
-          </div>
-          <div className="home-page__emp-stat">
-            <span className="home-page__emp-stat__label">Dev Plan</span>
-            <span className="home-page__emp-stat__value">
-              0<span style={{ fontSize: '0.55em', fontWeight: 400, color: '#94a3b8' }}>&thinsp;/&thinsp;2</span>
-            </span>
-            <span className="home-page__emp-stat__sub">courses started</span>
-          </div>
-        </div>
       </div>
     </article>
   )

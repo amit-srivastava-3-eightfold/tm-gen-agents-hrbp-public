@@ -2006,9 +2006,6 @@ const MATCH_COLOR = (score: number) =>
   score >= 70 ? { color: '#d97706', bg: '#fffbeb' } :
                { color: '#dc2626', bg: '#fef2f2' }
 
-const LEVEL_LABELS: Record<string, string> = {
-  ic: 'Individual Contributor', manager: 'Manager', director: 'Director', vp: 'VP',
-}
 
 const STEP_ICONS: Record<string, string> = {
   course: 'school', project: 'rocket_launch', mentoring: 'people', reading: 'menu_book',

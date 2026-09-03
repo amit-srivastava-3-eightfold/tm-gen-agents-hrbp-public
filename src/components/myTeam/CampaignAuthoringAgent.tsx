@@ -256,9 +256,6 @@ function getNextMissingField(fields: RequiredFields): FieldQuestion | null {
   return null // all fields collected
 }
 
-function allFieldsComplete(f: RequiredFields): boolean {
-  return !!(f.intent && f.dataToCapture && f.audience && f.channel && f.periodStart && f.periodEnd && f.isRecurring !== null)
-}
 
 // ─── Artifact generation ──────────────────────────────────────────────────────
 
@@ -467,9 +464,7 @@ export function CampaignAuthoringAgent({ onBack, onLaunch }: Props) {
 
   // ── Handle first user message: parse everything greedily ──
   const handleFirstMessage = useCallback((text: string) => {
-    const lower = text.toLowerCase()
-
-    const parsed: Partial<RequiredFields> = {}
+        const parsed: Partial<RequiredFields> = {}
 
     // Intent — use full message as the starting point
     parsed.intent = text.trim()

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
-import { CONTAINERS, THREADS, COACHING_PAST_SESSIONS, type Container, type Thread, type CoachingSession } from './agentData'
+import { CONTAINERS, THREADS, COACHING_PAST_SESSIONS, type Container, type Thread, type CoachingSession, type PastSession } from './agentData'
 import './EmployeeAgentHomeAI.css'
 import './EmployeeAgentHome.css'
 
@@ -468,7 +468,7 @@ function ThreadView({
   const sectionLabel = SECTIONS[sectionId]?.label ?? 'Section'
   const title = isThread ? (thread as Thread).title : (thread as CoachingSession).title
   const subtitle = isThread ? (thread as Thread).subtitle : (thread as CoachingSession).snippet
-  const pastSteps = isThread ? (thread as Thread).pastSteps ?? [] : []
+  const pastSteps: PastSession[] = isThread ? (thread as Thread).pastSessions ?? [] : []
 
   return (
     <div className="eah-ai-subpage">
@@ -493,7 +493,7 @@ function ThreadView({
       {pastSteps.length > 0 && (
         <div className="eah-ai-timeline">
           <div className="eah-ai-timeline__label">History</div>
-          {pastSteps.slice().reverse().map(step => (
+          {pastSteps.slice().reverse().map((step: PastSession) => (
             <div key={step.id} className="eah-ai-timeline__step">
               <div className="eah-ai-timeline__step-date">{step.date}</div>
               <div className="eah-ai-timeline__step-body">
