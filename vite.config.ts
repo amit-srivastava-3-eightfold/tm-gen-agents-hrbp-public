@@ -12,6 +12,9 @@ export default defineConfig({
   cacheDir: path.resolve(__dirname, '.vite'),
   server: { port: 5173 },
   resolve: {
+    alias: {
+      '@tonyh-2-eightfold/ef-design-system': path.resolve(__dirname, './vendor-ef-design-system/dist/index.js'),
+    },
     dedupe: ['react', 'react-dom'],
   },
 })
