@@ -1,1 +1,6 @@
-{}
+{
+  "compilerOptions": { "noEmit": true },
+  "files": [],
+  "include": [],
+  "exclude": ["**/*"]
+}
